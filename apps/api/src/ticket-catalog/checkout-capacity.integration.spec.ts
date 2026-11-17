@@ -254,11 +254,24 @@ describe.skipIf(!url)('isolated PostgreSQL checkout inventory', () => {
       serviceNumberSnapshot: native.serviceNumber,
       cabinClassCode: 'ECONOMY' as const,
     };
+    const converted = await tickets.reserve(
+      [selection],
+      branchId,
+      contract.id,
+      1,
+      { out: quote },
+    );
+    expect(converted).toMatchObject({ available: true });
+    await tickets.release(converted.createdAllocationIds);
     expect(
-      await tickets.reserve([selection], branchId, contract.id, 1, {
-        out: quote,
+      await db.ticketOfferCapacityAllocation.count({
+        where: { contractId: contract.id, status: 'ACTIVE' },
       }),
-    ).toMatchObject({ available: true });
+    ).toBe(1);
+    expect(
+      (await tickets.managed(actor)).data.find((o) => o.id === id)
+        ?.remainingCapacity,
+    ).toBe(0);
     expect(
       await db.ticketOfferCapacityHold.findFirstOrThrow({
         where: { checkoutSessionId: row.id },
@@ -285,6 +298,11 @@ describe.skipIf(!url)('isolated PostgreSQL checkout inventory', () => {
       await db.ticketOfferCapacityAllocation.count({
         where: { contractId: contract.id },
       }),
+    ).toBe(1);
+    await tickets.releaseContract(contract.id);
+    expect(
+      (await tickets.managed(actor)).data.find((o) => o.id === id)
+        ?.remainingCapacity,
     ).toBe(1);
   }, 30000);
 

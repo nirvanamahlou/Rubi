@@ -3047,8 +3047,36 @@ export class TicketPublicService {
   }
   async release(allocationIds: readonly string[]) {
     if (!allocationIds.length) return;
+    // Sales confirmation compensation must not free seats already paid for.
+    // A retry reuses this allocation; explicit contract cancellation uses releaseContract.
+    const allocations =
+      await this.database.client.ticketOfferCapacityAllocation.findMany({
+        where: { id: { in: [...allocationIds] }, status: 'ACTIVE' },
+        select: { id: true, contractId: true, offerId: true },
+      });
+    const paidHolds =
+      await this.database.client.ticketOfferCapacityHold.findMany({
+        where: {
+          status: 'CONSUMED',
+          checkoutSessionId: { not: null },
+          paymentPendingAt: { not: null },
+          checkoutContractId: { in: allocations.map((row) => row.contractId) },
+        },
+        select: { checkoutContractId: true, offerId: true },
+      });
+    const releasable = allocations
+      .filter(
+        (row) =>
+          !paidHolds.some(
+            (hold) =>
+              hold.checkoutContractId === row.contractId &&
+              hold.offerId === row.offerId,
+          ),
+      )
+      .map((row) => row.id);
+    if (!releasable.length) return;
     await this.database.client.ticketOfferCapacityAllocation.updateMany({
-      where: { id: { in: [...allocationIds] }, status: 'ACTIVE' },
+      where: { id: { in: releasable }, status: 'ACTIVE' },
       data: { status: 'RELEASED', releasedAt: new Date() },
     });
   }

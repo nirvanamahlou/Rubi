@@ -131,3 +131,73 @@ describe('native verified-checkout hold consumption', () => {
     expect(f.consume).not.toHaveBeenCalled();
   });
 });
+
+describe('confirmation compensation preserves paid inventory', () => {
+  it('releases ordinary failed-confirmation allocations but retains paid checkout allocations', async () => {
+    const updateMany = vi.fn();
+    const allocations = [
+      { id: 'paid', contractId: 'paid-contract', offerId: 'paid-offer' },
+      {
+        id: 'ordinary',
+        contractId: 'ordinary-contract',
+        offerId: 'ordinary-offer',
+      },
+    ];
+    const client = {
+      ticketOfferCapacityAllocation: {
+        findMany: vi.fn().mockResolvedValue(allocations),
+        updateMany,
+      },
+      ticketOfferCapacityHold: {
+        findMany: vi
+          .fn()
+          .mockResolvedValue([
+            { checkoutContractId: 'paid-contract', offerId: 'paid-offer' },
+          ]),
+      },
+    };
+    const service = new TicketPublicService({ client } as never, {} as never);
+    await service.release(['paid', 'ordinary']);
+    expect(updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['ordinary'] }, status: 'ACTIVE' },
+      data: { status: 'RELEASED', releasedAt: expect.any(Date) },
+    });
+    expect(client.ticketOfferCapacityHold.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          status: 'CONSUMED',
+          checkoutSessionId: { not: null },
+          paymentPendingAt: { not: null },
+        }),
+      }),
+    );
+  });
+  it('keeps all paid seats on confirmation failure while explicit cancellation still releases them', async () => {
+    const updateMany = vi.fn();
+    const client = {
+      ticketOfferCapacityAllocation: {
+        findMany: vi
+          .fn()
+          .mockResolvedValue([
+            { id: 'paid', contractId: 'contract', offerId: 'offer' },
+          ]),
+        updateMany,
+      },
+      ticketOfferCapacityHold: {
+        findMany: vi
+          .fn()
+          .mockResolvedValue([
+            { checkoutContractId: 'contract', offerId: 'offer' },
+          ]),
+      },
+    };
+    const service = new TicketPublicService({ client } as never, {} as never);
+    await service.release(['paid']);
+    expect(updateMany).not.toHaveBeenCalled();
+    await service.releaseContract('contract');
+    expect(updateMany).toHaveBeenCalledWith({
+      where: { contractId: 'contract', status: 'ACTIVE' },
+      data: { status: 'RELEASED', releasedAt: expect.any(Date) },
+    });
+  });
+});
