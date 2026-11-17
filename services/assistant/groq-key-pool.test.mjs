@@ -131,6 +131,28 @@ test('explicit key quota permits the next healthy credential', async () => {
   assert.equal(h.sent.length, 2);
 });
 
+test('explicit key scope and key error codes outrank organization wording', async () => {
+  for (const details of [
+    { scope: 'key' },
+    { code: 'key_rate_limit_exceeded' },
+  ]) {
+    const h = harness([
+      Response.json(
+        {
+          error: {
+            ...details,
+            message: 'Key limit in organization synthetic-main',
+          },
+        },
+        { status: 429 },
+      ),
+      new Response('ok'),
+    ]);
+    assert.equal((await h.run()).status, 200);
+    assert.equal(h.sent.length, 2);
+  }
+});
+
 test('project quota skips only known project peers', async () => {
   const h = harness([error(429, 'project'), new Response('ok')], {
     entries: entries.map((x, i) => ({

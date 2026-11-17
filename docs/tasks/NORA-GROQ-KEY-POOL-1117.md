@@ -75,9 +75,52 @@ Local final-source validation: 164 service tests pass (25 new targeted/integrate
 pool checks), scoped ESLint and source formatting pass. These native Node modules
 have no separate compilation artifact; full repository build/type gates run in CI.
 
-Pending: exact-head hosted CI, secure server provisioning,
-Nora-only deployment and authenticated browser acceptance. No live success or
-deployment is claimed by the implementation tests alone.
+## Release acceptance
+
+- Implementation: PR1778, head `512b77f37`, merge `bbdca37b0`. All nine checks
+  completed successfully before merge: push/PR production builds, quality gates,
+  full test suites, PostgreSQL migration/seed gates, independent assistant gate.
+- Repository service suite: 164/164 pass; scoped ESLint/format pass. Hosted full
+  lint, typecheck, builds and database gates pass.
+- Server mounted-source suite: 142/142 pass, including the 25 new pool tests.
+  Its older retained test inventory differs from the full repository suite;
+  those counts are reported separately, not presented as the same run. The test
+  runner needed a disposable `/tmp` tmpfs under the read-only container; initial
+  test-runner admission failed before activation and was corrected.
+- After the peer deployment lock was released, source hashes matched the
+  reviewed base. Current private environment and all peer container identities
+  were captured and verified before/after activation.
+- Six unique keys installed in order: current primary, then supplied keys 2–6,
+  all under one organization alias. Mode0600, UID1000, read-only container mount.
+  No credential values are in this report or Git.
+- Candidate real Groq smoke: native `set_plan` and `workbench_guide` selected
+  successfully through mandatory Germany proxy configuration, using synthetic
+  input only.
+- Main `rubi-nora-assistant` activated and healthy. Authenticated ERP browser:
+  synthetic greeting returned an actual short reply; hourly-leave guide showed
+  the vetted route and instructions. Alias-only operational events recorded
+  successful primary-key sends. No employee request was created or record read
+  for this smoke. Screenshot retained locally outside Git.
+- Actual secondary-key exhaustion/failover was deliberately not forced against
+  the live organization. Synthetic tests verify failover, 401/403/429 handling,
+  concurrency, budgets and revocation; they do not claim independent live quota
+  or validate every secondary credential through paid generation.
+- Only Nora source/entrypoint/container and its private pool path changed. Web,
+  API, read boundary, worker and PostgreSQL container identities stayed unchanged.
+  No migration or database fixture was applied.
+- Private backup and old single-key container remain available. Rollback uses
+  the retained old source, entrypoint and environment; Germany relay and existing
+  operator exemptions were preserved. Source/runtime lease is released.
+
+Remaining operating limit: organization-level Groq quotas still apply. Multiple
+Nora processes would need a shared state coordinator; this release is explicitly
+for the current single-process service.
+
+Final review follow-up: explicit structured quota scope and specific credential
+error codes take precedence over incidental organization wording in free text.
+One additional regression covers both forms;165 repository tests and scoped lint
+pass. This bounded classifier follow-up requires its own exact-head CI before
+the source-only update of the already active pool; credentials stay unchanged.
 
 ## Nora-only deployment and rollback
 

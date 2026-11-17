@@ -77,23 +77,23 @@ function failureScope(error) {
   const code = typeof error.code === 'string' ? error.code : '';
   const message =
     typeof error.message === 'string' ? error.message.slice(0, 16000) : '';
+  // Structured scope outranks incidental organization wording in a message.
+  if (scope === 'organization' || scope === 'org') return 'organization';
+  if (scope === 'project' || scope === 'key') return scope;
   if (
-    scope === 'organization' ||
-    scope === 'org' ||
     /^(?:organization|org)[_-](?:rate|quota|limit|permission)/.test(code) ||
-    code === 'blocked_api_access' ||
-    /\b(?:in|for)\s+(?:the\s+)?organization\b/i.test(message)
+    code === 'blocked_api_access'
   )
     return 'organization';
-  if (scope === 'project' || /^project[_-](?:rate|quota|limit)/.test(code))
-    return 'project';
+  if (/^project[_-](?:rate|quota|limit)/.test(code)) return 'project';
   if (
-    scope === 'key' ||
     /^(?:key_rate_limit_exceeded|api_key_rate_limit_exceeded|key_permission_denied|invalid_api_key)$/.test(
       code,
     )
   )
     return 'key';
+  if (/\b(?:in|for)\s+(?:the\s+)?organization\b/i.test(message))
+    return 'organization';
   return 'unknown';
 }
 
