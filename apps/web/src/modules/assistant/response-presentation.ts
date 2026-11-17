@@ -24,7 +24,7 @@ export function persianAssistantTerms(text: string) {
 
 export function formatAssistantSources(
   sources: readonly {
-    kind?: string;
+    kind?: string | undefined;
     sources: readonly string[];
     observedAt: string;
   }[],
