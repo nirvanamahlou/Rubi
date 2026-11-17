@@ -225,12 +225,18 @@ class TicketOffersController {
 
 @Module({
   imports: [IamModule, MasterDataModule, DocumentsModule, ProcurementModule],
-  controllers: [CheckoutCapacityController,
+  controllers: [
+    CheckoutCapacityController,
     TicketOffersController,
     TicketSalePriceTargetsController,
     TourController,
   ],
-  providers: [AuthGuard, TicketPublicService, TourPublicService, CheckoutTicketCapacity],
+  providers: [
+    AuthGuard,
+    TicketPublicService,
+    TourPublicService,
+    CheckoutTicketCapacity,
+  ],
   exports: [TicketPublicService, TourPublicService, CheckoutTicketCapacity],
 })
 export class TicketRuntimeModule {}

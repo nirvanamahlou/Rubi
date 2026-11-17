@@ -35,3 +35,13 @@ Body `{}` after successful proof and idempotent real draft creation using the sa
 ## Validation/release gates
 
 Schema/migration validation; all-channel capacity predicates/reporting; concurrent-last-seat PostgreSQL tests, two-leg rollback, replay, expiry, pending-bank beyond expiry, failed bank release, successful consume exactly once, scope/contact privacy, zero-seat infant; no production financial test data. Source/runtime CAS and host shared locks; consumer fail-closed until producer/migration/CI/deploy verified. Main settlement gates remain mandatory. This document is not a release claim.
+
+## Isolated validation completed before release
+
+All254 PostgreSQL18 migrations applied to an empty, network-isolated temporary database. Eight real PostgreSQL scenarios passed: concurrent last seat, both-leg rollback, stable attempt/expiry with pending-bank capacity retained, expired unpinned rejection, protected roster, native hold-to-allocation/bind/confirm replay exactly once, ordinary roster expiry/reacquisition, and pending-bank roster occupancy/release. Twelve additional pure policy/signature tests passed. The real consume test caught the existing status CHECK rejecting CONSUMED; the additive migration now widens the constraint without removing earlier states. No production orders, people or payments were created.
+
+Broad affected API tests388 passed; final focused tests54, API typecheck/lint/Nest build and276 Web/i18n tests passed. Final Next production build including TypeScript passed after the display API used an explicit nullable AbortSignal. The protected roster includes name/phone and scoped site order reference, stable pagination, server-clock countdown, stale-error display and no automatic bank-pending expiry claim.
+
+Main bank settlement PR1767 proof and Finance confirmation remain intact. A server-only VERIFIED-session witness supplies immutable flight quotes and package publication rows into draft/native Sales validation; it never accepts a browser bypass. New NSS drafts without a verified checkout fail closed; pre-existing WebsiteOrder replays remain compatible. Other sites retain their legacy flow. Bank proof currently supports IRR only, so unsupported currency totals reject before any token; no guessed exchange rate is used. The local unpaid proforma stays15minutes, while payment-stage capacity lease is10minutes; reload never extends either.
+
+Producer release is still pending repository gates and live source/image checks. Consumer activation is explicitly held until producer deployment succeeds.

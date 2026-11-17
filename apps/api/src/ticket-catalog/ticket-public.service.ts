@@ -1,4 +1,7 @@
-import { checkoutQuoteFingerprint, checkoutHoldIsLive } from './checkout-hold-policy';
+import {
+  checkoutQuoteFingerprint,
+  checkoutHoldIsLive,
+} from './checkout-hold-policy';
 import { liveCapacityHolds } from './live-capacity-holds';
 import { ageFareFields, ageFareTotal } from './ticket-age-fares';
 import { websiteTargetOffer } from './website-target-offer';
@@ -261,19 +264,18 @@ export class TicketPublicService {
       !offer.standaloneSalePrice &&
       !offer.roundTripSalePrices?.length
     ) {
-      const incoming =
-        await client.ticketSaleCommissionRevision.findMany({
-          where: {
-            returnOfferId: id,
-            salePriceTargetId,
-            offer: {
-              branchId: { in: [...branchIds] },
-              status: 'ACTIVE',
-              departureAt: { gt: new Date() },
-            },
+      const incoming = await client.ticketSaleCommissionRevision.findMany({
+        where: {
+          returnOfferId: id,
+          salePriceTargetId,
+          offer: {
+            branchId: { in: [...branchIds] },
+            status: 'ACTIVE',
+            departureAt: { gt: new Date() },
           },
-          orderBy: { revision: 'desc' },
-        });
+        },
+        orderBy: { revision: 'desc' },
+      });
       const latest = new Map<string, (typeof incoming)[number]>();
       for (const rate of incoming)
         if (!latest.has(rate.offerId)) latest.set(rate.offerId, rate);
@@ -2529,14 +2531,33 @@ export class TicketPublicService {
             select: { contractId: true, direction: true, quantity: true },
           },
           capacityHolds: {
-            where: { OR: [liveCapacityHolds(), { checkoutContractId: contractId }] },
-            select: { id:true, quantity:true, status:true, expiresAt:true, paymentPendingAt:true, checkoutContractId:true, checkoutQuoteFingerprint:true },
+            where: {
+              OR: [liveCapacityHolds(), { checkoutContractId: contractId }],
+            },
+            select: {
+              id: true,
+              quantity: true,
+              status: true,
+              expiresAt: true,
+              paymentPendingAt: true,
+              checkoutContractId: true,
+              checkoutQuoteFingerprint: true,
+            },
           },
         },
       });
-      const ownHolds = new Map(offers.flatMap(offer => offer.capacityHolds.filter(h => h.checkoutContractId === contractId).map(h => [offer.id, h] as const)));
+      const ownHolds = new Map(
+        offers.flatMap((offer) =>
+          offer.capacityHolds
+            .filter((h) => h.checkoutContractId === contractId)
+            .map((h) => [offer.id, h] as const),
+        ),
+      );
       // The owning lease is converted, not added to the inventory demand a second time.
-      for (const offer of offers) offer.capacityHolds = offer.capacityHolds.filter(h => h.checkoutContractId !== contractId);
+      for (const offer of offers)
+        offer.capacityHolds = offer.capacityHolds.filter(
+          (h) => h.checkoutContractId !== contractId,
+        );
       const byId = new Map(offers.map((offer) => [offer.id, offer]));
       const existing = await transaction.ticketOfferCapacityAllocation.findMany(
         {
@@ -2546,14 +2567,31 @@ export class TicketPublicService {
       const existingByDirection = new Map(
         existing.map((allocation) => [allocation.direction, allocation]),
       );
-      if (ownHolds.size && (ownHolds.size !== selections.length || selections.some(selection => {
-        const hold = ownHolds.get(selection.offerId);
-        const allocation = existingByDirection.get(selection.direction);
-        if (!hold || hold.quantity !== (counts?.[selection.serviceClientKey] ?? seatCount)) return true;
-        if (!allocation && (!checkoutHoldIsLive(hold,new Date()) || !hold.paymentPendingAt)) return true;
-        const quoted = expectedTicketTotals?.[selection.serviceClientKey];
-        return quoted !== undefined && hold.checkoutQuoteFingerprint !== checkoutQuoteFingerprint(quoted);
-      }))) throw new ConflictException('رزرو پرداخت با قرارداد مطابقت ندارد.');
+      if (
+        ownHolds.size &&
+        (ownHolds.size !== selections.length ||
+          selections.some((selection) => {
+            const hold = ownHolds.get(selection.offerId);
+            const allocation = existingByDirection.get(selection.direction);
+            if (
+              !hold ||
+              hold.quantity !==
+                (counts?.[selection.serviceClientKey] ?? seatCount)
+            )
+              return true;
+            if (
+              !allocation &&
+              (!checkoutHoldIsLive(hold, new Date()) || !hold.paymentPendingAt)
+            )
+              return true;
+            const quoted = expectedTicketTotals?.[selection.serviceClientKey];
+            return (
+              quoted !== undefined &&
+              hold.checkoutQuoteFingerprint !== checkoutQuoteFingerprint(quoted)
+            );
+          }))
+      )
+        throw new ConflictException('رزرو پرداخت با قرارداد مطابقت ندارد.');
       const unavailableOfferIds = selections
         .filter((selection) => {
           const quantity = counts?.[selection.serviceClientKey] ?? seatCount;
@@ -2866,10 +2904,15 @@ export class TicketPublicService {
         });
         createdAllocationIds.push(created.id);
       }
-      if (ownHolds.size) await transaction.ticketOfferCapacityHold.updateMany({
-        where:{id:{in:[...ownHolds.values()].map(h=>h.id)},checkoutContractId:contractId,status:'ACTIVE'},
-        data:{status:'CONSUMED',releasedAt:new Date()},
-      });
+      if (ownHolds.size)
+        await transaction.ticketOfferCapacityHold.updateMany({
+          where: {
+            id: { in: [...ownHolds.values()].map((h) => h.id) },
+            checkoutContractId: contractId,
+            status: 'ACTIVE',
+          },
+          data: { status: 'CONSUMED', releasedAt: new Date() },
+        });
       return { available: true, unavailableOfferIds: [], createdAllocationIds };
     });
   }
@@ -2941,7 +2984,12 @@ export class TicketPublicService {
         };
       }
       await transaction.ticketOfferCapacityHold.updateMany({
-        where: { offerId, status: 'ACTIVE', paymentPendingAt: null, expiresAt: { lte: now } },
+        where: {
+          offerId,
+          status: 'ACTIVE',
+          paymentPendingAt: null,
+          expiresAt: { lte: now },
+        },
         data: { status: 'EXPIRED', releasedAt: now },
       });
       await transaction.$queryRaw(

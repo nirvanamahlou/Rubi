@@ -56,5 +56,20 @@
   "قیمت بزرگسال کل رفت‌وبرگشت": "Adult fare for the complete round trip",
   "قیمت بزرگسال یک‌طرفه": "Adult one-way fare",
   "قیمت کودک (۲ تا کمتر از ۱۲)": "Child fare (2 to under 12)",
-  "قیمت نوزاد (کمتر از ۲)": "Infant fare (under 2)"
+  "قیمت نوزاد (کمتر از ۲)": "Infant fare (under 2)",
+  "پاسخ فهرست رزروهای ظرفیت معتبر نیست.": "The capacity hold list response is invalid.",
+  "در انتظار نتیجه قطعی بانک؛ ظرفیت محفوظ است": "Awaiting the final bank result; seats remain held",
+  "در حال خرید و رزروهای فعال": "Purchases in progress and active holds",
+  "در حال دریافت رزروهای ظرفیت…": "Loading capacity holds…",
+  "دریافت رزروهای ظرفیت انجام نشد.": "Capacity holds could not be loaded.",
+  "رزرو فعالی ثبت نشده است.": "There are no active holds.",
+  "رزروهای فعال ظرفیت": "Active capacity holds",
+  "زمان انقضای رزرو در دسترس نیست.": "The hold expiry time is unavailable.",
+  "زمان باقی‌مانده تا پایان رزرو:": "Time remaining until hold expiry:",
+  "شماره سفارش سایت:": "Website order number:",
+  "مهلت رزرو تمام شده؛ در حال بررسی آزادسازی ظرفیت.": "The hold deadline has passed; checking seat release.",
+  "مهلت رزرو:": "Hold deadline:",
+  "نمایش رزروهای بیشتر": "Show more holds",
+  "وضعیت رزروها به‌روز نیست.": "Hold status is out of date.",
+  "نشانگر صفحه رزرو معتبر نیست.": "The hold page cursor is invalid."
 }

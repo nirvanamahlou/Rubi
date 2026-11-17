@@ -1,3 +1,4 @@
+BEGIN;
 CREATE TABLE "website_checkout_sessions" (
  "id" UUID NOT NULL DEFAULT gen_random_uuid(), "siteCode" VARCHAR(40) NOT NULL,
  "branchId" UUID NOT NULL, "createdByUserId" UUID NOT NULL, "externalId" VARCHAR(100) NOT NULL,
@@ -26,3 +27,9 @@ CREATE INDEX "TicketOfferCapacityHold_checkoutContractId_status_idx" ON "TicketO
 ALTER TABLE "website_checkout_sessions" ADD COLUMN "contractId" UUID, ADD COLUMN "paymentAttemptKey" VARCHAR(160), ADD COLUMN "resolutionFingerprint" CHAR(64);
 ALTER TABLE "website_checkout_sessions" ADD CONSTRAINT "website_checkout_sessions_contractId_fkey" FOREIGN KEY("contractId") REFERENCES "sales_contracts"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 CREATE UNIQUE INDEX "website_checkout_sessions_contractId_key" ON "website_checkout_sessions"("contractId");
+
+-- Conversion and allocation are committed together; prior statuses remain valid.
+ALTER TABLE "TicketOfferCapacityHold" DROP CONSTRAINT "TicketOfferCapacityHold_status_check";
+ALTER TABLE "TicketOfferCapacityHold" ADD CONSTRAINT "TicketOfferCapacityHold_status_check" CHECK ("status" IN ('ACTIVE','RELEASED','EXPIRED','CONSUMED'));
+ALTER TABLE "website_checkout_sessions" ADD CONSTRAINT "website_checkout_sessions_status_check" CHECK ("status" IN ('PREPARED','PAYMENT_PENDING','VERIFIED','BOUND','RELEASED'));
+COMMIT;
