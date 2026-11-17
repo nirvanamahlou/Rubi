@@ -1,3 +1,7 @@
+## NORA-CHAT-SCROLL-RELEASE-1117 — PC-C — ACTIVE
+
+Owner explicitly authorizes publishing merged PR1768 and authenticated ERP browser acceptance. Branch codex/pc-c-nora-chat-scroll-release-1117 from develop13a6e753f. Reserve own operational receipt/task docs and bounded Web-only image overlay/build/activation under /opt/rubi/avina-deploy.lock with source-hash checks, current container/Compose CAS, private backup and Web-only rollback. Preserve current Nora/provider/read/API/worker/DB/tunnel and all peer runtime/source/config; no migration or operational test fixtures. The1768 source passed all8 exact-head hosted checks and284 local Assistant/English checks. Only if live UI reveals a defect, record a narrow Assistant UI repair lease before editing.
+
 ## NORA-CHAT-SCROLL-1117 — PC-C — ACTIVE
 
 Owner requests immediate user-message display, automatic latest-message scrolling and visible pending feedback in Nora's existing chat. PC-C verified by local Git identity; branch codex/pc-c-nora-chat-scroll-1117 from develop979d435ef. Reserve AssistantComposer presentation/submit integration, new scroll hook and focused tests/CSS, bounded assistant-copy labels and own status/task notes. Earlier routing UI work is merged; active live-matrix/provider and rate-exemption leases remain untouched. No API/model/history-policy, permissions, schema/migration, dependency or Production changes. Preserve identity/company isolation, navigation memory and stale-response cancellation. Use pending feedback for every asynchronous response; do not fabricate streamed model text.
