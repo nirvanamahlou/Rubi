@@ -22,6 +22,14 @@ function check(result: unknown, party = { brokerId: 'broker-a' }) {
   };
 }
 describe('direct bank transfer beneficiary', () => {
+  it('does not fall back to another book in the same branch', async () => {
+    const tx = {} as Prisma.TransactionClient;
+    await expect(
+      validatePayee(tx, 'branch-a', undefined, id, 'EUR', {
+        brokerId: 'broker-a',
+      }),
+    ).rejects.toThrow('شرکت و سال مالی را انتخاب کنید.');
+  });
   it('requires an active external destination in the right company, currency and payment direction', async () => {
     const { findFirst, payment } = check(row);
     await expect(payment).resolves.toBe(id);

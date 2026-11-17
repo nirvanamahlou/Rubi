@@ -195,6 +195,7 @@ export async function verifyBankPayment(
       v.rule('حواله کارگزار باید از صرافی پرداخت شده باشد.');
     if (new Prisma.Decimal(ctx.remaining).sub(pending).lt(ctx.amount))
       v.rule('برای این بخش از مانده قبلاً حواله صادر شده است.');
+    const bookId = new FinanceFiscalStorage().current()?.bookId;
     let ownerId = null;
     if (
       (ctx.channel === 'BANK_TRANSFER' || input.beneficiaryId) &&
@@ -203,6 +204,7 @@ export async function verifyBankPayment(
       !ctx.party.organizationId &&
       !('invoiceId' in source)
     ) {
+      if (!bookId) v.rule('شرکت و سال مالی را انتخاب کنید.');
       ownerId =
         (
           await tx.financePayeeDesignation.findFirst({
@@ -210,7 +212,7 @@ export async function verifyBankPayment(
               ...source,
               book: {
                 branchId: ctx.branchId,
-                id: new FinanceFiscalStorage().current()?.bookId ?? undefined,
+                id: bookId,
               },
             },
           })
@@ -221,7 +223,7 @@ export async function verifyBankPayment(
         ? await validatePayee(
             tx,
             ctx.branchId,
-            new FinanceFiscalStorage().current()?.bookId ?? undefined,
+            bookId ?? undefined,
             input.beneficiaryId,
             ctx.payeeCurrency ?? ctx.currency,
             { ...ctx.party, ownerId },
