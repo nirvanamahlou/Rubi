@@ -1,5 +1,38 @@
 export type AssistantText = readonly [string, string];
 export const assistantCopy = {
+  termNonCancelled: [
+    'قراردادهای لغونشده در پنل',
+    'Non-cancelled panel contracts',
+  ],
+  termSalesCancelled: [
+    'قراردادهای لغوشده در فروش',
+    'Contracts cancelled in Sales',
+  ],
+  termReservationCancelled: [
+    'قراردادهای لغوشده فقط در رزرواسیون',
+    'Contracts cancelled only in Reservations',
+  ],
+  termCompleted: [
+    'قراردادهای تکمیل‌شده و لغونشده',
+    'Completed non-cancelled contracts',
+  ],
+  termCount: ['آمار وضعیت قراردادها', 'Contract status counts'],
+  sourceContracts: ['قراردادها', 'Contracts'],
+  sourcePassengers: ['مسافران', 'Passengers'],
+  sourceServices: ['خدمات قرارداد', 'Contract services'],
+  sourceAmounts: ['مبالغ قرارداد', 'Contract amounts'],
+  sourcePayments: ['پرداخت‌های ثبت‌شده', 'Recorded payments'],
+  sourceCountBreakdown: [
+    'آمار قراردادهای فروش و وضعیت رزرواسیون',
+    'Sales contract counts and reservation status',
+  ],
+  sourceAuthorized: ['داده‌های مجاز سامانه', 'Authorized ERP data'],
+  sourceDate: ['تاریخ مشاهده', 'Observation date'],
+  sourceTime: ['ساعت مشاهده', 'Observation time'],
+  sourceTimeUnavailable: [
+    'زمان مشاهده ثبت نشده است',
+    'Observation time unavailable',
+  ],
   chatLatest: ['رفتن به آخر گفتگو', 'Go to latest message'],
   agentSources: ['منابع پاسخ', 'Answer sources'],
   agentLimitations: ['محدودیت‌های پاسخ', 'Answer limitations'],

@@ -1,3 +1,7 @@
+## NORA-PERSIAN-RESPONSE-1117 — PC-C — VALIDATING
+
+Persian public business wording and localized source/date/time labels; safe actual headings/emphasis/lists/tables replace raw Markdown markers.139 service and282 Assistant/i18n checks pass; scoped lint/format pass. Numbers, permissions, evidence, SQL and private runtime configuration unchanged. Clean hosted and live-browser gates remain separate. See [task](tasks/NORA-PERSIAN-RESPONSE-1117.md).
+
 ## NORA-CHAT-SCROLL-1117 — PC-C — implemented
 
 Nora immediately displays submitted user messages and one accessible waiting spinner on all async chat paths. Transcript-only scrolling follows new messages while near the bottom; scrolling up reveals a latest-message arrow. Typing the next draft no longer cancels pending work or gets erased on completion. Scope/navigation safeguards and provider history isolation remain. Synthetic browser UI acceptance completed without ERP/Groq access; clean hosted final-head gates still required. No Production, API, migration, permissions or dependency-version changes. See [task](tasks/NORA-CHAT-SCROLL-1117.md).
