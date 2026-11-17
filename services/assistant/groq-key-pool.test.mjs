@@ -158,13 +158,10 @@ test('provider-confirmed organization identity links provisional aliases without
       },
       { status: 429, headers: { 'retry-after': '2' } },
     );
-  const h = harness(
-    [shared(), shared(), new Response('ok'), shared()],
-    {
-      now: () => time,
-      entries: entries.map((x, i) => ({ ...x, organization: 'org-' + i })),
-    },
-  );
+  const h = harness([shared(), shared(), new Response('ok'), shared()], {
+    now: () => time,
+    entries: entries.map((x, i) => ({ ...x, organization: 'org-' + i })),
+  });
   await h.run();
   assert.equal(h.sent.length, 3);
   time = 4000;
