@@ -116,6 +116,12 @@ Remaining operating limit: organization-level Groq quotas still apply. Multiple
 Nora processes would need a shared state coordinator; this release is explicitly
 for the current single-process service.
 
+Final review follow-up: explicit structured quota scope and specific credential
+error codes take precedence over incidental organization wording in free text.
+One additional regression covers both forms;165 repository tests and scoped lint
+pass. This bounded classifier follow-up requires its own exact-head CI before
+the source-only update of the already active pool; credentials stay unchanged.
+
 ## Nora-only deployment and rollback
 
 Acquire the existing host deployment lock. Privately back up current container

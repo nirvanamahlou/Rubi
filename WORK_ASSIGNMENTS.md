@@ -1,4 +1,6 @@
-## NORA-GROQ-KEY-POOL-1117 — PC-C — RELEASED
+## NORA-GROQ-KEY-POOL-1117 — PC-C — FINAL_SCOPE_VALIDATION
+
+Reserve only groq-key-pool.mjs scope-classifier precedence, its synthetic regression and release notes for the final review follow-up. Explicit structured key/project scope or specific key code must precede organization wording heuristics. No keys, public contracts, policy, budget or dependencies change. Prior deployment remains healthy; bounded source-only follow-up ships after exact-head CI.
 
 Implementation PR1778 merged at bbdca37b0 after all nine exact-head checks passed on512b77f37. Main Nora activated with six deduplicated private credentials, same organization, read-only0600 file.164 repository service tests and142 mounted-source container tests pass; live Germany native tool/guide and authenticated ERP chat/leave-guide smokes pass. Backup and single-key rollback retained privately; API/Web/read-boundary/worker/database containers unchanged. Source/runtime lease released; no migration/dependency lock was acquired. Release receipt branch codex/pc-c-nora-groq-pool-release-1117 contains documentation only.
 
