@@ -112,8 +112,11 @@ describe.skipIf(!enabled)(
           endDate: '2026-12-31',
         },
       });
-      const selection = {
+      if (period.status !== 'OPEN')
+        throw new Error('Expected an open test period');
+      const selection: NonNullable<FinanceFiscalRequestV1['period']> = {
         ...period,
+        status: period.status,
         yearActive: true,
         code: year.code,
         title: year.title,
