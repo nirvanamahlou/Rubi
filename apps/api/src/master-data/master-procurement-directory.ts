@@ -122,7 +122,7 @@ export class MasterProcurementDirectory {
   ) {
     return (transaction ?? this.database.client).masterPaymentMethod.findFirst({
       where: { id, isActive: true, direction: { in: ['PAYMENT', 'BOTH'] } },
-      select: { id: true, name: true },
+      select: { id: true, name: true, channel: true },
     });
   }
   /** Public validator for manually confirmed incoming treasury receipts. */

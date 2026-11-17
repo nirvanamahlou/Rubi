@@ -1,4 +1,8 @@
 'use client';
+import {
+  BrokerPaymentControls,
+  emptyBankSelection,
+} from './broker-payment-controls';
 import { isOptionalOperationReason } from '@nora/contracts';
 
 import { currencySymbol } from '@/lib/currency-symbol';
@@ -66,6 +70,7 @@ export function FinancePayrollActions({
     Boolean(item.amount?.currencyCode) &&
     item.amount?.currencyCode !== 'IRR' &&
     !detail?.kind.startsWith('PETTY_CASH_');
+  const [selection, change] = useState(emptyBankSelection);
   const [methodId, setMethodId] = useState('');
   const [receiptMethods, setReceiptMethods] = useState<
     readonly FinancePaymentMethodOptionV1[]
@@ -131,6 +136,9 @@ export function FinancePayrollActions({
               paidAmount: amount,
               accountId: foreignPayment ? null : accountId,
               payingSupplierId: foreignPayment ? payingSupplierId : null,
+              ...(selection.beneficiaryId
+                ? { beneficiaryId: selection.beneficiaryId }
+                : {}),
               methodId,
               transferAt: new Date().toISOString(),
               paymentReference: reference,
@@ -308,6 +316,23 @@ export function FinancePayrollActions({
               </select>
             </label>
           )}
+          {!foreignPayment &&
+            !detail?.kind.startsWith('PETTY_CASH_') &&
+            methods.find((m) => m.id === methodId)?.channel ===
+              'BANK_TRANSFER' && (
+              <BrokerPaymentControls
+                item={item}
+                exchange={false}
+                direct={true}
+                office=""
+                amount={amount}
+                rate="1"
+                date=""
+                selection={selection}
+                change={change}
+                selectTransfer={() => {}}
+              />
+            )}
           <label>
             روش پرداخت
             <select

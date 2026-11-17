@@ -1,3 +1,5 @@
+import { bankCommand, bankReport } from './bank-reconciliation';
+import { beneficiaryRegister, saveBeneficiary } from '../payments/bank-payee';
 import {
   voidedSalesReceiptEvent,
   voidedSalesReceiptIds,
@@ -1008,7 +1010,7 @@ export class AccountingService {
     actor: AuthenticatedActor,
   ) {
     const permission: IamPermissionCode =
-      action === 'workflow-cancel'
+      action === 'workflow-cancel' || action === 'bank-statement-finalize'
         ? 'finance.journal.approve'
         : action.startsWith('workflow-')
           ? 'finance.journal.create'
@@ -1223,6 +1225,19 @@ export class AccountingService {
       ].includes(action)
     )
       return standardCommand(tx, bookId, action, p, expected);
+    if (action === 'save-beneficiary' || action.startsWith('bank-statement-')) {
+      if (
+        !actor.permissions.includes('master_data.read') ||
+        !hasAccessControl(actor.permissions, 'master-data.resource.banks')
+      )
+        throw new ForbiddenException();
+      if (action === 'save-beneficiary')
+        return saveBeneficiary(tx, book, p, expected);
+      const { period } = await this.reportPeriod(tx, bookId, {
+        periodId: v.uuid(p.periodId)!,
+      });
+      return bankCommand(tx, book, period, action, p);
+    }
     if (action === 'tax-reference-import')
       return importTaxReference(tx, bookId, p, actor.userId);
     if (action === 'tax-map-save') return saveTaxMapping(tx, bookId, p);
@@ -6729,6 +6744,22 @@ export class AccountingService {
     actor: AuthenticatedActor,
   ) {
     this.require(actor);
+    if (kind === 'bank-reconciliation' || kind === 'beneficiaries') {
+      if (
+        !actor.permissions.includes('master_data.read') ||
+        !hasAccessControl(actor.permissions, 'master-data.resource.banks')
+      )
+        throw new ForbiddenException();
+      return this.database.client.$transaction(
+        async (tx) => {
+          const book = await this.book(tx, bookId, actor);
+          if (kind === 'beneficiaries') return beneficiaryRegister(tx, book);
+          const { period } = await this.reportPeriod(tx, bookId, query);
+          return bankReport(tx, book, period, query);
+        },
+        { isolationLevel: 'RepeatableRead' },
+      );
+    }
     if (kind === 'tax-mapping' || kind === 'seasonal-report') {
       return this.database.client.$transaction(
         async (tx) => {

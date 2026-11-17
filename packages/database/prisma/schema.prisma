@@ -1400,6 +1400,7 @@ model MasterBank {
 }
 
 model MasterBankBranch {
+  beneficiaries FinanceBeneficiary[]
   settlementAccounts FinanceSettlementAccount[]
   id                  String     @id @default(uuid()) @db.Uuid
   bankId              String     @db.Uuid
@@ -1792,6 +1793,7 @@ model B2bAuditEvent {
 }
 
 model MasterSupplier {
+  beneficiaries FinanceBeneficiary[]
   accountingCode                     String?                                @unique @db.VarChar(7)
   payingOperationalPayments          FinanceOperationalRevision[]
   payingTicketPayments               FinanceTicketPurchasePaymentRevision[]
@@ -2664,6 +2666,8 @@ model MasterHotelImportSession {
 }
 
 model MasterBroker {
+  beneficiaries FinanceBeneficiary[]
+  brokerTransfers FinanceBrokerTransfer[]
   accountingCode                   String?                      @unique @db.VarChar(7)
   hotelGroupRates                  ReservationHotelGroupRate[]
   reservationServicePurchases      ReservationServicePurchase[]
@@ -3524,6 +3528,7 @@ model DocumentCategory {
 }
 
 model Document {
+  brokerReceipt FinanceBrokerTransfer?
   pettyRegistrations               ProcurementPettyEntry[]
   senderName                       String?                      @map("sender_name") @db.VarChar(200)
   isIncomingLetter                 Boolean                      @default(false) @map("is_incoming_letter")
@@ -3619,6 +3624,7 @@ model DocumentAccessGrant {
 }
 
 model DocumentVersion {
+  brokerReceipts FinanceBrokerTransfer[]
   pettyRegistrations ProcurementPettyEntry[]
   id                 String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   documentId         String                     @map("document_id") @db.Uuid
@@ -4717,6 +4723,8 @@ model ProcurementTicketPurchaseRequest {
  * Finance-owned immutable rates; legacy catalog estimates never count as confirmed costs.
  */
 model FinanceTicketPurchaseCostRevision {
+  payeeDesignations FinancePayeeDesignation[]
+  brokerTransfers FinanceBrokerTransfer[]
   purchaseFxSnapshots      FinancePurchaseFxSnapshot[]
   outboundTourPublications PackagePricingTourPublishedVersion[]   @relation("TourPricingOutboundCost")
   returnTourPublications   PackagePricingTourPublishedVersion[]   @relation("TourPricingReturnCost")
@@ -4749,6 +4757,10 @@ model FinanceTicketPurchaseCostRevision {
  * Finance-owned append-only payment evidence; only full settlement releases cost to Sales.
  */
 model FinanceTicketPurchasePaymentRevision {
+  beneficiaryId String? @db.Uuid
+  beneficiary FinanceBeneficiary? @relation(fields:[beneficiaryId],references:[id],onDelete:Restrict)
+  brokerTransferId String? @unique @db.Uuid
+  brokerTransfer FinanceBrokerTransfer? @relation(fields:[brokerTransferId],references:[id],onDelete:Restrict)
   exchangeOfficeId   String?                           @db.Uuid
   exchangeOfficeName String?                           @db.VarChar(200)
   exchangeOffice     FinanceExchangeOffice?            @relation(fields: [exchangeOfficeId], references: [id], onDelete: Restrict)
@@ -4903,6 +4915,8 @@ model TreasuryCashierAssignment {
 }
 
 model FinanceSettlementAccount {
+  beneficiaries FinanceBeneficiary[]
+  bankStatements FinanceBankStatement[]
   treasuryInstrument TreasuryInstrument? @relation("TreasuryOperationalAccount")
   receivingTerminals TreasuryInstrument[] @relation("TreasuryReceivingAccount")
   treasuryBookId String? @db.Uuid
@@ -4970,6 +4984,7 @@ model FinanceBankAccountAudit {
 }
 
 model FinanceOperationalRequest {
+  payeeDesignations FinancePayeeDesignation[]
   fiscalPeriodId             String?                      @db.Uuid
   fiscalPeriod               AccountingPeriod?            @relation(fields: [fiscalPeriodId], references: [id], onDelete: Restrict, map: "finance_requests_fiscal_period_fk")
   pettyFundId                String?                      @db.Uuid
@@ -5019,6 +5034,8 @@ model FinanceOperationalRequest {
 }
 
 model FinanceOperationalRevision {
+  beneficiaryId String? @db.Uuid
+  beneficiary FinanceBeneficiary? @relation(fields:[beneficiaryId],references:[id],onDelete:Restrict)
   salesRefund      SalesPaymentRefund?
   payingSupplierId String?                   @db.Uuid
   payingSupplier   MasterSupplier?           @relation(fields: [payingSupplierId], references: [id], onDelete: Restrict)
@@ -5089,6 +5106,10 @@ model FinanceReminderDelivery {
 }
 
 model FinanceProcurementInvoiceRevision {
+  beneficiaryId String? @db.Uuid
+  beneficiary FinanceBeneficiary? @relation(fields:[beneficiaryId],references:[id],onDelete:Restrict)
+  brokerTransferId String? @unique @db.Uuid
+  brokerTransfer FinanceBrokerTransfer? @relation(fields:[brokerTransferId],references:[id],onDelete:Restrict)
   exchangeOfficeId    String?                     @db.Uuid
   exchangeOfficeName  String?                     @db.VarChar(200)
   exchangeOffice      FinanceExchangeOffice?      @relation(fields: [exchangeOfficeId], references: [id], onDelete: Restrict)
@@ -5129,6 +5150,8 @@ model FinanceProcurementInvoiceRevision {
 }
 
 model ReservationServicePurchase {
+  payeeDesignations FinancePayeeDesignation[]
+  brokerTransfers FinanceBrokerTransfer[]
   purchaseFxSnapshots      FinancePurchaseFxSnapshot[]
   id                       String                           @id @default(uuid()) @db.Uuid
   batchId                  String?                          @db.Uuid
@@ -5163,6 +5186,10 @@ model ReservationServicePurchase {
 }
 
 model FinanceSupplierPaymentRevision {
+  beneficiaryId String? @db.Uuid
+  beneficiary FinanceBeneficiary? @relation(fields:[beneficiaryId],references:[id],onDelete:Restrict)
+  brokerTransferId String? @unique @db.Uuid
+  brokerTransfer FinanceBrokerTransfer? @relation(fields:[brokerTransferId],references:[id],onDelete:Restrict)
   exchangeOfficeId   String?                      @db.Uuid
   exchangeOfficeName String?                      @db.VarChar(200)
   exchangeOffice     FinanceExchangeOffice?       @relation(fields: [exchangeOfficeId], references: [id], onDelete: Restrict)
@@ -6782,6 +6809,7 @@ model ProcurementReturn {
 }
 
 model ProcurementInvoice {
+  brokerTransfers FinanceBrokerTransfer[]
   id                                                       String                      @id @default(uuid()) @db.Uuid
   requestId                                                String                      @db.Uuid
   orderId                                                  String                      @db.Uuid
@@ -7360,6 +7388,10 @@ model MasterBrokerCity {
 }
 
 model AccountingBook {
+  payeeDesignations FinancePayeeDesignation[]
+  brokerTransfers FinanceBrokerTransfer[]
+  beneficiaries FinanceBeneficiary[]
+  bankStatements FinanceBankStatement[]
   taxReferenceReleases TaxReferenceRelease[]
   taxReferenceMappings TaxReferenceMapping[]
   seasonalReports SeasonalReportSnapshot[]
@@ -7436,6 +7468,8 @@ model AccountingConfiguration {
 }
 
 model AccountingPeriod {
+  brokerTransfers FinanceBrokerTransfer[]
+  bankStatements FinanceBankStatement[]
   seasonalReports SeasonalReportSnapshot[]
   financialRequests FinanceOperationalRequest[]
   financialEvents   FinanceAccountingEvent[]
@@ -7461,6 +7495,7 @@ model AccountingPeriod {
 }
 
 model AccountingAccount {
+  bankStatements FinanceBankStatement[]
   standardMappings         AccountingStandardMapping[]
   groupDetailAllocations   AccountingAccountGroupDetail[]
   id                       String                          @id @default(uuid()) @db.Uuid
@@ -7548,6 +7583,9 @@ model AccountingStandardMapping {
 }
 
 model AccountingDetail {
+  payeeDesignations FinancePayeeDesignation[]
+  beneficiaries FinanceBeneficiary[]
+  bankStatements FinanceBankStatement[]
   treasuryInstruments TreasuryInstrument[]
   cashierAssignments TreasuryCashierAssignment[]
   customerId              String?                        @db.Uuid
@@ -7730,6 +7768,7 @@ model AccountingGeneralDocumentLine {
 }
 
 model AccountingJournalLine {
+  bankStatementRow FinanceBankStatementRow?
   fxSnapshotId  String?               @db.Uuid
   fxSnapshot    AccountingFxSnapshot? @relation(fields: [fxSnapshotId], references: [id], onDelete: Restrict)
   id            String                @id @default(uuid()) @db.Uuid
@@ -8696,6 +8735,7 @@ model ReservationNoteMail {
 }
 
 model FinanceExchangeOffice {
+  brokerTransfers FinanceBrokerTransfer[]
   audits           FinanceExchangeAudit[]
   id               String                                 @id @default(uuid()) @db.Uuid
   title            String                                 @db.VarChar(200)
@@ -8731,6 +8771,8 @@ model FinanceExchangeBalance {
 }
 
 model FinanceExchangeMovement {
+  brokerTransferId String? @unique @db.Uuid
+  brokerTransfer FinanceBrokerTransfer? @relation(fields:[brokerTransferId],references:[id],onDelete:Restrict)
   id                String                                @id @default(uuid()) @db.Uuid
   balanceId         String                                @db.Uuid
   balance           FinanceExchangeBalance                @relation(fields: [balanceId], references: [id], onDelete: Restrict)
@@ -8855,4 +8897,125 @@ model FloatingTourSaleImport {
   createdAt   DateTime                @default(now()) @db.Timestamptz(3)
 
   @@unique([packageId, version])
+}
+
+model FinanceBeneficiary {
+  operationalPayments FinanceOperationalRevision[]
+  bankBranchId String @db.Uuid
+  bankBranch MasterBankBranch @relation(fields:[bankBranchId],references:[id],onDelete:Restrict)
+  fingerprint String @db.VarChar(64)
+  ibanFingerprint String? @db.VarChar(64)
+  supplierId String? @db.Uuid
+  supplier MasterSupplier? @relation(fields:[supplierId],references:[id],onDelete:Restrict)
+  brokerId String? @db.Uuid
+  broker MasterBroker? @relation(fields:[brokerId],references:[id],onDelete:Restrict)
+  id String @id @default(uuid()) @db.Uuid
+  bookId String @db.Uuid
+  book AccountingBook @relation(fields:[bookId],references:[id],onDelete:Restrict)
+  ownerId String @db.Uuid
+  owner AccountingDetail @relation(fields:[ownerId],references:[id],onDelete:Restrict)
+  accountId String @db.Uuid
+  account FinanceSettlementAccount @relation(fields:[accountId],references:[id],onDelete:Restrict)
+  direction String @db.VarChar(10)
+  blacklisted Boolean @default(false)
+  version Int @default(1)
+  note String @db.VarChar(500)
+  ticketPayments FinanceTicketPurchasePaymentRevision[]
+  supplierPayments FinanceSupplierPaymentRevision[]
+  invoicePayments FinanceProcurementInvoiceRevision[]
+  @@unique([bookId,accountId])
+  @@map("finance_beneficiaries")
+}
+
+model FinanceBrokerTransfer {
+  id String @id @db.Uuid
+  bookId String @db.Uuid
+  book AccountingBook @relation(fields:[bookId],references:[id],onDelete:Restrict)
+  periodId String @db.Uuid
+  period AccountingPeriod @relation(fields:[periodId],references:[id],onDelete:Restrict)
+  officeId String @db.Uuid
+  office FinanceExchangeOffice @relation(fields:[officeId],references:[id],onDelete:Restrict)
+  brokerId String @db.Uuid
+  broker MasterBroker @relation(fields:[brokerId],references:[id],onDelete:Restrict)
+  purchaseId String? @db.Uuid
+  purchase ReservationServicePurchase? @relation(fields:[purchaseId],references:[id],onDelete:Restrict)
+  invoiceId String? @db.Uuid
+  invoice ProcurementInvoice? @relation(fields:[invoiceId],references:[id],onDelete:Restrict)
+  costId String? @db.Uuid
+  cost FinanceTicketPurchaseCostRevision? @relation(fields:[costId],references:[id],onDelete:Restrict)
+  currency String @db.VarChar(3)
+  amount Decimal @db.Decimal(24,4)
+  rate Decimal @db.Decimal(24,8)
+  sentAt DateTime @db.Timestamptz(3)
+  makerId String @db.Uuid
+  receiptId String? @unique @db.Uuid
+  receipt Document? @relation(fields:[receiptId],references:[id],onDelete:Restrict)
+  receivedAt DateTime? @db.Timestamptz(3)
+  receiptVersionId String? @db.Uuid
+  receiptVersion DocumentVersion? @relation(fields:[receiptVersionId],references:[id],onDelete:Restrict)
+  confirmedBy String? @db.Uuid
+  movement FinanceExchangeMovement?
+  supplierPayment FinanceSupplierPaymentRevision?
+  invoicePayment FinanceProcurementInvoiceRevision?
+  ticketPayment FinanceTicketPurchasePaymentRevision?
+  @@index([bookId,brokerId,sentAt])
+  @@index([purchaseId])
+  @@index([costId])
+  @@index([invoiceId])
+  @@map("finance_broker_transfers")
+}
+
+model FinanceBankStatement {
+  id String @id @default(uuid()) @db.Uuid
+  bookId String @db.Uuid
+  book AccountingBook @relation(fields:[bookId],references:[id],onDelete:Restrict)
+  periodId String @db.Uuid
+  period AccountingPeriod @relation(fields:[periodId],references:[id],onDelete:Restrict)
+  bankId String @db.Uuid
+  bank FinanceSettlementAccount @relation(fields:[bankId],references:[id],onDelete:Restrict)
+  accountId String @db.Uuid
+  account AccountingAccount @relation(fields:[accountId],references:[id],onDelete:Restrict)
+  detailId String? @db.Uuid
+  detail AccountingDetail? @relation(fields:[detailId],references:[id],onDelete:Restrict)
+  from String @db.VarChar(10)
+  to String @db.VarChar(10)
+  currency String @db.VarChar(3)
+  opening Decimal @db.Decimal(38,18)
+  closing Decimal @db.Decimal(38,18)
+  closedAt DateTime? @db.Timestamptz(3)
+  rows FinanceBankStatementRow[]
+  @@index([bookId,bankId,from,to])
+  @@map("finance_bank_statements")
+}
+
+model FinanceBankStatementRow {
+  id String @id @default(uuid()) @db.Uuid
+  statementId String @db.Uuid
+  statement FinanceBankStatement @relation(fields:[statementId],references:[id],onDelete:Restrict)
+  seq Int
+  date String @db.VarChar(10)
+  amount Decimal @db.Decimal(38,18)
+  reference String @db.VarChar(160)
+  description String @db.VarChar(500)
+  lineId String? @unique @db.Uuid
+  line AccountingJournalLine? @relation(fields:[lineId],references:[id],onDelete:Restrict)
+  @@unique([statementId,seq])
+  @@map("finance_bank_statement_rows")
+}
+
+model FinancePayeeDesignation {
+  id String @id @default(uuid()) @db.Uuid
+  bookId String @db.Uuid
+  book AccountingBook @relation(fields:[bookId],references:[id],onDelete:Restrict)
+  ownerId String @db.Uuid
+  owner AccountingDetail @relation(fields:[ownerId],references:[id],onDelete:Restrict)
+  costId String? @unique @db.Uuid
+  cost FinanceTicketPurchaseCostRevision? @relation(fields:[costId],references:[id],onDelete:Restrict)
+  purchaseId String? @unique @db.Uuid
+  purchase ReservationServicePurchase? @relation(fields:[purchaseId],references:[id],onDelete:Restrict)
+  operationalId String? @unique @db.Uuid
+  operational FinanceOperationalRequest? @relation(fields:[operationalId],references:[id],onDelete:Restrict)
+  createdBy String @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@map("finance_payee_designations")
 }

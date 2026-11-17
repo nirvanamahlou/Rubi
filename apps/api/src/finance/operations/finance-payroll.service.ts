@@ -1,3 +1,4 @@
+import { validatePayee } from '../payments/bank-payee';
 import { grossAccrualCovers } from '../accounting/accounting.workflows';
 import {
   assertFinanceFiscalWrite,
@@ -129,6 +130,7 @@ export class FinancePayrollService {
       'paidAmount',
       'accountId',
       'payingSupplierId',
+      'beneficiaryId',
       'methodId',
       'transferAt',
       'paymentReference',
@@ -389,6 +391,7 @@ export class FinancePayrollService {
           methodId: string | null = null,
           transferAt: Date | null = null;
         let methodName: string | null = null;
+        let beneficiaryId: string | null = null;
         let payingSupplierId: string | null = null;
         let payingSupplierName: string | null = null;
         let cumulativePaid = last.cumulativePaid,
@@ -466,6 +469,34 @@ export class FinancePayrollService {
             throw new BadRequestException(
               'حساب هم‌ارز فعال یا روش پرداخت معتبر نیست.',
             );
+          if (
+            !isPetty &&
+            accountId &&
+            (('channel' in method && method.channel === 'BANK_TRANSFER') ||
+              input.beneficiaryId)
+          ) {
+            const designation =
+              !current.counterpartyOrganizationId && !refundReceipt?.customerId
+                ? await tx.financePayeeDesignation.findFirst({
+                    where: {
+                      operationalId: id,
+                      book: { branchId: current.branchId },
+                    },
+                  })
+                : null;
+            beneficiaryId = await validatePayee(
+              tx,
+              current.branchId,
+              currentFinanceFiscalRequest()?.bookId ?? undefined,
+              input.beneficiaryId,
+              current.currencyCode,
+              {
+                organizationId: current.counterpartyOrganizationId,
+                customerId: refundReceipt?.customerId ?? null,
+                ownerId: designation?.ownerId ?? null,
+              },
+            );
+          }
           methodName = method.name;
           const instant = validate.text(input.transferAt, 'زمان UTC', 30);
           if (
@@ -514,6 +545,7 @@ export class FinancePayrollService {
         await tx.financeOperationalRevision.create({
           data: {
             id: operationId,
+            beneficiaryId,
             requestId: id,
             actorId: actor.userId,
             version: expectedVersion + 1,

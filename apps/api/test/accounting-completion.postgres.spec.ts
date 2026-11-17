@@ -1,7 +1,16 @@
+import { BankControlsController } from '../src/finance/payments/bank-controls.controller';
+import { brokerBalances } from '../src/finance/payments/broker-balances';
 import {
   accountingTestUrl,
   assertAccountingTestDatabase,
 } from './accounting-test-database';
+import {
+  bankCommand,
+  bankReport,
+} from '../src/finance/accounting/bank-reconciliation';
+import { fundBroker } from '../src/finance/payments/broker-transfer';
+import { FinanceFiscalStorage } from '../src/finance/fiscal-context/finance-fiscal-storage';
+import { FinanceDeliveryService } from '../src/finance/document-delivery/finance-delivery.module';
 import { randomUUID } from 'node:crypto';
 import {
   importTaxReference,
@@ -165,6 +174,338 @@ describe.skipIf(!url)('independent completion on isolated PostgreSQL', () => {
     await makeJournal(false);
     service = new AccountingCompletionService({ client: db } as never);
   }, 30000);
+  it('matches a bank statement only to posted ledger movements and preserves exact cents', async () => {
+    const book = await db.accountingBook.findUniqueOrThrow({
+        where: { id: bookId },
+      }),
+      period = await db.accountingPeriod.findUniqueOrThrow({
+        where: { id: periodId },
+      });
+    const bank = await db.financeSettlementAccount.create({
+      data: {
+        branchId,
+        kind: 'BANK',
+        title: 'Synthetic reconciliation',
+        currencyCode: 'IRR',
+        createdByUserId: userId,
+      },
+    });
+    const args = {
+      bankId: bank.id,
+      accountId: debitId,
+      from: '2026-03-01',
+      to: '2026-03-01',
+      opening: '0',
+      closing: '26000000000000000000.26',
+      rows: Array.from({ length: 26 }, (_, i) => ({
+        date: '2026-03-01',
+        amount: '1000000000000000000.01',
+        reference: '000' + i,
+      })),
+    };
+    const act = (action: string, data: Record<string, unknown>) =>
+      db.$transaction((tx) =>
+        bankCommand(tx, book, period, 'bank-statement-' + action, data),
+      );
+    await expect(
+      act('import', { ...args, closing: '26000000000000000000.25' }),
+    ).rejects.toThrow();
+    const { id } = await act('import', args);
+    await expect(act('import', args)).rejects.toThrow();
+    await expect(act('finalize', { id })).rejects.toThrow();
+    const view = await db.$transaction((tx) =>
+      bankReport(tx, book, period, { id }),
+    );
+    if (!('lines' in view)) throw Error('expected a statement');
+    expect(view.lines).toHaveLength(26);
+    expect(view.bookClosing).toBe(args.closing);
+    for (const [i, row] of view.rows.entries())
+      await act('match', { id, rowId: row.id, lineId: view.lines[i]!.id });
+    await act('finalize', { id });
+    await expect(
+      act('unmatch', { id, rowId: view.rows[0]!.id }),
+    ).rejects.toThrow();
+  });
+  it('keeps a 20,000 purchase open after dispatch and settles 5,000 exactly once on a clean broker receipt', async () => {
+    const year = await db.accountingPeriod.findUniqueOrThrow({
+      where: { id: periodId },
+    });
+    const scope = {
+      bookId,
+      mode: 'temporary',
+      period: { ...year, yearActive: true },
+      actorId: userId,
+    };
+    const scoped = <T>(fn: () => Promise<T>) =>
+      new FinanceFiscalStorage().run(scope as never, fn);
+    const broker = await db.masterBroker.create({
+      data: {
+        code: randomUUID().slice(0, 16),
+        name: 'Synthetic broker',
+        createdByUserId: userId,
+        updatedByUserId: userId,
+      },
+    });
+    await db.masterCurrency.upsert({
+      where: { code: 'EUR' },
+      update: {},
+      create: {
+        code: 'EUR',
+        name: 'Euro',
+        createdByUserId: userId,
+        updatedByUserId: userId,
+      },
+    });
+    const office = await db.financeExchangeOffice.create({
+      data: {
+        title: randomUUID(),
+        createdByUserId: userId,
+        balances: { create: { currencyCode: 'EUR', amount: '25000' } },
+      },
+    });
+    const intake = await db.reservationIntake.create({
+      data: {
+        requestId: randomUUID(),
+        contractId: randomUUID(),
+        contractVersion: 1,
+        branchId,
+        fingerprint: 'synthetic',
+        snapshot: { contractNumber: 'TEST-001' },
+      },
+    });
+    const purchase = await db.reservationServicePurchase.create({
+      data: {
+        intakeId: intake.id,
+        batchId: randomUUID(),
+        serviceClientKey: 'test',
+        serviceKind: 'HOTEL',
+        serviceTitleSnapshot: 'Synthetic',
+        supplierBrokerId: broker.id,
+        supplierNameSnapshot: broker.name,
+        version: 1,
+        amount: '20000',
+        currencyCode: 'EUR',
+        actorUserId: userId,
+        idempotencyKey: randomUUID(),
+        fingerprint: '0'.repeat(64),
+      },
+    });
+    const method = await db.masterPaymentMethod.create({
+      data: {
+        code:
+          'PM' + randomUUID().replaceAll('-', '').slice(0, 12).toUpperCase(),
+        name: 'Synthetic',
+        channel: 'BANK_TRANSFER',
+        createdByUserId: userId,
+        updatedByUserId: userId,
+      },
+    });
+    const p = {
+      id: randomUUID(),
+      kind: 'RESERVATIONS',
+      sourceId: purchase.id,
+      brokerId: broker.id,
+      officeId: office.id,
+      amount: '5000',
+      rate: '600000',
+      sentAt: '2026-03-01T06:00:00Z',
+    };
+    const send = (input: typeof p) =>
+      scoped(() => db.$transaction((tx) => fundBroker(tx, actor, input)));
+    await send(p);
+    await send(p);
+    await expect(
+      db.reservationServicePurchase.create({
+        data: {
+          intakeId: intake.id,
+          batchId: randomUUID(),
+          serviceClientKey: 'test',
+          serviceKind: 'HOTEL',
+          serviceTitleSnapshot: 'Replacement',
+          supplierBrokerId: broker.id,
+          supplierNameSnapshot: broker.name,
+          version: 2,
+          amount: '1000',
+          currencyCode: 'EUR',
+          actorUserId: userId,
+          idempotencyKey: randomUUID(),
+          fingerprint: '2'.repeat(64),
+        },
+      }),
+    ).rejects.toThrow(/funded broker transfer/);
+    await expect(
+      send({ ...p, id: randomUUID(), amount: '16000' }),
+    ).rejects.toThrow();
+    expect(
+      await db.financeSupplierPaymentRevision.count({
+        where: { purchaseId: purchase.id },
+      }),
+    ).toBe(0);
+    const type = await db.documentType.create({
+      data: {
+        code: randomUUID(),
+        domain: 'FINANCE',
+        name: 'Synthetic receipt',
+        allowedMimeTypes: ['application/pdf'],
+      },
+    });
+    const receipt = await db.document.create({
+      data: {
+        title: 'Synthetic receipt',
+        documentTypeId: type.id,
+        branchId,
+        ownerUserId: userId,
+        createdByUserId: userId,
+        updatedByUserId: userId,
+        sourceModule: 'FINANCE',
+        sourceEntityType: 'FinanceBrokerTransfer',
+        sourceEntityId: p.id,
+      },
+    });
+    const proof = await db.documentVersion.create({
+      data: {
+        documentId: receipt.id,
+        versionNumber: 1,
+        storageObjectKey: randomUUID(),
+        originalFileName: 'fixture.pdf',
+        safeDownloadName: 'fixture.pdf',
+        detectedMimeType: 'application/pdf',
+        extension: 'pdf',
+        versionNote: 'synthetic receipt',
+        sizeBytes: 100n,
+        sha256: '0'.repeat(64),
+        scanStatus: 'CLEAN',
+        createdByUserId: userId,
+      },
+    });
+    await db.document.update({
+      where: { id: receipt.id },
+      data: { currentVersionId: proof.id, currentVersionNumber: 1 },
+    });
+    const service = new FinanceDeliveryService(
+      { client: db } as never,
+      {} as never,
+    );
+    const cmd = {
+      expectedVersion: 0,
+      status: 'PAID' as const,
+      exchangeOfficeId: office.id,
+      brokerTransferId: p.id,
+      brokerReceiptId: receipt.id,
+      paymentMethodId: method.id,
+      paidAmount: '5000',
+      exchangeRateToIrr: p.rate,
+      transferAt: '2026-03-02T06:00:00Z',
+      reason: '',
+    };
+    const pay = (c: typeof cmd) =>
+      scoped(() =>
+        service.updateSupplierPayment(intake.id, purchase.id, c, userId, [
+          branchId,
+        ]),
+      );
+    await expect(
+      pay({ ...cmd, brokerReceiptId: randomUUID() }),
+    ).rejects.toThrow();
+    const result = await pay(cmd);
+    expect(result).toMatchObject({
+      status: 'PARTIALLY_PAID',
+      remainingAmount: '15000',
+      paidAmount: '5000',
+    });
+    await expect(pay({ ...cmd, expectedVersion: 1 })).rejects.toThrow();
+    expect(
+      await db.financeExchangeMovement.count({
+        where: { brokerTransferId: p.id },
+      }),
+    ).toBe(1);
+    expect(
+      (
+        await db.financeExchangeBalance.findFirstOrThrow({
+          where: { officeId: office.id },
+        })
+      ).amount.toString(),
+    ).toBe('20000');
+    const [balance] = await db.$transaction((tx) =>
+      brokerBalances(
+        tx,
+        { id: bookId, branchId },
+        broker.id,
+        null,
+        new Date('2027-01-01T00:00:00Z'),
+      ),
+    );
+    expect(
+      [balance?.credit, balance?.debit, balance?.balance].map(Number),
+    ).toEqual([20000, 5000, 15000]);
+    const ledger = new BankControlsController(
+      { client: db } as never,
+      {
+        brokerTransfers: async (items: unknown[]) =>
+          items.map(() => ({ contracts: [], journals: [] })),
+      } as never,
+    );
+    const ledgerResult = await scoped(() =>
+      ledger.ledger(
+        { search: 'TEST-001', brokerSearch: 'Synthetic', brokerId: broker.id },
+        { actor } as never,
+      ),
+    );
+    expect(ledgerResult.brokers).toContainEqual({
+      id: broker.id,
+      name: broker.name,
+    });
+    expect(ledgerResult.rows.map((row) => row.id)).toEqual([p.id]);
+    expect(Number(ledgerResult.balances[0]?.balance)).toBe(15000);
+    const second = { ...p, id: randomUUID(), amount: '15000' };
+    await send(second);
+    const nextReceipt = await db.document.create({
+      data: {
+        title: 'Final broker receipt',
+        documentTypeId: type.id,
+        branchId,
+        ownerUserId: userId,
+        createdByUserId: userId,
+        updatedByUserId: userId,
+        sourceModule: 'FINANCE',
+        sourceEntityType: 'FinanceBrokerTransfer',
+        sourceEntityId: second.id,
+      },
+    });
+    const v = await db.documentVersion.create({
+      data: {
+        documentId: nextReceipt.id,
+        versionNumber: 1,
+        storageObjectKey: randomUUID(),
+        originalFileName: 'final.pdf',
+        safeDownloadName: 'final.pdf',
+        detectedMimeType: 'application/pdf',
+        extension: 'pdf',
+        versionNote: 'synthetic final receipt',
+        sizeBytes: 100n,
+        sha256: '1'.repeat(64),
+        scanStatus: 'CLEAN',
+        createdByUserId: userId,
+      },
+    });
+    await db.document.update({
+      where: { id: nextReceipt.id },
+      data: { currentVersionId: v.id, currentVersionNumber: 1 },
+    });
+    expect(
+      await pay({
+        ...cmd,
+        expectedVersion: 1,
+        brokerTransferId: second.id,
+        brokerReceiptId: nextReceipt.id,
+        paidAmount: '15000',
+      }),
+    ).toMatchObject({
+      status: 'PAID',
+      remainingAmount: '0',
+      paidAmount: '20000',
+    });
+  });
   afterAll(async () => {
     await db?.$disconnect();
   });

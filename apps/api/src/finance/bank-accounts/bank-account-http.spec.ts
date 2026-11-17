@@ -125,7 +125,23 @@ describe('company bank account HTTP routing and native permission guard', () => 
     actor = { ...actor, permissions: ['master_data.read', 'finance.read'] };
     const base = '/finance/banks/bank-id/accounts';
     await request(app.getHttpServer()).get(`${base}?page=2`).expect(200);
-    expect(service.list).toHaveBeenCalledWith('bank-id', '2', actor);
+    expect(service.list).toHaveBeenCalledWith(
+      'bank-id',
+      '2',
+      actor,
+      undefined,
+      undefined,
+    );
+    await request(app.getHttpServer())
+      .get(base + '?companyBranchId=branch-id&bookId=book-id')
+      .expect(200);
+    expect(service.list).toHaveBeenLastCalledWith(
+      'bank-id',
+      undefined,
+      actor,
+      'branch-id',
+      'book-id',
+    );
     await request(app.getHttpServer())
       .post(`${base}/account-id/details`)
       .expect(403);

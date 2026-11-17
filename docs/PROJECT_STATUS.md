@@ -10261,3 +10261,7 @@ FLIGHT-AGE-FARES-1116 — PC-A: optional child/infant rates inside the native ti
 ## 2026-11-16 — NORA-TOKEN-EFFICIENCY-1116
 
 PC-C implemented provider usage counters, exact native total-count route with unchanged IAM/freshness gates, lossless tool-table compaction and published final-tool/citation protections on codex/pc-c-nora-token-efficiency-1116.136 service tests and scoped lint pass. Live synthetic40-row Groq input1496->1072 (28.3%); total1648->1237 (24.9%);4-row input362->334. Sample-specific, not full30-case certification. No model downgrade/history truncation, cross-user cache, migration or deployment. See docs/tasks/NORA-TOKEN-EFFICIENCY-1116.md.
+
+## 2026-11-17 — FINANCE-BANK-CONTROLS-1117
+
+Finance now distinguishes dispatch by an exchange office from receipt by a broker. Purchase balances change only on confirmation; the active company's bank register controls direct transfer destinations. Treasury can reconcile imported statements with posted bank lines. Changes, examples, permissions and migration scope: [bank controls](tasks/FINANCE-BANK-CONTROLS-1117.md).

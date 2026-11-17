@@ -16,6 +16,8 @@ import { masterDataApi } from '@/modules/master-data/api/client';
 import { GenericMasterDataWorkspace } from '@/modules/master-data/components/master-data-live-workspace';
 import { CompanyBankAccounts } from './company-bank-accounts';
 import { TreasuryInstruments } from './treasury-instruments';
+import { BankReconciliation } from './bank-reconciliation';
+import { BeneficiaryRegister } from './beneficiary-register';
 import { TreasuryBankHistory } from './treasury-bank-history';
 import { PettyFundCard } from '@/modules/procurement/petty-fund-card';
 import { procurementApi } from '@/modules/procurement/api';
@@ -135,9 +137,22 @@ function TreasuryPettyFund({ branchId }: { branchId: string }) {
 export function TreasuryDefinitionWorkspace(props: Props) {
   const { definition, book } = props;
   const canUse = useMasterDataResourceAccess();
+  const [panel, setPanel] = useState('');
   if (book && definition.kind === 'bank-history')
     return canUse('banks') ? (
-      <TreasuryBankHistory bookId={book.book.id} />
+      <>
+        <Button onClick={() => setPanel('')}>تاریخچه حساب بانکی</Button>
+        <Button onClick={() => setPanel('recon')}>مغایرت‌گیری بانک</Button>
+        {panel === 'recon' ? (
+          <BankReconciliation
+            snapshot={book}
+            run={props.run}
+            busy={props.busy}
+          />
+        ) : (
+          <TreasuryBankHistory bookId={book.book.id} />
+        )}
+      </>
     ) : (
       <p role="alert">مجوز دسترسی به بانک‌ها را ندارید.</p>
     );
@@ -145,7 +160,19 @@ export function TreasuryDefinitionWorkspace(props: Props) {
     return <TreasuryPettyFund branchId={book.book.branchId} />;
   if (definition.kind === 'company-accounts')
     return !book ? null : canUse('banks') ? (
-      <AccountsByBank book={book} />
+      <>
+        <Button onClick={() => setPanel('')}>معرفی حساب بانکی</Button>
+        <Button onClick={() => setPanel('payee')}>حساب بانکی ذی‌نفع</Button>
+        {panel === 'payee' ? (
+          <BeneficiaryRegister
+            snapshot={book}
+            run={props.run}
+            busy={props.busy}
+          />
+        ) : (
+          <AccountsByBank book={book} />
+        )}
+      </>
     ) : (
       <p role="alert">مجوز دسترسی به بانک‌ها را ندارید.</p>
     );

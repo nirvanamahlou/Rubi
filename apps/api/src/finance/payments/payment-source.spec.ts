@@ -45,6 +45,8 @@ describe('Finance payment source', () => {
           currencyCode:
             currency === 'IRR' ? currency : { in: [currency, 'IRR'] },
           isActive: true,
+          isExternal: false,
+          deletedAt: null,
         },
       });
       await expect(
@@ -110,6 +112,8 @@ describe('Finance payment source', () => {
           branchId: 'branch',
           currencyCode,
           isActive: true,
+          isExternal: false,
+          deletedAt: null,
         },
       });
       expect(supplier).not.toHaveBeenCalled();
@@ -180,6 +184,8 @@ describe('Finance payment source', () => {
         branchId: 'branch',
         currencyCode: 'IRR',
         isActive: true,
+        isExternal: false,
+        deletedAt: null,
       },
     });
     expect(supplier).not.toHaveBeenCalled();

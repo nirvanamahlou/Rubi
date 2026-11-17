@@ -12942,6 +12942,10 @@ PR1761 integration additionally reserves the existing data-agent test harness op
 
 PR1761 conflicts resolved: preserve both document histories; combine nativeStep with currentResultIds.136 integrated service tests pass; scoped lint/format/syntax and final-head hosted checks required. No production actions.
 
+## FINANCE-BANK-CONTROLS-1117 — PC-D — IMPLEMENTED
+
+Owner requests beneficiary account controls and bank reconciliation for the active ledger, with shared down-payment and cheque terms for all operating companies. Reserve Finance bank commands, selections and payment integration, posted journal matching and statement import, three additive migrations, scoped finance UI/contracts, tests and translations. Branch codex/pc-d-bank-controls-1117 continues the pushed Finance parity baseline. No live banking or source mutations. [Delivery and verification](docs/tasks/FINANCE-BANK-CONTROLS-1117.md).
+
 ## FINANCE-RAHKARAN-PARITY-1117 — PC-D — IMPLEMENTED
 
 Owner requests read-only observation of the populated Rahkaran Finance menu and implementation of missing financial behavior in Nora. Use the accounting delegation and existing Finance/Master Data contracts. Reserve the account browser and turnover/report filters, accounting navigation and relevant Treasury and tax report integration, focused tests and this task's notes. Preserve company, book, fiscal-period and permission boundaries. No source data import, source writes or production publication. Independent branch codex/pc-d-finance-rahkaran-parity-1117 from PC-D-Integration fast-forwarded to develop 979d435ef.

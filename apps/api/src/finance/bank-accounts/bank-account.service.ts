@@ -467,6 +467,21 @@ export class BankAccountService {
             );
             if (treasury && !identifiers.accountNumber)
               throw new BadRequestException('شماره حساب الزامی است.');
+            if (
+              current.isExternal &&
+              (Object.hasOwn(input, 'accountNumber') ||
+                Object.hasOwn(input, 'iban')) &&
+              (this.crypto.fingerprint(
+                'accountNumber',
+                identifiers.accountNumber,
+              ) !== current.accountFingerprint ||
+                this.crypto.fingerprint('iban', identifiers.iban) !==
+                  current.ibanFingerprint) &&
+              (await tx.financeBeneficiary.count({ where: { accountId: id } }))
+            )
+              throw new ConflictException(
+                'برای تغییر شماره حساب ذی‌نفع، حساب جدید معرفی کنید.',
+              );
             const result = await tx.financeSettlementAccount.updateMany({
               where: {
                 id,
