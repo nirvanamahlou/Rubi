@@ -45,6 +45,15 @@ describe('Workbench queries and personal removal', () => {
           category: { startsWith: 'WORKBENCH_' },
           OR: [
             { createdByUserId: 'user' },
+            {
+              timeline: {
+                some: {
+                  type: 'WORKBENCH_RECIPIENT_REVIEW',
+                  outcome: 'APPROVED',
+                  actorUserId: 'user',
+                },
+              },
+            },
             { executionOwnerUserId: 'user' },
             {
               timeline: {
