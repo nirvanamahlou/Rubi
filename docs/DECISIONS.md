@@ -865,3 +865,7 @@ Owner explicitly authorizes automatic Finance confirmation only for bank-verifie
 
 ## SOLDOUT-SITE-STOP-1117
 The owner requests automatic stop/hide for exhausted tickets on connected sites. Catalog derives effective salesStopped from authoritative remainingCapacity<=0 while retaining an additive capacityStopped marker. Persistent manual stop/unpublish flags are not rewritten; newly available capacity clears only the derived state in a newer full snapshot. Existing capacity-change triggers, independent signed delivery/retries and timed refresh on unpinned hold expiry are reused. Site local reads also fail closed for zero/invalid ticket stock; normal search excludes stopped tickets, and native purchase capacity guards remain. No migration, dependency, business inventory mutation or polling added. Validation/release tracked in tasks/SOLDOUT-SITE-STOP-1117.md.
+
+
+## PASSENGER-IDENTITY-PREFLIGHT-1117
+Owner requests early read-only passenger validation before website payment, and clarifies same-passenger reuse rather than permitting another person's passport. Extend the Customers public service with a minimal indexed validation contract; retain native uniqueness, site/branch authorization and NSS-PASSENGER-IDENTITY-SYNC-1115 same-national-ID synchronization. No automatic identity merge or customer creation during checks. Fail closed when ERP cannot validate; check on form submit and payment start, never timer polling.

@@ -1,6 +1,7 @@
 import type { VerifiedGatewayProof } from '../finance/payments/verified-gateway-receipt.public';
 import {
   Body,
+  BadRequestException,
   Controller,
   Get,
   Header,
@@ -30,6 +31,8 @@ import {
 } from './site-commerce.policy';
 import { SiteCommerceService } from './site-commerce.service';
 import { SiteCommerceWriteGuard } from './site-commerce-write.guard';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { PassengerPreflightDto } from './passenger-preflight.dto';
 
 @Controller('sales/site-commerce/v1/:site')
 @UseGuards(AuthGuard, SiteCommerceWriteGuard)
@@ -108,6 +111,46 @@ export class SiteCommerceController {
   ) {
     return this.service.flightQuote(site, body, req.actor);
   }
+  @Post('people/check')
+  @Header('Cache-Control', 'private, no-store')
+  async checkPeople(
+    @Param('site') site: string,
+    @Body() body: PassengerPreflightDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const binding = siteBinding(site, req.actor);
+    const duplicate = (person: CustomerMutationDto, at: number) =>
+      body.passengers.some(
+        (other, index) =>
+          index !== at &&
+          ((!!person.nationalId && person.nationalId === other.nationalId) ||
+            (!!person.passportNumber &&
+              person.passportNumber === other.passportNumber)),
+      );
+    const data = await Promise.all(
+      body.passengers.map(async (person, index) => {
+        try {
+          const result = await this.customers.checkWebsitePassenger(
+            person,
+            { ...req.actor, branchIds: [binding.branchId] },
+            binding.branchId,
+          );
+          return {
+            index,
+            ...(duplicate(person, index)
+              ? { valid: false, code: 'DUPLICATE_PASSENGER' }
+              : result),
+          };
+        } catch (error) {
+          if (error instanceof BadRequestException)
+            return { index, valid: false, code: 'INVALID_PASSENGER' };
+          throw error;
+        }
+      }),
+    );
+    return { data };
+  }
+
   @Post('people')
   async person(
     @Param('site') site: string,
