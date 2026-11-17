@@ -181,9 +181,14 @@ it('exposes the single edit action independently of the departure date', () => {
   expect(source).not.toContain(
     '{new Date(offer.departureAt).getTime() > catalogNow ? (',
   );
-  expect(source).toContain(
-    'new Date(offer.departureAt).getTime() <= catalogNow',
+  expect(source).toMatch(
+    /<TicketCapacityHoldAction\s+mode="inspect"\s+offer=\{offer\}\s+now=\{catalogNow\}/,
   );
+  const holdAction = readFileSync(
+    new URL('./ticket-capacity-hold-action.tsx', import.meta.url),
+    'utf8',
+  );
+  expect(holdAction).toContain('new Date(offer.departureAt).getTime() <= now');
 });
 
 it('uses the atomic batch command for same-weekday edits, preserving versions and dates', async () => {
