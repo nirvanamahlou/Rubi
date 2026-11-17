@@ -93,6 +93,14 @@ export function IntegrationsWorkspace() {
 
 function IntegrationEntry({ actor }: { actor: AuthenticatedActor }) {
   const [view, setView] = useState<'sites' | 'monitoring' | null>(null);
+  const [ticketLink, setTicketLink] = useState<URLSearchParams>();
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    if (query.get('view') === 'tickets') {
+      setTicketLink(query);
+      setView('sites');
+    }
+  }, []);
   if (view)
     return (
       <div className="grid gap-4" dir="rtl">
@@ -100,12 +108,12 @@ function IntegrationEntry({ actor }: { actor: AuthenticatedActor }) {
           type="button"
           variant="outline"
           className="justify-self-start"
-          onClick={() => setView(null)}
+          onClick={() => { setView(null); setTicketLink(undefined); }}
         >
           بازگشت به یکپارچه‌سازی‌ها
         </Button>
         {view === 'sites' ? (
-          <SiteManagement actor={actor} />
+          <SiteManagement actor={actor} ticketLink={ticketLink} />
         ) : (
           <IntegrationWorkspaceBody actor={actor} />
         )}
