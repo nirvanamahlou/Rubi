@@ -12995,3 +12995,5 @@ COMPUTER_ID=PC-A; branch codex/pc-a-zero-capacity-hold-roster-1117 from merged d
 Validation:32 focused control/roster/workspace/i18n tests pass; active/past inspection restrictions and busy create guard remain. Six interaction checks include zero/negative stock, restored stock, no creation when sold out and no duplicate create while busy. No operational writes or deployment. Full exact-head hosted gates precede authorized develop merge.
 
 ZERO-CAPACITY-HOLD-ROSTER-1117 compatibility: historical single-edit regression now verifies the extracted inspection control receives catalogNow and still contains the past-flight guard; its independent edit/date/version assertions remain unchanged. No historical editing policy changes.
+
+MANAGER-SENT-LEAVE-1117 PC-B completed. Retain manager participation through approved recipient-review timeline, return as outgoing, include review events, route approval to unique active nima HR account. Scoped ESLint passed; existing test blocked by missing contracts build. Standing user merge authorization applies.

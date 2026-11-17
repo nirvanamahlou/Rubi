@@ -2387,8 +2387,14 @@ export class CustomerAffairsService {
           priority: row.priority,
           nextActionAt: row.nextActionAt.toISOString(),
           updatedAt: row.updatedAt.toISOString(),
-          direction:
-            row.createdByUserId === actor.userId
+          direction: row.timeline?.some(
+            (e) =>
+              e.type === 'WORKBENCH_RECIPIENT_REVIEW' &&
+              e.outcome === 'APPROVED' &&
+              e.actorUserId === actor.userId,
+          )
+            ? 'outgoing'
+            : row.createdByUserId === actor.userId
               ? row.executionOwnerUserId === actor.userId
                 ? 'self'
                 : 'outgoing'
@@ -2573,13 +2579,11 @@ export class CustomerAffairsService {
           ['RESOLVED', 'CANCELLED'].includes(row.status)
         )
           throw conflict();
-        const recipients =
+        const hrRoute =
           input.status === 'APPROVED'
-            ? await this.hrDirectory.workbenchFeedbackRecipientUserIds(
-                row.branchId,
-                this.workbenchUnitTerms('منابع انسانی'),
-              )
-            : [];
+            ? await this.requestDirectory!.hrLeaveRecipient(actor, row.branchId)
+            : undefined;
+        const recipients = hrRoute ? [hrRoute.recipientId] : [];
         if (input.status === 'APPROVED' && !recipients.length)
           throw new ConflictException(
             'گیرنده منابع انسانی در این شعبه تعریف نشده است.',
