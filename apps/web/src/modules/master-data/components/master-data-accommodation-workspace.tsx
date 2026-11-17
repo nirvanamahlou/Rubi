@@ -1,4 +1,5 @@
 'use client';
+import { HotelImageStrip } from './hotel-images';
 import { HotelProfileInformation } from './hotel-profile-information';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import {
@@ -679,6 +680,7 @@ export function MasterDataAccommodationWorkspace() {
         ...(formMode === 'edit' && selected ? { existing: selected } : {}),
         ...(logoChange ? { logoChange } : {}),
       });
+      setSelected(result.data);
       setNotice(
         result.warning ??
           (resource === 'meal-services'
@@ -1249,13 +1251,11 @@ export function MasterDataAccommodationWorkspace() {
           </Card>
           <Card className="p-5">
             <h3 className="mb-4 flex items-center gap-2 font-black">
-              <ImageIcon className="size-5" /> لوگو و تصاویر با Documents
-              Reference
+              <ImageIcon className="size-5" /> تصاویر هتل
             </h3>
-            <EmptyState
-              description="قرارداد واقعی Documents/Worker هنوز آماده نیست؛ آپلود یا شناسه ساختگی نمایش داده نمی‌شود."
-              icon={ImageIcon}
-              title="در انتظار اتصال Documents"
+            <HotelImageStrip
+              main={String(selected.attributes.sourceMainImage ?? '')}
+              gallery={String(selected.attributes.sourceGalleryImages ?? '')}
             />
           </Card>
         </div>
