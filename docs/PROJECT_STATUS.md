@@ -1,10 +1,8 @@
-## 2026-11-17 — FINANCE-RAHKARAN-PARITY-1117
+## NORA-GROQ-KEY-POOL-1117 — PC-C — RELEASED
 
-PC-D added ledger-scoped tax reference import and mapping, internal seasonal report validation and snapshots, the analytical account browser, Treasury definitions and year-end readiness. Source inspection used period 1405. See [implementation, evidence and outstanding dependencies](tasks/FINANCE-RAHKARAN-PARITY-1117.md).
+PR1778 merged after all nine exact-head CI checks passed. Main Nora now uses six ordered private credentials with shared-organization quota handling.164 service tests pass locally/CI;142 tests pass against the preserved mounted-source container. Real Germany tool calling/guide selection and authenticated ERP chat/hourly-leave guide succeed. Only Nora replaced; private backup/read-only0600 pool and prior single-key rollback retained. No migration or Web/API/database change. Full release evidence is in the [task](tasks/NORA-GROQ-KEY-POOL-1117.md).
 
-## NORA-GROQ-KEY-POOL-1117 — PC-C — VALIDATING
-
-Shared process-local Groq transport covers Agent, chat and guide selection with ordered sticky failover, scoped cooldowns, organization-quota protection and single half-open probes. Retries preserve payload/deadline and revalidate native scope; actual model attempts and failed-call allowance remain in the Agent budget. Synthetic integrated tests prove SQL is not replayed and revoked evidence is not resent. Private-file provisioning, exact-head hosted CI and Nora-only rollout/browser gates remain pending. No schema, migration or public API changes. See [task](tasks/NORA-GROQ-KEY-POOL-1117.md).
+Shared process-local Groq transport covers Agent, chat and guide selection with ordered sticky failover, scoped cooldowns, organization-quota protection and single half-open probes. Retries preserve payload/deadline and revalidate native scope; actual model attempts and failed-call allowance remain in the Agent budget. Synthetic integrated tests prove SQL is not replayed and revoked evidence is not resent. Private-file provisioning, exact-head hosted CI and Nora-only rollout/browser gates are complete as recorded above. No schema, migration or public API changes. See [task](tasks/NORA-GROQ-KEY-POOL-1117.md).
 
 ## PAYMENT-HOLD-1117 — PC-A — ACTIVE
 
@@ -58,6 +56,14 @@ Shared Composer intent arbitration separates data/evidence follow-ups from catal
 
 Supplier PDF mail POST accepts a canonical HTTPS browser origin when the TLS proxy forwards the same public Host over HTTP to Next. Foreign, opaque/missing, malformed, credential-bearing and wrong-port origins remain rejected; forwarded header spoofing cannot authorize a request. Native authenticated workflow lookup, branch/permission checks, saved version/PDF signature and mail queue controls remain.15 route regressions and scoped lint pass, including same-host proxy success and unchanged401/403/404 API rejection. No real email sent, grants/data/dependency/schema or production change. Hosted quality/build/tests gates precede the owner-authorized develop merge.
 FLOATING-MERGED-TEMPLATE-1116 CI repair: the latest develop had an undeclared referral override DTO field and missing optional IAM service injection in the existing Nima-only leave-substitute override. Restored only those existing references, preserving fail-closed HR policy and positional constructors.44 focused pricing/Workbench tests and scoped lint pass. Hosted checks remain the final gate.
+
+## 2026-11-17 — FINANCE-RAHKARAN-PARITY-1117
+
+PC-D added ledger-scoped tax reference import and mapping, internal seasonal report validation and snapshots, the analytical account browser, Treasury definitions and year-end readiness. Source inspection used period 1405. See [implementation, evidence and outstanding dependencies](tasks/FINANCE-RAHKARAN-PARITY-1117.md).
+
+## 2026-11-17 — FINANCE-BANK-CONTROLS-1117
+
+Finance now distinguishes dispatch by an exchange office from receipt by a broker. Purchase balances change only on confirmation; the active company's bank register controls direct transfer destinations. Treasury can reconcile imported statements with posted bank lines. Changes, examples, permissions and migration scope: [bank controls](tasks/FINANCE-BANK-CONTROLS-1117.md).
 
 ## FLOATING-MERGED-TEMPLATE-1116 — PC-A
 
@@ -10283,10 +10289,6 @@ FLIGHT-AGE-FARES-1116 — PC-A: optional child/infant rates inside the native ti
 
 PC-C implemented provider usage counters, exact native total-count route with unchanged IAM/freshness gates, lossless tool-table compaction and published final-tool/citation protections on codex/pc-c-nora-token-efficiency-1116.136 service tests and scoped lint pass. Live synthetic40-row Groq input1496->1072 (28.3%); total1648->1237 (24.9%);4-row input362->334. Sample-specific, not full30-case certification. No model downgrade/history truncation, cross-user cache, migration or deployment. See docs/tasks/NORA-TOKEN-EFFICIENCY-1116.md.
 
-## 2026-11-17 — FINANCE-BANK-CONTROLS-1117
-
-Finance now distinguishes dispatch by an exchange office from receipt by a broker. Purchase balances change only on confirmation; the active company's bank register controls direct transfer destinations. Treasury can reconcile imported statements with posted bank lines. Changes, examples, permissions and migration scope: [bank controls](tasks/FINANCE-BANK-CONTROLS-1117.md).
-
 
 ## NSS-BANK-SETTLEMENT-1117 — verified gateway exception
 Owner explicitly authorizes automatic Finance confirmation only for bank-verified NSS gateway receipts bound by a server-only signature to the linked order and configured SEP terminal/account. Ordinary BANK_TRANSFER/unsigned receipts retain manual Finance review. Finance validates the active branch/IRR/BANK account and emits the existing native receipt confirmation; it preserves accounting events, audit, idempotency, correction/void rejection and real settlement. SiteCommerce uses the existing fresh full-settlement document release, retaining explicit revocation/cancellation. No new generic site Finance permission or direct cross-module table write. No migration or dependency change. See tasks/NSS-BANK-SETTLEMENT-1117.md; validation/release pending.
@@ -10306,3 +10308,5 @@ COMPUTER_ID=PC-A; branch codex/pc-a-zero-capacity-hold-roster-1117 from merged d
 Validation:32 focused control/roster/workspace/i18n tests pass; active/past inspection restrictions and busy create guard remain. Six interaction checks include zero/negative stock, restored stock, no creation when sold out and no duplicate create while busy. No operational writes or deployment. Full exact-head hosted gates precede authorized develop merge.
 
 ZERO-CAPACITY-HOLD-ROSTER-1117 compatibility: historical single-edit regression now verifies the extracted inspection control receives catalogNow and still contains the past-flight guard; its independent edit/date/version assertions remain unchanged. No historical editing policy changes.
+
+MANAGER-SENT-LEAVE-1117: manager-approved leave stays in manager sent list and transfers to Nima HR inbox atomically. Historic approved reviewer participation is derived from timeline. Scoped ESLint passed; request tests could not collect due to missing contracts build.

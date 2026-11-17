@@ -81,6 +81,8 @@ export function WebsiteDestination({
   compact?: boolean;
 }) {
   const [stored, setStored] = useState<Publication>();
+  const [delivery, setDelivery] = useState<string>('unknown');
+  const [refresh, setRefresh] = useState(0);
   const [selected, setSelected] = useState(false);
   const [busy, setBusy] = useState(false);
   const saving = useRef(false);
@@ -109,6 +111,7 @@ export function WebsiteDestination({
       .then((result) => {
         if (!abort.signal.aborted) {
           const value = result.data ?? { enabled: false, version: 0 };
+          setDelivery(result.deliveryStatus ?? 'unknown');
           setStored(value);
           setSelected(value.enabled);
           setPresentation(
@@ -124,7 +127,26 @@ export function WebsiteDestination({
         if (!abort.signal.aborted) setError(cause.message);
       });
     return () => abort.abort();
-  }, [path, branchId, periodKey]);
+  }, [path, branchId, periodKey, refresh]);
+  useEffect(() => {
+    if (delivery !== 'pending' && delivery !== 'error') return;
+    const abort = new AbortController();
+    const timer = window.setInterval(async () => {
+      try {
+        const query = new URLSearchParams({ branchId, ...(periodKey ? { periodKey } : {}) });
+        const response = await localizedFetch(`${path}?${query}`, {
+          credentials: 'include', cache: 'no-store', signal: abort.signal,
+        });
+        if (response.ok) {
+          const result = await response.json();
+          if (!abort.signal.aborted) setDelivery(result.deliveryStatus ?? 'unknown');
+        }
+      } catch {
+        // Retain the last observed state until the next refresh.
+      }
+    }, 30000);
+    return () => { window.clearInterval(timer); abort.abort(); };
+  }, [delivery, path, branchId, periodKey]);
   async function save(enabled = selected, selectionOnly = false) {
     if (!stored || busy || saving.current || (enabled && !canPublish)) return;
     saving.current = true;
@@ -162,6 +184,7 @@ export function WebsiteDestination({
           result.error?.message ?? result.message ?? 'ثبت انتشار ناموفق بود.',
         );
       setStored(result.data);
+      setRefresh((value) => value + 1);
       if (selectionOnly) setSelected(result.data.enabled);
     } catch (cause) {
       if (selectionOnly) setSelected(stored.enabled);
@@ -183,11 +206,12 @@ export function WebsiteDestination({
           commissionPercent: '0',
         },
       ) === JSON.stringify(presentation));
-  const status = !site.connected
-    ? 'در انتظار اتصال'
-    : stored?.enabled
-      ? 'انتشار فعال'
-      : 'منتشر نشده';
+  const status = !stored ? 'در حال دریافت وضعیت'
+    : delivery === 'unconfigured' ? 'در انتظار اتصال'
+    : delivery === 'error' ? 'خطا در ارسال کاتالوگ'
+    : delivery === 'pending' ? 'در انتظار رسید کاتالوگ'
+    : delivery !== 'accepted' ? 'وضعیت اتصال نامشخص'
+    : stored.enabled ? 'انتشار فعال' : 'منتشر نشده';
   return (
     <div
       aria-busy={busy}
@@ -231,7 +255,7 @@ export function WebsiteDestination({
         <span className="flex min-w-0 items-center gap-1.5 text-[10px] leading-4 text-muted-foreground">
           <span
             aria-hidden="true"
-            className={`h-1.5 w-1.5 shrink-0 rounded-full ${!site.connected ? 'bg-amber-500' : stored?.enabled ? 'bg-emerald-500' : 'bg-slate-300'}`}
+            className={`h-1.5 w-1.5 shrink-0 rounded-full ${delivery !== 'accepted' ? 'bg-amber-500' : stored?.enabled ? 'bg-emerald-500' : 'bg-slate-300'}`}
           />
           {busy ? 'در حال ثبت…' : status}
         </span>

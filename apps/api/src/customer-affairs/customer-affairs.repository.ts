@@ -464,6 +464,15 @@ export class CustomerAffairsRepository {
           category: { startsWith: 'WORKBENCH_' },
           OR: [
             { createdByUserId: userId },
+            {
+              timeline: {
+                some: {
+                  type: 'WORKBENCH_RECIPIENT_REVIEW',
+                  outcome: 'APPROVED',
+                  actorUserId: userId,
+                },
+              },
+            },
             { executionOwnerUserId: userId },
             {
               timeline: {
@@ -498,6 +507,15 @@ export class CustomerAffairsRepository {
         timeline: { none: { type: 'WORKBENCH_REMOVED', actorUserId: userId } },
         OR: [
           { createdByUserId: userId },
+          {
+            timeline: {
+              some: {
+                type: 'WORKBENCH_RECIPIENT_REVIEW',
+                outcome: 'APPROVED',
+                actorUserId: userId,
+              },
+            },
+          },
           { executionOwnerUserId: userId },
           {
             timeline: {
@@ -510,7 +528,16 @@ export class CustomerAffairsRepository {
       },
       include: {
         timeline: {
-          where: { type: { in: ['WORKBENCH_SUBSTITUTE', 'WORKBENCH_LEAVE'] } },
+          where: {
+            type: {
+              in: [
+                'WORKBENCH_SUBSTITUTE',
+                'WORKBENCH_LEAVE',
+                'WORKBENCH_RECIPIENT_REVIEW',
+                'WORKBENCH_HR_REVIEW',
+              ],
+            },
+          },
         },
         createdBy: { select: { displayName: true } },
         executionOwner: { select: { displayName: true } },
