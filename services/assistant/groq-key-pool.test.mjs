@@ -117,6 +117,82 @@ test('organization quota stops the entire organization without trying another ke
   assert.equal(h.sent.length, 1);
 });
 
+test('one organization quota skips its peers and reaches a different organization', async () => {
+  const h = harness(
+    [error(429, 'organization'), new Response('ok'), new Response('ok')],
+    {
+      entries: entries.map((x, i) => ({
+        ...x,
+        organization: i < 2 ? 'org-first' : 'org-second',
+      })),
+    },
+  );
+  assert.equal((await h.run()).status, 200);
+  await h.run();
+  assert.deepEqual(
+    h.sent.map((x) => x.headers.get('authorization')),
+    ['Bearer synthetic-a', 'Bearer synthetic-c', 'Bearer synthetic-c'],
+  );
+  assert.equal(h.pool.snapshot()[0].state, 'unavailable');
+  assert.equal(h.pool.snapshot()[1].state, 'unavailable');
+  assert.equal(h.audit[0].limitUnit, 'TPM');
+});
+
+test('matching quota words do not join independently configured organizations', async () => {
+  const h = harness([error(429), error(429), new Response('ok')], {
+    entries: entries.map((x, i) => ({ ...x, organization: 'org-' + i })),
+  });
+  assert.equal((await h.run()).status, 200);
+  assert.equal(h.sent.length, 3);
+});
+
+test('provider-confirmed organization identity links provisional aliases without logging identity', async () => {
+  let time = 1000;
+  const shared = () =>
+    Response.json(
+      {
+        error: {
+          scope: 'organization',
+          organization_id: 'org_synthetic_shared',
+          message: 'TPM limit in organization org_synthetic_shared',
+        },
+      },
+      { status: 429, headers: { 'retry-after': '2' } },
+    );
+  const h = harness(
+    [shared(), shared(), new Response('ok'), shared(), new Response('ok')],
+    {
+      now: () => time,
+      entries: entries.map((x, i) => ({ ...x, organization: 'org-' + i })),
+    },
+  );
+  await h.run();
+  assert.equal(h.sent.length, 3);
+  time = 4000;
+  // A separate synthetic request needs to return to the first credential to probe:
+  // make the current healthy credential temporarily key-limited, then learn that
+  // one shared organization still excludes both previously identified credentials.
+  h.sent.length = 0;
+  const before = h.pool.snapshot();
+  assert.equal(
+    before.every((x) => x.state === 'ready'),
+    true,
+  );
+  // Current credential is C: it reports the same provider organization, which
+  // must suppress A and B even though operator aliases differ.
+  assert.equal((await h.run()).status, 429);
+  assert.equal(h.sent.length, 1);
+  const metadata = JSON.stringify({
+    audit: h.audit,
+    snapshot: h.pool.snapshot(),
+  });
+  assert.equal(metadata.includes('org_synthetic_shared'), false);
+  assert.equal(
+    h.pool.snapshot().every((x) => x.state === 'unavailable'),
+    true,
+  );
+});
+
 test('unknown quota allows only one diagnostic replacement before grouping', async () => {
   const h = harness([error(429), error(429)]);
   assert.equal((await h.run()).status, 429);

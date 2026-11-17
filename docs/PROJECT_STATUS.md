@@ -1,3 +1,7 @@
+## NORA-GROQ-QUOTA-GROUPS-1117 — PC-C — VALIDATING
+
+Confirmed private configuration used one unverified alias for all six keys; a primary organization429 therefore suppressed unrelated credentials. Owner corrects account provenance. Independent synthetic Germany probes return200 for all six. Replace universal grouping with provisional per-credential groups; provider-confirmed shared organization identities still coalesce through private equality hashes. Safe quota-unit diagnostics added; no ERP permissions/SQL/model/relay changes. Tests/CI and guarded Nora-only rollout remain required. See [task](tasks/NORA-GROQ-QUOTA-GROUPS-1117.md). Earlier same-organization claims were configuration assumptions, not verified provider identities.
+
 ## NORA-GROQ-KEY-POOL-1117 — PC-C — RELEASED
 
 PR1778 merged after all nine exact-head CI checks passed. Main Nora now uses six ordered private credentials with shared-organization quota handling.164 service tests pass locally/CI;142 tests pass against the preserved mounted-source container. Real Germany tool calling/guide selection and authenticated ERP chat/hourly-leave guide succeed. Only Nora replaced; private backup/read-only0600 pool and prior single-key rollback retained. No migration or Web/API/database change. Full release evidence is in the [task](tasks/NORA-GROQ-KEY-POOL-1117.md).

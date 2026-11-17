@@ -1,4 +1,5 @@
 import { ServiceError } from './errors.mjs';
+import { createHash } from 'node:crypto';
 import { validateGroqCredentials } from './groq-credentials.mjs';
 
 const ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
@@ -97,6 +98,28 @@ function failureScope(error) {
   return 'unknown';
 }
 
+function providerOrganization(error) {
+  const raw = error.organization_id ?? error.organizationId;
+  const message =
+    typeof error.message === 'string' ? error.message.slice(0, 16000) : '';
+  const identifier =
+    typeof raw === 'string' && /^org_[A-Za-z0-9_-]{1,120}$/.test(raw)
+      ? raw
+      : message.match(
+          /\borganization\s+[`"']?(org_[A-Za-z0-9_-]{1,120})\b/i,
+        )?.[1];
+  // Keep only equality evidence in memory, never the upstream identifier or message.
+  return identifier
+    ? 'provider-org:' + createHash('sha256').update(identifier).digest('hex')
+    : undefined;
+}
+const quotaUnit = (error) =>
+  typeof error.message === 'string'
+    ? (error.message
+        .slice(0, 16000)
+        .match(/\b(TPM|TPD|RPM|RPD|ITPM|OTPM)\b/)?.[1] ?? 'unknown')
+    : 'unknown';
+
 /** Credentials and cooldown metadata only; never retain prompts, users or evidence. */
 export function createGroqKeyPool({
   entries,
@@ -115,11 +138,12 @@ export function createGroqKeyPool({
   };
   const scopes = (key) => [
     group('org:' + key.organization),
+    ...(key.providerOrganization ? [group(key.providerOrganization)] : []),
     ...(key.project
       ? [group('project:' + key.organization + ':' + key.project)]
       : []),
   ];
-  const emit = (key, category, attempt, until = 0) => {
+  const emit = (key, category, attempt, until = 0, limitUnit = null) => {
     try {
       audit(
         Object.freeze({
@@ -127,6 +151,7 @@ export function createGroqKeyPool({
           keyId: key.id,
           category,
           attempt,
+          limitUnit,
           availableAt:
             Number.isFinite(until) && until > 0
               ? new Date(until).toISOString()
@@ -290,8 +315,14 @@ export function createGroqKeyPool({
             const until = now() + groqRetryDelay(response.headers, now());
             block(key, until);
             const org = group('org:' + key.organization);
-            if (scope === 'organization') block(org, until);
-            else if (scope === 'project' && key.project)
+            if (scope === 'organization') {
+              block(org, until);
+              const observed = providerOrganization(error);
+              if (observed) {
+                key.providerOrganization = observed;
+                block(group(observed), until);
+              }
+            } else if (scope === 'project' && key.project)
               block(
                 group('project:' + key.organization + ':' + key.project),
                 until,
@@ -300,12 +331,7 @@ export function createGroqKeyPool({
               scope === 'unknown' ||
               (scope === 'project' && !key.project)
             ) {
-              const unit =
-                typeof error.message === 'string'
-                  ? (/\b(TPM|TPD|RPM|RPD|ITPM|OTPM)\b/.exec(
-                      error.message,
-                    )?.[1] ?? 'unknown')
-                  : 'unknown';
+              const unit = quotaUnit(error);
               const previous = org.lastUnknown;
               if (
                 previous &&
@@ -321,6 +347,7 @@ export function createGroqKeyPool({
               scope === 'unknown' ? 'quota-unknown' : 'quota-' + scope,
               attempt,
               until,
+              quotaUnit(error),
             );
           }
           if (cursor === index) cursor = (index + 1) % keys.length;
