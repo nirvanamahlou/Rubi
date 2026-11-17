@@ -1,3 +1,4 @@
+import type { VerifiedGatewayProof } from '../finance/payments/verified-gateway-receipt.public';
 import {
   Body,
   Controller,
@@ -168,10 +169,20 @@ export class SiteCommerceController {
   paid(
     @Param('site') site: string,
     @Param('externalId') id: string,
-    @Body() body: { payments: SalesPaymentCreateRequest[] },
+    @Body()
+    body: {
+      payments: SalesPaymentCreateRequest[];
+      gatewayReceipt?: VerifiedGatewayProof;
+    },
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.service.paid(site, id, body?.payments, req.actor);
+    return this.service.paid(
+      site,
+      id,
+      body?.payments,
+      req.actor,
+      body?.gatewayReceipt,
+    );
   }
   @Get('orders/:externalId/contract')
   @Header('Cache-Control', 'private, no-store')

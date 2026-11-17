@@ -1,3 +1,4 @@
+import { VerifiedGatewayReceiptPublic } from './verified-gateway-receipt.public';
 import {
   BadRequestException,
   Inject,
@@ -95,8 +96,12 @@ export class SalesReceiptAccountsPublic {
 
 @Module({
   imports: [MasterDataModule],
-  providers: [BankAccountCrypto, SalesReceiptAccountsPublic],
-  exports: [SalesReceiptAccountsPublic],
+  providers: [
+    BankAccountCrypto,
+    SalesReceiptAccountsPublic,
+    VerifiedGatewayReceiptPublic,
+  ],
+  exports: [SalesReceiptAccountsPublic, VerifiedGatewayReceiptPublic],
 })
 export class SalesReceiptAccountsModule {}
 
