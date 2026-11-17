@@ -23,7 +23,7 @@ import { pricingCityCountries } from '@/modules/sales/model/ticket-pricing-displ
 import { integrationsApi } from '../api/client';
 import { SiteTicketFacts } from './site-ticket-facts';
 import { TicketBulkPublication } from './ticket-bulk-publication';
-import { matchingPublicationTickets } from '../ticket-bulk-publication';
+import { matchingPublicationTicketRows } from '../ticket-bulk-publication';
 import styles from './site-management.module.css';
 import {
   publishableTickets,
@@ -521,14 +521,13 @@ export function SiteManagement({
     from,
     to,
   };
-  const eligible = new Set(
-    matchingPublicationTickets(
-      tickets,
-      branchId,
-      ticketFilters,
-      flightLabel,
-    ).map((offer) => offer.id),
+  const matchingRows = matchingPublicationTicketRows(
+    tickets,
+    branchId,
+    ticketFilters,
+    flightLabel,
   );
+  const eligible = new Set(matchingRows.map((row) => row.offer.id));
   const tourGroups = websiteTourGroups(tours, floatingTours, branchId);
   const visibleTours = filterWebsiteTourGroups(tourGroups, {
     tourId,
@@ -543,6 +542,11 @@ export function SiteManagement({
       id: row.id,
       title: flightLabel(row),
       offer: row,
+      returnOfferIds: matchingRows.flatMap((match) =>
+        match.offer.id === row.id && match.returnOfferId
+          ? [match.returnOfferId]
+          : [],
+      ),
       detail: `${new Date(row.departureAt).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })} — ${new Date(row.arrivalAt).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })} · مانده: ${row.remainingCapacity} · ظرفیت: ${row.totalCapacity} · ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice) ? `یک‌طرفه: ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice)!.amount} ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice)!.currencyCode}` : ''} ${(
         row.baseRoundTripSalePrices ??
         row.roundTripSalePrices ??
@@ -857,6 +861,7 @@ export function SiteManagement({
                           <div className="min-w-0 break-words">
                             <SiteTicketFacts
                               offer={row.offer}
+                              returnOfferIds={row.returnOfferIds}
                               tickets={tickets}
                               cities={cities}
                               cityCountries={cityCountries}

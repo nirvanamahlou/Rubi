@@ -13,7 +13,7 @@ export type TicketPublicationFilters = {
   to: string;
   query: string;
 };
-export function matchingPublicationTickets(
+export function matchingPublicationTicketRows(
   tickets: TicketOfferV1[],
   branchId: string,
   filters: TicketPublicationFilters,
@@ -22,12 +22,28 @@ export function matchingPublicationTickets(
   const active = tickets.filter(
     (offer) => offer.branchId === branchId && offer.status === 'ACTIVE',
   );
-  const rows = filterTicketRows(ticketPriceRows(active), filters, label).filter(
+  return filterTicketRows(ticketPriceRows(active), filters, label).filter(
     (row) =>
       Number(row.base?.amount) > 0 && (!row.returnOfferId || row.returning),
   );
-  const ids = new Set(rows.map((row) => row.offer.id));
-  return active.filter((offer) => ids.has(offer.id));
+}
+export function matchingPublicationTickets(
+  tickets: TicketOfferV1[],
+  branchId: string,
+  filters: TicketPublicationFilters,
+  label: (offer: TicketOfferV1) => string,
+) {
+  const ids = new Set(
+    matchingPublicationTicketRows(tickets, branchId, filters, label).map(
+      (row) => row.offer.id,
+    ),
+  );
+  return tickets.filter(
+    (offer) =>
+      offer.branchId === branchId &&
+      offer.status === 'ACTIVE' &&
+      ids.has(offer.id),
+  );
 }
 export function completePublicationFilters(filters: TicketPublicationFilters) {
   const date = (value: string) =>
