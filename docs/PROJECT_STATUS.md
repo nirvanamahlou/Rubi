@@ -1,3 +1,7 @@
+## NORA-CHAT-RECOVERY-1117 — PC-C — VALIDATING
+
+Confirmed production Web client uses legacy v2 despite Agent runtime policy; Germany provider/native tool-planning checks succeed. Prepare a current-source Web-only build with explicit public compile flag and fresh-bundle admission. Five guard regressions pass; no data/migration/dependency/assistant/API replacement. Final browser/rollout evidence belongs to the PR release notes. See [task](tasks/NORA-CHAT-RECOVERY-1117.md).
+
 ## NORA-LIVE-MATRIX-1116 — PC-C — IN_PROGRESS
 
 Original final-source live validation stopped at four real Groq cases plus one source-down control because of TPD quota; full30 not certified. All original120 service tests and10 hosted gates passed. User authorizes PR1761 conflict repair/develop merge on2026-11-17. Integration preserves the newly merged token-saving native route and restores per-request evidence IDs in its model options. No production change. See tasks/NORA-LIVE-MATRIX-1116.md.

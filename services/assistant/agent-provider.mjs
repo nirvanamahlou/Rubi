@@ -153,6 +153,12 @@ export function createAgentProvider({
                     ...finalJsonTool.function.parameters,
                     properties: {
                       ...finalJsonTool.function.parameters.properties,
+                      status: {
+                        type: 'string',
+                        enum: currentResultIds.length
+                          ? ['ANSWER', 'CLARIFY', 'REPLY']
+                          : ['CLARIFY', 'REPLY'],
+                      },
                       resultIds: {
                         type: 'array',
                         maxItems: currentResultIds.length,
