@@ -12,6 +12,7 @@ import {
   validateSalesWindow,
   renderSalesWindow,
   SALES_FACT_INSTRUCTION,
+  salesFinalChoices,
 } from './sales-window-evidence.mjs';
 import {
   calculationMetadataValid,
@@ -217,7 +218,16 @@ export function createDataAgent({
               attemptBudget,
               beforeRetry: () => call('catalog'),
               allowFinalResponse: Boolean(plan),
-              currentResultIds: [...evidence.keys()],
+              currentResultIds: financialReport
+                ? [financialReport.resultId]
+                : [...evidence.keys()],
+              ...(financialReport
+                ? {
+                    finalTextChoices: salesFinalChoices(
+                      financialRequest.details,
+                    ),
+                  }
+                : {}),
               allowedTools: !plan
                 ? ['set_plan']
                 : !described.size
@@ -457,17 +467,27 @@ export function createDataAgent({
               /* Operational logging cannot replace evidence. */
             }
             output.verifiedSalesReport = {
-              ...financialReport,
+              resultId: financialReport.resultId,
+              count: financialReport.count,
+              totals: financialReport.totals.map(
+                ({ currency_code, amount }) => ({ currency_code, amount }),
+              ),
+              missing: financialReport.missing,
+              complete: financialReport.complete,
+              detailRows: financialReport.details.length,
               period: financialRequest.period,
               detailsRequested: financialRequest.details,
-              instruction: SALES_FACT_INSTRUCTION,
+              finalTextChoices: salesFinalChoices(financialRequest.details),
+              calculationExplanation: '[[sales:method]]',
+              instruction:
+                'For final text choose exactly one of finalTextChoices, with no expanded prose. The runtime renders these typed facts. Cite this resultId. limitations=[]; calculationExplanation=[[sales:method]].',
             };
           }
         } catch (error) {
           if (error instanceof ServiceError && error.status === 400)
             output = {
               error: 'QUERY_REJECTED',
-              hint: 'Check described columns, supported SELECT grammar and unique output aliases. Use normalized identifier literals rather than REPLACE calls. Money aggregates require GROUP BY currency_code. Query monetary totals separately from passenger/service counts to avoid fanout. Narrow an expensive query.',
+              hint: 'Check described columns, supported SELECT grammar and unique output aliases. Allowed functions only: count,sum,avg,min,max,coalesce,nullif,round,abs,lower,upper,date_trunc,date_part,length,now. No JSON_AGG, JSON_BUILD_OBJECT, JSON_OBJECT_AGG, ARRAY_AGG, nested aggregates, window functions or FILTER. Return flat rows; use separate grouped totals when needed. Use normalized identifier literals rather than REPLACE calls. Money aggregates require GROUP BY currency_code. Query monetary totals separately from passenger/service counts to avoid fanout. Narrow an expensive query.',
             };
           else throw error;
         }
@@ -530,7 +550,9 @@ export function createDataAgent({
               'The final response was not released: ' +
               error.message +
               (financialRequest
-                ? '. ' + SALES_FACT_INSTRUCTION
+                ? '. Return ONLY the final JSON with text exactly one of ' +
+                  JSON.stringify(salesFinalChoices(financialRequest.details)) +
+                  ', calculationExplanation="[[sales:method]]", limitations=[] and the verified resultId. Do not expand the markers or replay SQL.'
                 : '. Return the final JSON again with a concise calculationExplanation grounded in the already cited evidence. Choose prose or table yourself. Include applicable source/grain, actual filters/period, formula/operands, units and limitations. This is a public calculation summary, not private reasoning. Do not re-run SQL merely to repair formatting. Keep combined text and explanation within 6000 characters.'),
           });
           continue;

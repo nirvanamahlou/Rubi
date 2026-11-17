@@ -179,7 +179,18 @@ const safe = (s) =>
   String(s ?? '—')
     .replace(/[\r\n|<>[\]{}]/g, ' ')
     .slice(0, 160);
-export const SALES_FACT_INSTRUCTION = `The runtime will reconcile this explicit Persian whole-scope contractual-sales period through the same authorized query boundary, after your first database_query. You must still set_plan, describe sources and author SQL. Use canonicalPeriod exactly, not mental calendar conversion. Count DISTINCT contract identities, never contract/currency rows. On receiving verifiedSalesReport, its resultId is authoritative for count, date and discounted amounts. For ANSWER, choose layout and order using ONLY these exact markers in text: [[sales:summary:table]] OR [[sales:summary:list]] OR [[sales:summary:prose]], then optionally [[sales:details:table]] OR [[sales:details:list]], and [[sales:method]]. Include exactly one summary and one method; include details when requested. These typed blocks bind labels and values together, preventing unsupported numeric/calendar claims while you choose the layout. No other prose, numbers or limitations outside the blocks. Set calculationExplanation="[[sales:method]]" (this nonempty method block is the required calculation explanation), cite the verified resultId, and limitations=[]. Example final text when details requested: "[[sales:summary:table]]\\n[[sales:details:list]]"; calculationExplanation is "[[sales:method]]". Do not re-run SQL just to repair final formatting. CLARIFY/REPLY cannot assert financial results.`;
+export const SALES_FACT_INSTRUCTION = `The runtime will reconcile this explicit Persian whole-scope contractual-sales period through the same authorized query boundary, after your first database_query. You must still set_plan and author SQL. The native authorizedDescriptions already describe contracts and amounts: do not spend turns describing these same sources again. For this request your first database_query should be a FLAT SELECT of eligible contracts with their per-currency amounts, not a JSON-packed report. The runtime will produce the independent count and currency totals. JSON_AGG, JSON_BUILD_OBJECT, JSON_OBJECT_AGG, ARRAY_AGG and window functions are NOT supported; never use them or nesting of aggregate functions. Use canonicalPeriod exactly, not mental calendar conversion. Count DISTINCT contract identities, never contract/currency rows. On receiving verifiedSalesReport, its resultId is authoritative for count, date and discounted amounts. For ANSWER, choose layout and order using ONLY these exact markers in text: [[sales:summary:table]] OR [[sales:summary:list]] OR [[sales:summary:prose]], then optionally [[sales:details:table]] OR [[sales:details:list]], and [[sales:method]]. Include exactly one summary and one method; include details when requested. These typed blocks bind labels and values together, preventing unsupported numeric/calendar claims while you choose the layout. No other prose, numbers or limitations outside the blocks. Set calculationExplanation="[[sales:method]]" (this nonempty method block is the required calculation explanation), cite the verified resultId, and limitations=[]. Example final text when details requested: "[[sales:summary:table]]\\n[[sales:details:list]]"; calculationExplanation is "[[sales:method]]". Do not re-run SQL just to repair final formatting. CLARIFY/REPLY cannot assert financial results.`;
+
+export function salesFinalChoices(details) {
+  return ['table', 'list', 'prose'].flatMap((layout) =>
+    details
+      ? ['table', 'list'].map(
+          (detail) =>
+            `[[sales:summary:${layout}]]\n[[sales:details:${detail}]]`,
+        )
+      : [`[[sales:summary:${layout}]]`],
+  );
+}
 
 export function renderSalesWindow(answer, report, request) {
   if (answer.status !== 'ANSWER') return null;

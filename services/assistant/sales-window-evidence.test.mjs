@@ -11,6 +11,7 @@ import {
   renderSalesWindow,
 } from './sales-window-evidence.mjs';
 import { createDataAgent } from './data-agent.mjs';
+import { createAgentProvider } from './agent-provider.mjs';
 const now = new Date('2026-11-17T08:00:00Z');
 const question =
   'فروشمون از ۲۰ آبان تا ۲۳ آبان امسال چقدر بوده و تعداد قراردادها و شماره قراردادها و اطلاعاتشان را بده.';
@@ -74,6 +75,56 @@ const final = {
   limitations: [],
   calculationExplanation: null,
 };
+test('typed final schema is scoped to this request, supports layout choice and never changes ordinary final responses', async () => {
+  const bodies = [];
+  const provider = createAgentProvider({
+    apiKey: 'synthetic',
+    fetcher: async (_url, opts) => {
+      bodies.push(JSON.parse(opts.body));
+      return Response.json({
+        choices: [
+          {
+            finish_reason: 'stop',
+            message: { content: JSON.stringify(final) },
+          },
+        ],
+        usage: { total_tokens: 10 },
+      });
+    },
+  });
+  const options = {
+    signal: new AbortController().signal,
+    allowFinalResponse: true,
+    allowedTools: ['finish_answer'],
+    currentResultIds: [id],
+  };
+  await provider.step([], {
+    ...options,
+    finalTextChoices: ['[[sales:summary:table]]', '[[sales:summary:prose]]'],
+  });
+  await provider.step([], options);
+  const schema = bodies[0].response_format.json_schema.schema;
+  assert.equal(bodies[0].response_format.json_schema.strict, true);
+  assert.equal(bodies[0].tools, undefined);
+  assert.equal(bodies[0].tool_choice, undefined);
+  assert.equal(schema.properties.text.enum.length, 2);
+  assert.equal(schema.properties.resultIds.minItems, 1);
+  assert.deepEqual(schema.properties.calculationExplanation.enum, [
+    '[[sales:method]]',
+  ]);
+  assert.equal(
+    bodies[1].tools[0].function.parameters.properties.text.enum,
+    undefined,
+  );
+  await assert.rejects(
+    provider.step([], {
+      ...options,
+      currentResultIds: [],
+      finalTextChoices: ['x'],
+    }),
+    /INVALID_AGENT_SOURCE/,
+  );
+});
 test('20–23 Aban1405 resolves independently to inclusive11–14November with Tehran half-open UTC boundaries', () => {
   assert.deepEqual(request.period, {
     calendar: 'persian',

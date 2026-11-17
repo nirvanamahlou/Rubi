@@ -1,6 +1,6 @@
 ## 2026-11-17 — Nora Sales evidence correction (PC-C)
 
-NORA-SALES-EVIDENCE-1117: reproduced Persian calendar/Tehran-boundary and contract-currency row-count defects. Added deterministic period resolution, same-snapshot authorized reconciliation and typed financial fact binding with model-chosen layout.179 service tests pass; real read-only native-session-scoped query matches independent count/currency oracles. No migration or operational writes. Exact-head CI, Nora-only activation and authenticated browser acceptance remain pending. See [task](tasks/NORA-SALES-EVIDENCE-1117.md).
+NORA-SALES-EVIDENCE-1117: reproduced Persian calendar/Tehran-boundary and contract-currency row-count defects. Added deterministic period resolution, same-snapshot authorized reconciliation and typed financial fact binding with model-chosen layout.180 service tests pass; real Groq/Germany plus native-session-scoped PostgreSQL passes in three model calls and two reads, matching independent count/currency oracles. No migration or operational writes. Exact-head CI, Nora-only activation and authenticated browser acceptance remain pending. See [task](tasks/NORA-SALES-EVIDENCE-1117.md).
 
 ## NORA-GROQ-QUOTA-GROUPS-1117 — PC-C — VALIDATING
 
