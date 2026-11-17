@@ -11,6 +11,11 @@ All Groq consumers now use one process-local credential pool through
 read-only ordered credential file; without it `GROQ_API_KEY` remains supported.
 Never construct separate pools per request or bypass the shared factory in a
 custom runtime. Organization quotas are shared, not multiplied by key count.
+The `organization` value is an operator quota-group alias, not a provider identity
+lookup. Do not place unrelated/unverified accounts in one universal group. On a
+provider organization quota error, actual organization identities additionally
+link provisional aliases through private in-memory equality hashes. See the
+[quota-group correction](../../docs/tasks/NORA-GROQ-QUOTA-GROUPS-1117.md).
 Configuration, scoped failover, budget/auth rules and Nora-only rollback:
 [NORA-GROQ-KEY-POOL-1117](../../docs/tasks/NORA-GROQ-KEY-POOL-1117.md).
 
