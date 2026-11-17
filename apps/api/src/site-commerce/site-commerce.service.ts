@@ -1,4 +1,8 @@
 import { commerceSites, isDeliverySite } from './commerce-sites';
+import {
+  VerifiedGatewayReceiptPublic,
+  type VerifiedGatewayProof,
+} from '../finance/payments/verified-gateway-receipt.public';
 import { ageCounts } from '../ticket-catalog/ticket-age-fares';
 import { websitePresentation } from './publication-presentation';
 import { DocumentsService } from '../documents/documents.service';
@@ -66,6 +70,9 @@ export class SiteCommerceService {
     private readonly documents?: DocumentsService,
     @Inject(FloatingTourPricingService)
     private readonly floating?: FloatingTourPricingService,
+    @Optional()
+    @Inject(VerifiedGatewayReceiptPublic)
+    private readonly gatewayReceipts?: VerifiedGatewayReceiptPublic,
   ) {}
 
   private scoped(site: string, actor: AuthenticatedActor) {
@@ -871,8 +878,19 @@ export class SiteCommerceService {
     externalId: string,
     payments: SalesPaymentCreateRequest[],
     actor: AuthenticatedActor,
+    gatewayReceipt?: VerifiedGatewayProof,
   ) {
     const { row, scoped } = await this.order(site, externalId, actor);
+    if (gatewayReceipt && !this.gatewayReceipts)
+      throw new ForbiddenException('اتصال تسویه درگاه تنظیم نشده است.');
+    const gateway = gatewayReceipt
+      ? await this.gatewayReceipts!.resolve(
+          site,
+          externalId,
+          gatewayReceipt,
+          scoped,
+        )
+      : undefined;
     if (
       !Array.isArray(payments) ||
       !payments.length ||
@@ -884,6 +902,19 @@ export class SiteCommerceService {
       )
     )
       throw new BadRequestException('رسید تأییدشده سایت الزامی است.');
+    if (
+      gateway &&
+      (payments.length !== 1 ||
+        payments[0]!.method !== 'ONLINE_GATEWAY' ||
+        payments[0]!.paymentReference !== gateway.reference ||
+        payments[0]!.currencyCode !== gateway.currencyCode ||
+        !new Prisma.Decimal(payments[0]!.amount).eq(gateway.amount) ||
+        (payments[0]!.destinationAccountId &&
+          payments[0]!.destinationAccountId !== gateway.accountId))
+    )
+      throw new ConflictException(
+        'تأیید بانکی با مبلغ و حساب رسید مطابقت ندارد.',
+      );
     const fingerprint = stableFingerprint(payments);
     if (row.paymentFingerprint && row.paymentFingerprint !== fingerprint)
       throw new ConflictException('رسید این سفارش تغییر کرده است.');
@@ -978,6 +1009,29 @@ export class SiteCommerceService {
         scoped,
         `site:${site}:${externalId}:confirm`,
       );
+    }
+    if (gateway) {
+      const { data: receiptContract } = await this.sales.detail(
+        row.contractId,
+        scoped,
+      );
+      const matches = receiptContract.payments.filter(
+        (p) =>
+          p.method === 'ONLINE_GATEWAY' &&
+          p.paymentReference === gateway.reference &&
+          p.currencyCode === gateway.currencyCode &&
+          new Prisma.Decimal(p.amount).eq(gateway.amount),
+      );
+      if (matches.length !== 1)
+        throw new ConflictException('رسید بانکی یکتای قرارداد پیدا نشد.');
+      await this.gatewayReceipts!.confirm(
+        row.contractId,
+        matches[0]!,
+        gateway,
+        scoped,
+        (event) => this.sales.applyFinancePaymentConfirmed(event),
+      );
+      await this.releaseSettledWebsiteDocuments(row, scoped);
     }
     return this.status(site, externalId, actor);
   }
