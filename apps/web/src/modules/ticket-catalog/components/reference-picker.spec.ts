@@ -12,7 +12,7 @@ describe('Ticket reference labels', () => {
   });
 });
 
-it('allows an airport search without requiring a commercial city selection', () => {
+it('requires a country before searching airports', () => {
   const html = renderToStaticMarkup(
     createElement(ReferencePicker, {
       id: 'independent-airport',
@@ -22,6 +22,23 @@ it('allows an airport search without requiring a commercial city selection', () 
       onSelect: () => {},
     }),
   );
+  expect(html).toContain('disabled=""');
+  expect(html).toContain('ابتدا کشور را انتخاب کنید');
+});
+
+it('allows all airports in the country without requiring a commercial city', () => {
+  const html = renderToStaticMarkup(
+    createElement(ReferencePicker, {
+      id: 'country-airport',
+      label: 'Airport',
+      resource: 'airports',
+      countryId: 'country-ir',
+      required: true,
+      value: undefined,
+      onSelect: () => {},
+    }),
+  );
   expect(html).not.toContain('disabled=""');
+  expect(html).toContain('aria-required="true"');
   expect(html).not.toContain('ابتدا شهر را انتخاب کنید');
 });

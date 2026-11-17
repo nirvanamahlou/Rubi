@@ -249,3 +249,31 @@ it('maps published rail and bus references for ticket definitions', () => {
     ),
   ).toEqual(['railCompany', 'trainType', 'busCompany', 'busType']);
 });
+import { getAirportReference } from './references';
+
+it('hydrates the saved airport label and country through the catalog selection endpoint', async () => {
+  vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
+  const record = {
+    id: 'saved-airport',
+    resource: 'airports',
+    name: 'Antalya Airport',
+    code: 'AYT',
+    status: 'active',
+    attributes: { countryId: 'tr', cityId: 'ayt' },
+  };
+  const fetcher = vi
+    .fn()
+    .mockResolvedValue({ ok: true, json: async () => ({ data: record }) });
+  vi.stubGlobal('fetch', fetcher);
+  await expect(getAirportReference('saved-airport')).resolves.toMatchObject({
+    id: 'saved-airport',
+    name: 'Antalya Airport',
+    countryId: 'tr',
+  });
+  expect(fetcher.mock.calls[0]![0]).toBe(
+    'http://localhost:4000/api/v1/master-data/selections/ticket-catalog/airports/saved-airport',
+  );
+  await expect(
+    getAirportReference('different-airport'),
+  ).resolves.toBeUndefined();
+});

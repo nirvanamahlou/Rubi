@@ -81,6 +81,8 @@ export function WebsiteDestination({
   compact?: boolean;
 }) {
   const [stored, setStored] = useState<Publication>();
+  const [delivery, setDelivery] = useState<string>('unknown');
+  const [refresh, setRefresh] = useState(0);
   const [selected, setSelected] = useState(false);
   const [busy, setBusy] = useState(false);
   const saving = useRef(false);
@@ -109,6 +111,7 @@ export function WebsiteDestination({
       .then((result) => {
         if (!abort.signal.aborted) {
           const value = result.data ?? { enabled: false, version: 0 };
+          setDelivery(result.deliveryStatus ?? 'unknown');
           setStored(value);
           setSelected(value.enabled);
           setPresentation(
@@ -124,7 +127,26 @@ export function WebsiteDestination({
         if (!abort.signal.aborted) setError(cause.message);
       });
     return () => abort.abort();
-  }, [path, branchId, periodKey]);
+  }, [path, branchId, periodKey, refresh]);
+  useEffect(() => {
+    if (delivery !== 'pending' && delivery !== 'error') return;
+    const abort = new AbortController();
+    const timer = window.setInterval(async () => {
+      try {
+        const query = new URLSearchParams({ branchId, ...(periodKey ? { periodKey } : {}) });
+        const response = await localizedFetch(`${path}?${query}`, {
+          credentials: 'include', cache: 'no-store', signal: abort.signal,
+        });
+        if (response.ok) {
+          const result = await response.json();
+          if (!abort.signal.aborted) setDelivery(result.deliveryStatus ?? 'unknown');
+        }
+      } catch {
+        // Retain the last observed state until the next refresh.
+      }
+    }, 30000);
+    return () => { window.clearInterval(timer); abort.abort(); };
+  }, [delivery, path, branchId, periodKey]);
   async function save(enabled = selected, selectionOnly = false) {
     if (!stored || busy || saving.current || (enabled && !canPublish)) return;
     saving.current = true;
@@ -162,6 +184,7 @@ export function WebsiteDestination({
           result.error?.message ?? result.message ?? 'ثبت انتشار ناموفق بود.',
         );
       setStored(result.data);
+      setRefresh((value) => value + 1);
       if (selectionOnly) setSelected(result.data.enabled);
     } catch (cause) {
       if (selectionOnly) setSelected(stored.enabled);
@@ -183,11 +206,12 @@ export function WebsiteDestination({
           commissionPercent: '0',
         },
       ) === JSON.stringify(presentation));
-  const status = !site.connected
-    ? 'در انتظار اتصال'
-    : stored?.enabled
-      ? 'انتشار فعال'
-      : 'منتشر نشده';
+  const status = !stored ? 'در حال دریافت وضعیت'
+    : delivery === 'unconfigured' ? 'در انتظار اتصال'
+    : delivery === 'error' ? 'خطا در ارسال کاتالوگ'
+    : delivery === 'pending' ? 'در انتظار رسید کاتالوگ'
+    : delivery !== 'accepted' ? 'وضعیت اتصال نامشخص'
+    : stored.enabled ? 'انتشار فعال' : 'منتشر نشده';
   return (
     <div
       aria-busy={busy}
@@ -231,7 +255,7 @@ export function WebsiteDestination({
         <span className="flex min-w-0 items-center gap-1.5 text-[10px] leading-4 text-muted-foreground">
           <span
             aria-hidden="true"
-            className={`h-1.5 w-1.5 shrink-0 rounded-full ${!site.connected ? 'bg-amber-500' : stored?.enabled ? 'bg-emerald-500' : 'bg-slate-300'}`}
+            className={`h-1.5 w-1.5 shrink-0 rounded-full ${delivery !== 'accepted' ? 'bg-amber-500' : stored?.enabled ? 'bg-emerald-500' : 'bg-slate-300'}`}
           />
           {busy ? 'در حال ثبت…' : status}
         </span>
@@ -334,10 +358,18 @@ export function WebsiteDestination({
     </div>
   );
 }
-export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
-  const [tab, setTab] = useState<'tours' | 'tickets' | 'hotels'>('tours');
+export function SiteManagement({
+  actor,
+  ticketLink,
+}: {
+  actor: AuthenticatedActor;
+  ticketLink?: URLSearchParams | undefined;
+}) {
+  const [tab, setTab] = useState<'tours' | 'tickets' | 'hotels'>(
+    ticketLink ? 'tickets' : 'tours',
+  );
   const [branches, setBranches] = useState<BranchReference[]>([]);
-  const [branchId, setBranchId] = useState('');
+  const [branchId, setBranchId] = useState(ticketLink?.get('branchId') ?? '');
   const [targets, setTargets] = useState<TicketSalePriceTargetV1[]>([]);
   const [tourId, setTourId] = useState('');
   const [tours, setTours] = useState<TourDepartureV1[]>([]);
@@ -449,6 +481,13 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
       active = false;
     };
   }, [branchScope, canManage, revision]);
+  useEffect(() => {
+    if (!loading && tab === 'tickets' && ticketLink?.get('offerId')) {
+      document
+        .getElementById('publication-' + ticketLink.get('offerId'))
+        ?.scrollIntoView?.({ block: 'center' });
+    }
+  }, [loading, tab, ticketLink]);
   if (!canManage)
     return (
       <Alert
@@ -788,6 +827,7 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
                     )
                     .map((row) => (
                       <article
+                        id={`publication-${row.id}`}
                         key={`${revision}:${branchId}:${row.kind}:${row.id}`}
                         className={styles.resource}
                       >
@@ -824,6 +864,12 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
                               >
                                 {row.kind === 'ticket' ? (
                                   <TicketSiteCommission
+                                    initialPair={
+                                      row.id === ticketLink?.get('offerId')
+                                        ? (ticketLink.get('returnOfferId') ??
+                                          '')
+                                        : ''
+                                    }
                                     offer={tickets.find(
                                       (offer) => offer.id === row.id,
                                     )!}
@@ -851,10 +897,12 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
 }
 
 function TicketSiteCommission({
+  initialPair,
   offer,
   site,
   targets,
 }: {
+  initialPair: string;
   offer: TicketOfferV1;
   site: (typeof websiteDestinations)[number];
   targets: TicketSalePriceTargetV1[];
@@ -868,7 +916,13 @@ function TicketSiteCommission({
         (site.code === 'nss' && t.name === 'نیایش سیر سحر')),
   );
   const [target, setTarget] = useState(initialTarget);
-  const [pair, setPair] = useState('');
+  const [pair, setPair] = useState(
+    (offer.baseRoundTripSalePrices ?? offer.roundTripSalePrices)?.some(
+      (fare) => fare.returnOfferId === initialPair,
+    )
+      ? initialPair
+      : '',
+  );
   const [percent, setPercent] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');

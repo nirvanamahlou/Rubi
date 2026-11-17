@@ -105,14 +105,18 @@ function projectPlan(value, now) {
 /** Server-only provider; runtime requires explicit messages-only consent. */
 export function createGroqProvider({
   apiKey,
+  transport,
   fetchImpl = fetch,
   now = () => new Date(),
   timeoutMs = 1500,
 } = {}) {
-  if (typeof apiKey !== 'string' || !apiKey.trim() || /\s/.test(apiKey))
+  if (
+    !transport &&
+    (typeof apiKey !== 'string' || !apiKey.trim() || /\s/.test(apiKey))
+  )
     throw new ServiceError(503, 'PROVIDER_NOT_CONFIGURED');
   return Object.freeze({
-    async plan(input, { signal, maxOutputTokens = 512 } = {}) {
+    async plan(input, { signal, maxOutputTokens = 512, beforeRetry } = {}) {
       const message = validateMessage({
         version: input.version,
         message: input.message,
@@ -130,7 +134,7 @@ export function createGroqProvider({
       ]);
       if (combined.aborted) throw new ServiceError(503, 'CONVERSATION_TIMEOUT');
       try {
-        const response = await fetchImpl(
+        const response = await (transport?.fetch ?? fetchImpl)(
           'https://api.groq.com/openai/v1/chat/completions',
           {
             method: 'POST',
@@ -138,7 +142,7 @@ export function createGroqProvider({
             cache: 'no-store',
             signal: combined,
             headers: {
-              authorization: `Bearer ${apiKey}`,
+              ...(!transport ? { authorization: `Bearer ${apiKey}` } : {}),
               'content-type': 'application/json',
             },
             body: JSON.stringify({
@@ -163,6 +167,7 @@ export function createGroqProvider({
               ],
             }),
           },
+          { beforeRetry },
         );
         if (!response.ok) {
           await response.body?.cancel();

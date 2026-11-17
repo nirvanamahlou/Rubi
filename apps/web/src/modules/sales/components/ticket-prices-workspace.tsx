@@ -1294,11 +1294,6 @@ export function TicketPricesWorkspace() {
                                     })}
                                   </div>
                                 ))}
-                                <Button asChild variant="outline">
-                                  <a href="/integrations">
-                                    مدیریت انتشار در سایت
-                                  </a>
-                                </Button>
                               </div>
                             ) : (
                               <p className="mt-2 text-sm text-muted-foreground">
@@ -1398,6 +1393,27 @@ export function TicketPricesWorkspace() {
                             ) : null}
                           </div>
                         </div>
+                        {row.base && (
+                          <Button
+                            asChild
+                            size="sm"
+                            variant="outline"
+                            className="mt-2"
+                          >
+                            <a
+                              href={`/integrations?${new URLSearchParams({
+                                view: 'tickets',
+                                branchId: row.offer.branchId,
+                                offerId: row.offer.id,
+                                ...(row.returnOfferId
+                                  ? { returnOfferId: row.returnOfferId }
+                                  : {}),
+                              })}`}
+                            >
+                              مدیریت انتشار در سایت
+                            </a>
+                          </Button>
+                        )}
                         <div className="mt-2 border-t border-sky-100 pt-2">
                           <TierEditor
                             draft={draft}

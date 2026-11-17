@@ -472,7 +472,16 @@ it('projects branch-scoped manifest inventory from active allocations and unexpi
           select: { quantity: true },
         },
         capacityHolds: {
-          where: { status: 'ACTIVE', expiresAt: { gt: expect.any(Date) } },
+          where: {
+            status: 'ACTIVE',
+            OR: [
+              { expiresAt: { gt: expect.any(Date) } },
+              {
+                checkoutSessionId: { not: null },
+                paymentPendingAt: { not: null },
+              },
+            ],
+          },
           select: { quantity: true },
         },
       }),

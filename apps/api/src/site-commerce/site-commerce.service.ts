@@ -1,3 +1,4 @@
+import { WebsiteCheckoutHoldsService } from './website-checkout-holds.service';
 import { commerceSites, isDeliverySite } from './commerce-sites';
 import {
   VerifiedGatewayReceiptPublic,
@@ -73,6 +74,9 @@ export class SiteCommerceService {
     @Optional()
     @Inject(VerifiedGatewayReceiptPublic)
     private readonly gatewayReceipts?: VerifiedGatewayReceiptPublic,
+    @Optional()
+    @Inject(WebsiteCheckoutHoldsService)
+    private readonly checkoutHolds?: WebsiteCheckoutHoldsService,
   ) {}
 
   private scoped(site: string, actor: AuthenticatedActor) {
@@ -170,7 +174,16 @@ export class SiteCommerceService {
     if (!['ticket', 'tour', 'floating-tour'].includes(kind))
       throw new BadRequestException();
     const periodKey = this.publicationPeriod(kind, requestedPeriod);
+    const delivery = await this.db.client.websiteCatalogDelivery.findFirst({
+      where: { siteCode: site, branchId },
+      select: { lastError: true, deliveredAt: true, deliveredRevision: true, revision: true },
+    });
+    const deliveryStatus = !delivery ? 'unconfigured'
+      : delivery.lastError ? 'error'
+      : delivery.deliveredAt && delivery.deliveredRevision === delivery.revision ? 'accepted'
+      : 'pending';
     return {
+      deliveryStatus,
       data: await this.db.client.websitePublication.findFirst({
         where: { siteCode: site, kind, resourceId, branchId, periodKey },
       }),
@@ -808,12 +821,20 @@ export class SiteCommerceService {
       `site:${site}:${externalId}`,
       scoped,
     );
-    if (!recovered) await this.assertPublished(site, input, scoped);
+    const checkout = await this.checkoutHolds?.validateDraft(
+      site,
+      externalId,
+      input,
+      scoped,
+    );
+    if (!recovered && !checkout)
+      await this.assertPublished(site, input, scoped);
     const ticketTargetId = input.services.some(
       (s) => s.metadata?.tourDepartureId,
     )
       ? undefined
-      : await this.ticketTarget(site, scoped.branchIds[0]!);
+      : (checkout?.targetId ??
+        (await this.ticketTarget(site, scoped.branchIds[0]!)));
     const created = await this.sales.create(
       {
         ...input,
@@ -830,6 +851,8 @@ export class SiteCommerceService {
       scoped,
       key.branchId,
       `site:${site}:${externalId}`,
+      undefined,
+      checkout?.frozenPackageSales,
     );
     // Native Sales create is durable/idempotent; a timeout before this link is safe to retry.
     await this.db.client.websiteOrder.upsert({

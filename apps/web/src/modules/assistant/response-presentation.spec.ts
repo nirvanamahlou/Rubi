@@ -5,6 +5,18 @@ import {
 } from './response-presentation';
 
 describe('public assistant labels', () => {
+  it('localizes aggregation labels observed in live calculation replies', () => {
+    expect(
+      persianAssistantTerms(
+        'total = COUNT(*) = count = SUM(amounts) = sum؛ 45 + 2 + 1 = 48',
+      ),
+    ).toBe(
+      'مجموع = تعداد(*) = تعداد = جمع(مبالغ قرارداد) = جمع؛ 45 + 2 + 1 = 48',
+    );
+    expect(
+      persianAssistantTerms('ACME Total REF-total-120 my_total_copy'),
+    ).toBe('ACME Total REF-total-120 my_total_copy');
+  });
   it('uses business source names and separates Tehran observation date/time', () => {
     const text = formatAssistantSources([
       {

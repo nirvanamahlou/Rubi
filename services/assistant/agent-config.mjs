@@ -1,11 +1,24 @@
 import { createAgentProvider } from './agent-provider.mjs';
-export function dataAgentConfiguration(env = process.env) {
+export function dataAgentConfiguration(env = process.env, { transport } = {}) {
+  if (
+    env.GROQ_KEY_POOL_FILE &&
+    !transport &&
+    env.ASSISTANT_AGENT_ENABLED === 'true'
+  )
+    throw new Error('GROQ_SHARED_POOL_REQUIRED');
   if (env.ASSISTANT_AGENT_ENABLED !== 'true') return { enabled: false };
   if (
     env.ASSISTANT_DATA_POLICY !== 'authorized-erp-results' ||
     env.ASSISTANT_MODEL_PROVIDER !== 'groq'
   )
     throw new Error('AGENT_DATA_POLICY_REQUIRED');
+  requireGermanyProxy(env);
+  return {
+    enabled: true,
+    provider: createAgentProvider({ apiKey: env.GROQ_API_KEY, transport }),
+  };
+}
+export function requireGermanyProxy(env) {
   let proxy;
   try {
     proxy = new URL(env.HTTPS_PROXY);
@@ -40,8 +53,4 @@ export function dataAgentConfiguration(env = process.env) {
     (env.no_proxy && env.NO_PROXY && env.no_proxy !== env.NO_PROXY)
   )
     throw new Error('AGENT_GERMANY_PROXY_REQUIRED');
-  return {
-    enabled: true,
-    provider: createAgentProvider({ apiKey: env.GROQ_API_KEY }),
-  };
 }

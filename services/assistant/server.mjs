@@ -1,10 +1,8 @@
-import { conversationConfiguration } from './conversation-config.mjs';
+import { groqConfigurations } from './groq-runtime.mjs';
 import {
   createWorkbenchGuideSelector,
   validateWorkbenchGuide,
-  workbenchGuideConfiguration,
 } from './workbench-guide.mjs';
-import { dataAgentConfiguration } from './agent-config.mjs';
 import { createDataAgent, validateDataAgentMessage } from './data-agent.mjs';
 import { createOrchestrator, readMessage } from './orchestrator.mjs';
 import { parseFilterSearch, resolveReportFilters } from './report-filters.mjs';
@@ -211,7 +209,9 @@ export function createAssistantServer({
             deadline.signal,
             validateWorkbenchGuide,
           );
-          const result = await selectWorkbenchGuide(input, deadline.signal);
+          const result = await selectWorkbenchGuide(input, deadline.signal, {
+            beforeRetry: () => authenticate(cookie, deadline.signal, actorId),
+          });
           await authenticate(cookie, deadline.signal, actorId);
           outcome = 'SUCCESS';
           send(200, result);
@@ -236,6 +236,7 @@ export function createAssistantServer({
           const message = await readMessage(request, deadline.signal);
           const result = await orchestrate(message, {
             signal: deadline.signal,
+            beforeRetry: () => authenticate(cookie, deadline.signal, actorId),
             runAction: async (selected, filters) => {
               action = selected;
               filteredRequest = true;
@@ -342,9 +343,9 @@ if (
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   const service = createAssistantServer({
-    conversation: conversationConfiguration(),
-    agent: dataAgentConfiguration(),
-    workbenchGuide: workbenchGuideConfiguration(),
+    ...groqConfigurations(process.env, {
+      audit: (event) => process.stdout.write(JSON.stringify(event) + '\n'),
+    }),
     identityTimeoutMs: 5000,
     erpBaseUrl: process.env.ERP_API_BASE_URL,
     erpAuthBaseUrl:

@@ -66,3 +66,7 @@ reservation is complete; peers must retain PR1768 and1769 in future Web builds.
 ## Subsequent peer handoff
 
 A later peer release activated image `rubi-production:nora-persian-reconciled-1117-web` (build `Y6Y5ayoMnyDa2Xp-Yo0G3`). Read-only verification confirms all four1768 UI files still exactly match the integrated251eb62c4 source; the scroll hook SHA-256 is `145708544dcbd4b8c37b18091eb2153ce1f1d5eeb3c0424ae43b24875a394871`. The peer release preserves this unit's published interaction changes; do not restore the earlier image over it. Primary browser acceptance above occurred on this unit's own deployed image before that handoff.
+
+## CI integration requested 2026-11-17
+
+PR1776 inherited an integrations-workspace set-state-in-effect lint failure on its older merge snapshot. Current develop a27328ecd already contains the producer's useTicketPublicationLink repair. Integrate it without altering product code; retain both append-only task/status histories. Require every final-head hosted gate before owner-authorized merge. Follow with fresh merged-author/live-source deployment inventory; no credential or operational personal record is committed.
