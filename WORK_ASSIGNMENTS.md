@@ -12756,7 +12756,7 @@ Owner explicitly authorizes publishing merged PR1768 and authenticated ERP brows
 
 Release complete: Web image nora-chat-scroll-1768-1117-r2-web, build08Ajp-thgUW8QA5lVntoo, integrates251eb62c4 and preserves peer Persian presentation.291 integrated tests and server Web build/type/Agent admission pass; authenticated ERP confirms immediate bubbles, pending spinner, bottom following, reading-position pause/arrow, draft retention and three nonduplicated exchanges. No business writes, migration or non-Web service replacement by this unit. Private backup/CAS receipts on host; source/runtime reservation released. See docs/tasks/NORA-CHAT-SCROLL-RELEASE-1117.md.
 
-## PR1776-CI-RELEASE-1117 — PC-C — VALIDATING
+## PR1776-CI-RELEASE-1117 — PC-C — DONE
 
 Owner authorizes fixing all PR1776 CI, conflict integration, green-final-head develop merge then publishing all merged Amin PRs absent from production. Continue existing release branch. Reserve bounded own task/status conflict notes; inherited integrations effect lint repair only if current develop has not already fixed it, respecting producer ownership. No dependency or migration edit; preserve all peer source and use existing guarded release/backup/rollback after exact inventory.
 
@@ -12767,6 +12767,8 @@ PR1776 inherited verification repair lease: workbench-hr-request.postgres.spec.t
 PR1776 catalogue sync: add the same new HR error translation to its required apps/api/src/common/i18n/en-catalog.json mirror; preserve every existing key and coverage assertion. No standalone-editor label is introduced. Native HR/IAM logic unchanged.
 
 PR1776 concurrent producer integration: PR1782 delivered the same CI repairs while this run was validating. Retain its stronger fixture assertions for actor/branch and its canonical six English translations, and synchronize the API mirror to that exact wording. Both product scopes remain untouched; final merged-head CI must run again.
+
+PR1776 release complete: all8 final-head hosted gates passed; merged4d1182948.182 merged-author PRs covered,18 runtime source hashes match. Web build/types/46 tests/canary and encrypted backup passed. API catalog deployed with dependent Worker namespace rebind; health/authenticated transport/AMI/timer passed. No migration or business-data change. Operational source lease released. See docs/tasks/PR1776-CI-RELEASE-1117.md.
 
 ## NORA-DATA-AGENT-V1 — PC-C — IN_PROGRESS — 2026-11-14
 
@@ -13028,6 +13030,7 @@ MANAGER-SENT-LEAVE-1117 PC-B completed. Retain manager participation through app
 WORKBENCH-MISSION-1117 PC-B completed. Owner requests complete mission lifecycle from workbench to Nima HR to Finance with schedule-locked expense entry and receipt previews. Reserve workbench mission contract, Customer Affairs request lifecycle, public HR upload, Documents evidence kind, HR forwarding and Finance referral detail UI. No schema/migration/dependency edits. Existing unit/inbox permissions retained.
 
 Validation: 59 API tests and 3 Web render tests passed. Web typecheck passed. Scoped lint passed after import fixes. API typecheck has only pre-existing missing pg/pgsql-ast-parser/sharp dependencies. Mission financial submission is sender-only after scheduled return time, versioned and audited. No live deployment.
+
 ## SITE-TICKET-TYPE-FILTER-1117 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-site-ticket-type-filter-1117 from develop a27328ecd. User requests that one-way site-management filtering excludes round-trip display and authorizes develop merge. Reserve Integrations ticket-bulk-publication row matcher, site-management matched-facts wiring, SiteTicketFacts and focused tests plus own notes. Preserve canonical offers/publication identity, native pricing filters, bulk selection/CAS and commission commands. Only display return legs matched by the active filters; an independently priced one-way remains valid even when its offer also has paired fares. Existing site-filter scopes are merged/released; no active overlapping source writer found. No API/schema/dependency/operational data or deployment change. Source lease releases on verified merge.

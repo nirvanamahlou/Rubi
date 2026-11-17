@@ -83,6 +83,10 @@ User authorizes latest develop Avina deployment with all data preserved. Reserve
 
 PR1768 UI is active in ERP with PR1769 Persian/source presentation preserved. Published Web build08Ajp-thgUW8QA5lVntoo;291 integrated tests and server compile/type/Agent admission pass. Authenticated browser confirms immediate messages, waiting spinner, transcript bottom scrolling, pause while reading, latest arrow, next-draft and close/reopen retention. No SQL/financial acceptance claim, migration, business writes or non-Web replacement. [Release receipt](tasks/NORA-CHAT-SCROLL-RELEASE-1117.md).
 
+## PR1776 CI and publication — 2026-11-17
+
+All8 final-head checks passed; PR1776 merged4d1182948. Complete182-author-PR inventory covered by existing runtime plus the verified translation publication.46 server i18n tests, build/types, canary, encrypted backup and final public/native/Worker/AMI checks pass. API/Worker namespace dependency handled together; native Nora/read and all business data preserved. See docs/tasks/PR1776-CI-RELEASE-1117.md.
+
 ## NORA-COUNT-BREAKDOWN-1116 — PC-C — READY_FOR_CI
 
 Added authorized all-time contract count reconciliation with disjoint native
