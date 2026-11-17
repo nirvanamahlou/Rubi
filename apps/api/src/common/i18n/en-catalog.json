@@ -8923,5 +8923,7 @@
   "توقف فروش حفظ شد": "Sales stop preserved",
   "جزئیات نتیجهٔ انتشار": "Publication result details",
   "مبدأ، مقصد، نوع بلیط و بازهٔ تاریخ را در فیلترهای بالا مشخص کنید؛ سپس سایت‌ها را انتخاب کنید.": "Set the origin, destination, trip type and date range above, then select websites.",
-  "مشاهده بلیت‌های انتخاب‌شده": "View selected tickets"
+  "مشاهده بلیت‌های انتخاب‌شده": "View selected tickets",
+  "ترکیب مسافران تغییر کرده است.": "The passenger composition has changed.",
+  "ترکیب مسافران معتبر نیست.": "The passenger composition is invalid."
 }

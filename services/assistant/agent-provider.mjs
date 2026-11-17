@@ -1,5 +1,6 @@
 import { ServiceError } from './errors.mjs';
 import { CALCULATION_POLICY } from './calculation-policy.mjs';
+import { compactMessages, usageCounters } from './token-efficiency.mjs';
 
 const tool = (
   name,
@@ -172,7 +173,7 @@ export function createAgentProvider({
         stream: false,
         messages: [
           { role: 'system', content: CALCULATION_POLICY },
-          ...messages,
+          ...compactMessages(messages),
         ],
         tools,
         tool_choice: allowFinalResponse
@@ -276,6 +277,7 @@ export function createAgentProvider({
             name: 'finish_answer',
             args: final,
             tokens,
+            usage: usageCounters(result.usage),
           };
         }
         if (

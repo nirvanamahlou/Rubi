@@ -1,6 +1,18 @@
 ## NORA-LIVE-MATRIX-1116 — PC-C — IN_PROGRESS
 
-Actual Germany-routed Groq30-case run on disposable local SQL fixtures found an obsolete count transport, missing clarification on nonunique names and unadvertised final json calls. Bounded harness/prompt/provider repairs implemented;119 service regressions and native scope preflight pass. Final same-source model matrix still running; no production change. See tasks/NORA-LIVE-MATRIX-1116.md.
+Original final-source live validation stopped at four real Groq cases plus one source-down control because of TPD quota; full30 not certified. All original120 service tests and10 hosted gates passed. User authorizes PR1761 conflict repair/develop merge on2026-11-17. Integration preserves the newly merged token-saving native route and restores per-request evidence IDs in its model options. No production change. See tasks/NORA-LIVE-MATRIX-1116.md.
+
+## AGE-PRICE-BREAKDOWN-1116 — PC-A — ACTIVE
+
+COMPUTER_ID=PC-A; branch codex/pc-a-age-price-breakdown-1116 from origin/develop0c81e9962. Owner asks to verify child/infant age pricing and show each group/per-passenger cost on the same website page. Prior FLIGHT-AGE-FARES-1116 producer owner explicitly released quote scope in coordination on2026-11-16. Reserve apps/api/src/ticket-catalog/ticket-age-fares.ts (additive bounded display helper only), apps/api/src/site-commerce/ticket-quote.ts, site-commerce.service.ts and focused tests. No price policy, native reservation arithmetic, payment, schema/migration, dependency/lockfile changes. Site consumer owned by this task; other site chats notified.
+
+Shared read-only Site Commerce v1 additive compatibility: existing birthDates quote requests remain valid; optional mutually-exclusive passengerCounts supports explicit provisional composition preview without fabricated DOB. Existing per-leg amount/currencyCode unchanged. Optional version1 pricingBreakdown contains authoritative per-passenger rounded amounts; round-trip bundle metadata covers the full pair once. Native draft still derives ages from real DOB and validates exact quote independently. Bounds, branch/publication/sale-stop/100percent-hide controls remain. Producer ERP Site Commerce; consumer Niyayesh website capacity/quote API and passenger page. No new storage or cross-module table access. Standing owner publication approval and all green CI gates required before develop merge/release.
+
+## NORA-ACCOUNT-RATE-EXEMPTIONS-1116 — PC-C — READY_FOR_CI
+
+FLIGHT-PRICE-LAYOUT-1116: base-price save refreshes offer facts without unmounting the list or clearing unrelated drafts; destination groups sit beneath flight details and grow without an inner height limit. Success feedback stays in the save button. 22 targeted regressions, scoped ESLint and formatting pass; hosted checks gate merge.
+
+Native-identity private quota exemption for two owner-selected accounts;122 service tests pass. Other accounts, data authorization, SQL bounds and actual Groq limits preserved. Nora-only rollout pending hosted gates. No migration/API/Web change. See [task](tasks/NORA-ACCOUNT-RATE-EXEMPTIONS-1116.md).
 
 ## TICKET-BULK-PUBLICATION-1116 — PC-A
 
@@ -10239,3 +10251,9 @@ HR-MANAGER-OVERRIDE-1116: sales manager identity corrected, aggregate branch act
 SITE-TICKET-FILTERS-1116: stable branch-scope effect dependencies stop session-refresh reloads. Reuses native pricing route/trip/search/date filters; master-data city labels, Tehran flight timestamps, cabin/capacity and separate one-way/return fare details. Web only; no data migration. 91 focused regressions passed; release checks pending.
 
 REQUEST-PROGRESS-1116: restrict substitutes to active colleagues in same department/company, hide empty assignment banner and show leave progress with green completed nodes/connectors. Scoped ESLint passed; local tests blocked by missing contracts build.
+
+FLIGHT-AGE-FARES-1116 — PC-A: optional child/infant rates inside the native ticket-pricing base card; immutable standalone/pair revisions, net target projections and birthday-derived website/native final quote guards. Legacy null semantics and financial history preserved.57 focused API checks and isolated PostgreSQL18 migration proof passed; final Web/hosted gates precede release.
+
+## 2026-11-16 — NORA-TOKEN-EFFICIENCY-1116
+
+PC-C implemented provider usage counters, exact native total-count route with unchanged IAM/freshness gates, lossless tool-table compaction and published final-tool/citation protections on codex/pc-c-nora-token-efficiency-1116.136 service tests and scoped lint pass. Live synthetic40-row Groq input1496->1072 (28.3%); total1648->1237 (24.9%);4-row input362->334. Sample-specific, not full30-case certification. No model downgrade/history truncation, cross-user cache, migration or deployment. See docs/tasks/NORA-TOKEN-EFFICIENCY-1116.md.

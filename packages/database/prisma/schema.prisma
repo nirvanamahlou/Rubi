@@ -4469,6 +4469,8 @@ model TicketSaleCommissionRevision {
 }
 
 model TicketOfferStandaloneSalePrice {
+  childAmount       Decimal?                   @db.Decimal(20, 4)
+  infantAmount      Decimal?                   @db.Decimal(20, 4)
   id                String                     @id @default(uuid()) @db.Uuid
   offerId           String                     @db.Uuid
   salePriceTargetId String?                    @db.Uuid
@@ -4514,6 +4516,8 @@ model TicketSalePriceTarget {
 }
 
 model TicketOfferRoundTripSalePrice {
+  childAmount     Decimal?                   @db.Decimal(20, 4)
+  infantAmount    Decimal?                   @db.Decimal(20, 4)
   id              String                     @id @default(uuid()) @db.Uuid
   outboundOfferId String                     @db.Uuid
   returnOfferId   String                     @db.Uuid
@@ -8683,6 +8687,8 @@ model WebsiteCatalogDelivery {
   branchId          String                 @db.Uuid
   branch            Branch                 @relation(fields: [branchId], references: [id], onDelete: Restrict)
   revision          BigInt                 @default(1)
+  attemptedRevision BigInt                 @default(0)
+  lastError         String?                @db.VarChar(80)
   deliveredRevision BigInt                 @default(0)
   deliveredAt       DateTime?              @db.Timestamptz(3)
   nextRefreshAt     DateTime?              @db.Timestamptz(3)

@@ -1,0 +1,162 @@
+{
+  "model": "openai/gpt-oss-120b",
+  "synthetic": true,
+  "productionDataRead": false,
+  "comparison": "transport-only; not full30 semantic acceptance",
+  "runs": [
+    {
+      "rows": 4,
+      "at": "2026-11-16T13:20:32.099Z",
+      "runs": [
+        {
+          "variant": "before",
+          "inputBytes": 731,
+          "status": 200,
+          "usage": {
+            "queue_time": 0.048519344,
+            "prompt_tokens": 362,
+            "prompt_time": 0.10305228,
+            "completion_tokens": 138,
+            "completion_time": 0.289130133,
+            "total_tokens": 500,
+            "total_time": 0.392182413,
+            "completion_tokens_details": {
+              "reasoning_tokens": 81
+            }
+          },
+          "answer": "{\n  \"rows\": 4,\n  \"USD\": 2,\n  \"IRR\": 2,\n  \"firstAmount\": \"12345678901234567890.1250\",\n  \"truncated\": false\n}",
+          "finish": "stop",
+          "retryAfter": null
+        },
+        {
+          "variant": "after",
+          "inputBytes": 560,
+          "status": 200,
+          "usage": {
+            "queue_time": 0.018104122,
+            "prompt_tokens": 334,
+            "prompt_time": 0.016851022,
+            "completion_tokens": 144,
+            "completion_time": 0.303473575,
+            "total_tokens": 478,
+            "total_time": 0.320324597,
+            "completion_tokens_details": {
+              "reasoning_tokens": 87
+            }
+          },
+          "answer": "{\n  \"rows\": 4,\n  \"USD\": 2,\n  \"IRR\": 2,\n  \"firstAmount\": \"12345678901234567890.1250\",\n  \"truncated\": false\n}",
+          "finish": "stop",
+          "retryAfter": null
+        }
+      ]
+    },
+    {
+      "rows": 20,
+      "at": "2026-11-16T13:25:46.108Z",
+      "runs": [
+        {
+          "variant": "before",
+          "inputBytes": 2629,
+          "status": 200,
+          "usage": {
+            "queue_time": 0.018687048,
+            "prompt_tokens": 866,
+            "prompt_time": 0.045252832,
+            "completion_tokens": 140,
+            "completion_time": 0.293243859,
+            "total_tokens": 1006,
+            "total_time": 0.338496691,
+            "completion_tokens_details": {
+              "reasoning_tokens": 83
+            }
+          },
+          "answer": "{\n  \"rows\": 20,\n  \"USD\": 10,\n  \"IRR\": 10,\n  \"firstAmount\": \"12345678901234567890.1250\",\n  \"truncated\": false\n}",
+          "finish": "stop",
+          "retryAfter": null
+        },
+        {
+          "variant": "after",
+          "inputBytes": 1434,
+          "status": 200,
+          "usage": {
+            "queue_time": 0.200878303,
+            "prompt_tokens": 662,
+            "prompt_time": 0.032873843,
+            "completion_tokens": 138,
+            "completion_time": 0.28905446,
+            "total_tokens": 800,
+            "total_time": 0.321928303,
+            "completion_tokens_details": {
+              "reasoning_tokens": 81
+            }
+          },
+          "answer": "{\n  \"rows\": 20,\n  \"USD\": 10,\n  \"IRR\": 10,\n  \"firstAmount\": \"12345678901234567890.1250\",\n  \"truncated\": false\n}",
+          "finish": "stop",
+          "retryAfter": null
+        }
+      ]
+    },
+    {
+      "rows": 40,
+      "at": "2026-11-16T13:19:10.589Z",
+      "runs": [
+        {
+          "variant": "before",
+          "inputBytes": 5009,
+          "status": 200,
+          "usage": {
+            "queue_time": 0.218481473,
+            "prompt_tokens": 1496,
+            "prompt_time": 0.079372186,
+            "completion_tokens": 152,
+            "completion_time": 0.325167412,
+            "total_tokens": 1648,
+            "total_time": 0.404539598,
+            "completion_tokens_details": {
+              "reasoning_tokens": 95
+            }
+          },
+          "answer": "{\n  \"rows\": 40,\n  \"USD\": 20,\n  \"IRR\": 20,\n  \"firstAmount\": \"12345678901234567890.1250\",\n  \"truncated\": false\n}",
+          "finish": "stop",
+          "retryAfter": null
+        },
+        {
+          "variant": "after",
+          "inputBytes": 2534,
+          "status": 200,
+          "usage": {
+            "queue_time": 0.121246079,
+            "prompt_tokens": 1072,
+            "prompt_time": 0.050049887,
+            "completion_tokens": 165,
+            "completion_time": 0.348008717,
+            "total_tokens": 1237,
+            "total_time": 0.398058604,
+            "completion_tokens_details": {
+              "reasoning_tokens": 108
+            }
+          },
+          "answer": "{\n  \"rows\": 40,\n  \"USD\": 20,\n  \"IRR\": 20,\n  \"firstAmount\": \"12345678901234567890.1250\",\n  \"truncated\": false\n}",
+          "finish": "stop",
+          "retryAfter": null
+        }
+      ]
+    }
+  ],
+  "quotaAttempts": [
+    {
+      "rows": 20,
+      "variant": "after",
+      "status": 429,
+      "retryAfterSeconds": 258,
+      "usage": null
+    },
+    {
+      "rows": 20,
+      "variant": "after",
+      "status": 429,
+      "retryAfterSeconds": 36,
+      "usage": null
+    }
+  ]
+}

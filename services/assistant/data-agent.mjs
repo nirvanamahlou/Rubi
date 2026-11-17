@@ -4,6 +4,8 @@ import { validateMessage } from './orchestrator.mjs';
 import { configuredErpOrigin } from './erp-client.mjs';
 import { boundedAgentJson } from './agent-provider.mjs';
 import { validCountBreakdown } from './contract-count-breakdown.mjs';
+import { usageCounters } from './token-efficiency.mjs';
+import { nativeCountRoute } from './native-count-route.mjs';
 import {
   calculationMetadataValid,
   explainedAnswerText,
@@ -63,6 +65,7 @@ export function createDataAgent({
   return async (input, { cookie, signal }) => {
     if (!enabled) throw new ServiceError(503, 'AGENT_DISABLED');
     const request = validateDataAgentMessage(input);
+    const nativeStep = nativeCountRoute(request);
     const requestId = randomUUID();
     let contextId;
     let tokens = 0;
@@ -171,28 +174,30 @@ export function createDataAgent({
       if (signal.aborted) throw new ServiceError(503, 'AGENT_TIMEOUT');
       let step;
       try {
-        step = await provider.step(messages, {
-          signal,
-          remainingTokens: 40000 - tokens,
-          allowFinalResponse: Boolean(plan),
-          currentResultIds: [...evidence.keys()],
-          allowedTools: !plan
-            ? ['set_plan']
-            : !described.size
-              ? [
-                  'catalog_search',
-                  'catalog_describe',
-                  'contract_count_breakdown',
-                  'finish_answer',
-                ]
-              : [
-                  'catalog_search',
-                  'catalog_describe',
-                  'database_query',
-                  'contract_count_breakdown',
-                  'finish_answer',
-                ],
-        });
+        step = nativeStep
+          ? nativeStep(messages)
+          : await provider.step(messages, {
+              signal,
+              remainingTokens: 40000 - tokens,
+              allowFinalResponse: Boolean(plan),
+              currentResultIds: [...evidence.keys()],
+              allowedTools: !plan
+                ? ['set_plan']
+                : !described.size
+                  ? [
+                      'catalog_search',
+                      'catalog_describe',
+                      'contract_count_breakdown',
+                      'finish_answer',
+                    ]
+                  : [
+                      'catalog_search',
+                      'catalog_describe',
+                      'database_query',
+                      'contract_count_breakdown',
+                      'finish_answer',
+                    ],
+            });
       } catch (error) {
         if (
           error instanceof ServiceError &&
@@ -216,6 +221,26 @@ export function createDataAgent({
       }
       if (callIds.has(step.id)) fail();
       callIds.add(step.id);
+      try {
+        const usage = step.usage;
+        audit({
+          event: 'assistant.agent.usage',
+          requestId,
+          turn: turn + 1,
+          model: step.native ? 'native-count' : 'openai/gpt-oss-120b',
+          ...usageCounters({
+            total_tokens: step.tokens,
+            prompt_tokens: usage?.promptTokens,
+            completion_tokens: usage?.completionTokens,
+            prompt_tokens_details: { cached_tokens: usage?.cachedPromptTokens },
+            completion_tokens_details: {
+              reasoning_tokens: usage?.reasoningTokens,
+            },
+          }),
+        });
+      } catch {
+        /* Audit failure never exposes source content. */
+      }
       tokens += step.tokens;
       if (!Number.isSafeInteger(tokens) || tokens > 40000)
         throw new ServiceError(429, 'AGENT_TOKEN_BUDGET_EXCEEDED');
@@ -314,7 +339,7 @@ export function createDataAgent({
             audit({
               requestId,
               version: 1,
-              model: 'openai/gpt-oss-120b',
+              model: step.native ? 'native-count' : 'openai/gpt-oss-120b',
               queryHash: output.queryHash,
               sources: output.sources,
               rowCount: output.rows.length,
@@ -412,8 +437,12 @@ export function createDataAgent({
           status: args.status,
           text,
           plan,
-          sources: selected.map(
-            ({ calculationRequired: _required, ...item }) => item,
+          sources: selected.map((item) =>
+            Object.fromEntries(
+              Object.entries(item).filter(
+                ([key]) => key !== 'calculationRequired',
+              ),
+            ),
           ),
           limitations,
           requestId,

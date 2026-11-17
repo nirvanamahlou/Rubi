@@ -1,3 +1,4 @@
+import { ageFareFields, ageFareTotal } from './ticket-age-fares';
 import { websiteTargetOffer } from './website-target-offer';
 import { createHash, randomUUID } from 'node:crypto';
 import { restoreContractCapacity } from './restore-contract-capacity';
@@ -612,6 +613,8 @@ export class TicketPublicService {
       salePriceTargetId: string | null;
       revision: number;
       amount: Prisma.Decimal;
+      childAmount?: Prisma.Decimal | null;
+      infantAmount?: Prisma.Decimal | null;
       tiers?: readonly { seatCount: number; amount: Prisma.Decimal }[];
       currencyCode: string;
       salePriceTarget: {
@@ -627,6 +630,8 @@ export class TicketPublicService {
       returnOfferId: string;
       revision: number;
       amount: Prisma.Decimal;
+      childAmount?: Prisma.Decimal | null;
+      infantAmount?: Prisma.Decimal | null;
       tiers?: readonly { seatCount: number; amount: Prisma.Decimal }[];
       currencyCode: string;
     }[];
@@ -679,6 +684,7 @@ export class TicketPublicService {
           ? {
               revision: directSalePrice.revision,
               amount: directSalePrice.amount.toString(),
+              ...ageFareFields(directSalePrice),
               currencyCode: directSalePrice.currencyCode,
               ...(directSalePrice.tiers?.length
                 ? {
@@ -700,6 +706,7 @@ export class TicketPublicService {
                 {
                   revision: price.revision,
                   amount: price.amount.toString(),
+                  ...ageFareFields(price),
                   currencyCode: price.currencyCode,
                   ...(price.tiers?.length
                     ? {
@@ -724,6 +731,7 @@ export class TicketPublicService {
                   returnOfferId: price.returnOfferId,
                   revision: price.revision,
                   amount: price.amount.toString(),
+                  ...ageFareFields(price),
                   currencyCode: price.currencyCode,
                   ...(price.tiers?.length
                     ? {
@@ -1297,6 +1305,14 @@ export class TicketPublicService {
     if (uuid.validate(offerId).error || !key?.trim() || key.length > 160)
       throw new BadRequestException('شناسه بلیط یا کلید درخواست معتبر نیست.');
     const validation = Joi.object({
+      childAmount: Joi.string()
+        .pattern(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,4})?$/)
+        .allow(null)
+        .optional(),
+      infantAmount: Joi.string()
+        .pattern(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,4})?$/)
+        .allow(null)
+        .optional(),
       expectedRevision: Joi.number().integer().min(0).required(),
       amount: Joi.string()
         .pattern(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,4})?$/)
@@ -1363,6 +1379,7 @@ export class TicketPublicService {
               data: {
                 revision: replay.revision,
                 amount: replay.amount.toString(),
+                ...ageFareFields(replay),
                 currencyCode: replay.currencyCode,
               },
             };
@@ -1381,6 +1398,27 @@ export class TicketPublicService {
               salePriceTargetId,
               revision: input.expectedRevision + 1,
               amount: new Prisma.Decimal(input.amount),
+              ...(input.childAmount !== undefined || latest?.childAmount != null
+                ? {
+                    childAmount:
+                      input.childAmount === undefined
+                        ? (latest?.childAmount ?? null)
+                        : input.childAmount === null
+                          ? null
+                          : new Prisma.Decimal(input.childAmount),
+                  }
+                : {}),
+              ...(input.infantAmount !== undefined ||
+              latest?.infantAmount != null
+                ? {
+                    infantAmount:
+                      input.infantAmount === undefined
+                        ? (latest?.infantAmount ?? null)
+                        : input.infantAmount === null
+                          ? null
+                          : new Prisma.Decimal(input.infantAmount),
+                  }
+                : {}),
               currencyCode: input.currencyCode,
               ...(input.tiers
                 ? {
@@ -1398,6 +1436,7 @@ export class TicketPublicService {
             data: {
               revision: price.revision,
               amount: price.amount.toString(),
+              ...ageFareFields(price),
               currencyCode: price.currencyCode,
             },
           };
@@ -1435,6 +1474,14 @@ export class TicketPublicService {
         'شناسه جفت بلیط یا کلید درخواست معتبر نیست.',
       );
     const validation = Joi.object({
+      childAmount: Joi.string()
+        .pattern(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,4})?$/)
+        .allow(null)
+        .optional(),
+      infantAmount: Joi.string()
+        .pattern(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,4})?$/)
+        .allow(null)
+        .optional(),
       expectedRevision: Joi.number().integer().min(0).required(),
       amount: Joi.string()
         .pattern(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,4})?$/)
@@ -1519,6 +1566,7 @@ export class TicketPublicService {
               data: {
                 revision: replay.revision,
                 amount: replay.amount.toString(),
+                ...ageFareFields(replay),
                 currencyCode: replay.currencyCode,
               },
             };
@@ -1537,6 +1585,27 @@ export class TicketPublicService {
               returnOfferId,
               revision: input.expectedRevision + 1,
               amount: new Prisma.Decimal(input.amount),
+              ...(input.childAmount !== undefined || latest?.childAmount != null
+                ? {
+                    childAmount:
+                      input.childAmount === undefined
+                        ? (latest?.childAmount ?? null)
+                        : input.childAmount === null
+                          ? null
+                          : new Prisma.Decimal(input.childAmount),
+                  }
+                : {}),
+              ...(input.infantAmount !== undefined ||
+              latest?.infantAmount != null
+                ? {
+                    infantAmount:
+                      input.infantAmount === undefined
+                        ? (latest?.infantAmount ?? null)
+                        : input.infantAmount === null
+                          ? null
+                          : new Prisma.Decimal(input.infantAmount),
+                  }
+                : {}),
               currencyCode: input.currencyCode,
               ...(input.tiers
                 ? {
@@ -1554,6 +1623,7 @@ export class TicketPublicService {
             data: {
               revision: price.revision,
               amount: price.amount.toString(),
+              ...ageFareFields(price),
               currencyCode: price.currencyCode,
             },
           };
@@ -2356,7 +2426,16 @@ export class TicketPublicService {
     expectedTicketTotals?: Readonly<
       Record<
         string,
-        { amount: string; currencyCode: string; salePriceTargetId?: string }
+        {
+          amount: string;
+          currencyCode: string;
+          salePriceTargetId?: string;
+          passengerCounts?: {
+            adults: number;
+            children: number;
+            infants: number;
+          };
+        }
       >
     >,
     counts?: Readonly<Record<string, number>>,
@@ -2532,6 +2611,11 @@ export class TicketPublicService {
           consumed: number,
           selection: SalesTicketSelectionInput,
           half?: 'OUTBOUND' | 'RETURN',
+          ageFare?: {
+            amount: Prisma.Decimal;
+            childAmount?: Prisma.Decimal | null;
+            infantAmount?: Prisma.Decimal | null;
+          },
         ) => {
           if (!tiers.length) return;
           if (commissionPercent?.eq(100))
@@ -2542,6 +2626,13 @@ export class TicketPublicService {
               'قیمت پله‌ای بلیت در قرارداد ثبت نشده است؛ قرارداد را تازه کنید.',
             );
           const quantity = counts?.[selection.serviceClientKey] ?? seatCount;
+          if (
+            current.passengerCounts &&
+            current.passengerCounts.adults +
+              current.passengerCounts.children !==
+              quantity
+          )
+            throw new ConflictException('ترکیب مسافران تغییر کرده است.');
           let first = 0;
           let units = 0n;
           for (const tier of tiers) {
@@ -2563,6 +2654,33 @@ export class TicketPublicService {
             throw new ConflictException(
               'ظرفیت پله‌های قیمت کافی نیست؛ فهرست را تازه کنید.',
             );
+          if (current.passengerCounts && ageFare) {
+            const net = (v: Prisma.Decimal) =>
+              commissionPercent
+                ? commissionAmount(v.toString(), commissionPercent.toString())
+                : v.toString();
+            units = moneyUnits(
+              ageFareTotal(
+                {
+                  amount: net(ageFare.amount),
+                  childAmount:
+                    ageFare.childAmount == null
+                      ? null
+                      : net(ageFare.childAmount),
+                  infantAmount:
+                    ageFare.infantAmount == null
+                      ? null
+                      : net(ageFare.infantAmount),
+                  tiers: tiers.map((t) => ({
+                    seatCount: t.seatCount,
+                    amount: net(t.amount),
+                  })),
+                },
+                current.passengerCounts,
+                consumed,
+              ).toFixed(4),
+            );
+          }
           // Website checkout quotes at two decimals; split the outbound half down,
           // then round the remaining half, exactly as websiteFlightQuotes does.
           const targetQuote = current.salePriceTargetId !== undefined;
@@ -2648,7 +2766,9 @@ export class TicketPublicService {
             verify(
               pairPrice.tiers.length
                 ? pairPrice.tiers
-                : salePriceTargetId
+                : salePriceTargetId ||
+                    pairPrice.childAmount != null ||
+                    pairPrice.infantAmount != null
                   ? [
                       {
                         seatCount: Number.MAX_SAFE_INTEGER,
@@ -2661,6 +2781,7 @@ export class TicketPublicService {
               consumed,
               selection,
               selection.direction,
+              pairPrice,
             );
         } else {
           for (const selection of selections) {
@@ -2696,7 +2817,9 @@ export class TicketPublicService {
             verify(
               fare.tiers.length
                 ? fare.tiers
-                : salePriceTargetId
+                : salePriceTargetId ||
+                    fare.childAmount != null ||
+                    fare.infantAmount != null
                   ? [
                       {
                         seatCount: Number.MAX_SAFE_INTEGER,
@@ -2708,6 +2831,8 @@ export class TicketPublicService {
               commission?.percent,
               consumed,
               selection,
+              undefined,
+              fare,
             );
           }
         }

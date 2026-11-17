@@ -1,3 +1,5 @@
+import { commerceSites, isDeliverySite } from './commerce-sites';
+import { ageCounts } from '../ticket-catalog/ticket-age-fares';
 import { websitePresentation } from './publication-presentation';
 import { DocumentsService } from '../documents/documents.service';
 import {
@@ -35,6 +37,7 @@ import { salesContractFlights, isFloatingSalesContract } from '@nora/contracts';
 import { passengerAgeCategory } from '../sales/sales.domain';
 import { websiteFlightQuotes } from './ticket-quote';
 import {
+  actorSite,
   assertWebsiteDraft,
   externalOrderId,
   siteBinding,
@@ -87,7 +90,9 @@ export class SiteCommerceService {
     carrierName: string,
     actor: AuthenticatedActor,
   ) {
-    const scoped = this.scoped('nss', actor);
+    const site = actorSite(actor);
+    if (!isDeliverySite(site)) throw new ForbiddenException();
+    const scoped = this.scoped(site, actor);
     if (
       !this.documents ||
       typeof carrierName !== 'string' ||
@@ -96,7 +101,7 @@ export class SiteCommerceService {
     )
       throw new NotFoundException();
     const link = await this.db.client.websiteOrder.findFirst({
-      where: { siteCode: 'nss', branchId: scoped.branchIds[0]!, contractId },
+      where: { siteCode: site, branchId: scoped.branchIds[0]!, contractId },
       select: { id: true },
     });
     if (!link) throw new NotFoundException();
@@ -140,7 +145,7 @@ export class SiteCommerceService {
       !branchId ||
       !actor.branchIds.includes(branchId) ||
       (bound && bound !== branchId) ||
-      (site === 'nss' && !bound)
+      (isDeliverySite(site) && !bound)
     )
       throw new ForbiddenException('این شعبه به سایت انتخاب‌شده دسترسی ندارد.');
     return branchId;
@@ -198,7 +203,9 @@ export class SiteCommerceService {
         await this.tickets.websiteOffer(
           resourceId,
           [branchId],
-          site === 'nss' ? await this.ticketTarget(site, branchId) : undefined,
+          isDeliverySite(site)
+            ? await this.ticketTarget(site, branchId)
+            : undefined,
         );
     } else if (kind === 'floating-tour') {
       await this.floatingProduct(
@@ -481,7 +488,7 @@ export class SiteCommerceService {
       }
     }
     const cancelledOrders = await this.cancelledOrders(site, scoped);
-    if (!this.documents || site !== 'nss')
+    if (!this.documents || !isDeliverySite(site))
       return { version: 1, data, cancelledOrders };
     const flights: { carrierName: string; carrierLogoUrl?: string }[] = [];
     for (const product of data) {
@@ -507,6 +514,7 @@ export class SiteCommerceService {
       (name) =>
         websiteAirlineLogo(name, scoped, this.references, this.documents!),
       available,
+      commerceSites[site].origin,
     );
     return { version: 1, data, airlineLogos, cancelledOrders };
   }
@@ -624,7 +632,16 @@ export class SiteCommerceService {
       const seats = input.passengers.filter(
         (p) => passengerAgeCategory(p.birthDate, input.departureDate) !== 'INF',
       ).length;
-      const quotes = websiteFlightQuotes(offers[0]!, offers[1], seats);
+      const quotes = websiteFlightQuotes(
+        offers[0]!,
+        offers[1],
+        seats,
+        ageCounts(
+          input.passengers.map((p) =>
+            passengerAgeCategory(p.birthDate, input.departureDate),
+          ),
+        ),
+      );
       for (const [index, selection] of selections.entries()) {
         const offer = offers[index]!,
           price = quotes[index]!;
@@ -672,21 +689,44 @@ export class SiteCommerceService {
 
   async flightQuote(
     site: string,
-    body: { productIds: string[]; birthDates: string[] },
+    body: {
+      productIds: string[];
+      birthDates?: string[];
+      passengerCounts?: { adults: number; children: number; infants: number };
+    },
     actor: AuthenticatedActor,
   ) {
     const scoped = this.scoped(site, actor);
+    const dates = Array.isArray(body?.birthDates) ? body.birthDates : null;
+    const preview = body?.passengerCounts;
+    const validDates =
+      dates &&
+      dates.length >= 1 &&
+      dates.length <= 30 &&
+      dates.every(
+        (d) => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d),
+      );
+    const validPreview =
+      preview &&
+      typeof preview === 'object' &&
+      !Array.isArray(preview) &&
+      Object.keys(preview).length === 3 &&
+      (['adults', 'children', 'infants'] as const).every(
+        (key) => Number.isSafeInteger(preview[key]) && preview[key] >= 0,
+      ) &&
+      preview.adults + preview.children >= 1 &&
+      preview.adults + preview.children + preview.infants <= 30;
     if (
       !body ||
       !Array.isArray(body.productIds) ||
       body.productIds.length < 1 ||
       body.productIds.length > 2 ||
-      !Array.isArray(body.birthDates) ||
-      !body.birthDates.length ||
-      body.birthDates.length > 30 ||
-      body.birthDates.some(
-        (d) => typeof d !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(d),
-      )
+      body.productIds.some(
+        (id) => typeof id !== 'string' || !id || id.length > 80,
+      ) ||
+      new Set(body.productIds).size !== body.productIds.length ||
+      (body.birthDates !== undefined && body.passengerCounts !== undefined) ||
+      !(validDates || validPreview)
     )
       throw new BadRequestException('استعلام بلیت معتبر نیست.');
     const offers: Awaited<ReturnType<TicketPublicService['websiteOffer']>>[] =
@@ -712,11 +752,22 @@ export class SiteCommerceService {
         ),
       );
     }
-    const seats = body.birthDates.filter(
-      (d) =>
-        passengerAgeCategory(d, offers[0]!.departureAt.slice(0, 10)) !== 'INF',
-    ).length;
-    return { data: websiteFlightQuotes(offers[0]!, offers[1], seats) };
+    const counts = dates
+      ? ageCounts(
+          dates.map((d) =>
+            passengerAgeCategory(d, offers[0]!.departureAt.slice(0, 10)),
+          ),
+        )
+      : preview!;
+    return {
+      data: websiteFlightQuotes(
+        offers[0]!,
+        offers[1],
+        counts.adults + counts.children,
+        counts,
+        true,
+      ),
+    };
   }
 
   async draft(

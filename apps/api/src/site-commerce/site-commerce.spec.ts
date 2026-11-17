@@ -132,6 +132,7 @@ function fixture() {
         }),
       },
       websitePublication: {
+        findFirst: vi.fn().mockResolvedValue({ resourceId: ids.offer }),
         findUnique: vi.fn().mockResolvedValue({ enabled: true }),
         findMany: vi.fn().mockResolvedValue([]),
       },
@@ -453,4 +454,172 @@ describe('website ticket destination', () => {
     await f.service.paid('nss', 'sold-out', [payment], actor);
     expect(f.sales.confirm).toHaveBeenCalledTimes(2);
   });
+});
+
+describe('website age quote preview and exact birthday checks', () => {
+  const publishedFare = {
+    ...flight,
+    standaloneSalePrice: {
+      revision: 1,
+      amount: '100',
+      childAmount: '40',
+      infantAmount: '10',
+      currencyCode: 'IRR',
+    },
+  };
+  it('previews declared groups without creating people, contracts or payments', async () => {
+    const f = fixture();
+    f.tickets.websiteOffer.mockResolvedValue(publishedFare);
+    const result = await f.service.flightQuote(
+      'nss',
+      {
+        productIds: ['publication'],
+        passengerCounts: { adults: 1, children: 1, infants: 1 },
+      },
+      actor,
+    );
+    expect(result.data[0]).toMatchObject({
+      amount: '150.00',
+      currencyCode: 'IRR',
+      pricingBreakdown: {
+        version: 1,
+        totalAmount: '150.00',
+        passengers: [
+          { category: 'ADT', amount: '100.00' },
+          { category: 'CHD', amount: '40.00' },
+          { category: 'INF', amount: '10.00' },
+        ],
+      },
+    });
+    expect(f.sales.create).not.toHaveBeenCalled();
+    expect(f.sales.addPayment).not.toHaveBeenCalled();
+    expect(f.db.client.websiteOrder.upsert).not.toHaveBeenCalled();
+  });
+  it('uses real birth dates at exact two/twelve-year boundaries', async () => {
+    const f = fixture();
+    f.tickets.websiteOffer.mockResolvedValue(publishedFare);
+    const result = await f.service.flightQuote(
+      'nss',
+      {
+        productIds: ['publication'],
+        birthDates: ['2018-01-01', '2018-01-02', '2028-01-01', '2028-01-02'],
+      },
+      actor,
+    );
+    expect(result.data[0]?.amount).toBe('190.00');
+    expect(
+      result.data[0]?.pricingBreakdown?.passengers.map((p) => p.category),
+    ).toEqual(['ADT', 'CHD', 'CHD', 'INF']);
+  });
+  it.each([
+    { passengerCounts: { adults: 1.5, children: 0, infants: 0 } },
+    { passengerCounts: { adults: 0, children: 0, infants: 1 } },
+    { passengerCounts: { adults: 30, children: 1, infants: 0 } },
+    { passengerCounts: { adults: 1, children: -1, infants: 0 } },
+    {
+      passengerCounts: { adults: 1, children: 0, infants: 0 },
+      birthDates: ['2000-01-01'],
+    },
+  ])('rejects malformed or ambiguous preview %#', async (input) => {
+    const f = fixture();
+    await expect(
+      f.service.flightQuote(
+        'nss',
+        { productIds: ['publication'], ...input },
+        actor,
+      ),
+    ).rejects.toThrow();
+    expect(f.tickets.websiteOffer).not.toHaveBeenCalled();
+  });
+});
+
+it('isolates concurrent quotes, contracts and documents for two sites sharing HQ inventory', async () => {
+  const f = fixture();
+  const sites = ['nss', 'jahan-bastan'] as const;
+  const records = sites.map((site, i) => ({
+    site,
+    actor: { ...actor, userId: 'site-user-' + i },
+    target: 'target-' + i,
+    amount: i ? '213.00' : '105.00',
+    order: 'order-' + i,
+    contract: 'contract-' + i,
+  }));
+  vi.stubEnv(
+    'SITE_COMMERCE_BINDINGS',
+    JSON.stringify(
+      Object.fromEntries(
+        records.map((r) => [
+          r.site,
+          { userId: r.actor.userId, branchId: ids.branch },
+        ]),
+      ),
+    ),
+  );
+  const { client } = f.db;
+  client.websiteCatalogDelivery.findUnique.mockImplementation(
+    async ({ where }) => ({
+      branchId: ids.branch,
+      salePriceTargetId: records.find((r) => r.site === where.siteCode)!.target,
+    }),
+  );
+  client.websitePublication.findFirst.mockImplementation(async ({ where }) =>
+    where.branchId === ids.branch &&
+    where.id === 'publication-' + where.siteCode
+      ? { resourceId: ids.offer }
+      : null,
+  );
+  f.tickets.websiteOffer.mockImplementation(
+    async (offerId, branches, targetId) => {
+      expect([offerId, branches]).toEqual([ids.offer, [ids.branch]]);
+      return {
+        ...flight,
+        standaloneSalePrice: {
+          ...flight.standaloneSalePrice,
+          amount: records.find((r) => r.target === targetId)!.amount,
+        },
+      };
+    },
+  );
+  client.websiteOrder.findUnique.mockImplementation(async ({ where }) => {
+    const { siteCode, branchId, externalId } =
+      where.siteCode_branchId_externalId;
+    const record = records.find(
+      (r) =>
+        r.site === siteCode &&
+        r.order === externalId &&
+        branchId === ids.branch,
+    );
+    return record ? { ...f.link, contractId: record.contract } : null;
+  });
+  f.delivery.readCustomerContract.mockResolvedValue({ approved: true });
+  await Promise.all(
+    records.map(async (r, i) => {
+      const other = records[1 - i]!;
+      const quote = await f.service.flightQuote(
+        r.site,
+        {
+          productIds: ['publication-' + r.site],
+          birthDates: ['2000-01-01'],
+        },
+        r.actor,
+      );
+      expect(quote.data[0]?.amount).toBe(r.amount);
+      await f.service.contractOutput(r.site, r.order, r.actor);
+      await expect(
+        f.service.travelDocuments(r.site, r.order, r.actor),
+      ).resolves.toHaveProperty('data.ticketDocuments');
+      expect(f.delivery.readCustomerContract).toHaveBeenCalledWith(r.contract);
+      expect(f.output.prepare).toHaveBeenCalledWith(r.contract, r.actor);
+      await expect(
+        f.service.contractOutput(r.site, other.order, r.actor),
+      ).rejects.toThrow();
+      await expect(
+        f.service.travelDocuments(r.site, other.order, r.actor),
+      ).rejects.toThrow();
+      await expect(
+        f.service.travelDocuments(other.site, other.order, r.actor),
+      ).rejects.toThrow();
+    }),
+  );
+  expect(f.delivery.readCustomerContract).toHaveBeenCalledTimes(2);
 });
