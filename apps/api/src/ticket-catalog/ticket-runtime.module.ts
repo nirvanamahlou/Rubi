@@ -1,3 +1,5 @@
+import { CheckoutTicketCapacity } from './checkout-ticket-capacity';
+import { CheckoutCapacityController } from './checkout-capacity.controller';
 import {
   Body,
   DefaultValuePipe,
@@ -223,12 +225,12 @@ class TicketOffersController {
 
 @Module({
   imports: [IamModule, MasterDataModule, DocumentsModule, ProcurementModule],
-  controllers: [
+  controllers: [CheckoutCapacityController,
     TicketOffersController,
     TicketSalePriceTargetsController,
     TourController,
   ],
-  providers: [AuthGuard, TicketPublicService, TourPublicService],
-  exports: [TicketPublicService, TourPublicService],
+  providers: [AuthGuard, TicketPublicService, TourPublicService, CheckoutTicketCapacity],
+  exports: [TicketPublicService, TourPublicService, CheckoutTicketCapacity],
 })
 export class TicketRuntimeModule {}

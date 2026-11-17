@@ -285,6 +285,7 @@ export const toursApi = {
     }),
   publishOffer: (input: TicketOfferCreateV1, branch: string, key: string) =>
     request<{ data: { id: string } }>('/offers', post(input, branch, key)),
+  capacityHolds: (offerId:string)=>request<{data:{id:string;quantity:number;requesterName:string|null;requesterPhone:string|null;expiresAt:string;paymentPendingAt:string|null}[]}>(`/offers/${offerId}/capacity-holds`),
   temporaryHold: (
     offerId: string,
     input: { quantity: number; expiresAt: string; requesterName?: string },

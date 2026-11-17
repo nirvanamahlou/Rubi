@@ -1,3 +1,4 @@
+import { liveCapacityHolds } from './live-capacity-holds';
 import { ConflictException } from '@nestjs/common';
 import { Prisma } from '@nora/database';
 import type { SalesTicketSelectionInput } from '@nora/contracts';
@@ -47,7 +48,7 @@ export async function restoreContractCapacity(
     include: {
       capacityAllocations: { where: { status: 'ACTIVE' } },
       capacityHolds: {
-        where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+        where: liveCapacityHolds(),
       },
     },
   });
