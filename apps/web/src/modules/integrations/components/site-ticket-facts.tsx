@@ -43,20 +43,22 @@ export function SiteTicketFacts({
   tickets,
   cities,
   cityCountries = {},
+  returnOfferIds,
 }: {
   offer: TicketOfferV1;
   tickets: TicketOfferV1[];
   cities: Record<string, string>;
   cityCountries?: Record<string, string>;
+  returnOfferIds?: readonly string[];
 }) {
   const pairs =
     offer.baseRoundTripSalePrices ?? offer.roundTripSalePrices ?? [];
-  const returning = [...new Set(pairs.map((p) => p.returnOfferId))].flatMap(
-    (id) => {
+  const returning = [...new Set(pairs.map((p) => p.returnOfferId))]
+    .filter((id) => returnOfferIds === undefined || returnOfferIds.includes(id))
+    .flatMap((id) => {
       const row = tickets.find((t) => t.id === id);
       return row ? [row] : [];
-    },
-  );
+    });
   return (
     <div>
       <h2 className={styles.route}>

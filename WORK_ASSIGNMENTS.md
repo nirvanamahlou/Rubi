@@ -12997,3 +12997,7 @@ Validation:32 focused control/roster/workspace/i18n tests pass; active/past insp
 ZERO-CAPACITY-HOLD-ROSTER-1117 compatibility: historical single-edit regression now verifies the extracted inspection control receives catalogNow and still contains the past-flight guard; its independent edit/date/version assertions remain unchanged. No historical editing policy changes.
 
 MANAGER-SENT-LEAVE-1117 PC-B completed. Retain manager participation through approved recipient-review timeline, return as outgoing, include review events, route approval to unique active nima HR account. Scoped ESLint passed; existing test blocked by missing contracts build. Standing user merge authorization applies.
+
+## SITE-TICKET-TYPE-FILTER-1117 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-site-ticket-type-filter-1117 from develop a27328ecd. User requests that one-way site-management filtering excludes round-trip display and authorizes develop merge. Reserve Integrations ticket-bulk-publication row matcher, site-management matched-facts wiring, SiteTicketFacts and focused tests plus own notes. Preserve canonical offers/publication identity, native pricing filters, bulk selection/CAS and commission commands. Only display return legs matched by the active filters; an independently priced one-way remains valid even when its offer also has paired fares. Existing site-filter scopes are merged/released; no active overlapping source writer found. No API/schema/dependency/operational data or deployment change. Source lease releases on verified merge.

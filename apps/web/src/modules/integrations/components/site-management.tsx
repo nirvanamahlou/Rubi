@@ -23,7 +23,7 @@ import { pricingCityCountries } from '@/modules/sales/model/ticket-pricing-displ
 import { integrationsApi } from '../api/client';
 import { SiteTicketFacts } from './site-ticket-facts';
 import { TicketBulkPublication } from './ticket-bulk-publication';
-import { matchingPublicationTickets } from '../ticket-bulk-publication';
+import { matchingPublicationTicketRows } from '../ticket-bulk-publication';
 import styles from './site-management.module.css';
 import {
   publishableTickets,
@@ -133,19 +133,28 @@ export function WebsiteDestination({
     const abort = new AbortController();
     const timer = window.setInterval(async () => {
       try {
-        const query = new URLSearchParams({ branchId, ...(periodKey ? { periodKey } : {}) });
+        const query = new URLSearchParams({
+          branchId,
+          ...(periodKey ? { periodKey } : {}),
+        });
         const response = await localizedFetch(`${path}?${query}`, {
-          credentials: 'include', cache: 'no-store', signal: abort.signal,
+          credentials: 'include',
+          cache: 'no-store',
+          signal: abort.signal,
         });
         if (response.ok) {
           const result = await response.json();
-          if (!abort.signal.aborted) setDelivery(result.deliveryStatus ?? 'unknown');
+          if (!abort.signal.aborted)
+            setDelivery(result.deliveryStatus ?? 'unknown');
         }
       } catch {
         // Retain the last observed state until the next refresh.
       }
     }, 30000);
-    return () => { window.clearInterval(timer); abort.abort(); };
+    return () => {
+      window.clearInterval(timer);
+      abort.abort();
+    };
   }, [delivery, path, branchId, periodKey]);
   async function save(enabled = selected, selectionOnly = false) {
     if (!stored || busy || saving.current || (enabled && !canPublish)) return;
@@ -206,12 +215,19 @@ export function WebsiteDestination({
           commissionPercent: '0',
         },
       ) === JSON.stringify(presentation));
-  const status = !stored ? 'در حال دریافت وضعیت'
-    : delivery === 'unconfigured' ? 'در انتظار اتصال'
-    : delivery === 'error' ? 'خطا در ارسال کاتالوگ'
-    : delivery === 'pending' ? 'در انتظار رسید کاتالوگ'
-    : delivery !== 'accepted' ? 'وضعیت اتصال نامشخص'
-    : stored.enabled ? 'انتشار فعال' : 'منتشر نشده';
+  const status = !stored
+    ? 'در حال دریافت وضعیت'
+    : delivery === 'unconfigured'
+      ? 'در انتظار اتصال'
+      : delivery === 'error'
+        ? 'خطا در ارسال کاتالوگ'
+        : delivery === 'pending'
+          ? 'در انتظار رسید کاتالوگ'
+          : delivery !== 'accepted'
+            ? 'وضعیت اتصال نامشخص'
+            : stored.enabled
+              ? 'انتشار فعال'
+              : 'منتشر نشده';
   return (
     <div
       aria-busy={busy}
@@ -505,14 +521,13 @@ export function SiteManagement({
     from,
     to,
   };
-  const eligible = new Set(
-    matchingPublicationTickets(
-      tickets,
-      branchId,
-      ticketFilters,
-      flightLabel,
-    ).map((offer) => offer.id),
+  const matchingRows = matchingPublicationTicketRows(
+    tickets,
+    branchId,
+    ticketFilters,
+    flightLabel,
   );
+  const eligible = new Set(matchingRows.map((row) => row.offer.id));
   const tourGroups = websiteTourGroups(tours, floatingTours, branchId);
   const visibleTours = filterWebsiteTourGroups(tourGroups, {
     tourId,
@@ -527,6 +542,11 @@ export function SiteManagement({
       id: row.id,
       title: flightLabel(row),
       offer: row,
+      returnOfferIds: matchingRows.flatMap((match) =>
+        match.offer.id === row.id && match.returnOfferId
+          ? [match.returnOfferId]
+          : [],
+      ),
       detail: `${new Date(row.departureAt).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })} — ${new Date(row.arrivalAt).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })} · مانده: ${row.remainingCapacity} · ظرفیت: ${row.totalCapacity} · ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice) ? `یک‌طرفه: ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice)!.amount} ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice)!.currencyCode}` : ''} ${(
         row.baseRoundTripSalePrices ??
         row.roundTripSalePrices ??
@@ -841,6 +861,7 @@ export function SiteManagement({
                           <div className="min-w-0 break-words">
                             <SiteTicketFacts
                               offer={row.offer}
+                              returnOfferIds={row.returnOfferIds}
                               tickets={tickets}
                               cities={cities}
                               cityCountries={cityCountries}
