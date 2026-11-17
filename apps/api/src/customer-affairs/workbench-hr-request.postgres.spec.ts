@@ -102,7 +102,7 @@ describe.skipIf(!enabled)('transactional Workbench HR leave approval', () => {
       new NotificationsService(new NotificationsRepository(database as never)),
       { workbenchFeedbackRecipientUserIds: async () => [reviewer] } as never,
       undefined,
-      undefined,
+      { hrLeaveRecipient: async () => ({ recipientId: reviewer }) } as never,
       hr,
     );
   }, 30000);
