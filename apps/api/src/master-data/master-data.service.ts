@@ -3129,7 +3129,9 @@ export class MasterDataService {
     if (resource === 'hotels') {
       if (
         Object.hasOwn(data, 'sourceGalleryImages') &&
-        String(data.sourceGalleryImages ?? '').split('|').filter((url) => url.trim()).length > 6
+        String(data.sourceGalleryImages ?? '')
+          .split('|')
+          .filter((url) => url.trim()).length > 6
       )
         throw new BadRequestException('گالری هتل حداکثر ۶ عکس می‌پذیرد.');
       for (const [field, limit] of [

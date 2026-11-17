@@ -13046,5 +13046,6 @@ SITE-TICKET-TYPE-FILTER-1117 bounded CI compatibility lease: develop a27328ecd/P
 SITE-TICKET-TYPE-FILTER-1117 bounded translation lease: add only six missing labels inherited from merged publication-delivery/HR routing code to en-overrides; synchronize the single API-visible HR message in the offline API catalogue. Preserve all existing translations and inventory assertions. No product, authorization or delivery behavior change.
 SITE-TICKET-TYPE-FILTER-1117 integration: develop7142f9459 publishes the same inherited CI repairs as dc8c53839/fdee0e620 alongside the owner-authored finance controls. Consume the exact four incoming fixture/catalogue files, preserving all peer source and migrations unchanged; the final diff against develop remains only the original seven filter/test/document files. No independent HR/IAM/Finance policy edits. Repeat filter, translation and recipient regressions plus every hosted gate on the new integration head before merge.
 
-## HOTEL-IMAGES-1117 — PC-B — IN_PROGRESS
+## HOTEL-IMAGES-1117 — PC-B — VERIFIED
+
 User-authorized hotel main image and six-image gallery, WebP conversion, public download/display, tests and develop merge. Own new hotel image controller/components and bounded Master Data form/module/profile wiring. Reuse existing hotel image attributes and mounted storage root. No migration/dependency change.

@@ -37,17 +37,36 @@ function row(id: string, extra: Record<string, unknown> = {}) {
 
 describe('MasterDataService accommodation', () => {
   it('limits persisted hotel galleries to six images on edits', async () => {
-    const update = vi.fn().mockImplementation(async (_resource, _id, data) =>
-      row(ids.chain, { cityId: ids.city, ...data }));
+    const update = vi
+      .fn()
+      .mockImplementation(async (_resource, _id, data) =>
+        row(ids.chain, { cityId: ids.city, ...data }),
+      );
     const service = new MasterDataService({
       find: vi.fn().mockResolvedValue(row(ids.chain, { cityId: ids.city })),
       update,
     } as unknown as MasterDataRepository);
-    const urls = Array.from({ length: 7 }, (_, index) => `https://hotel.test/${index}.webp`);
-    await expect(service.update('hotels', ids.chain, { sourceGalleryImages: urls.join('|') }, 1, actor))
-      .rejects.toBeInstanceOf(BadRequestException);
+    const urls = Array.from(
+      { length: 7 },
+      (_, index) => `https://hotel.test/${index}.webp`,
+    );
+    await expect(
+      service.update(
+        'hotels',
+        ids.chain,
+        { sourceGalleryImages: urls.join('|') },
+        1,
+        actor,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
     expect(update).not.toHaveBeenCalled();
-    await service.update('hotels', ids.chain, { sourceGalleryImages: urls.slice(0, 6).join('|') }, 1, actor);
+    await service.update(
+      'hotels',
+      ids.chain,
+      { sourceGalleryImages: urls.slice(0, 6).join('|') },
+      1,
+      actor,
+    );
     expect(update).toHaveBeenCalledTimes(1);
   });
   it('creates ordered real member hotels across cities and derives the legacy anchor from the first', async () => {
