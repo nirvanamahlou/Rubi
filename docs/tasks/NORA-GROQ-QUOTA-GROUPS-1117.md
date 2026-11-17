@@ -11,6 +11,15 @@ key. A real organization-scoped 429 on the primary credential therefore cooled
 all six entries. The previous report incorrectly treated that configured alias
 as proof that all six actual organizations shared a quota.
 
+A second independent defect was reproduced after correcting the private alias:
+every admission-rejected401/403/429 reserved the entire prompt-byte upper bound
+plus completion allowance as if inference had completed. For a synthetic request
+with33000 remaining and22000 per-send admission bound, one quota rejection spent
+22000 invented tokens and prevented any send to the healthy replacement. The
+result was `AGENT_TOKEN_BUDGET_EXCEEDED`, also rendered by Web as generic429.
+This explains why grouping correction alone did not guarantee failover for a
+large-context Agent request.
+
 The owner now clarifies the keys were created using distinct accounts. Two
 low-cost synthetic probe rounds independently obtained HTTP200 with every key,
 through the existing Germany route. Responses advertised1000 request and8000
@@ -34,7 +43,14 @@ calls per key regardless of actual organization membership or other limits.
   and error text never enter logs, Git or public responses. Discovery may require
   a bounded request on an unobserved key; known shared scopes are then skipped.
 - Log only the safe quota-unit enum (TPM/TPD/RPM/RPD/ITPM/OTPM/unknown), alongside
-  existing nonsecret aliases/timing. Organization identity is not logged.
+  existing nonsecret aliases/timing and opaque observed-group ordinal. Organization
+  identity is not logged.
+- Admission-rejected attempts still consume the original8-wire-call budget and
+  share the same deadline. A rejected response does not fabricate completed
+  inference usage; explicit valid reported usage is charged, invalid counters
+  fail closed. Every send still passes the unchanged conservative token admission
+  check; successful model usage and tool_use_failed generation allowances remain
+  in the same40k budget. No SQL or complete Agent run is replayed.
 - No model, TLS, Germany egress, SQL permission, public API, IAM, migration,
   dependency or Web change. Policy/request/transport errors retain existing rules.
 
@@ -90,3 +106,9 @@ its Web source is not part of the Nora-only production overlay.
   health/backup/CAS precede activation; credentials/order/environment/source and
   peer containers are preserved. Provider-identity hardening is a separate source
   update and remains gated by the new PR's exact-head CI.
+
+Final additional regressions cover the high-context rejected-budget reproduction,
+reported rejected usage exhausting the original budget, invalid usage counters,
+and unchanged8-attempt exhaustion.170 repository service tests pass. Existing
+mission render tests3/3 and scoped zero-warning lint pass for the inherited CI
+compatibility repair. Final hosted gates and source activation remain separate.

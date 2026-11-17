@@ -397,7 +397,12 @@ test('replacement consumes original model and token budgets', async () => {
   await assert.rejects(attempts.run({ attemptBudget: budget }), /MODEL_BUDGET/);
   assert.equal(budget.attempts, 8);
   assert.equal(attempts.sent.length, 1);
-  const tokens = harness([error(401)]);
+  const tokens = harness([
+    Response.json(
+      { error: { scope: 'key' }, usage: { total_tokens: 100 } },
+      { status: 429 },
+    ),
+  ]);
   const tokenBudget = { attempts: 0, retryTokens: 0 };
   await assert.rejects(
     tokens.run({
@@ -409,6 +414,43 @@ test('replacement consumes original model and token budgets', async () => {
   );
   assert.equal(tokenBudget.retryTokens, 100);
   assert.equal(tokens.sent.length, 1);
+});
+
+test('admission-rejected requests do not spend an invented completion budget', async () => {
+  for (const status of [401, 429]) {
+    const h = harness([error(status, 'organization'), new Response('ok')], {
+      entries: entries.map((k, i) => ({ ...k, organization: 'account-' + i })),
+    });
+    const budget = { attempts: 0, retryTokens: 0 };
+    assert.equal(
+      (
+        await h.run({
+          attemptBudget: budget,
+          remainingTokens: 33000,
+          tokenCharge: 22000,
+        })
+      ).status,
+      200,
+    );
+    assert.equal(h.sent.length, 2);
+    assert.equal(budget.attempts, 2);
+    assert.equal(budget.retryTokens, 0);
+    assert.equal(h.sent[0].body, h.sent[1].body);
+    assert.equal(h.sent[0].signal, h.sent[1].signal);
+  }
+});
+
+test('malformed rejected usage cannot grant extra budget or start another key', async () => {
+  for (const total_tokens of [-1, '100', 1.5]) {
+    const h = harness([
+      Response.json(
+        { error: { scope: 'key' }, usage: { total_tokens } },
+        { status: 429 },
+      ),
+    ]);
+    await assert.rejects(h.run(), /INVALID_AGENT_USAGE/);
+    assert.equal(h.sent.length, 1);
+  }
 });
 
 test('fixed endpoint and redirect admission cannot be bypassed', async () => {
