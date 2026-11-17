@@ -1,3 +1,7 @@
+## NORA-GROQ-KEY-POOL-1117 — PC-C — VALIDATING
+
+Shared process-local Groq transport covers Agent, chat and guide selection with ordered sticky failover, scoped cooldowns, organization-quota protection and single half-open probes. Retries preserve payload/deadline and revalidate native scope; actual model attempts and failed-call allowance remain in the Agent budget. Synthetic integrated tests prove SQL is not replayed and revoked evidence is not resent. Private-file provisioning, exact-head hosted CI and Nora-only rollout/browser gates remain pending. No schema, migration or public API changes. See [task](tasks/NORA-GROQ-KEY-POOL-1117.md).
+
 ## NORA-PERSIAN-RESPONSE-1117 — PC-C — VALIDATING
 
 Persian public business wording and localized source/date/time labels; safe actual headings/emphasis/lists/tables replace raw Markdown markers.139 service and282 Assistant/i18n checks pass; scoped lint/format pass. Numbers, permissions, evidence, SQL and private runtime configuration unchanged. Clean hosted and live-browser gates remain separate. See [task](tasks/NORA-PERSIAN-RESPONSE-1117.md).
