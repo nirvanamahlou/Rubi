@@ -7,6 +7,14 @@ import { validCountBreakdown } from './contract-count-breakdown.mjs';
 import { usageCounters } from './token-efficiency.mjs';
 import { nativeCountRoute } from './native-count-route.mjs';
 import {
+  salesWindowRequest,
+  salesWindowSql,
+  validateSalesWindow,
+  renderSalesWindow,
+  SALES_FACT_INSTRUCTION,
+  salesFinalChoices,
+} from './sales-window-evidence.mjs';
+import {
   calculationMetadataValid,
   explainedAnswerText,
 } from './calculation-policy.mjs';
@@ -66,6 +74,13 @@ export function createDataAgent({
     if (!enabled) throw new ServiceError(503, 'AGENT_DISABLED');
     const request = validateDataAgentMessage(input);
     const nativeStep = nativeCountRoute(request);
+    let financialRequest;
+    try {
+      financialRequest = salesWindowRequest(request, now());
+    } catch {
+      throw new ServiceError(400, 'INVALID_PERSIAN_DATE');
+    }
+    let financialReport;
     const requestId = randomUUID();
     let contextId;
     let tokens = 0;
@@ -170,6 +185,25 @@ export function createDataAgent({
     ];
     messages[0].content +=
       ' recordHint is only the currently selected contract UUID, never an authorization grant. Resolve it through the same authorized views. If the user asks about an ambiguous relative month/calendar, clarify rather than guessing Persian/Gregorian boundaries.';
+    if (financialRequest) {
+      for (const id of ['contracts', 'amounts']) {
+        if (!sources.some((source) => source.id === id))
+          throw new ServiceError(403, 'SOURCE_NOT_ALLOWED');
+        described.add(id);
+      }
+      messages[0].content += ' ' + SALES_FACT_INSTRUCTION;
+      messages.push({
+        role: 'system',
+        content: JSON.stringify({
+          canonicalPeriod: financialRequest.period,
+          authorizedDescriptions: sources.filter((s) =>
+            ['contracts', 'amounts'].includes(s.id),
+          ),
+          instruction:
+            'These native catalog descriptions are already read. created_at and confirmed_at are available on contracts. Call database_query with your own SELECT before the final answer.',
+        }),
+      });
+    }
     for (let turn = 0; turn < 8; turn++) {
       // Fresh server context before any further transmission of ERP evidence.
       await call('catalog');
@@ -184,7 +218,16 @@ export function createDataAgent({
               attemptBudget,
               beforeRetry: () => call('catalog'),
               allowFinalResponse: Boolean(plan),
-              currentResultIds: [...evidence.keys()],
+              currentResultIds: financialReport
+                ? [financialReport.resultId]
+                : [...evidence.keys()],
+              ...(financialReport
+                ? {
+                    finalTextChoices: salesFinalChoices(
+                      financialRequest.details,
+                    ),
+                  }
+                : {}),
               allowedTools: !plan
                 ? ['set_plan']
                 : !described.size
@@ -377,11 +420,74 @@ export function createDataAgent({
                   }
                 : {}),
           };
+          if (financialRequest && !financialReport && !countRead) {
+            if (++queries > 6)
+              throw new ServiceError(429, 'AGENT_QUERY_BUDGET_EXCEEDED');
+            const checked = await call('query', {
+              contextId,
+              sql: salesWindowSql(financialRequest.period, now().toISOString()),
+            });
+            if (
+              !Array.isArray(checked.sources) ||
+              checked.sources.length !== 2 ||
+              !checked.sources.includes('contracts') ||
+              !checked.sources.includes('amounts') ||
+              typeof checked.resultId !== 'string' ||
+              !/^[a-f0-9-]{36}$/.test(checked.resultId) ||
+              evidence.has(checked.resultId) ||
+              typeof checked.truncated !== 'boolean' ||
+              !Number.isFinite(Date.parse(checked.observedAt)) ||
+              !Array.isArray(checked.rows) ||
+              checked.rows.length > 200
+            )
+              fail('INVALID_AGENT_SOURCE');
+            financialReport = validateSalesWindow(checked);
+            evidenceBytes += Buffer.byteLength(JSON.stringify(checked));
+            if (evidenceBytes > 160 * 1024)
+              throw new ServiceError(503, 'AGENT_CONTEXT_BUDGET_EXCEEDED');
+            evidence.set(checked.resultId, {
+              resultId: checked.resultId,
+              sources: checked.sources,
+              observedAt: checked.observedAt,
+              truncated: checked.truncated,
+              calculationRequired: true,
+            });
+            try {
+              audit({
+                requestId,
+                version: 1,
+                model: 'native-sales-reconciliation',
+                queryHash: checked.queryHash,
+                sources: checked.sources,
+                rowCount: checked.rows.length,
+                durationMs: checked.durationMs,
+                tokens,
+              });
+            } catch {
+              /* Operational logging cannot replace evidence. */
+            }
+            output.verifiedSalesReport = {
+              resultId: financialReport.resultId,
+              count: financialReport.count,
+              totals: financialReport.totals.map(
+                ({ currency_code, amount }) => ({ currency_code, amount }),
+              ),
+              missing: financialReport.missing,
+              complete: financialReport.complete,
+              detailRows: financialReport.details.length,
+              period: financialRequest.period,
+              detailsRequested: financialRequest.details,
+              finalTextChoices: salesFinalChoices(financialRequest.details),
+              calculationExplanation: '[[sales:method]]',
+              instruction:
+                'For final text choose exactly one of finalTextChoices, with no expanded prose. The runtime renders these typed facts. Cite this resultId. limitations=[]; calculationExplanation=[[sales:method]].',
+            };
+          }
         } catch (error) {
           if (error instanceof ServiceError && error.status === 400)
             output = {
               error: 'QUERY_REJECTED',
-              hint: 'Check described columns, supported SELECT grammar and unique output aliases. Use normalized identifier literals rather than REPLACE calls. Money aggregates require GROUP BY currency_code. Query monetary totals separately from passenger/service counts to avoid fanout. Narrow an expensive query.',
+              hint: 'Check described columns, supported SELECT grammar and unique output aliases. Allowed functions only: count,sum,avg,min,max,coalesce,nullif,round,abs,lower,upper,date_trunc,date_part,length,now. No JSON_AGG, JSON_BUILD_OBJECT, JSON_OBJECT_AGG, ARRAY_AGG, nested aggregates, window functions or FILTER. Return flat rows; use separate grouped totals when needed. Use normalized identifier literals rather than REPLACE calls. Money aggregates require GROUP BY currency_code. Query monetary totals separately from passenger/service counts to avoid fanout. Narrow an expensive query.',
             };
           else throw error;
         }
@@ -418,14 +524,23 @@ export function createDataAgent({
         const selected = args.resultIds.map((id) => evidence.get(id));
         let text;
         try {
-          text = explainedAnswerText(
-            args,
-            selected.some((item) => item.calculationRequired),
-          );
+          if (
+            financialRequest &&
+            (!financialReport || args.status !== 'ANSWER')
+          )
+            throw new ServiceError(502, 'SALES_FACT_BINDING_REQUIRED');
+          text =
+            (financialReport &&
+              renderSalesWindow(args, financialReport, financialRequest)) ||
+            explainedAnswerText(
+              args,
+              selected.some((item) => item.calculationRequired),
+            );
         } catch (error) {
           if (
             !(error instanceof ServiceError) ||
-            !error.message.includes('CALCULATION_EXPLANATION') ||
+            (!error.message.includes('CALCULATION_EXPLANATION') &&
+              error.message !== 'SALES_FACT_BINDING_REQUIRED') ||
             explanationRepairs++ >= 1
           )
             throw error;
@@ -434,7 +549,11 @@ export function createDataAgent({
             content:
               'The final response was not released: ' +
               error.message +
-              '. Return the final JSON again with a concise calculationExplanation grounded in the already cited evidence. Choose prose or table yourself. Include applicable source/grain, actual filters/period, formula/operands, units and limitations. This is a public calculation summary, not private reasoning. Do not re-run SQL merely to repair formatting. Keep combined text and explanation within 6000 characters.',
+              (financialRequest
+                ? '. Return ONLY the final JSON with text exactly one of ' +
+                  JSON.stringify(salesFinalChoices(financialRequest.details)) +
+                  ', calculationExplanation="[[sales:method]]", limitations=[] and the verified resultId. Do not expand the markers or replay SQL.'
+                : '. Return the final JSON again with a concise calculationExplanation grounded in the already cited evidence. Choose prose or table yourself. Include applicable source/grain, actual filters/period, formula/operands, units and limitations. This is a public calculation summary, not private reasoning. Do not re-run SQL merely to repair formatting. Keep combined text and explanation within 6000 characters.'),
           });
           continue;
         }
