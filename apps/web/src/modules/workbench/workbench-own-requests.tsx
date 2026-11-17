@@ -1,4 +1,5 @@
 'use client';
+import { MissionDetails, MissionFinanceEditor } from './mission-fields';
 import { leaveDescription } from '@/modules/workbench/leave-description';
 import { hrRequest } from '@/modules/hr/hr-api';
 
@@ -449,6 +450,25 @@ export function WorkbenchOwnRequests() {
                     </dd>
                   </div>
                 </dl>
+                {selected.mission && (
+                  <>
+                    <MissionDetails
+                      mission={selected.mission}
+                      id={selected.id}
+                    />
+                    {selected.direction !== 'incoming' &&
+                      selected.branchId &&
+                      selected.version && (
+                        <MissionFinanceEditor
+                          mission={selected.mission}
+                          id={selected.id}
+                          version={selected.version}
+                          branchId={selected.branchId}
+                          onSaved={() => setRefresh((v) => v + 1)}
+                        />
+                      )}
+                  </>
+                )}
                 {selected.leave && (
                   <ol
                     aria-label="روند درخواست مرخصی"

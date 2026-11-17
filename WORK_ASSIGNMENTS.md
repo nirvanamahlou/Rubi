@@ -13006,3 +13006,7 @@ Validation:32 focused control/roster/workspace/i18n tests pass; active/past insp
 ZERO-CAPACITY-HOLD-ROSTER-1117 compatibility: historical single-edit regression now verifies the extracted inspection control receives catalogNow and still contains the past-flight guard; its independent edit/date/version assertions remain unchanged. No historical editing policy changes.
 
 MANAGER-SENT-LEAVE-1117 PC-B completed. Retain manager participation through approved recipient-review timeline, return as outgoing, include review events, route approval to unique active nima HR account. Scoped ESLint passed; existing test blocked by missing contracts build. Standing user merge authorization applies.
+
+WORKBENCH-MISSION-1117 PC-B completed. Owner requests complete mission lifecycle from workbench to Nima HR to Finance with schedule-locked expense entry and receipt previews. Reserve workbench mission contract, Customer Affairs request lifecycle, public HR upload, Documents evidence kind, HR forwarding and Finance referral detail UI. No schema/migration/dependency edits. Existing unit/inbox permissions retained.
+
+Validation: 59 API tests and 3 Web render tests passed. Web typecheck passed. Scoped lint passed after import fixes. API typecheck has only pre-existing missing pg/pgsql-ast-parser/sharp dependencies. Mission financial submission is sender-only after scheduled return time, versioned and audited. No live deployment.

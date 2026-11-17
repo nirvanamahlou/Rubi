@@ -1,3 +1,4 @@
+import type { WorkbenchMissionV1 } from '@nora/contracts';
 import { createHash, randomUUID } from 'node:crypto';
 import {
   BadRequestException,
@@ -41,13 +42,18 @@ type FinanceReferral = Pick<
   | 'createdAt'
   | 'response'
   | 'canRespond'
-> & { amount?: { amount: string; currencyCode: string } | null };
+> & {
+  sourceId?: string | undefined;
+  mission?: WorkbenchMissionV1 | undefined;
+  amount?: { amount: string; currencyCode: string } | null;
+};
 type ResponseCandidate = Pick<Row, 'data' | 'tab'> & {
   employee: Pick<NonNullable<Row['employee']>, 'userId'> | null;
 };
 const financeReferralLimit = 25_000;
 
 interface SharedContent {
+  mission?: WorkbenchMissionV1 | undefined;
   title: string;
   message: string;
   sourceCode: string;
@@ -58,9 +64,10 @@ interface SharedContent {
   response: string | null;
   amount?: { amount: string; currencyCode: string };
   recipientUserId?: string;
-  sourceId?: string;
+  sourceId?: string | undefined;
 }
 export interface HrInboxSource {
+  mission?: WorkbenchMissionV1 | undefined;
   id: string;
   branchId: string;
   version: number;
@@ -223,6 +230,8 @@ export class HrConnectionsService {
         title: data.title,
         message: data.message,
         amount: data.amount ?? null,
+        mission: data.mission,
+        sourceId: data.sourceId,
         employeeLabel: data.employeeLabel,
         status: row.status as HrConnectionStatus,
         version: row.version,
@@ -452,15 +461,19 @@ export class HrConnectionsService {
     const message = [source.description, note].filter(Boolean).join('\n\n');
     if (!message || message.length > 4000)
       throw new BadRequestException('شرح درخواست معتبر نیست.');
-    const rawAmount =
-      input.amount == null
+    if (target === 'finance' && source.mission && !source.mission.finance)
+      throw new ConflictException('ابتدا هزینه مأموریت باید تکمیل شود.');
+    const rawAmount = source.mission?.finance
+      ? source.mission.finance.amount
+      : input.amount == null
         ? ''
         : validate.digits(
             validate.text(input.amount, 'مبلغ به ریال', 24, true),
           );
     if (
       rawAmount &&
-      (!/^\d{1,20}(\.\d{1,4})?$/.test(rawAmount) || Number(rawAmount) <= 0)
+      (!/^\d{1,20}(\.\d{1,4})?$/.test(rawAmount) ||
+        (source.mission ? Number(rawAmount) < 0 : Number(rawAmount) <= 0))
     )
       throw new BadRequestException('مبلغ به ریال معتبر نیست.');
     const amount = rawAmount
@@ -488,6 +501,7 @@ export class HrConnectionsService {
         const dueAt = new Date(Date.now() + 7 * 86400000).toISOString();
         const data: SharedContent = {
           ...(amount ? { amount } : {}),
+          ...(source.mission ? { mission: source.mission } : {}),
           title: source.title,
           message,
           sourceId: source.id,

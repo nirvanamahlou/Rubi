@@ -1,4 +1,5 @@
 'use client';
+import { MissionDetails } from '@/modules/workbench/mission-fields';
 import { matchesHrRequestType } from './hr-request-type';
 import { leaveDescription } from '@/modules/workbench/leave-description';
 import { LeaveEvidenceList } from './leave-evidence-list';
@@ -439,6 +440,9 @@ export function HrInbox({
           className="max-h-[90dvh] max-w-3xl overflow-y-auto p-0"
           dir="rtl"
         >
+          {review?.mission && (
+            <MissionDetails mission={review.mission} id={review.id} />
+          )}
           <header className="flex items-center gap-3 border-b bg-primary/5 p-5 pl-12">
             <span className="rounded-xl bg-primary p-3 text-primary-foreground">
               <ClipboardCheck className="size-5" aria-hidden="true" />

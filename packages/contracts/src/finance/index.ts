@@ -1,3 +1,4 @@
+import type { WorkbenchMissionV1 } from '../workbench/requests';
 import type { FinanceSourceReferencesV1 } from './source-references';
 export * from './accounting-events';
 import type { HotelPurchaseSavingsV1 } from '../travel/hotel-savings';
@@ -429,7 +430,12 @@ export interface FinanceInboxItemV1 {
   financeVersion?: number;
   origin: 'PERSISTED_SOURCE';
   /** Public HR referral projection, not a payroll/payment instruction. */
-  hrReferral?: { canRespond: boolean; response: string | null };
+  hrReferral?: {
+    canRespond: boolean;
+    response: string | null;
+    sourceId?: string | undefined;
+    mission?: WorkbenchMissionV1 | undefined;
+  };
   /** Atomic Reservations submission; absent on legacy single-service purchases. */
   reservationPurchase?: {
     lines: readonly {

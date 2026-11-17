@@ -1,3 +1,20 @@
+export interface WorkbenchMissionV1 {
+  destination: string;
+  purpose: string;
+  from: string;
+  to: string;
+  startTime: string;
+  endTime: string;
+  finance?: {
+    amount: string;
+    referToPetty: boolean;
+    title: string;
+    costCenter: string;
+    fee: string;
+    description: string;
+    attachmentIds: string[];
+  };
+}
 export interface WorkbenchLeaveInputV1 {
   from: string;
   to: string;
@@ -12,6 +29,7 @@ export interface WorkbenchLeaveInputV1 {
 }
 
 export interface WorkbenchRequestInputV1 {
+  mission?: WorkbenchMissionV1 | undefined;
   subject: string;
   description: string;
   priority: 'NORMAL' | 'HIGH' | 'URGENT';
@@ -22,6 +40,7 @@ export interface WorkbenchRequestInputV1 {
 }
 
 export interface WorkbenchRequestOptionsV1 {
+  missionRoute?: { unitId: string; recipientId: string };
   leaveRoute?: { unitId: string; recipientId: string };
   substituteUsers?:
     Array<{ id: string; displayName: string; username: string }> | undefined;
@@ -33,6 +52,8 @@ export interface WorkbenchRequestOptionsV1 {
 }
 
 export interface WorkbenchRequestItemV1 {
+  branchId?: string;
+  mission?: WorkbenchMissionV1 | undefined;
   progress?: {
     managerApproved: boolean;
     hrApproved: boolean;
