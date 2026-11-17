@@ -1,6 +1,7 @@
 # Correct false cross-organization Groq cooldowns — 2026-11-17
 
-PC-C; branch `codex/pc-c-nora-quota-groups-1117`; follows PR1778/1779.
+PC-C; branch `codex/pc-c-nora-quota-groups-1117`, base develop4d1182948;
+follows PR1778/1779.
 
 ## Confirmed cause and corrected interpretation
 
@@ -61,6 +62,18 @@ activation. Record actual results separately from simulated failures.
 
 All earlier same-organization statements in the initial release documents refer
 to the old configuration assumption and are superseded by this investigation.
+
+## Inherited CI compatibility
+
+Both hosted quality jobs independently fail on the unmodified base's completed
+WORKBENCH-MISSION-1117/PR1783 `MissionFinanceEditor` render-time `Date.now()` and
+raw image warning under the zero-warning gate. Consume published PC-A fix6e2832876
+for clock state/deadline handling; its committed ownership note records the
+Mission owner's completion and no active overlap. Use the existing unoptimized
+localized Image wrapper for authenticated attachment previews, preserving the
+source URL, preview size class and lack of optimizer requests. No gate is disabled.
+This is a bounded baseline compatibility repair, not a Workbench workflow change;
+its Web source is not part of the Nora-only production overlay.
 
 ## Recorded acceptance
 
