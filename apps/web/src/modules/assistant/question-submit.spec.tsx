@@ -162,6 +162,92 @@ afterEach(() => {
 });
 
 describe('actual Composer submit routing and transport', () => {
+  it('also shows pending feedback immediately on the legacy v2 path and prevents a same-tick double send', async () => {
+    vi.stubEnv('NEXT_PUBLIC_ASSISTANT_AGENT_ENABLED', 'false');
+    let resolve!: (response: Response) => void;
+    h.fetcher.mockImplementationOnce(
+      () =>
+        new Promise<Response>((done) => {
+          resolve = done;
+        }),
+    );
+    const field = render().find((node) => node.type === 'textarea')!;
+    (field.props.onChange as (event: unknown) => void)({
+      target: { value: 'سلام' },
+    });
+    const form = render().find((node) => node.type === 'form')!;
+    const submit = form.props.onSubmit as (event: unknown) => void;
+    submit({ preventDefault() {} });
+    submit({ preventDefault() {} });
+    await vi.waitFor(() => expect(h.fetcher).toHaveBeenCalledOnce());
+    expect(h.fetcher.mock.calls[0]![0]).toBe('/api/assistant/v2/conversation');
+    expect(
+      render().filter((node) => node.props['data-role'] === 'user'),
+    ).toHaveLength(1);
+    expect(render().some((node) => node.props.role === 'status')).toBe(true);
+    resolve(
+      Response.json({
+        version: 1,
+        status: 'REPLY',
+        text: 'سلام، پاسخ آزمایشی',
+      }),
+    );
+    await vi.waitFor(() => expect(chat()).toEqual(['سلام، پاسخ آزمایشی']));
+    expect(render().some((node) => node.props.role === 'status')).toBe(false);
+  });
+  it('shows the user message and pending indicator before HTTP finishes, without duplicate history or erasing the next draft', async () => {
+    let resolve!: (response: Response) => void;
+    h.fetcher.mockImplementationOnce(
+      () =>
+        new Promise<Response>((done) => {
+          resolve = done;
+        }),
+    );
+    const field = render().find((node) => node.type === 'textarea')!;
+    (field.props.onChange as (event: unknown) => void)({
+      target: { value: 'تعداد قراردادها را بگو' },
+    });
+    const form = render().find((node) => node.type === 'form')!;
+    (form.props.onSubmit as (event: unknown) => void)({ preventDefault() {} });
+    await vi.waitFor(() => expect(h.fetcher).toHaveBeenCalledOnce());
+    let tree = render();
+    expect(
+      tree.filter((node) => node.props['data-role'] === 'user'),
+    ).toHaveLength(1);
+    expect(chat()).toHaveLength(0);
+    expect(tree.some((node) => node.props.role === 'status')).toBe(true);
+    expect(tree.find((node) => node.type === 'textarea')!.props.value).toBe('');
+    expect(JSON.parse(h.fetcher.mock.calls[0]![1].body).history).toEqual([]);
+    (
+      tree.find((node) => node.type === 'textarea')!.props.onChange as (
+        event: unknown,
+      ) => void
+    )({ target: { value: 'پرسش بعدی' } });
+    expect(h.fetcher.mock.calls[0]![1].signal.aborted).toBe(false);
+    resolve(answer());
+    await vi.waitFor(() => expect(chat()).toHaveLength(1));
+    tree = render();
+    expect(
+      tree.filter((node) => node.props['data-role'] === 'user'),
+    ).toHaveLength(1);
+    expect(tree.some((node) => node.props.role === 'status')).toBe(false);
+    expect(tree.find((node) => node.type === 'textarea')!.props.value).toBe(
+      'پرسش بعدی',
+    );
+  });
+  it('retains a failed user bubble but excludes it from future provider history', async () => {
+    h.fetcher.mockResolvedValueOnce(Response.json({}, { status: 429 }));
+    await send('تعداد قراردادها را بگو');
+    expect(
+      render().filter((node) => node.props['data-role'] === 'user'),
+    ).toHaveLength(1);
+    expect(render().some((node) => node.props.role === 'alert')).toBe(true);
+    await send('جمع فروش را بگو');
+    expect(JSON.parse(h.fetcher.mock.calls[1]![1].body).history).toEqual([]);
+    expect(
+      render().filter((node) => node.props['data-role'] === 'user'),
+    ).toHaveLength(2);
+  });
   it('switches from Sales data to identifier-only Workbench guidance and uses its internal fallback on 429', async () => {
     await send('تعداد قراردادها را بگو');
     h.fetcher.mockResolvedValueOnce(Response.json({}, { status: 429 }));
