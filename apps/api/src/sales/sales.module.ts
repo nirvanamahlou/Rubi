@@ -1,3 +1,5 @@
+import { WebsiteCheckoutHoldsService } from '../site-commerce/website-checkout-holds.service';
+import { WebsiteCheckoutHoldsController } from '../site-commerce/website-checkout-holds.controller';
 import { SalesDocumentBrandingController } from './sales-document-branding.controller';
 import { SiteCommerceController } from '../site-commerce/site-commerce.controller';
 import { WebsiteCatalogDispatcher } from '../site-commerce/catalog-dispatcher';
@@ -65,6 +67,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
   ],
   controllers: [
     SiteCommerceController,
+    WebsiteCheckoutHoldsController,
     SalesDocumentBrandingController,
     SalesInsuranceDocumentsController,
     SalesPurchaseDraftController,
@@ -79,6 +82,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
   providers: [
     WebsiteCatalogDispatcher,
     SiteCommerceService,
+    WebsiteCheckoutHoldsService,
     SiteCommerceWriteGuard,
     SalesFloatingPurchases,
     FlightLoadService,

@@ -334,10 +334,18 @@ export function WebsiteDestination({
     </div>
   );
 }
-export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
-  const [tab, setTab] = useState<'tours' | 'tickets' | 'hotels'>('tours');
+export function SiteManagement({
+  actor,
+  ticketLink,
+}: {
+  actor: AuthenticatedActor;
+  ticketLink?: URLSearchParams | undefined;
+}) {
+  const [tab, setTab] = useState<'tours' | 'tickets' | 'hotels'>(
+    ticketLink ? 'tickets' : 'tours',
+  );
   const [branches, setBranches] = useState<BranchReference[]>([]);
-  const [branchId, setBranchId] = useState('');
+  const [branchId, setBranchId] = useState(ticketLink?.get('branchId') ?? '');
   const [targets, setTargets] = useState<TicketSalePriceTargetV1[]>([]);
   const [tourId, setTourId] = useState('');
   const [tours, setTours] = useState<TourDepartureV1[]>([]);
@@ -449,6 +457,13 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
       active = false;
     };
   }, [branchScope, canManage, revision]);
+  useEffect(() => {
+    if (!loading && tab === 'tickets' && ticketLink?.get('offerId')) {
+      document
+        .getElementById('publication-' + ticketLink.get('offerId'))
+        ?.scrollIntoView?.({ block: 'center' });
+    }
+  }, [loading, tab, ticketLink]);
   if (!canManage)
     return (
       <Alert
@@ -788,6 +803,7 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
                     )
                     .map((row) => (
                       <article
+                        id={`publication-${row.id}`}
                         key={`${revision}:${branchId}:${row.kind}:${row.id}`}
                         className={styles.resource}
                       >
@@ -824,6 +840,12 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
                               >
                                 {row.kind === 'ticket' ? (
                                   <TicketSiteCommission
+                                    initialPair={
+                                      row.id === ticketLink?.get('offerId')
+                                        ? (ticketLink.get('returnOfferId') ??
+                                          '')
+                                        : ''
+                                    }
                                     offer={tickets.find(
                                       (offer) => offer.id === row.id,
                                     )!}
@@ -851,10 +873,12 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
 }
 
 function TicketSiteCommission({
+  initialPair,
   offer,
   site,
   targets,
 }: {
+  initialPair: string;
   offer: TicketOfferV1;
   site: (typeof websiteDestinations)[number];
   targets: TicketSalePriceTargetV1[];
@@ -868,7 +892,13 @@ function TicketSiteCommission({
         (site.code === 'nss' && t.name === 'نیایش سیر سحر')),
   );
   const [target, setTarget] = useState(initialTarget);
-  const [pair, setPair] = useState('');
+  const [pair, setPair] = useState(
+    (offer.baseRoundTripSalePrices ?? offer.roundTripSalePrices)?.some(
+      (fare) => fare.returnOfferId === initialPair,
+    )
+      ? initialPair
+      : '',
+  );
   const [percent, setPercent] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');

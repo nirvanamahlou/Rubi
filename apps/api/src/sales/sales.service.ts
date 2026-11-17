@@ -1,3 +1,4 @@
+import type { PackagePublishedSaleV1 } from '@nora/contracts';
 import { ContractCompanyScope } from '../sales/contract-company-scope.public';
 import { salesSupplyWhere } from './sales-supply-filter';
 import { isFloatingSalesContract } from '@nora/contracts';
@@ -1266,6 +1267,7 @@ export class SalesService {
     requestedBranch: string | undefined,
     idempotencyKey: string | undefined,
     traceId?: string,
+    frozenPackageSales?: readonly PackagePublishedSaleV1[],
   ) {
     if (!has(actor, 'sales.contracts.create'))
       throw new ForbiddenException('مجوز ایجاد قرارداد وجود ندارد.');
@@ -1303,6 +1305,7 @@ export class SalesService {
         input,
         actor,
         branchId,
+        frozenPackageSales,
       );
     } else if (input.services.some((s) => s.metadata?.packagePublishedSale))
       throw new BadRequestException('قیمت فروش معتبر نیست.');

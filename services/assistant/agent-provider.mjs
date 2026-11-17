@@ -102,10 +102,16 @@ export async function boundedAgentJson(response, limit = 256 * 1024) {
 
 export function createAgentProvider({
   apiKey,
+  transport,
   fetcher = fetch,
   now = Date.now,
 } = {}) {
-  if (typeof apiKey !== 'string' || !apiKey.trim() || /\s/.test(apiKey))
+  if (transport && typeof transport.fetch !== 'function')
+    throw new Error('GROQ_SHARED_POOL_REQUIRED');
+  if (
+    !transport &&
+    (typeof apiKey !== 'string' || !apiKey.trim() || /\s/.test(apiKey))
+  )
     throw new Error('AGENT_PROVIDER_KEY_REQUIRED');
   let unavailableUntil = 0;
   return {
@@ -117,9 +123,11 @@ export function createAgentProvider({
         allowedTools,
         allowFinalResponse = false,
         currentResultIds,
+        beforeRetry,
+        attemptBudget,
       },
     ) {
-      if (now() < unavailableUntil) {
+      if (!transport && now() < unavailableUntil) {
         const error = new ServiceError(429, 'AGENT_PROVIDER_RATE_LIMITED');
         error.retryAfterMs = unavailableUntil - now();
         throw error;
@@ -153,6 +161,12 @@ export function createAgentProvider({
                     ...finalJsonTool.function.parameters,
                     properties: {
                       ...finalJsonTool.function.parameters.properties,
+                      status: {
+                        type: 'string',
+                        enum: currentResultIds.length
+                          ? ['ANSWER', 'CLARIFY', 'REPLY']
+                          : ['CLARIFY', 'REPLY'],
+                      },
                       resultIds: {
                         type: 'array',
                         maxItems: currentResultIds.length,
@@ -191,18 +205,24 @@ export function createAgentProvider({
       if (Buffer.byteLength(body) + 3072 > remainingTokens)
         throw new ServiceError(429, 'AGENT_TOKEN_BUDGET_EXCEEDED');
       try {
-        const response = await fetcher(
+        const response = await (transport?.fetch ?? fetcher)(
           'https://api.groq.com/openai/v1/chat/completions',
           {
             method: 'POST',
             headers: {
-              authorization: `Bearer ${apiKey}`,
+              ...(!transport ? { authorization: `Bearer ${apiKey}` } : {}),
               'content-type': 'application/json',
             },
             body: wireBody,
             redirect: 'error',
             cache: 'no-store',
             signal: AbortSignal.any([signal, AbortSignal.timeout(15000)]),
+          },
+          {
+            beforeRetry,
+            attemptBudget,
+            remainingTokens,
+            tokenCharge: Buffer.byteLength(body) + 3072,
           },
         );
         if (!response.ok) {

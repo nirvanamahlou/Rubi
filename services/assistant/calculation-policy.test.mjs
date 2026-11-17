@@ -11,6 +11,12 @@ test('one calculation rule covers every ERP domain without prescribing a table',
   assert.match(CALCULATION_POLICY, /ALL ERP domains/);
   assert.match(CALCULATION_POLICY, /NO fixed table/);
   assert.match(CALCULATION_POLICY, /never private chain of thought/);
+  assert.match(CALCULATION_POLICY, /ALL public prose, calculationExplanation/);
+  assert.match(
+    CALCULATION_POLICY,
+    /Never expose English prose or internal tool\/schema\/column\/JSON names/,
+  );
+  assert.match(CALCULATION_POLICY, /non-cancelled is not automatically active/);
   for (const [text, explanation] of [
     [
       'اضافه‌کاری: ۹۰ دقیقه',

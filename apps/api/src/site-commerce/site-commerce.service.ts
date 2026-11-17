@@ -1,4 +1,9 @@
+import { WebsiteCheckoutHoldsService } from './website-checkout-holds.service';
 import { commerceSites, isDeliverySite } from './commerce-sites';
+import {
+  VerifiedGatewayReceiptPublic,
+  type VerifiedGatewayProof,
+} from '../finance/payments/verified-gateway-receipt.public';
 import { ageCounts } from '../ticket-catalog/ticket-age-fares';
 import { websitePresentation } from './publication-presentation';
 import { DocumentsService } from '../documents/documents.service';
@@ -66,6 +71,12 @@ export class SiteCommerceService {
     private readonly documents?: DocumentsService,
     @Inject(FloatingTourPricingService)
     private readonly floating?: FloatingTourPricingService,
+    @Optional()
+    @Inject(VerifiedGatewayReceiptPublic)
+    private readonly gatewayReceipts?: VerifiedGatewayReceiptPublic,
+    @Optional()
+    @Inject(WebsiteCheckoutHoldsService)
+    private readonly checkoutHolds?: WebsiteCheckoutHoldsService,
   ) {}
 
   private scoped(site: string, actor: AuthenticatedActor) {
@@ -459,13 +470,19 @@ export class SiteCommerceService {
             },
           };
         }
+        const capacityStopped =
+          'flight' in product &&
+          !!product.flight &&
+          product.flight.remainingCapacity <= 0;
         data.push({
           id: row.id,
           kind: row.kind,
           resourceId: row.resourceId,
           ...(row.kind === 'floating-tour' ? { periodKey: row.periodKey } : {}),
           enabled: true,
-          salesStopped: row.salesStopped,
+          // Stock exhaustion is a reversible projection, never a manual publication edit.
+          salesStopped: row.salesStopped || capacityStopped,
+          ...(capacityStopped ? { capacityStopped: true } : {}),
           version: row.version,
           ...product,
           ...(presentation ? { presentation } : {}),
@@ -795,12 +812,20 @@ export class SiteCommerceService {
       `site:${site}:${externalId}`,
       scoped,
     );
-    if (!recovered) await this.assertPublished(site, input, scoped);
+    const checkout = await this.checkoutHolds?.validateDraft(
+      site,
+      externalId,
+      input,
+      scoped,
+    );
+    if (!recovered && !checkout)
+      await this.assertPublished(site, input, scoped);
     const ticketTargetId = input.services.some(
       (s) => s.metadata?.tourDepartureId,
     )
       ? undefined
-      : await this.ticketTarget(site, scoped.branchIds[0]!);
+      : (checkout?.targetId ??
+        (await this.ticketTarget(site, scoped.branchIds[0]!)));
     const created = await this.sales.create(
       {
         ...input,
@@ -817,6 +842,8 @@ export class SiteCommerceService {
       scoped,
       key.branchId,
       `site:${site}:${externalId}`,
+      undefined,
+      checkout?.frozenPackageSales,
     );
     // Native Sales create is durable/idempotent; a timeout before this link is safe to retry.
     await this.db.client.websiteOrder.upsert({
@@ -850,9 +877,19 @@ export class SiteCommerceService {
   async status(site: string, externalId: string, actor: AuthenticatedActor) {
     const { row, scoped } = await this.order(site, externalId, actor);
     const { data: contract } = await this.sales.detail(row.contractId, scoped);
+    const facts = await this.sales.financeCustomerDocumentDeliveryFacts(
+      row.contractId,
+      scoped.branchIds,
+    );
     return {
       version: 1,
       data: {
+        paymentStatus:
+          !facts.cancelled && facts.hasConfirmedPayment && facts.fullySettled
+            ? 'paid'
+            : 'unpaid',
+        hasConfirmedPayment: facts.hasConfirmedPayment,
+        fullySettled: facts.fullySettled,
         externalId,
         contractId: contract.id,
         contractNumber: contract.contractNumber,
@@ -871,8 +908,19 @@ export class SiteCommerceService {
     externalId: string,
     payments: SalesPaymentCreateRequest[],
     actor: AuthenticatedActor,
+    gatewayReceipt?: VerifiedGatewayProof,
   ) {
     const { row, scoped } = await this.order(site, externalId, actor);
+    if (gatewayReceipt && !this.gatewayReceipts)
+      throw new ForbiddenException('اتصال تسویه درگاه تنظیم نشده است.');
+    const gateway = gatewayReceipt
+      ? await this.gatewayReceipts!.resolve(
+          site,
+          externalId,
+          gatewayReceipt,
+          scoped,
+        )
+      : undefined;
     if (
       !Array.isArray(payments) ||
       !payments.length ||
@@ -884,6 +932,19 @@ export class SiteCommerceService {
       )
     )
       throw new BadRequestException('رسید تأییدشده سایت الزامی است.');
+    if (
+      gateway &&
+      (payments.length !== 1 ||
+        payments[0]!.method !== 'ONLINE_GATEWAY' ||
+        payments[0]!.paymentReference !== gateway.reference ||
+        payments[0]!.currencyCode !== gateway.currencyCode ||
+        !new Prisma.Decimal(payments[0]!.amount).eq(gateway.amount) ||
+        (payments[0]!.destinationAccountId &&
+          payments[0]!.destinationAccountId !== gateway.accountId))
+    )
+      throw new ConflictException(
+        'تأیید بانکی با مبلغ و حساب رسید مطابقت ندارد.',
+      );
     const fingerprint = stableFingerprint(payments);
     if (row.paymentFingerprint && row.paymentFingerprint !== fingerprint)
       throw new ConflictException('رسید این سفارش تغییر کرده است.');
@@ -979,6 +1040,29 @@ export class SiteCommerceService {
         `site:${site}:${externalId}:confirm`,
       );
     }
+    if (gateway) {
+      const { data: receiptContract } = await this.sales.detail(
+        row.contractId,
+        scoped,
+      );
+      const matches = receiptContract.payments.filter(
+        (p) =>
+          p.method === 'ONLINE_GATEWAY' &&
+          p.paymentReference === gateway.reference &&
+          p.currencyCode === gateway.currencyCode &&
+          new Prisma.Decimal(p.amount).eq(gateway.amount),
+      );
+      if (matches.length !== 1)
+        throw new ConflictException('رسید بانکی یکتای قرارداد پیدا نشد.');
+      await this.gatewayReceipts!.confirm(
+        row.contractId,
+        matches[0]!,
+        gateway,
+        scoped,
+        (event) => this.sales.applyFinancePaymentConfirmed(event),
+      );
+      await this.releaseSettledWebsiteDocuments(row, scoped);
+    }
     return this.status(site, externalId, actor);
   }
 
@@ -1000,6 +1084,54 @@ export class SiteCommerceService {
     return this.sales.paymentAccounts(row.contractId, scoped);
   }
 
+  private async releaseSettledWebsiteDocuments(
+    row: { contractId: string; paymentFingerprint: string | null },
+    scoped: AuthenticatedActor,
+  ) {
+    const current = await this.delivery.readCustomerContract(row.contractId);
+    // Never override an explicit finance decision (including a revoked approval).
+    if (current.approved || current.version !== 0) return current;
+    const facts = await this.sales.financeCustomerDocumentDeliveryFacts(
+      row.contractId,
+      scoped.branchIds,
+    );
+    if (facts.cancelled || !facts.hasConfirmedPayment || !facts.fullySettled)
+      return current;
+    try {
+      return await this.delivery.updateCustomerContract(
+        {
+          expectedVersion: current.version,
+          approved: true,
+          basis: 'FULL_SETTLEMENT',
+          reason:
+            'تحویل خودکار خرید سایت پس از تأیید پرداخت و تسویه کامل در سامانه مرکزی',
+        },
+        facts,
+        scoped,
+        async (tx) => {
+          const fresh = await this.sales.financeCustomerDocumentDeliveryFacts(
+            row.contractId,
+            scoped.branchIds,
+            tx,
+          );
+          if (
+            fresh.cancelled ||
+            !fresh.hasConfirmedPayment ||
+            !fresh.fullySettled
+          )
+            throw new ConflictException(
+              'تسویه کامل تأییدشده برای تحویل مدارک لازم است.',
+            );
+          return fresh;
+        },
+      );
+    } catch (error) {
+      if (!(error instanceof ConflictException)) throw error;
+      // A simultaneous finance decision wins; do not overwrite or retry it.
+      return this.delivery.readCustomerContract(row.contractId);
+    }
+  }
+
   async travelDocuments(
     site: string,
     externalId: string,
@@ -1011,9 +1143,11 @@ export class SiteCommerceService {
       row.contractId,
       scoped.branchIds,
     );
-    const authorization = await this.delivery.readCustomerContract(
-      row.contractId,
-    );
+    const authorization =
+      contract.status !== 'CANCELLED' &&
+      intake.workflow.supplierStatus !== 'CANCELLED'
+        ? await this.releaseSettledWebsiteDocuments(row, scoped)
+        : await this.delivery.readCustomerContract(row.contractId);
     if (
       !authorization.approved ||
       contract.status === 'CANCELLED' ||

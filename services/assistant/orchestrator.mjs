@@ -97,7 +97,7 @@ export function createOrchestrator({
   timeoutMs = 1500,
   now = () => new Date(),
 } = {}) {
-  return async function orchestrate(input, { signal, runAction }) {
+  return async function orchestrate(input, { signal, runAction, beforeRetry }) {
     if (!enabled || typeof provider?.plan !== 'function')
       throw new ServiceError(503, 'CONVERSATION_DISABLED');
     const message = validateMessage(input);
@@ -121,7 +121,7 @@ export function createOrchestrator({
         Promise.resolve().then(() =>
           provider.plan(
             { ...message, actions: CONVERSATION_ACTIONS },
-            { signal: combined, maxOutputTokens: 512 },
+            { signal: combined, maxOutputTokens: 512, beforeRetry },
           ),
         ),
         deadline,

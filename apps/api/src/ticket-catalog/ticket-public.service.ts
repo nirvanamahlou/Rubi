@@ -1,3 +1,8 @@
+import {
+  checkoutQuoteFingerprint,
+  checkoutHoldIsLive,
+} from './checkout-hold-policy';
+import { liveCapacityHolds } from './live-capacity-holds';
 import { ageFareFields, ageFareTotal } from './ticket-age-fares';
 import { websiteTargetOffer } from './website-target-offer';
 import { createHash, randomUUID } from 'node:crypto';
@@ -188,6 +193,7 @@ export class TicketPublicService {
       where: {
         branchId: { in: [...branchIds] },
         status: 'ACTIVE',
+        paymentPendingAt: null,
         expiresAt: { gt: new Date() },
       },
       _min: { expiresAt: true },
@@ -199,10 +205,11 @@ export class TicketPublicService {
     id: string,
     branchIds: readonly string[],
     salePriceTargetId?: string,
+    client: Prisma.TransactionClient = this.database.client,
   ) {
     if (
       salePriceTargetId &&
-      !(await this.database.client.ticketSalePriceTarget.findFirst({
+      !(await client.ticketSalePriceTarget.findFirst({
         where: {
           id: salePriceTargetId,
           branchId: { in: [...branchIds] },
@@ -212,7 +219,7 @@ export class TicketPublicService {
       }))
     )
       throw new BadRequestException('بلیت فعال سایت یافت نشد.');
-    const row = await this.database.client.ticketPublishedOffer.findFirst({
+    const row = await client.ticketPublishedOffer.findFirst({
       where: {
         id,
         branchId: { in: [...branchIds] },
@@ -226,7 +233,7 @@ export class TicketPublicService {
           select: { quantity: true },
         },
         capacityHolds: {
-          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          where: liveCapacityHolds(),
           select: { quantity: true },
         },
         standaloneSalePrices: {
@@ -257,19 +264,18 @@ export class TicketPublicService {
       !offer.standaloneSalePrice &&
       !offer.roundTripSalePrices?.length
     ) {
-      const incoming =
-        await this.database.client.ticketSaleCommissionRevision.findMany({
-          where: {
-            returnOfferId: id,
-            salePriceTargetId,
-            offer: {
-              branchId: { in: [...branchIds] },
-              status: 'ACTIVE',
-              departureAt: { gt: new Date() },
-            },
+      const incoming = await client.ticketSaleCommissionRevision.findMany({
+        where: {
+          returnOfferId: id,
+          salePriceTargetId,
+          offer: {
+            branchId: { in: [...branchIds] },
+            status: 'ACTIVE',
+            departureAt: { gt: new Date() },
           },
-          orderBy: { revision: 'desc' },
-        });
+        },
+        orderBy: { revision: 'desc' },
+      });
       const latest = new Map<string, (typeof incoming)[number]>();
       for (const rate of incoming)
         if (!latest.has(rate.offerId)) latest.set(rate.offerId, rate);
@@ -506,7 +512,7 @@ export class TicketPublicService {
           select: { quantity: true },
         },
         capacityHolds: {
-          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          where: liveCapacityHolds(),
           select: { quantity: true },
         },
       },
@@ -800,7 +806,7 @@ export class TicketPublicService {
           select: { quantity: true },
         },
         capacityHolds: {
-          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          where: liveCapacityHolds(),
           select: { quantity: true },
         },
         standaloneSalePrices: {
@@ -945,7 +951,7 @@ export class TicketPublicService {
           select: { quantity: true },
         },
         capacityHolds: {
-          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          where: liveCapacityHolds(),
           select: { quantity: true },
         },
         standaloneSalePrices: {
@@ -1148,7 +1154,7 @@ export class TicketPublicService {
           },
           include: {
             capacityHolds: {
-              where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+              where: liveCapacityHolds(),
             },
             tourOutboundDepartures: { select: { id: true } },
             tourReturnDepartures: { select: { id: true } },
@@ -1874,7 +1880,7 @@ export class TicketPublicService {
           },
           include: {
             capacityHolds: {
-              where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+              where: liveCapacityHolds(),
             },
             tourOutboundDepartures: { select: { id: true } },
             tourReturnDepartures: { select: { id: true } },
@@ -2071,7 +2077,7 @@ export class TicketPublicService {
         saleRoutes: { select: routeSelect },
         capacityAllocations: { where: { status: 'ACTIVE' } },
         capacityHolds: {
-          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          where: liveCapacityHolds(),
         },
         tourOutboundDepartures: { select: { id: true } },
         tourReturnDepartures: { select: { id: true } },
@@ -2334,7 +2340,7 @@ export class TicketPublicService {
         saleRoutes: { select: routeSelect },
         capacityAllocations: { where: { status: 'ACTIVE' } },
         capacityHolds: {
-          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          where: liveCapacityHolds(),
         },
       },
     });
@@ -2525,11 +2531,33 @@ export class TicketPublicService {
             select: { contractId: true, direction: true, quantity: true },
           },
           capacityHolds: {
-            where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
-            select: { quantity: true },
+            where: {
+              OR: [liveCapacityHolds(), { checkoutContractId: contractId }],
+            },
+            select: {
+              id: true,
+              quantity: true,
+              status: true,
+              expiresAt: true,
+              paymentPendingAt: true,
+              checkoutContractId: true,
+              checkoutQuoteFingerprint: true,
+            },
           },
         },
       });
+      const ownHolds = new Map(
+        offers.flatMap((offer) =>
+          offer.capacityHolds
+            .filter((h) => h.checkoutContractId === contractId)
+            .map((h) => [offer.id, h] as const),
+        ),
+      );
+      // The owning lease is converted, not added to the inventory demand a second time.
+      for (const offer of offers)
+        offer.capacityHolds = offer.capacityHolds.filter(
+          (h) => h.checkoutContractId !== contractId,
+        );
       const byId = new Map(offers.map((offer) => [offer.id, offer]));
       const existing = await transaction.ticketOfferCapacityAllocation.findMany(
         {
@@ -2539,6 +2567,31 @@ export class TicketPublicService {
       const existingByDirection = new Map(
         existing.map((allocation) => [allocation.direction, allocation]),
       );
+      if (
+        ownHolds.size &&
+        (ownHolds.size !== selections.length ||
+          selections.some((selection) => {
+            const hold = ownHolds.get(selection.offerId);
+            const allocation = existingByDirection.get(selection.direction);
+            if (
+              !hold ||
+              hold.quantity !==
+                (counts?.[selection.serviceClientKey] ?? seatCount)
+            )
+              return true;
+            if (
+              !allocation &&
+              (!checkoutHoldIsLive(hold, new Date()) || !hold.paymentPendingAt)
+            )
+              return true;
+            const quoted = expectedTicketTotals?.[selection.serviceClientKey];
+            return (
+              quoted !== undefined &&
+              hold.checkoutQuoteFingerprint !== checkoutQuoteFingerprint(quoted)
+            );
+          }))
+      )
+        throw new ConflictException('رزرو پرداخت با قرارداد مطابقت ندارد.');
       const unavailableOfferIds = selections
         .filter((selection) => {
           const quantity = counts?.[selection.serviceClientKey] ?? seatCount;
@@ -2601,7 +2654,7 @@ export class TicketPublicService {
           unavailableOfferIds,
           createdAllocationIds: [] as string[],
         };
-      if (expectedTicketTotals) {
+      if (expectedTicketTotals && ownHolds.size === 0) {
         const quoted = (selection: SalesTicketSelectionInput) =>
           expectedTicketTotals[selection.serviceClientKey];
         const verify = (
@@ -2851,6 +2904,15 @@ export class TicketPublicService {
         });
         createdAllocationIds.push(created.id);
       }
+      if (ownHolds.size)
+        await transaction.ticketOfferCapacityHold.updateMany({
+          where: {
+            id: { in: [...ownHolds.values()].map((h) => h.id) },
+            checkoutContractId: contractId,
+            status: 'ACTIVE',
+          },
+          data: { status: 'CONSUMED', releasedAt: new Date() },
+        });
       return { available: true, unavailableOfferIds: [], createdAllocationIds };
     });
   }
@@ -2922,7 +2984,12 @@ export class TicketPublicService {
         };
       }
       await transaction.ticketOfferCapacityHold.updateMany({
-        where: { offerId, status: 'ACTIVE', expiresAt: { lte: now } },
+        where: {
+          offerId,
+          status: 'ACTIVE',
+          paymentPendingAt: null,
+          expiresAt: { lte: now },
+        },
         data: { status: 'EXPIRED', releasedAt: now },
       });
       await transaction.$queryRaw(
@@ -2941,7 +3008,7 @@ export class TicketPublicService {
             select: { quantity: true },
           },
           capacityHolds: {
-            where: { status: 'ACTIVE', expiresAt: { gt: now } },
+            where: liveCapacityHolds(now),
             select: { quantity: true },
           },
         },
@@ -2980,8 +3047,36 @@ export class TicketPublicService {
   }
   async release(allocationIds: readonly string[]) {
     if (!allocationIds.length) return;
+    // Sales confirmation compensation must not free seats already paid for.
+    // A retry reuses this allocation; explicit contract cancellation uses releaseContract.
+    const allocations =
+      await this.database.client.ticketOfferCapacityAllocation.findMany({
+        where: { id: { in: [...allocationIds] }, status: 'ACTIVE' },
+        select: { id: true, contractId: true, offerId: true },
+      });
+    const paidHolds =
+      await this.database.client.ticketOfferCapacityHold.findMany({
+        where: {
+          status: 'CONSUMED',
+          checkoutSessionId: { not: null },
+          paymentPendingAt: { not: null },
+          checkoutContractId: { in: allocations.map((row) => row.contractId) },
+        },
+        select: { checkoutContractId: true, offerId: true },
+      });
+    const releasable = allocations
+      .filter(
+        (row) =>
+          !paidHolds.some(
+            (hold) =>
+              hold.checkoutContractId === row.contractId &&
+              hold.offerId === row.offerId,
+          ),
+      )
+      .map((row) => row.id);
+    if (!releasable.length) return;
     await this.database.client.ticketOfferCapacityAllocation.updateMany({
-      where: { id: { in: [...allocationIds] }, status: 'ACTIVE' },
+      where: { id: { in: releasable }, status: 'ACTIVE' },
       data: { status: 'RELEASED', releasedAt: new Date() },
     });
   }

@@ -280,7 +280,7 @@ describe('owning producer permissions and source-specific predicates', () => {
       },
     });
   });
-  it('capacity counts only active allocations and unexpired active holds without clipping deficits', async () => {
+  it('capacity counts active allocations and live or bank-pending holds without clipping deficits', async () => {
     const findMany = vi.fn().mockResolvedValue([
       {
         id: 'offer',
@@ -303,9 +303,13 @@ describe('owning producer permissions and source-specific predicates', () => {
     expect(
       findMany.mock.calls[0]?.[0].select.capacityAllocations.where.status,
     ).toBe('ACTIVE');
-    expect(
-      findMany.mock.calls[0]?.[0].select.capacityHolds.where.expiresAt.gt,
-    ).toBeInstanceOf(Date);
+    expect(findMany.mock.calls[0]?.[0].select.capacityHolds.where).toEqual({
+      status: 'ACTIVE',
+      OR: [
+        { expiresAt: { gt: expect.any(Date) } },
+        { checkoutSessionId: { not: null }, paymentPendingAt: { not: null } },
+      ],
+    });
   });
   it('hotel rates use only the exact current version of a nonarchived pack', async () => {
     const rate = {

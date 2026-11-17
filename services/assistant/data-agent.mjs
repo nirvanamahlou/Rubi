@@ -69,11 +69,13 @@ export function createDataAgent({
     const requestId = randomUUID();
     let contextId;
     let tokens = 0;
+    const attemptBudget = { attempts: 0, retryTokens: 0 };
     let queries = 0;
     let evidenceBytes = 0;
     let plan;
     let protocolRepairs = 0;
     let explanationRepairs = 0;
+    let evidenceRepairs = 0;
     const evidence = new Map();
     const described = new Set();
     const callIds = new Set();
@@ -178,7 +180,9 @@ export function createDataAgent({
           ? nativeStep(messages)
           : await provider.step(messages, {
               signal,
-              remainingTokens: 40000 - tokens,
+              remainingTokens: 40000 - tokens - attemptBudget.retryTokens,
+              attemptBudget,
+              beforeRetry: () => call('catalog'),
               allowFinalResponse: Boolean(plan),
               currentResultIds: [...evidence.keys()],
               allowedTools: !plan
@@ -207,7 +211,7 @@ export function createDataAgent({
           error.tokenCharge > 0
         ) {
           tokens += error.tokenCharge;
-          if (tokens > 40000)
+          if (tokens + attemptBudget.retryTokens > 40000)
             throw new ServiceError(429, 'AGENT_TOKEN_BUDGET_EXCEEDED');
           messages.push({
             role: 'system',
@@ -242,7 +246,10 @@ export function createDataAgent({
         /* Audit failure never exposes source content. */
       }
       tokens += step.tokens;
-      if (!Number.isSafeInteger(tokens) || tokens > 40000)
+      if (
+        !Number.isSafeInteger(tokens) ||
+        tokens + attemptBudget.retryTokens > 40000
+      )
         throw new ServiceError(429, 'AGENT_TOKEN_BUDGET_EXCEEDED');
       const args = step.args;
       let output;
@@ -256,7 +263,10 @@ export function createDataAgent({
         )
           fail();
         plan = args.steps;
-        messages[0].content += ' ' + finalProtocol;
+        messages[0].content +=
+          ' ' +
+          finalProtocol +
+          ' Greetings, connection checks and general non-data conversation use REPLY with empty resultIds; they must not be labelled ANSWER and do not need SQL. ANSWER is reserved for organizational findings backed by fresh evidence from this request.';
         output = { accepted: true };
       } else if (step.name === 'catalog_search') {
         if (
@@ -396,8 +406,15 @@ export function createDataAgent({
           new Set(args.resultIds).size !== args.resultIds.length
         )
           fail();
-        if (args.status === 'ANSWER' && !args.resultIds.length)
-          fail('AGENT_EVIDENCE_REQUIRED');
+        if (args.status === 'ANSWER' && !args.resultIds.length) {
+          if (evidenceRepairs++ >= 1) fail('AGENT_EVIDENCE_REQUIRED');
+          messages.push({
+            role: 'system',
+            content:
+              'The response was not released: AGENT_EVIDENCE_REQUIRED. ANSWER needs current query resultIds. For greetings or general non-data replies use REPLY with empty resultIds; use CLARIFY for material ambiguity. Organizational facts still require authorized tools and fresh evidence. Never invent evidence or claim execution. Correct the final response within the existing remaining turn/token budget.',
+          });
+          continue;
+        }
         const selected = args.resultIds.map((id) => evidence.get(id));
         let text;
         try {

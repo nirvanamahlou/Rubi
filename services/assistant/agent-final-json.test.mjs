@@ -128,4 +128,14 @@ test('citation choices are isolated to trusted current evidence, never shared ac
       .properties.resultIds.maxItems,
     0,
   );
+  assert.deepEqual(
+    sent[2].tools.find((t) => t.function.name === 'json').function.parameters
+      .properties.status.enum,
+    ['CLARIFY', 'REPLY'],
+  );
+  assert.deepEqual(
+    sent[0].tools.find((t) => t.function.name === 'json').function.parameters
+      .properties.status.enum,
+    ['ANSWER', 'CLARIFY', 'REPLY'],
+  );
 });
