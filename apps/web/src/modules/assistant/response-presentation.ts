@@ -11,9 +11,15 @@ const publicTerms: Record<string, string> = {
   contract_number: 'شماره قرارداد',
   sales_status: 'وضعیت فروش',
   reservation_status: 'وضعیت رزرواسیون',
+  total: 'مجموع',
+  count: 'تعداد',
+  COUNT: 'تعداد',
+  sum: 'جمع',
+  SUM: 'جمع',
+  amounts: 'مبالغ',
 };
 const termPattern = new RegExp(
-  `\\b(${Object.keys(publicTerms).join('|')})\\b`,
+  `(?<![A-Za-z0-9_-])(${Object.keys(publicTerms).join('|')})(?![A-Za-z0-9_-])`,
   'g',
 );
 
