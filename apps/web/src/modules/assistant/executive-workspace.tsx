@@ -1,6 +1,7 @@
 'use client';
 
 import { AssistantResponseContent } from './response-content';
+import { formatAssistantSources } from './response-presentation';
 import { useChatScroll } from './use-chat-scroll';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { resolveWorkbenchGuide, loadWorkbenchGuide } from './workbench-guides';
@@ -730,12 +731,7 @@ function AssistantComposerContent({
       if (controller.signal.aborted) return;
       if (agentMode) {
         const result = agentResponseSchema.parse(body);
-        const sourceText = result.sources
-          .map(
-            (source) =>
-              `${source.kind === 'panel-count-breakdown' ? 'sales.panel-count-breakdown + reservations.latest-lifecycle' : source.sources.map((id) => 'nora_agent.' + id).join(', ')} — ${new Date(source.observedAt).toLocaleString(english ? 'en-GB' : 'fa-IR', { timeZone: 'Asia/Tehran' })}`,
-          )
-          .join('\n');
+        const sourceText = formatAssistantSources(result.sources, english);
         const answer = [
           result.text,
           result.status === 'ANSWER' &&
@@ -921,7 +917,10 @@ function AssistantComposerContent({
                     className="whitespace-pre-wrap"
                   >
                     {item.role === 'assistant' ? (
-                      <AssistantResponseContent text={item.content} />
+                      <AssistantResponseContent
+                        text={item.content}
+                        english={english}
+                      />
                     ) : (
                       item.content
                     )}
