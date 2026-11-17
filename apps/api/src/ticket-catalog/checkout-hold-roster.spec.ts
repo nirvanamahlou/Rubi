@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { beforeEach, expect, it, vi } from 'vitest';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { CheckoutTicketCapacity } from './checkout-ticket-capacity';
@@ -150,3 +151,20 @@ it('rejects invalid or foreign pagination cursors before listing holds', async (
   ).rejects.toThrow();
   expect(f.ticketOfferCapacityHold.findMany).not.toHaveBeenCalled();
 });
+
+it.each([[row.id], { id: row.id }, 42])(
+  'rejects non-string query cursors before calling Prisma: %j',
+  async (cursor) => {
+    const f = fixture();
+    await expect(
+      new CheckoutTicketCapacity().roster(
+        f as never,
+        'offer',
+        actor,
+        cursor as never,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(f.ticketOfferCapacityHold.findFirst).not.toHaveBeenCalled();
+    expect(f.ticketOfferCapacityHold.findMany).not.toHaveBeenCalled();
+  },
+);

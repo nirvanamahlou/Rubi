@@ -266,8 +266,9 @@ export class CheckoutTicketCapacity {
     });
     if (!offer) throw new ForbiddenException('پرواز در دسترس نیست.');
     let after: { id: string; createdAt: Date } | null = null;
-    if (cursor) {
+    if (cursor !== undefined) {
       if (
+        typeof cursor !== 'string' ||
         !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
           cursor,
         )
