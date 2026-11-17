@@ -13007,3 +13007,5 @@ Validation:32 focused control/roster/workspace/i18n tests pass; active/past insp
 ZERO-CAPACITY-HOLD-ROSTER-1117 compatibility: historical single-edit regression now verifies the extracted inspection control receives catalogNow and still contains the past-flight guard; its independent edit/date/version assertions remain unchanged. No historical editing policy changes.
 
 MANAGER-SENT-LEAVE-1117 PC-B completed. Retain manager participation through approved recipient-review timeline, return as outgoing, include review events, route approval to unique active nima HR account. Scoped ESLint passed; existing test blocked by missing contracts build. Standing user merge authorization applies.
+
+PR1776 inherited formatting lease: apply repository Prettier only to already-merged apps/api/src/site-commerce/site-commerce.service.ts, apps/web/src/modules/integrations/components/site-management.tsx and site-publication-model.spec.ts. Push CI compares the older PR head and exposes these pre-existing incoming format failures. Preserve producer semantics, no permission/workflow/schema/dependency change or gate suppression.

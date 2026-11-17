@@ -133,19 +133,28 @@ export function WebsiteDestination({
     const abort = new AbortController();
     const timer = window.setInterval(async () => {
       try {
-        const query = new URLSearchParams({ branchId, ...(periodKey ? { periodKey } : {}) });
+        const query = new URLSearchParams({
+          branchId,
+          ...(periodKey ? { periodKey } : {}),
+        });
         const response = await localizedFetch(`${path}?${query}`, {
-          credentials: 'include', cache: 'no-store', signal: abort.signal,
+          credentials: 'include',
+          cache: 'no-store',
+          signal: abort.signal,
         });
         if (response.ok) {
           const result = await response.json();
-          if (!abort.signal.aborted) setDelivery(result.deliveryStatus ?? 'unknown');
+          if (!abort.signal.aborted)
+            setDelivery(result.deliveryStatus ?? 'unknown');
         }
       } catch {
         // Retain the last observed state until the next refresh.
       }
     }, 30000);
-    return () => { window.clearInterval(timer); abort.abort(); };
+    return () => {
+      window.clearInterval(timer);
+      abort.abort();
+    };
   }, [delivery, path, branchId, periodKey]);
   async function save(enabled = selected, selectionOnly = false) {
     if (!stored || busy || saving.current || (enabled && !canPublish)) return;
@@ -206,12 +215,19 @@ export function WebsiteDestination({
           commissionPercent: '0',
         },
       ) === JSON.stringify(presentation));
-  const status = !stored ? 'در حال دریافت وضعیت'
-    : delivery === 'unconfigured' ? 'در انتظار اتصال'
-    : delivery === 'error' ? 'خطا در ارسال کاتالوگ'
-    : delivery === 'pending' ? 'در انتظار رسید کاتالوگ'
-    : delivery !== 'accepted' ? 'وضعیت اتصال نامشخص'
-    : stored.enabled ? 'انتشار فعال' : 'منتشر نشده';
+  const status = !stored
+    ? 'در حال دریافت وضعیت'
+    : delivery === 'unconfigured'
+      ? 'در انتظار اتصال'
+      : delivery === 'error'
+        ? 'خطا در ارسال کاتالوگ'
+        : delivery === 'pending'
+          ? 'در انتظار رسید کاتالوگ'
+          : delivery !== 'accepted'
+            ? 'وضعیت اتصال نامشخص'
+            : stored.enabled
+              ? 'انتشار فعال'
+              : 'منتشر نشده';
   return (
     <div
       aria-busy={busy}
