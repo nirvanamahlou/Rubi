@@ -1,4 +1,10 @@
 {
+  "انتخاب سایت ذخیره شد": "Website selection saved",
+  "خطا در ارسال کاتالوگ": "Catalog delivery failed",
+  "در انتظار رسید کاتالوگ": "Awaiting catalog acknowledgment",
+  "در حال دریافت وضعیت": "Loading status",
+  "گیرنده فعال منابع انسانی برای مرخصی در این شعبه به‌صورت یکتا تعریف نشده است.": "A unique active HR recipient for leave requests has not been configured in this branch.",
+  "وضعیت اتصال نامشخص": "Connection status unknown",
   "فرودگاه مبدأ و مقصد را انتخاب کنید.": "Select the departure and arrival airports.",
   "فرودگاه ثبت‌شده": "Saved airport",
   "اعلام درخواست": "Request submitted",
