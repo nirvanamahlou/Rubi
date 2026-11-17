@@ -16,7 +16,7 @@ const publicTerms: Record<string, string> = {
   COUNT: 'تعداد',
   sum: 'جمع',
   SUM: 'جمع',
-  amounts: 'مبالغ',
+  amounts: c.sourceAmounts[0],
 };
 const termPattern = new RegExp(
   `(?<![A-Za-z0-9_-])(${Object.keys(publicTerms).join('|')})(?![A-Za-z0-9_-])`,
