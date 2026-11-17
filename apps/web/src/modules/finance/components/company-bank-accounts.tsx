@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Eye, FilePenLine, Plus, Trash2 } from 'lucide-react';
 import type {
+  AccountingConfigurationV1,
   CompanyBankAccountInputV1,
   CompanyBankAccountV1,
   CompanyBankAccountOptionsV1,
@@ -24,6 +25,7 @@ import {
 } from '@/components/ui/overlays';
 import { Card, EmptyState, Skeleton } from '@/components/ui/surfaces';
 import { bankAccountsApi } from '../api/bank-accounts-api';
+import { MasterDataReferenceSelector } from '@/modules/master-data/components/master-data-reference-selector';
 
 type Editor = {
   mode: 'create' | 'edit' | 'view';
@@ -38,7 +40,15 @@ const labels = {
   iban: 'شماره شبا',
 } as const;
 
-export function CompanyBankAccounts({ bankId }: { bankId: string }) {
+export function CompanyBankAccounts({
+  bankId,
+  companyBranchId,
+  treasury,
+}: {
+  bankId: string;
+  companyBranchId?: string;
+  treasury?: { bookId: string; types: AccountingConfigurationV1[] };
+}) {
   const [rows, setRows] = useState<CompanyBankAccountV1[]>([]);
   const [options, setOptions] = useState<CompanyBankAccountOptionsV1 | null>(
     null,
@@ -72,6 +82,7 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
       setPending(false);
     }
   }
+  const treasuryBookId = treasury?.bookId;
   const load = useCallback(async () => {
     const current = ++generation.current;
     setLoading(true);
@@ -80,13 +91,22 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
     setOptions(null);
     try {
       const [list, available] = await Promise.all([
-        bankAccountsApi.list(bankId, page),
+        bankAccountsApi.list(bankId, page, companyBranchId, treasuryBookId),
         bankAccountsApi.options(bankId),
       ]);
       if (generation.current !== current) return;
       setRows(list.items);
       setHasMore(list.hasMore);
-      setOptions(available);
+      setOptions(
+        companyBranchId
+          ? {
+              ...available,
+              branches: available.branches.filter(
+                (b) => b.id === companyBranchId,
+              ),
+            }
+          : available,
+      );
     } catch (cause) {
       if (generation.current === current)
         setError(
@@ -97,7 +117,7 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
     } finally {
       if (generation.current === current) setLoading(false);
     }
-  }, [bankId, page]);
+  }, [bankId, page, companyBranchId, treasuryBookId]);
   const invalidate = useCallback(() => {
     generation.current++;
   }, []);
@@ -132,6 +152,15 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
           currencyCode: full.currencyCode,
           isActive: full.isActive,
           isExternal: full.isExternal ?? false,
+          ...(treasury
+            ? {
+                treasury: full.treasury ?? {
+                  treasuryBookId: treasury.bookId,
+                  bankBranchId: '',
+                  bankAccountTypeId: '',
+                },
+              }
+            : {}),
           accountNumber: full.accountNumber,
           cardNumber: full.cardNumber,
           iban: full.iban,
@@ -160,6 +189,15 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
       ].some((value) => value?.trim())
     ) {
       setFormError('حداقل یکی از شماره حساب، کارت یا شبا را وارد کنید.');
+      return;
+    }
+    if (
+      treasury &&
+      (!editor.values.accountNumber?.trim() ||
+        !editor.values.treasury?.bankAccountTypeId ||
+        !editor.values.treasury.bankBranchId)
+    ) {
+      setFormError('شماره حساب، شعبه بانک و نوع حساب را وارد کنید.');
       return;
     }
     const captured = editor;
@@ -216,6 +254,15 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
                     '',
                   isActive: true,
                   isExternal: false,
+                  ...(treasury
+                    ? {
+                        treasury: {
+                          treasuryBookId: treasury.bookId,
+                          bankBranchId: '',
+                          bankAccountTypeId: '',
+                        },
+                      }
+                    : {}),
                   accountNumber: '',
                   cardNumber: '',
                   iban: '',
@@ -429,7 +476,7 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
                 <input
                   type="checkbox"
                   checked={editor.values.isExternal ?? false}
-                  disabled={pending || readonly}
+                  disabled={pending || readonly || !!companyBranchId}
                   onChange={(event) => {
                     setFormError('');
                     const restoreScope =
@@ -467,6 +514,78 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
                   />
                 </FormField>
               ) : null}
+              {treasury && editor.values.treasury && (
+                <>
+                  <FormField
+                    id="treasury-bank-branch"
+                    label="شعبه بانک"
+                    required
+                  >
+                    <MasterDataReferenceSelector
+                      id="treasury-bank-branch"
+                      label="شعبه بانک"
+                      required
+                      config={{
+                        target: 'bank-branches',
+                        payload: 'id',
+                        scopeField: 'bankId',
+                      }}
+                      scopeValue={bankId}
+                      disabled={pending || readonly}
+                      value={editor.values.treasury.bankBranchId}
+                      onChange={(id) =>
+                        setEditor({
+                          ...editor,
+                          values: {
+                            ...editor.values,
+                            treasury: {
+                              ...editor.values.treasury!,
+                              bankBranchId: id,
+                            },
+                          },
+                        })
+                      }
+                    />
+                  </FormField>
+                  <FormField
+                    id="treasury-bank-type"
+                    label="نوع حساب بانکی"
+                    required
+                  >
+                    <select
+                      id="treasury-bank-type"
+                      required
+                      disabled={pending || readonly}
+                      value={editor.values.treasury.bankAccountTypeId}
+                      onChange={(e) =>
+                        setEditor({
+                          ...editor,
+                          values: {
+                            ...editor.values,
+                            treasury: {
+                              ...editor.values.treasury!,
+                              bankAccountTypeId: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    >
+                      <option value="">انتخاب کنید</option>
+                      {treasury.types
+                        .filter(
+                          (t) =>
+                            t.active ||
+                            t.id === editor.values.treasury?.bankAccountTypeId,
+                        )
+                        .map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.title}
+                          </option>
+                        ))}
+                    </select>
+                  </FormField>
+                </>
+              )}
               <FormField
                 id="company-bank-title"
                 label="عنوان حساب"
@@ -499,6 +618,7 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
                   disabled={
                     pending ||
                     readonly ||
+                    !!companyBranchId ||
                     (editor.mode !== 'create' &&
                       !editor.values.isExternal &&
                       !editor.record?.isExternal)
@@ -584,6 +704,7 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
                       id={`company-bank-${field}`}
                       dir="ltr"
                       autoComplete="off"
+                      required={!!treasury && field === 'accountNumber'}
                       maxLength={120}
                       value={editor.values[field] ?? ''}
                       disabled={pending || readonly}

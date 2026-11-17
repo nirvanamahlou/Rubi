@@ -1,4 +1,7 @@
-import { debitExchange } from '../exchange-offices/exchange-payment';
+import {
+  assertPurchaseReturnable,
+  verifyBankPayment,
+} from '../payments/broker-transfer';
 import type { CustomerFinancialReleaseFacts } from './financial-release.public';
 import { financialDate } from '../accounting/accounting.financial-events';
 import {
@@ -285,7 +288,8 @@ export class FinanceDeliveryService {
         bankId: string | null;
         currencyCode: string;
       } | null = null;
-      let paymentMethod: { id: string; name: string } | null = null;
+      let paymentMethod: { id: string; name: string; channel?: string } | null =
+        null;
       let payingSupplierId: string | null = null;
       let payingSupplierName: string | null = null;
       let exchangeOfficeId: string | null = null;
@@ -310,7 +314,7 @@ export class FinanceDeliveryService {
             isActive: true,
             direction: { in: ['PAYMENT', 'BOTH'] },
           },
-          select: { id: true, name: true },
+          select: { id: true, name: true, channel: true },
         });
         if (!paymentMethod)
           throw new BadRequestException('روش پرداخت انتخاب‌شده معتبر نیست.');
@@ -330,6 +334,7 @@ export class FinanceDeliveryService {
         : current?.status === 'PAID'
           ? new Prisma.Decimal(purchase.amount)
           : new Prisma.Decimal(0);
+      if (!paid) await assertPurchaseReturnable(tx, purchaseId);
       if (!paid && alreadyPaid.gt(0))
         throw new ConflictException(
           'خریدی که بخشی از آن پرداخت شده قابل برگشت نیست.',
@@ -348,9 +353,33 @@ export class FinanceDeliveryService {
           ? 'PAID'
           : 'PARTIALLY_PAID'
         : 'REJECTED';
+      const verified = paid
+        ? await verifyBankPayment(
+            tx,
+            command,
+            { purchaseId },
+            {
+              amount: paidAmount!.toString(),
+              rate: exchangeRate!.toString(),
+              remaining: remainingBefore.toString(),
+              currency: purchase.currencyCode,
+              actorId: actorUserId,
+              branchId: purchase.intake.branchId,
+              date: transferAt!,
+              payeeCurrency: account?.currencyCode,
+              channel: account ? paymentMethod?.channel : undefined,
+              party: {
+                brokerId: purchase.supplierBrokerId,
+                organizationId: purchase.supplierOrganizationId,
+                name: purchase.supplierNameSnapshot,
+              },
+            },
+          )
+        : {};
       const row = await tx.financeSupplierPaymentRevision.create({
         data: {
           purchaseId,
+          ...verified,
           version: command.expectedVersion + 1,
           status: nextStatus,
           bankId: paid ? (account?.bankId ?? null) : null,
@@ -373,14 +402,6 @@ export class FinanceDeliveryService {
           actorUserId,
         },
       });
-      if (paid && paidAmount)
-        await debitExchange(tx, {
-          officeId: exchangeOfficeId,
-          currencyCode: purchase.currencyCode,
-          amount: paidAmount.toString(),
-          actorUserId,
-          supplierPaymentId: row.id,
-        });
       if (
         paid &&
         alreadyPaid.isZero() &&
@@ -424,7 +445,11 @@ export class FinanceDeliveryService {
             row.rialEquivalent?.toString(),
           ),
           settlementAccountId: account?.id ?? null,
-          partyId: `${purchase.supplierBrokerId ?? purchase.supplierOrganizationId ?? purchaseId}:${exchangeOfficeId ?? payingSupplierId ?? ''}`,
+          partyId: exchangeOfficeId
+            ? (purchase.supplierBrokerId ??
+              purchase.supplierOrganizationId ??
+              purchaseId)
+            : `${purchase.supplierBrokerId ?? purchase.supplierOrganizationId ?? purchaseId}:${payingSupplierId ?? ''}`,
           reference: row.paymentReference,
         });
       return {

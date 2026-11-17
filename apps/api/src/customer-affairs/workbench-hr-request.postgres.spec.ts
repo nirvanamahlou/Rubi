@@ -100,16 +100,16 @@ describe.skipIf(!enabled)('transactional Workbench HR leave approval', () => {
       {} as never,
       {} as never,
       new NotificationsService(new NotificationsRepository(database as never)),
-      { workbenchFeedbackRecipientUserIds: async () => [reviewer] } as never,
+      {} as never,
       undefined,
       {
         hrLeaveRecipient: async (
-          routeActor: AuthenticatedActor,
+          requester: AuthenticatedActor,
           branchId: string,
         ) => {
-          expect(routeActor.userId).toBe(initialReviewer);
+          expect(requester.userId).toBe(initialReviewer);
           expect(branchId).toBe(branch);
-          return { unitId: 'synthetic-hr-unit', recipientId: reviewer };
+          return { unitId: 'synthetic-hr', recipientId: reviewer };
         },
       } as never,
       hr,

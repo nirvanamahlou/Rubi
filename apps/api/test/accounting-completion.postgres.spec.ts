@@ -1,8 +1,34 @@
+import { BankControlsController } from '../src/finance/payments/bank-controls.controller';
+import { brokerBalances } from '../src/finance/payments/broker-balances';
 import {
   accountingTestUrl,
   assertAccountingTestDatabase,
 } from './accounting-test-database';
+import {
+  bankCommand,
+  bankReport,
+} from '../src/finance/accounting/bank-reconciliation';
+import { fundBroker } from '../src/finance/payments/broker-transfer';
+import { FinanceFiscalStorage } from '../src/finance/fiscal-context/finance-fiscal-storage';
+import { FinanceDeliveryService } from '../src/finance/document-delivery/finance-delivery.module';
 import { randomUUID } from 'node:crypto';
+import {
+  importTaxReference,
+  saveTaxMapping,
+  taxMappingView,
+} from '../src/finance/accounting/tax-reference';
+import {
+  finalizeSeasonal,
+  seasonalPreview,
+  seasonalSnapshot,
+  setSeasonalRegion,
+} from '../src/finance/accounting/seasonal-report';
+import {
+  saveTreasuryInstrument,
+  treasuryInstruments,
+} from '../src/finance/accounting/treasury-instruments';
+import { treasuryConfigAttributes } from '../src/finance/accounting/accounting-treasury';
+import { readAccountBrowser } from '../src/finance/accounting/accounting-account-browser';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 import type { AuthenticatedActor } from '@nora/contracts';
@@ -148,10 +174,670 @@ describe.skipIf(!url)('independent completion on isolated PostgreSQL', () => {
     await makeJournal(false);
     service = new AccountingCompletionService({ client: db } as never);
   }, 30000);
+  it('matches a bank statement only to posted ledger movements and preserves exact cents', async () => {
+    const book = await db.accountingBook.findUniqueOrThrow({
+        where: { id: bookId },
+      }),
+      period = await db.accountingPeriod.findUniqueOrThrow({
+        where: { id: periodId },
+      });
+    const bank = await db.financeSettlementAccount.create({
+      data: {
+        branchId,
+        kind: 'BANK',
+        title: 'Synthetic reconciliation',
+        currencyCode: 'IRR',
+        createdByUserId: userId,
+      },
+    });
+    const args = {
+      bankId: bank.id,
+      accountId: debitId,
+      from: '2026-03-01',
+      to: '2026-03-01',
+      opening: '0',
+      closing: '26000000000000000000.26',
+      rows: Array.from({ length: 26 }, (_, i) => ({
+        date: '2026-03-01',
+        amount: '1000000000000000000.01',
+        reference: '000' + i,
+      })),
+    };
+    const act = (action: string, data: Record<string, unknown>) =>
+      db.$transaction((tx) =>
+        bankCommand(tx, book, period, 'bank-statement-' + action, data),
+      );
+    await expect(
+      act('import', { ...args, closing: '26000000000000000000.25' }),
+    ).rejects.toThrow();
+    const { id } = await act('import', args);
+    await expect(act('import', args)).rejects.toThrow();
+    await expect(act('finalize', { id })).rejects.toThrow();
+    const view = await db.$transaction((tx) =>
+      bankReport(tx, book, period, { id }),
+    );
+    if (!('lines' in view)) throw Error('expected a statement');
+    expect(view.lines).toHaveLength(26);
+    expect(view.bookClosing).toBe(args.closing);
+    for (const [i, row] of view.rows.entries())
+      await act('match', { id, rowId: row.id, lineId: view.lines[i]!.id });
+    await act('finalize', { id });
+    await expect(
+      act('unmatch', { id, rowId: view.rows[0]!.id }),
+    ).rejects.toThrow();
+  });
+  it('keeps a 20,000 purchase open after dispatch and settles 5,000 exactly once on a clean broker receipt', async () => {
+    const year = await db.accountingPeriod.findUniqueOrThrow({
+      where: { id: periodId },
+    });
+    const scope = {
+      bookId,
+      mode: 'temporary',
+      period: { ...year, yearActive: true },
+      actorId: userId,
+    };
+    const scoped = <T>(fn: () => Promise<T>) =>
+      new FinanceFiscalStorage().run(scope as never, fn);
+    const broker = await db.masterBroker.create({
+      data: {
+        code: randomUUID().slice(0, 16),
+        name: 'Synthetic broker',
+        createdByUserId: userId,
+        updatedByUserId: userId,
+      },
+    });
+    await db.masterCurrency.upsert({
+      where: { code: 'EUR' },
+      update: {},
+      create: {
+        code: 'EUR',
+        name: 'Euro',
+        createdByUserId: userId,
+        updatedByUserId: userId,
+      },
+    });
+    const office = await db.financeExchangeOffice.create({
+      data: {
+        title: randomUUID(),
+        createdByUserId: userId,
+        balances: { create: { currencyCode: 'EUR', amount: '25000' } },
+      },
+    });
+    const intake = await db.reservationIntake.create({
+      data: {
+        requestId: randomUUID(),
+        contractId: randomUUID(),
+        contractVersion: 1,
+        branchId,
+        fingerprint: 'synthetic',
+        snapshot: { contractNumber: 'TEST-001' },
+      },
+    });
+    const purchase = await db.reservationServicePurchase.create({
+      data: {
+        intakeId: intake.id,
+        batchId: randomUUID(),
+        serviceClientKey: 'test',
+        serviceKind: 'HOTEL',
+        serviceTitleSnapshot: 'Synthetic',
+        supplierBrokerId: broker.id,
+        supplierNameSnapshot: broker.name,
+        version: 1,
+        amount: '20000',
+        currencyCode: 'EUR',
+        actorUserId: userId,
+        idempotencyKey: randomUUID(),
+        fingerprint: '0'.repeat(64),
+      },
+    });
+    const method = await db.masterPaymentMethod.create({
+      data: {
+        code:
+          'PM' + randomUUID().replaceAll('-', '').slice(0, 12).toUpperCase(),
+        name: 'Synthetic',
+        channel: 'BANK_TRANSFER',
+        createdByUserId: userId,
+        updatedByUserId: userId,
+      },
+    });
+    const p = {
+      id: randomUUID(),
+      kind: 'RESERVATIONS',
+      sourceId: purchase.id,
+      brokerId: broker.id,
+      officeId: office.id,
+      amount: '5000',
+      rate: '600000',
+      sentAt: '2026-03-01T06:00:00Z',
+    };
+    const send = (input: typeof p) =>
+      scoped(() => db.$transaction((tx) => fundBroker(tx, actor, input)));
+    await send(p);
+    await send(p);
+    await expect(
+      db.reservationServicePurchase.create({
+        data: {
+          intakeId: intake.id,
+          batchId: randomUUID(),
+          serviceClientKey: 'test',
+          serviceKind: 'HOTEL',
+          serviceTitleSnapshot: 'Replacement',
+          supplierBrokerId: broker.id,
+          supplierNameSnapshot: broker.name,
+          version: 2,
+          amount: '1000',
+          currencyCode: 'EUR',
+          actorUserId: userId,
+          idempotencyKey: randomUUID(),
+          fingerprint: '2'.repeat(64),
+        },
+      }),
+    ).rejects.toThrow(/funded broker transfer/);
+    await expect(
+      send({ ...p, id: randomUUID(), amount: '16000' }),
+    ).rejects.toThrow();
+    expect(
+      await db.financeSupplierPaymentRevision.count({
+        where: { purchaseId: purchase.id },
+      }),
+    ).toBe(0);
+    const type = await db.documentType.create({
+      data: {
+        code: randomUUID(),
+        domain: 'FINANCE',
+        name: 'Synthetic receipt',
+        allowedMimeTypes: ['application/pdf'],
+      },
+    });
+    const receipt = await db.document.create({
+      data: {
+        title: 'Synthetic receipt',
+        documentTypeId: type.id,
+        branchId,
+        ownerUserId: userId,
+        createdByUserId: userId,
+        updatedByUserId: userId,
+        sourceModule: 'FINANCE',
+        sourceEntityType: 'FinanceBrokerTransfer',
+        sourceEntityId: p.id,
+      },
+    });
+    const proof = await db.documentVersion.create({
+      data: {
+        documentId: receipt.id,
+        versionNumber: 1,
+        storageObjectKey: randomUUID(),
+        originalFileName: 'fixture.pdf',
+        safeDownloadName: 'fixture.pdf',
+        detectedMimeType: 'application/pdf',
+        extension: 'pdf',
+        versionNote: 'synthetic receipt',
+        sizeBytes: 100n,
+        sha256: '0'.repeat(64),
+        scanStatus: 'CLEAN',
+        createdByUserId: userId,
+      },
+    });
+    await db.document.update({
+      where: { id: receipt.id },
+      data: { currentVersionId: proof.id, currentVersionNumber: 1 },
+    });
+    const service = new FinanceDeliveryService(
+      { client: db } as never,
+      {} as never,
+    );
+    const cmd = {
+      expectedVersion: 0,
+      status: 'PAID' as const,
+      exchangeOfficeId: office.id,
+      brokerTransferId: p.id,
+      brokerReceiptId: receipt.id,
+      paymentMethodId: method.id,
+      paidAmount: '5000',
+      exchangeRateToIrr: p.rate,
+      transferAt: '2026-03-02T06:00:00Z',
+      reason: '',
+    };
+    const pay = (c: typeof cmd) =>
+      scoped(() =>
+        service.updateSupplierPayment(intake.id, purchase.id, c, userId, [
+          branchId,
+        ]),
+      );
+    await expect(
+      pay({ ...cmd, brokerReceiptId: randomUUID() }),
+    ).rejects.toThrow();
+    const result = await pay(cmd);
+    expect(result).toMatchObject({
+      status: 'PARTIALLY_PAID',
+      remainingAmount: '15000',
+      paidAmount: '5000',
+    });
+    await expect(pay({ ...cmd, expectedVersion: 1 })).rejects.toThrow();
+    expect(
+      await db.financeExchangeMovement.count({
+        where: { brokerTransferId: p.id },
+      }),
+    ).toBe(1);
+    expect(
+      (
+        await db.financeExchangeBalance.findFirstOrThrow({
+          where: { officeId: office.id },
+        })
+      ).amount.toString(),
+    ).toBe('20000');
+    const [balance] = await db.$transaction((tx) =>
+      brokerBalances(
+        tx,
+        { id: bookId, branchId },
+        broker.id,
+        null,
+        new Date('2027-01-01T00:00:00Z'),
+      ),
+    );
+    expect(
+      [balance?.credit, balance?.debit, balance?.balance].map(Number),
+    ).toEqual([20000, 5000, 15000]);
+    const ledger = new BankControlsController(
+      { client: db } as never,
+      {
+        brokerTransfers: async (items: unknown[]) =>
+          items.map(() => ({ contracts: [], journals: [] })),
+      } as never,
+    );
+    const ledgerResult = await scoped(() =>
+      ledger.ledger(
+        { search: 'TEST-001', brokerSearch: 'Synthetic', brokerId: broker.id },
+        { actor } as never,
+      ),
+    );
+    expect(ledgerResult.brokers).toContainEqual({
+      id: broker.id,
+      name: broker.name,
+    });
+    expect(ledgerResult.rows.map((row) => row.id)).toEqual([p.id]);
+    expect(Number(ledgerResult.balances[0]?.balance)).toBe(15000);
+    const second = { ...p, id: randomUUID(), amount: '15000' };
+    await send(second);
+    const nextReceipt = await db.document.create({
+      data: {
+        title: 'Final broker receipt',
+        documentTypeId: type.id,
+        branchId,
+        ownerUserId: userId,
+        createdByUserId: userId,
+        updatedByUserId: userId,
+        sourceModule: 'FINANCE',
+        sourceEntityType: 'FinanceBrokerTransfer',
+        sourceEntityId: second.id,
+      },
+    });
+    const v = await db.documentVersion.create({
+      data: {
+        documentId: nextReceipt.id,
+        versionNumber: 1,
+        storageObjectKey: randomUUID(),
+        originalFileName: 'final.pdf',
+        safeDownloadName: 'final.pdf',
+        detectedMimeType: 'application/pdf',
+        extension: 'pdf',
+        versionNote: 'synthetic final receipt',
+        sizeBytes: 100n,
+        sha256: '1'.repeat(64),
+        scanStatus: 'CLEAN',
+        createdByUserId: userId,
+      },
+    });
+    await db.document.update({
+      where: { id: nextReceipt.id },
+      data: { currentVersionId: v.id, currentVersionNumber: 1 },
+    });
+    expect(
+      await pay({
+        ...cmd,
+        expectedVersion: 1,
+        brokerTransferId: second.id,
+        brokerReceiptId: nextReceipt.id,
+        paidAmount: '15000',
+      }),
+    ).toMatchObject({
+      status: 'PAID',
+      remainingAmount: '0',
+      paidAmount: '20000',
+    });
+  });
   afterAll(async () => {
     await db?.$disconnect();
   });
 
+  it('gates only required row mappings, preserves text codes and freezes finalized report values', async () => {
+    const window = {
+      period: { id: periodId },
+      from: '2026-01-01',
+      to: '2026-03-31',
+    };
+    const journal = await db.accountingJournal.findFirstOrThrow({
+      where: { bookId, status: 'POSTED' },
+    });
+    const stamp = { createdByUserId: userId, updatedByUserId: userId };
+    const currency = await db.masterCurrency.upsert({
+      where: { code: 'ZXQ' },
+      update: {},
+      create: { ...stamp, code: 'ZXQ', name: 'Synthetic currency' },
+    });
+    const country = await db.masterCountry.upsert({
+      where: { code: 'XZ' },
+      update: {},
+      create: { ...stamp, code: 'XZ', name: 'Synthetic country' },
+    });
+    const region = await db.masterRegion.create({
+      data: {
+        ...stamp,
+        countryId: country.id,
+        code: randomUUID().slice(0, 12),
+        name: 'Synthetic region',
+      },
+    });
+    const eventId = randomUUID();
+    await db.financeAccountingEvent.create({
+      data: {
+        sourceKey: eventId,
+        fingerprint: 'a'.repeat(64),
+        source: 'SALES',
+        recordId: eventId,
+        requestId: randomUUID(),
+        kind: 'SALES_CONTRACT_CONFIRMED',
+        occurredAt: new Date(),
+        branchId,
+        actorId: userId,
+        currency: currency.code,
+        amount: '42.1500',
+        journalId: journal.id,
+        trackingNumber: 'C-0004',
+      },
+    });
+    const read = (layout: 'CURRENCY' | 'REGION' | 'CURRENCY_REGION') =>
+      db.$transaction((tx) => seasonalPreview(tx, bookId, window, layout));
+    const finalize = (layout: 'CURRENCY' | 'CURRENCY_REGION', digest: string) =>
+      db.$transaction((tx) =>
+        finalizeSeasonal(tx, bookId, window, layout, digest, userId),
+      );
+    expect((await read('CURRENCY_REGION')).rows[0]?.missing).toEqual([
+      'CURRENCY',
+      'REGION',
+    ]);
+    await expect(finalize('CURRENCY', 'wrong')).rejects.toThrow();
+    const imp = (
+      kind: string,
+      label: string,
+      csv: string,
+      previousReleaseId: string | null,
+    ) =>
+      db.$transaction((tx) =>
+        importTaxReference(
+          tx,
+          bookId,
+          { kind, label, csv, previousReleaseId },
+          userId,
+        ),
+      );
+    const map = (
+      kind: string,
+      sourceId: string,
+      entryId: string,
+      releaseId: string,
+    ) =>
+      db.$transaction((tx) =>
+        saveTaxMapping(tx, bookId, {
+          kind,
+          sourceId,
+          entryId,
+          releaseId,
+          previousEntryId: null,
+        }),
+      );
+    const release = await imp(
+      'CURRENCY',
+      'test 1',
+      'code,title\n0007,"Currency, test"',
+      null,
+    );
+    const entry = await db.taxReferenceEntry.findFirstOrThrow({
+      where: { releaseId: release.id },
+    });
+    await expect(
+      imp('CURRENCY', 'bad', 'code,title\n001,A\n001,B', release.id),
+    ).rejects.toThrow();
+    await map('CURRENCY', currency.id, entry.id, release.id);
+    const ready = await read('CURRENCY');
+    expect(ready.rows[0]).toMatchObject({
+      reference: 'C-0004',
+      amount: '42.15',
+      missing: [],
+      currencyTarget: { code: '0007' },
+    });
+    await expect(finalize('CURRENCY', 'stale')).rejects.toThrow();
+    const snapshot = await finalize('CURRENCY', ready.digest);
+    await expect(finalize('CURRENCY', ready.digest)).resolves.toEqual(snapshot);
+    const both = await read('CURRENCY_REGION');
+    expect(both.rows[0]?.missing).toEqual(['REGION']);
+    await expect(finalize('CURRENCY_REGION', both.digest)).rejects.toThrow();
+    const geo = await imp('REGION', 'test 1', 'code,title\n009,Region', null);
+    await expect(map('REGION', region.id, entry.id, geo.id)).rejects.toThrow();
+    const geoEntry = await db.taxReferenceEntry.findFirstOrThrow({
+      where: { releaseId: geo.id },
+    });
+    await map('REGION', region.id, geoEntry.id, geo.id);
+    await db.$transaction((tx) =>
+      setSeasonalRegion(tx, bookId, window, {
+        journalId: journal.id,
+        regionId: region.id,
+        previousRegionId: null,
+      }),
+    );
+    expect((await read('CURRENCY_REGION')).rows[0]?.missing).toEqual([]);
+    const same = await imp(
+      'CURRENCY',
+      'test 2',
+      'code,title\n0007,"Currency, test"',
+      release.id,
+    );
+    expect((await read('CURRENCY')).rows[0]?.currencyTarget?.version).toBe(
+      'test 2',
+    );
+    await imp('CURRENCY', 'test 3', 'code,title\n0007,New meaning', same.id);
+    expect((await read('CURRENCY')).rows[0]?.missing).toEqual(['CURRENCY']);
+    expect(
+      (
+        await db.$transaction((tx) => taxMappingView(tx, bookId, 'CURRENCY'))
+      ).sources.find((s) => s.id === currency.id)?.entryId,
+    ).toBeNull();
+    const saved = await db.$transaction((tx) =>
+      seasonalSnapshot(tx, bookId, periodId, snapshot.id),
+    );
+    expect(saved.rows).toMatchObject([
+      {
+        currencyTarget: {
+          code: '0007',
+          title: 'Currency, test',
+          version: 'test 1',
+        },
+      },
+    ]);
+    await expect(
+      db.$transaction((tx) =>
+        seasonalSnapshot(tx, randomUUID(), periodId, snapshot.id),
+      ),
+    ).rejects.toThrow();
+  });
+  it('creates operational accounts and preserves cashier assignment intervals through changes', async () => {
+    const book = { id: bookId, branchId, baseCurrency: 'IRR' };
+    const person = await db.accountingConfiguration.create({
+      data: {
+        bookId,
+        kind: 'detail-types',
+        code: 'P',
+        title: 'شخص',
+        attributes: {},
+      },
+    });
+    const people = await Promise.all(
+      ['001', '002'].map((code) =>
+        db.accountingDetail.create({
+          data: {
+            bookId,
+            typeId: person.id,
+            code,
+            title: 'Synthetic ' + code,
+            attributes: {},
+          },
+        }),
+      ),
+    );
+    const save = (p: Record<string, unknown>, version?: number) =>
+      db.$transaction((tx) =>
+        saveTreasuryInstrument(tx, book, p, version, userId),
+      );
+    const p = {
+      kind: 'cashboxes',
+      title: 'Synthetic cash',
+      operatorId: people[0]!.id,
+    };
+    const box = await save(p);
+    await save({ ...p, id: box.id, title: 'New cash title' }, box.version);
+    await expect(save({ ...p, id: box.id }, box.version)).rejects.toThrow();
+    await save(
+      { ...p, id: box.id, operatorId: people[1]!.id },
+      box.version + 1,
+    );
+    const intervals = await db.treasuryCashierAssignment.findMany({
+      where: { instrumentId: box.id },
+      orderBy: { startsAt: 'asc' },
+    });
+    expect(intervals).toHaveLength(2);
+    expect(intervals[0]!.endsAt).toEqual(intervals[1]!.startsAt);
+    expect(intervals[1]!.endsAt).toBeNull();
+    const history = await db.$transaction((tx) =>
+      treasuryInstruments(tx, book, {
+        view: 'cashiers',
+        instrumentId: box.id,
+        from: '2020-01-01',
+        to: '2099-01-01',
+      }),
+    );
+    expect(history.rows).toHaveLength(2);
+    const bank = await db.financeSettlementAccount.create({
+      data: {
+        branchId,
+        kind: 'BANK',
+        title: 'Synthetic bank account',
+        currencyCode: 'IRR',
+        createdByUserId: userId,
+      },
+    });
+    const provider = await db.accountingConfiguration.create({
+      data: {
+        bookId,
+        kind: 'payment-providers',
+        code: '001',
+        title: 'Synthetic PSP',
+        attributes: {},
+      },
+    });
+    const terminal = {
+      kind: 'terminals',
+      providerId: provider.id,
+      deviceType: 'کارت خوان',
+      terminalNumber: '00015',
+      merchantNumber: '00001',
+      receivingBankId: bank.id,
+    };
+    const pos = await save(terminal);
+    expect(
+      await db.financeSettlementAccount.findUniqueOrThrow({
+        where: { id: pos.id },
+      }),
+    ).toMatchObject({
+      kind: 'POS',
+      currencyCode: 'IRR',
+      branchId,
+      title: '00015',
+    });
+    await expect(
+      save({ ...terminal, deviceType: 'unknown' }),
+    ).rejects.toThrow();
+    await expect(
+      save({ ...terminal, receivingBankId: box.id }),
+    ).rejects.toThrow();
+    await expect(save(terminal)).rejects.toThrow();
+    expect(
+      await db.financeSettlementAccount.count({
+        where: { branchId, kind: 'POS' },
+      }),
+    ).toBe(1);
+    expect(() =>
+      treasuryConfigAttributes('treasury-causes', '01', {
+        documentType: 'unknown',
+      }),
+    ).toThrow();
+  });
+  it('filters by whole-document debit before account selection and uses the same scope for drilldown', async () => {
+    const browse = (
+      filters: Record<string, string>,
+      from = '2026-01-01',
+      scope = periodId,
+    ) =>
+      db.$transaction((tx) =>
+        readAccountBrowser(tx, bookId, scope, from, '2026-12-31', {
+          axis: 'SUBSIDIARY',
+          accountIds: debitId,
+          ...filters,
+        }),
+      );
+    const filters = {
+      minAmount: '26000000000000000000.26',
+      maxAmount: '26000000000000000000.26',
+    };
+    const report = await browse(filters);
+    expect(report.rows).toMatchObject([
+      {
+        key: debitId,
+        opening: '0',
+        debit: filters.minAmount,
+        balance: filters.minAmount,
+      },
+    ]);
+    const turnover = await browse({ ...filters, selectedKey: debitId });
+    expect(turnover.lines).toHaveLength(26);
+    expect(
+      turnover.lines.every(
+        (l) => l.number === 1 && l.debit === '1000000000000000000.01',
+      ),
+    ).toBe(true);
+    expect((await browse(filters, '2026-04-01')).rows[0]).toMatchObject({
+      opening: filters.minAmount,
+      debit: '0',
+    });
+    expect((await browse({ ...filters, currencyOnly: 'true' })).rows).toEqual(
+      [],
+    );
+    expect((await browse({ ...filters, traceableOnly: 'true' })).rows).toEqual(
+      [],
+    );
+    expect((await browse(filters, undefined, randomUUID())).rows).toEqual([]);
+    expect(
+      (
+        await browse({
+          ...filters,
+          minAmount: '26000000000000000000.27',
+          maxAmount: '',
+        })
+      ).rows,
+    ).toEqual([]);
+    await expect(
+      browse({ minAmount: '100', maxAmount: '99' }),
+    ).rejects.toThrow();
+  });
   it('paginates 52 posted lines with exact whole-filter totals and excludes the draft', async () => {
     const first = await service.journalLines(bookId, { periodId }, actor);
     const second = await service.journalLines(

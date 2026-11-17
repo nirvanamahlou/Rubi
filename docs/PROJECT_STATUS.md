@@ -57,6 +57,14 @@ Shared Composer intent arbitration separates data/evidence follow-ups from catal
 Supplier PDF mail POST accepts a canonical HTTPS browser origin when the TLS proxy forwards the same public Host over HTTP to Next. Foreign, opaque/missing, malformed, credential-bearing and wrong-port origins remain rejected; forwarded header spoofing cannot authorize a request. Native authenticated workflow lookup, branch/permission checks, saved version/PDF signature and mail queue controls remain.15 route regressions and scoped lint pass, including same-host proxy success and unchanged401/403/404 API rejection. No real email sent, grants/data/dependency/schema or production change. Hosted quality/build/tests gates precede the owner-authorized develop merge.
 FLOATING-MERGED-TEMPLATE-1116 CI repair: the latest develop had an undeclared referral override DTO field and missing optional IAM service injection in the existing Nima-only leave-substitute override. Restored only those existing references, preserving fail-closed HR policy and positional constructors.44 focused pricing/Workbench tests and scoped lint pass. Hosted checks remain the final gate.
 
+## 2026-11-17 — FINANCE-RAHKARAN-PARITY-1117
+
+PC-D added ledger-scoped tax reference import and mapping, internal seasonal report validation and snapshots, the analytical account browser, Treasury definitions and year-end readiness. Source inspection used period 1405. See [implementation, evidence and outstanding dependencies](tasks/FINANCE-RAHKARAN-PARITY-1117.md).
+
+## 2026-11-17 — FINANCE-BANK-CONTROLS-1117
+
+Finance now distinguishes dispatch by an exchange office from receipt by a broker. Purchase balances change only on confirmation; the active company's bank register controls direct transfer destinations. Treasury can reconcile imported statements with posted bank lines. Changes, examples, permissions and migration scope: [bank controls](tasks/FINANCE-BANK-CONTROLS-1117.md).
+
 ## FLOATING-MERGED-TEMPLATE-1116 — PC-A
 
 Floating tour pricing now exposes a styled template download. Combined templates contain one row per destination and actual vertically merged shared-price/date cells. Import preserves Excel merge boundaries and physical source rows, validates every itinerary stay and counts each common price/commission/flight once. Three-stay and separate equal-price combination round trips pass, including malformed/overlapping merge rejection and branch-scoped read-only template access. Legacy templates remain compatible. No schema/migration/dependency/data/deployment change. Local contracts build,22 API and5 Web/i18n checks plus affected lint pass; full hosted quality/build/tests/migration gates precede the user-authorized develop merge.

@@ -83,7 +83,7 @@ import { MasterDataTravelServicesWorkspace } from './master-data-travel-services
 
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
-function GenericMasterDataWorkspace({
+export function GenericMasterDataWorkspace({
   section,
 }: {
   section: MasterDataSectionDefinition;

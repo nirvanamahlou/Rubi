@@ -1,4 +1,4 @@
-import { debitExchange } from '../exchange-offices/exchange-payment';
+import { verifyBankPayment } from '../payments/broker-transfer';
 import { recordPurchaseGroup } from './record-purchase-group';
 import { purchaseFlightGroup, readPurchasePool } from './ticket-purchase-group';
 import { financialDate } from '../accounting/accounting.financial-events';
@@ -249,7 +249,10 @@ export class FinanceTicketCostService {
       const previous = await tx.financeTicketPurchaseCostRevision.findFirst({
         where: { requestId },
         orderBy: { version: 'desc' },
-        include: { payments: { take: 1 } },
+        include: {
+          payments: { take: 1 },
+          brokerTransfers: { take: 1, select: { id: true } },
+        },
       });
       if (
         input.expectedCostVersion !== undefined &&
@@ -262,7 +265,7 @@ export class FinanceTicketCostService {
         throw new ConflictException(
           'Edit the complete original purchase group.',
         );
-      if (previous?.payments.length)
+      if (previous?.payments.length || previous?.brokerTransfers?.length)
         throw new ConflictException(
           'پس از آغاز پرداخت، اصلاح قیمت خرید مجاز نیست.',
         );
@@ -496,7 +499,13 @@ export class FinanceTicketCostService {
       );
       if (input.operationId) {
         const replay = await tx.financeTicketPurchasePaymentRevision.findUnique(
-          { where: { id: input.operationId }, include: { cost: true } },
+          {
+            where: { id: input.operationId },
+            include: {
+              cost: true,
+              brokerTransfer: { select: { receiptId: true } },
+            },
+          },
         );
         if (replay) {
           if (
@@ -509,6 +518,11 @@ export class FinanceTicketCostService {
               (input.payingSupplierId || null) ||
             (replay.exchangeOfficeId ?? null) !==
               (input.exchangeOfficeId || null) ||
+            (replay.beneficiaryId ?? null) !== (input.beneficiaryId ?? null) ||
+            (replay.brokerTransferId ?? null) !==
+              (input.brokerTransferId ?? null) ||
+            (replay.brokerTransfer?.receiptId ?? null) !==
+              (input.brokerReceiptId ?? null) ||
             replay.paymentMethodId !== input.paymentMethodId ||
             !replay.paidAmount.equals(amount) ||
             !replay.exchangeRateToIrr.equals(rate) ||
@@ -586,9 +600,29 @@ export class FinanceTicketCostService {
       const remaining = cost.invoiceAmount.sub(cumulative);
       if (remaining.lt(0))
         throw new BadRequestException('پرداخت بیش از مبلغ فاکتور است.');
+      const verified = await verifyBankPayment(
+        tx,
+        input,
+        { costId: cost.id },
+        {
+          amount: amount.toString(),
+          rate: rate.toString(),
+          remaining: cost.invoiceAmount
+            .sub(previous?.cumulativePaid ?? 0)
+            .toString(),
+          currency: cost.currencyCode,
+          actorId: actor.userId,
+          branchId: request.branchId,
+          date: transferAt,
+          payeeCurrency: account?.currencyCode,
+          channel: account ? method.channel : undefined,
+          party: { name: request.supplierDisplaySnapshot },
+        },
+      );
       const rialEquivalent = amount.mul(rate).toDecimalPlaces(4);
       const row = await tx.financeTicketPurchasePaymentRevision.create({
         data: {
+          ...verified,
           id: input.operationId ?? randomUUID(),
           costRevisionId: cost.id,
           version: (previous?.version ?? 0) + 1,
@@ -609,13 +643,6 @@ export class FinanceTicketCostService {
           reason: '',
           actorUserId: actor.userId,
         },
-      });
-      await debitExchange(tx, {
-        officeId: exchangeOfficeId,
-        currencyCode: cost.currencyCode,
-        amount: amount.toString(),
-        actorUserId: actor.userId,
-        ticketPaymentId: row.id,
       });
       if (!previous && (await isNewAccountingSource(tx, cost.createdAt)))
         await recordFinancialEvent(tx, {

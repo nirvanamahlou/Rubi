@@ -499,6 +499,9 @@ export function reservationServicePurchaseTotal(
 }
 
 export interface FinanceSupplierPaymentCommandV1 {
+  beneficiaryId?: string | null;
+  brokerTransferId?: string | null;
+  brokerReceiptId?: string | null;
   payingSupplierId?: string | null;
   exchangeOfficeId?: string | null;
   expectedVersion: number;

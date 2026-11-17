@@ -36,8 +36,10 @@ export class BankAccountController {
     @Param('bankId') bankId: string,
     @Query('page') page: string | undefined,
     @Req() req: AuthenticatedRequest,
+    @Query('companyBranchId') companyBranchId?: string,
+    @Query('bookId') bookId?: string,
   ) {
-    return this.service.list(bankId, page, req.actor);
+    return this.service.list(bankId, page, req.actor, companyBranchId, bookId);
   }
   @Post()
   @Header('Cache-Control', 'private, no-store')

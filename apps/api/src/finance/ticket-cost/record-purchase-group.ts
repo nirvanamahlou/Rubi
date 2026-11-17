@@ -202,7 +202,10 @@ export async function recordPurchaseGroup(
           tx.financeTicketPurchaseCostRevision.findFirst({
             where: { requestId: m.requestId },
             orderBy: { version: 'desc' },
-            include: { payments: { take: 1 } },
+            include: {
+              payments: { take: 1 },
+              brokerTransfers: { take: 1, select: { id: true } },
+            },
           }),
         ),
       );
@@ -210,7 +213,8 @@ export async function recordPurchaseGroup(
         const old = previous[i];
         if (
           (old?.version ?? 0) !== members[i]!.expectedCostVersion ||
-          old?.payments.length
+          old?.payments.length ||
+          old?.brokerTransfers?.length
         )
           throw new ConflictException(
             'Purchase changed or payment has started. Refresh the inbox.',

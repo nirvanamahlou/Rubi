@@ -24,26 +24,32 @@ export function accountingRouteCapabilities(
     'taxpayer-system/lists/cancellations',
     'taxpayer-system/lists/batch-schedules',
   ];
+  const seasonal = route === 'tax-accounting/vat/quarterly-sales-report';
+  const treasuryHistory =
+    implementation === 'treasury-definition' &&
+    (route.endsWith('/bank-history') || route.endsWith('/cashier-history'));
   const storage =
-    !blocked &&
-    !list &&
-    (draftForms.includes(route) ||
-      [
-        'configuration',
-        'ledger',
-        'accounts',
-        'details',
-        'account-groups',
-        'detail-groups',
-        'mapping',
-        'coding-standard',
-        'standard-mapping',
-        'detail-conversion',
-        'journal-edit',
-        'template-list',
-        'tax-reference',
-        'taxpayer-seller',
-      ].includes(implementation));
+    seasonal ||
+    (implementation === 'treasury-definition' && !treasuryHistory) ||
+    (!blocked &&
+      !list &&
+      (draftForms.includes(route) ||
+        [
+          'configuration',
+          'ledger',
+          'accounts',
+          'details',
+          'account-groups',
+          'detail-groups',
+          'mapping',
+          'coding-standard',
+          'standard-mapping',
+          'detail-conversion',
+          'journal-edit',
+          'template-list',
+          'tax-reference',
+          'taxpayer-seller',
+        ].includes(implementation)));
   const execution =
     !blocked &&
     !sourceStageBlocked &&
@@ -61,24 +67,26 @@ export function accountingRouteCapabilities(
       'year-end-nature-adjustment',
     ].includes(implementation);
   const reporting =
-    !blocked &&
-    (!!internalAccountingReportKind(route) ||
-      draftLists.includes(route) ||
-      [
-        'statement-list',
-        'trial-balance',
-        'turnover-report',
-        'analytical-report',
-        'chart-report',
-        'journal-line-report',
-        'journal-browser-report',
-        'electronic-book-report',
-        'standard-report',
-        'journal-list',
-        'configuration-list',
-      ].includes(implementation) ||
-      route === 'general-ledger/documents/lists/revaluations' ||
-      route === 'general-ledger/documents/lists/gl-vouchers');
+    seasonal ||
+    treasuryHistory ||
+    (!blocked &&
+      (!!internalAccountingReportKind(route) ||
+        draftLists.includes(route) ||
+        [
+          'statement-list',
+          'trial-balance',
+          'turnover-report',
+          'analytical-report',
+          'chart-report',
+          'journal-line-report',
+          'journal-browser-report',
+          'electronic-book-report',
+          'standard-report',
+          'journal-list',
+          'configuration-list',
+        ].includes(implementation) ||
+        route === 'general-ledger/documents/lists/revaluations' ||
+        route === 'general-ledger/documents/lists/gl-vouchers'));
   return {
     observedForm: evidenceStatus === 'observed-layout',
     storage,

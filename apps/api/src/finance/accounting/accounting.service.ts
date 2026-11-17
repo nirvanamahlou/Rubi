@@ -1,3 +1,5 @@
+import { bankCommand, bankReport } from './bank-reconciliation';
+import { beneficiaryRegister, saveBeneficiary } from '../payments/bank-payee';
 import {
   voidedSalesReceiptEvent,
   voidedSalesReceiptIds,
@@ -80,6 +82,29 @@ import { accountingCurrencies } from './accounting.currency-directory';
 import { IamFinanceDirectory } from '../../iam/iam-finance-directory';
 import { DecimalValue } from '../finance.money';
 import * as v from './accounting.validation';
+import { readAccountBrowser } from './accounting-account-browser';
+import {
+  importTaxReference,
+  saveTaxMapping,
+  taxKind,
+  taxMappingView,
+} from './tax-reference';
+import {
+  finalizeSeasonal,
+  seasonalLayout,
+  seasonalPreview,
+  seasonalSnapshot,
+  setSeasonalRegion,
+} from './seasonal-report';
+import { hasAccessControl } from '@nora/contracts';
+import {
+  saveTreasuryInstrument,
+  treasuryInstruments,
+} from './treasury-instruments';
+import {
+  treasuryConfigAttributes,
+  treasuryConfigKinds,
+} from './accounting-treasury';
 import {
   executeAccountSetup,
   validateGroupDetailAllocations,
@@ -204,6 +229,7 @@ const resetApprovalAttributes = (value: unknown) =>
     'warnings',
   ]);
 const kinds = [
+  ...treasuryConfigKinds,
   'coding-standards',
   'accounting-list-filters',
   'approval-policies',
@@ -984,11 +1010,11 @@ export class AccountingService {
     actor: AuthenticatedActor,
   ) {
     const permission: IamPermissionCode =
-      action === 'workflow-cancel'
+      action === 'workflow-cancel' || action === 'bank-statement-finalize'
         ? 'finance.journal.approve'
         : action.startsWith('workflow-')
           ? 'finance.journal.create'
-          : action === 'export-batch'
+          : ['export-batch', 'seasonal-finalize'].includes(action)
             ? 'finance.export'
             : [
                   'approve',
@@ -1199,6 +1225,39 @@ export class AccountingService {
       ].includes(action)
     )
       return standardCommand(tx, bookId, action, p, expected);
+    if (action === 'save-beneficiary' || action.startsWith('bank-statement-')) {
+      if (
+        !actor.permissions.includes('master_data.read') ||
+        !hasAccessControl(actor.permissions, 'master-data.resource.banks')
+      )
+        throw new ForbiddenException();
+      if (action === 'save-beneficiary')
+        return saveBeneficiary(tx, book, p, expected);
+      const { period } = await this.reportPeriod(tx, bookId, {
+        periodId: v.uuid(p.periodId)!,
+      });
+      return bankCommand(tx, book, period, action, p);
+    }
+    if (action === 'tax-reference-import')
+      return importTaxReference(tx, bookId, p, actor.userId);
+    if (action === 'tax-map-save') return saveTaxMapping(tx, bookId, p);
+    if (action === 'seasonal-finalize' || action === 'seasonal-region') {
+      const window = await this.reportPeriod(tx, bookId, {
+        periodId: v.uuid(p.periodId)!,
+        from: v.date(p.from)!,
+        to: v.date(p.to)!,
+      });
+      return action === 'seasonal-region'
+        ? setSeasonalRegion(tx, bookId, window, p)
+        : finalizeSeasonal(
+            tx,
+            bookId,
+            window,
+            seasonalLayout(p.layout),
+            p.digest,
+            actor.userId,
+          );
+    }
     if (action === 'workflow-create')
       return captureWorkflow(tx, book, p, actor);
     if (action === 'workflow-cancel') return cancelWorkflow(tx, book, p, actor);
@@ -3469,6 +3528,8 @@ export class AccountingService {
         },
       });
     }
+    if (action === 'save-treasury-instrument')
+      return saveTreasuryInstrument(tx, book, p, expected, actor.userId);
     if (action === 'save-configuration') {
       const kind = v.text(p.kind, 40, true);
       if (!kinds.includes(kind)) v.invalid('نوع اطلاعات پایه معتبر نیست.');
@@ -3481,6 +3542,8 @@ export class AccountingService {
         if (existing.kind !== kind) v.invalid('نوع رکورد قابل تغییر نیست.');
       }
       let attributes = v.attributes(p.attributes);
+      if (treasuryConfigKinds.includes(kind))
+        attributes = treasuryConfigAttributes(kind, p.code, attributes);
       if (kind === 'accounting-list-filters')
         attributes = listFilterAttributes(attributes);
       if (kind === 'coding-standards') {
@@ -6681,8 +6744,75 @@ export class AccountingService {
     actor: AuthenticatedActor,
   ) {
     this.require(actor);
+    if (kind === 'bank-reconciliation' || kind === 'beneficiaries') {
+      if (
+        !actor.permissions.includes('master_data.read') ||
+        !hasAccessControl(actor.permissions, 'master-data.resource.banks')
+      )
+        throw new ForbiddenException();
+      return this.database.client.$transaction(
+        async (tx) => {
+          const book = await this.book(tx, bookId, actor);
+          if (kind === 'beneficiaries') return beneficiaryRegister(tx, book);
+          const { period } = await this.reportPeriod(tx, bookId, query);
+          return bankReport(tx, book, period, query);
+        },
+        { isolationLevel: 'RepeatableRead' },
+      );
+    }
+    if (kind === 'tax-mapping' || kind === 'seasonal-report') {
+      return this.database.client.$transaction(
+        async (tx) => {
+          await this.book(tx, bookId, actor);
+          if (kind === 'tax-mapping')
+            return taxMappingView(tx, bookId, taxKind(query.kind));
+          const window = await this.reportPeriod(tx, bookId, query);
+          if (query.snapshotId)
+            return seasonalSnapshot(
+              tx,
+              bookId,
+              window.period.id,
+              query.snapshotId,
+            );
+          return seasonalPreview(
+            tx,
+            bookId,
+            window,
+            seasonalLayout(query.layout),
+          );
+        },
+        {
+          isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+          timeout: 20000,
+        },
+      );
+    }
+    if (kind === 'treasury-instruments') {
+      if (
+        ['bank-history', 'history-banks'].includes(query.view ?? '') &&
+        (!actor.permissions.includes('master_data.read') ||
+          !hasAccessControl(actor.permissions, 'master-data.resource.banks'))
+      )
+        throw new ForbiddenException();
+      return this.database.client.$transaction(async (tx) =>
+        treasuryInstruments(tx, await this.book(tx, bookId, actor), query),
+      );
+    }
     if (kind !== 'standard-mapping')
       query = this.fiscal?.query(bookId, query) ?? query;
+    if (kind === 'account-browser')
+      return this.database.client.$transaction(
+        async (tx) => {
+          await this.book(tx, bookId, actor);
+          const { period, from, to } = await this.reportPeriod(
+            tx,
+            bookId,
+            query,
+          );
+          return readAccountBrowser(tx, bookId, period.id, from, to, query);
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+      );
     if (kind === 'standard-mapping' || kind === 'standard-turnover')
       return this.database.client.$transaction(
         async (tx) => {
