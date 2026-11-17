@@ -511,9 +511,6 @@ export class CustomerRepository {
         kind: true,
         nationalIdFingerprint: true,
         passportNumberFingerprint: true,
-        firstName: true,
-        lastName: true,
-        birthDate: true,
       },
     });
   }
