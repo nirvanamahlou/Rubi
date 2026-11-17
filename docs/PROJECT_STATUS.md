@@ -10328,3 +10328,8 @@ Validation:36 focused matching/bulk-publication/facts/price-row tests and affect
 
 ## HOTEL-IMAGES-1117
 Hotel create/edit forms now support one main image and a six-image gallery. Uploads are decoded and re-encoded to WebP in persistent public-hotel-images storage under DOCUMENTS_STORAGE_ROOT. Profiles show direct downloadable thumbnails; uploaded image downloads are public. Existing hotel image attributes are reused. 13 focused API and 37 Web tests and affected ESLint pass. No migration.
+
+
+## CHECKOUT-ADVISORY-1117 — PC-A — ACTIVE
+
+COMPUTER_ID=PC-A; branch codex/pc-a-checkout-advisory-1117 from develop4d1182948. User reports ERP checkout connection failure and requests real flight/passenger confirmation before Saman payment, with ten-minute inventory acquisition only on the explicit payment action. Reserve only WebsiteCheckoutHoldsService prepare advisory command, one isolated PostgreSQL regression and own append-only task/status notes. Production read-only diagnostic proved P2010: pg_advisory_xact_lock returns PostgreSQL void, which Prisma queryRaw cannot deserialize. Use executeRaw for this command, preserving the identical transaction-scoped lock key and all ownership/replay/capacity/quote/expiry rules. No schema, migration, dependency, permission or financial mutation. Site consumer/UI changes are separate files; no active overlapping writer found. Merge/release use existing user publication authorization and exact-head quality/test/build/DB gates, latest-runtime source/image CAS and shared deployment lock. No live synthetic orders/holds/payments.

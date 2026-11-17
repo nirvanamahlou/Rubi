@@ -98,6 +98,7 @@ function harness(status = 'VERIFIED') {
     .mockImplementation(async ({ data }) => Object.assign(row, data));
   const tx = {
     $queryRaw: vi.fn(),
+    $executeRaw: vi.fn(),
     websiteCheckoutSession: {
       findUnique: vi.fn().mockResolvedValue(row),
       findUniqueOrThrow: vi.fn().mockResolvedValue(row),
@@ -278,6 +279,7 @@ describe('verified checkout draft witness and transitions', () => {
     expect(
       (await h.service.prepare('qa', 'checkout', body, actor)).data.expiresAt,
     ).toBe(expiry.toISOString());
+    expect(h.tx.$executeRaw).toHaveBeenCalledOnce();
     await expect(
       h.service.prepare(
         'qa',

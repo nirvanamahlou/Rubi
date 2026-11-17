@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { NotFoundException } from '@nestjs/common';
+import { WebsiteCheckoutHoldsService } from '../site-commerce/website-checkout-holds.service';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createDatabaseClient } from '@nora/database';
 import type { AuthenticatedActor } from '@nora/contracts';
@@ -45,6 +47,45 @@ describe.skipIf(!url)('isolated PostgreSQL checkout inventory', () => {
   }, 60000);
   afterAll(async () => {
     await db?.$disconnect();
+  });
+  it('executes the checkout advisory command without deserializing PostgreSQL void', async () => {
+    const previousBinding = process.env.SITE_COMMERCE_BINDINGS;
+    process.env.SITE_COMMERCE_BINDINGS = JSON.stringify({
+      qa: { userId, branchId },
+    });
+    const service = new WebsiteCheckoutHoldsService(
+      { client: db } as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      capacity,
+      {} as never,
+      {} as never,
+    );
+    const externalId = 'qa-advisory-' + randomUUID();
+    try {
+      await expect(
+        service.prepare(
+          'qa',
+          externalId,
+          {
+            productIds: [randomUUID()],
+            birthDates: ['2000-01-01'],
+            customerExternalId: 'synthetic-advisory-buyer',
+            requesterName: 'Synthetic buyer',
+            requesterPhone: '00000000000',
+          },
+          actor,
+        ),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(
+        await db.websiteCheckoutSession.count({ where: { externalId } }),
+      ).toBe(0);
+    } finally {
+      if (previousBinding === undefined)
+        delete process.env.SITE_COMMERCE_BINDINGS;
+      else process.env.SITE_COMMERCE_BINDINGS = previousBinding;
+    }
   });
   const offer = async (number: string, quantity = 1) =>
     (
