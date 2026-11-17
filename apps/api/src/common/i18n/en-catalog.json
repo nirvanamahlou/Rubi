@@ -9187,5 +9187,8 @@
   "ثبت هزینه فقط پس از پایان مأموریت مجاز است.": "Expenses may only be submitted after the mission ends.",
   "مدرک هزینه مأموریت": "Mission expense document",
   "نوع درخواست را مشخص کنید.": "Select the request type.",
-  "هزینه مأموریت ثبت شد.": "Mission expenses submitted."
+  "هزینه مأموریت ثبت شد.": "Mission expenses submitted.",
+  "بین یک تا شش عکس انتخاب کنید.": "Select one to six images.",
+  "عکس باید PNG، JPEG یا WebP معتبر و حداکثر ۴۰ مگاپیکسل باشد.": "Use a valid PNG, JPEG or WebP image of up to 40 megapixels.",
+  "گالری هتل حداکثر ۶ عکس می‌پذیرد.": "The hotel gallery accepts up to 6 images."
 }

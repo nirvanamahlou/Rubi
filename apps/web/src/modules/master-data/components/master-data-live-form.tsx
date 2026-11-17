@@ -1,4 +1,5 @@
 'use client';
+import { HotelImageUpload } from './hotel-images';
 import { hotelMultilineFields } from '../model/hotel-profile-fields';
 import { MasterDataBrokerForm } from './master-data-broker-form';
 import { MasterDataCompositeHotelForm } from './master-data-composite-hotel-form';
@@ -258,6 +259,7 @@ function GenericMasterDataLiveForm({
   } | null>(null);
   const [referenceRevision, setReferenceRevision] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [imagesBusy, setImagesBusy] = useState(false);
   const [logoChange, setLogoChange] = useState<MasterDataLogoChange>();
   const [saving, setSaving] = useState(false);
   const [supplierPhoneTouched, setSupplierPhoneTouched] = useState(false);
@@ -266,13 +268,20 @@ function GenericMasterDataLiveForm({
   >(new Set());
   const readonly = mode === 'view';
   const focusRestore = useMasterDataDialogFocusRestore();
-  const fields = getMasterDataFormFields(definition, mode).filter(
-    (field) =>
-      definition.key !== 'brokers' ||
-      field.key !== 'primaryContactId' ||
-      mode === 'view' ||
-      (mode === 'edit' && Boolean(record?.attributes.organizationId)),
-  );
+  const fields = getMasterDataFormFields(definition, mode)
+    .filter(
+      (field) =>
+        mode === 'view' ||
+        definition.key !== 'hotels' ||
+        !['sourceMainImage', 'sourceGalleryImages'].includes(field.key),
+    )
+    .filter(
+      (field) =>
+        definition.key !== 'brokers' ||
+        field.key !== 'primaryContactId' ||
+        mode === 'view' ||
+        (mode === 'edit' && Boolean(record?.attributes.organizationId)),
+    );
 
   function displayValue(field: (typeof fields)[number], value: string): string {
     const option = field.options?.find((item) => item.value === value);
@@ -302,7 +311,7 @@ function GenericMasterDataLiveForm({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (readonly) return;
+    if (readonly || imagesBusy) return;
     const result = validateMasterDataDraft(definition.key, values);
     setErrors(result.errors);
     if (!result.success) return;
@@ -565,14 +574,27 @@ function GenericMasterDataLiveForm({
                     value={values[field.key] ?? ''}
                   />
                 ) : field.key === 'logoFileReference' ? (
-                  <MasterDataLogoUpload
-                    disabled={readonly || saving}
-                    label={field.label}
-                    onChange={setLogoChange}
-                    {...(logoChange ? { pending: logoChange } : {})}
-                    {...(record ? { record } : {})}
-                    value={values[field.key] ?? ''}
-                  />
+                  <>
+                    <MasterDataLogoUpload
+                      disabled={readonly || saving}
+                      label={field.label}
+                      onChange={setLogoChange}
+                      {...(logoChange ? { pending: logoChange } : {})}
+                      {...(record ? { record } : {})}
+                      value={values[field.key] ?? ''}
+                    />
+                    {definition.key === 'hotels' && (
+                      <HotelImageUpload
+                        main={values.sourceMainImage ?? ''}
+                        gallery={values.sourceGalleryImages ?? ''}
+                        disabled={readonly || saving}
+                        onBusy={setImagesBusy}
+                        onChange={(key, value) =>
+                          setValues((current) => ({ ...current, [key]: value }))
+                        }
+                      />
+                    )}
+                  </>
                 ) : field.type === 'select' ? (
                   <Select
                     disabled={readonly || saving}
@@ -747,7 +769,7 @@ function GenericMasterDataLiveForm({
                   </Button>
                 </DialogClose>
                 {!readonly ? (
-                  <Button loading={saving} type="submit">
+                  <Button disabled={imagesBusy} loading={saving} type="submit">
                     ذخیره
                   </Button>
                 ) : null}

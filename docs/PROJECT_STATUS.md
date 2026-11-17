@@ -10326,6 +10326,9 @@ Site-management ticket cards now retain the exact native fare-row filter results
 
 Validation:36 focused matching/bulk-publication/facts/price-row tests and affected ESLint pass. Regression coverage includes an offer carrying both fare types, query-specific returns, clearing the type filter, unchanged source objects, paired-only fares, branch/status scope and native date bounds. Final-head full hosted quality/test/PostgreSQL/production-build gates precede the owner-authorized develop merge. Source lease releases on verified merge; branch codex/pc-a-site-ticket-type-filter-1117 from a27328ecd.
 
+## HOTEL-IMAGES-1117
+Hotel create/edit forms now support one main image and a six-image gallery. Uploads are decoded and re-encoded to WebP in persistent public-hotel-images storage under DOCUMENTS_STORAGE_ROOT. Profiles show direct downloadable thumbnails; uploaded image downloads are public. Existing hotel image attributes are reused. 13 focused API and 37 Web tests and affected ESLint pass. No migration.
+
 
 ## CHECKOUT-ADVISORY-1117 — PC-A — ACTIVE
 
