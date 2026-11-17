@@ -163,3 +163,7 @@ The additive POST /v1/assistant/workbench-guide accepts only version1/topicId/go
 ## Operator request quota exemptions —2026-11-16
 
 ASSISTANT_RATE_LIMIT_EXEMPT_USER_IDS accepts a private comma-separated immutable native IAM UUID allowlist. Matched authenticated accounts bypass application user/IP request quotas and the ordinary concurrency pool; other users retain existing limits. No client username/header grants exemption. Data permissions, SQL safety and provider limits remain enforced. Invalid configuration fails startup. See ../../docs/tasks/NORA-ACCOUNT-RATE-EXEMPTIONS-1116.md.
+
+## Persian contractual-sales period evidence
+
+Explicit plain Persian sales-window questions use runtime calendar resolution and a bounded, same-snapshot reconciliation through the existing authorized Sales query endpoint after model-authored SQL. Unique contracts differ from currency rows. Typed financial facts preserve Groq's choice of table/list/prose while preventing invented dates/counts or discount semantics. This is not accounting revenue or the native active-panel population. See [scope and acceptance](../../docs/tasks/NORA-SALES-EVIDENCE-1117.md).
