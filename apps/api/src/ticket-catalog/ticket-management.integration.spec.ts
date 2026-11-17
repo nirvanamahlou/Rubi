@@ -1,3 +1,4 @@
+import { CheckoutTicketCapacity } from './checkout-ticket-capacity';
 import { Test } from '@nestjs/testing';
 import type { INestApplication, ExecutionContext } from '@nestjs/common';
 import request from 'supertest';
@@ -8,7 +9,7 @@ import { randomUUID } from 'node:crypto';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createDatabaseClient } from '@nora/database';
 import type { AuthenticatedActor, TicketOfferCreateV1 } from '@nora/contracts';
-import type { DatabaseService } from '../database/database.service';
+import { DatabaseService } from '../database/database.service';
 import { ProcurementPublicService } from '../procurement/procurement-public.service';
 import { TicketPublicService } from './ticket-public.service';
 const url = process.env.TICKET_MANAGEMENT_TEST_DATABASE_URL;
@@ -63,6 +64,8 @@ describe.skipIf(!url)('ticket management PostgreSQL lifecycle', () => {
     const module = await Test.createTestingModule({
       controllers: Reflect.getMetadata('controllers', TicketRuntimeModule),
       providers: [
+        { provide: DatabaseService, useValue: database },
+        CheckoutTicketCapacity,
         { provide: TicketPublicService, useValue: service },
         { provide: TourPublicService, useValue: {} },
       ],

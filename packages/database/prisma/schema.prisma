@@ -30,6 +30,8 @@ enum AuditOutcome {
 }
 
 model User {
+  websiteCheckoutSessions WebsiteCheckoutSession[]
+
   standaloneInsuranceApplicants   ReservationInsuranceApplicant[]
   insuranceApplicantReads         ReservationInsuranceApplicantAccess[]
   exchangeAudits                  FinanceExchangeAudit[]
@@ -278,6 +280,8 @@ model RolePermission {
 }
 
 model Branch {
+  websiteCheckoutSessions WebsiteCheckoutSession[]
+
   websiteCatalogDeliveries      WebsiteCatalogDelivery[]
   websitePublications           WebsitePublication[]
   websiteOrders                 WebsiteOrder[]
@@ -4026,6 +4030,8 @@ model SalesContractNumberCounter {
 }
 
 model SalesContract {
+  checkoutCapacityHolds     TicketOfferCapacityHold[]      @relation("CheckoutContractCapacityHolds")
+  checkoutSession           WebsiteCheckoutSession?        @relation("CheckoutSessionContract")
   websiteOrder              WebsiteOrder?
   legalEntityId             String?                        @map("legal_entity_id") @db.Uuid
   legalEntity               LegalEntity?                   @relation(fields: [legalEntityId], references: [id], onDelete: Restrict)
@@ -4585,23 +4591,34 @@ model TicketOfferCapacityAllocation {
 }
 
 model TicketOfferCapacityHold {
-  requesterName   String?              @db.VarChar(160)
-  id              String               @id @default(uuid()) @db.Uuid
-  offerId         String               @db.Uuid
-  branchId        String               @db.Uuid
-  quantity        Int
-  status          String               @default("ACTIVE") @db.VarChar(20)
-  expiresAt       DateTime             @db.Timestamptz(3)
-  createdByUserId String               @db.Uuid
-  idempotencyKey  String               @db.VarChar(160)
-  fingerprint     String               @db.VarChar(64)
-  createdAt       DateTime             @default(now()) @db.Timestamptz(3)
-  releasedAt      DateTime?            @db.Timestamptz(3)
-  offer           TicketPublishedOffer @relation(fields: [offerId], references: [id], onDelete: Restrict)
-  branch          Branch               @relation("TicketCapacityHoldBranch", fields: [branchId], references: [id], onDelete: Restrict)
-  createdByUser   User                 @relation("TicketCapacityHoldCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  checkoutContractId       String?                 @db.Uuid
+  checkoutSessionId        String?                 @db.Uuid
+  checkoutSession          WebsiteCheckoutSession? @relation(fields: [checkoutSessionId], references: [id], onDelete: Restrict)
+  checkoutQuoteFingerprint String?                 @db.Char(64)
+  checkoutContract         SalesContract?          @relation("CheckoutContractCapacityHolds", fields: [checkoutContractId], references: [id], onDelete: Restrict)
+  requesterPhone           String?                 @db.VarChar(40)
+  paymentPendingAt         DateTime?               @db.Timestamptz(3)
+  paymentAttemptKey        String?                 @db.VarChar(160)
+  requesterName            String?                 @db.VarChar(160)
+  id                       String                  @id @default(uuid()) @db.Uuid
+  offerId                  String                  @db.Uuid
+  branchId                 String                  @db.Uuid
+  quantity                 Int
+  status                   String                  @default("ACTIVE") @db.VarChar(20)
+  expiresAt                DateTime                @db.Timestamptz(3)
+  createdByUserId          String                  @db.Uuid
+  idempotencyKey           String                  @db.VarChar(160)
+  fingerprint              String                  @db.VarChar(64)
+  createdAt                DateTime                @default(now()) @db.Timestamptz(3)
+  releasedAt               DateTime?               @db.Timestamptz(3)
+  offer                    TicketPublishedOffer    @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  branch                   Branch                  @relation("TicketCapacityHoldBranch", fields: [branchId], references: [id], onDelete: Restrict)
+  createdByUser            User                    @relation("TicketCapacityHoldCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
 
+  @@unique([checkoutSessionId, offerId])
+  @@unique([checkoutContractId, offerId])
   @@unique([createdByUserId, idempotencyKey])
+  @@index([checkoutContractId, status])
   @@index([offerId, status, expiresAt])
   @@index([branchId, expiresAt])
 }
@@ -8720,4 +8737,32 @@ model FloatingTourSaleImport {
   createdAt   DateTime                @default(now()) @db.Timestamptz(3)
 
   @@unique([packageId, version])
+}
+
+// A capacity lease is not a sale, buyer record, invoice or issued contract.
+model WebsiteCheckoutSession {
+  contractId            String?                   @unique @db.Uuid
+  contract              SalesContract?            @relation("CheckoutSessionContract", fields: [contractId], references: [id], onDelete: Restrict)
+  paymentAttemptKey     String?                   @db.VarChar(160)
+  resolutionFingerprint String?                   @db.Char(64)
+  id                    String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  siteCode              String                    @db.VarChar(40)
+  branchId              String                    @db.Uuid
+  branch                Branch                    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  createdByUserId       String                    @db.Uuid
+  createdByUser         User                      @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+  externalId            String                    @db.VarChar(100)
+  customerExternalId    String                    @db.VarChar(100)
+  fingerprint           String                    @db.Char(64)
+  quoteSnapshot         Json
+  requesterName         String                    @db.VarChar(160)
+  requesterPhone        String                    @db.VarChar(40)
+  expiresAt             DateTime                  @db.Timestamptz(3)
+  status                String                    @default("PREPARED") @db.VarChar(24)
+  holds                 TicketOfferCapacityHold[]
+  createdAt             DateTime                  @default(now()) @db.Timestamptz(3)
+
+  @@unique([siteCode, branchId, externalId])
+  @@index([branchId, customerExternalId, status])
+  @@map("website_checkout_sessions")
 }

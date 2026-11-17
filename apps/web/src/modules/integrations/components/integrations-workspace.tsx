@@ -1,4 +1,5 @@
 'use client';
+import { useTicketPublicationLink } from '../use-ticket-publication-link';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -92,15 +93,11 @@ export function IntegrationsWorkspace() {
 }
 
 function IntegrationEntry({ actor }: { actor: AuthenticatedActor }) {
-  const [view, setView] = useState<'sites' | 'monitoring' | null>(null);
-  const [ticketLink, setTicketLink] = useState<URLSearchParams>();
-  useEffect(() => {
-    const query = new URLSearchParams(window.location.search);
-    if (query.get('view') === 'tickets') {
-      setTicketLink(query);
-      setView('sites');
-    }
-  }, []);
+  const ticketRoute = useTicketPublicationLink();
+  const [selectedView, setView] = useState<'sites' | 'monitoring' | null>();
+  const view =
+    selectedView === undefined ? (ticketRoute ? 'sites' : null) : selectedView;
+  const ticketLink = selectedView === undefined ? ticketRoute : undefined;
   if (view)
     return (
       <div className="grid gap-4" dir="rtl">
@@ -108,7 +105,7 @@ function IntegrationEntry({ actor }: { actor: AuthenticatedActor }) {
           type="button"
           variant="outline"
           className="justify-self-start"
-          onClick={() => { setView(null); setTicketLink(undefined); }}
+          onClick={() => setView(null)}
         >
           بازگشت به یکپارچه‌سازی‌ها
         </Button>

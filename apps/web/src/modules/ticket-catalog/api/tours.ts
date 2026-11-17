@@ -1,4 +1,5 @@
 'use client';
+import type { CapacityHoldPage } from '../model/capacity-hold-roster';
 import { localizedFetch } from '@/i18n/localized-fetch';
 
 import type {
@@ -285,6 +286,11 @@ export const toursApi = {
     }),
   publishOffer: (input: TicketOfferCreateV1, branch: string, key: string) =>
     request<{ data: { id: string } }>('/offers', post(input, branch, key)),
+  capacityHolds: (offerId: string, cursor?: string, signal?: AbortSignal) =>
+    request<CapacityHoldPage>(
+      `/offers/${encodeURIComponent(offerId)}/capacity-holds${cursor ? '?' + new URLSearchParams({ cursor }) : ''}`,
+      { signal: signal ?? null },
+    ),
   temporaryHold: (
     offerId: string,
     input: { quantity: number; expiresAt: string; requesterName?: string },
