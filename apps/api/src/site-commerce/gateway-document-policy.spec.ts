@@ -18,6 +18,7 @@ type Harness = {
   delivery: { readCustomerContract: Mock; updateCustomerContract: Mock };
 };
 const actor = {
+  sessionId: 'synthetic-session',
   userId: 'synthetic-user',
   branchIds: ['branch'],
   permissions: [],

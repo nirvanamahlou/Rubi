@@ -7,6 +7,7 @@ import {
   type VerifiedGatewayProof,
 } from './verified-gateway-receipt.public';
 const actor = {
+  sessionId: 'synthetic-session',
   userId: 'site-user',
   branchIds: ['branch'],
   permissions: [],

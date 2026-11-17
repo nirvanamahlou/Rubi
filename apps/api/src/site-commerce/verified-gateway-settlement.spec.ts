@@ -21,6 +21,7 @@ type Harness = {
   status: Mock;
 };
 const actor = {
+  sessionId: 'synthetic-session',
   userId: 'site-user',
   branchIds: ['branch'],
   permissions: [],
