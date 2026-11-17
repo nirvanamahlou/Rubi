@@ -12,7 +12,7 @@ acceptance. PC-C used `codex/pc-c-nora-chat-scroll-release-1117`.
 - Exact committed Composer, CSS, scroll hook and assistant copy verified in the
   image. The current peer response renderer/presentation files were inherited
   unchanged, not replaced by an older release.
--291 Assistant/English tests passed after integration. Full Web compilation,
+- 291 Assistant/English tests passed after integration. Full Web compilation,
   TypeScript and fresh Agent compile admission passed on the server before
   previous hashed assets were retained. Local/public login health returned200.
 
