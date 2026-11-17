@@ -9004,5 +9004,6 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "گیرنده فعال منابع انسانی برای مرخصی در این شعبه به‌صورت یکتا تعریف نشده است.": "A unique active HR recipient for leave requests has not been configured in this branch."
 }
