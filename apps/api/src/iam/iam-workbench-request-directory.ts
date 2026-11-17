@@ -197,6 +197,23 @@ export class IamWorkbenchRequestDirectory {
     };
   }
 
+  async hrLeaveRecipient(actor: AuthenticatedActor, branchId: string) {
+    const options = await this.options(actor, branchId);
+    const matches = options.units.flatMap((unit) =>
+      unit.users
+        .filter(
+          (user) =>
+            user.username.toLowerCase() === 'nima' &&
+            /منابع انسانی|سرمایه انسانی/.test(unit.name),
+        )
+        .map((user) => ({ unitId: unit.id, recipientId: user.id })),
+    );
+    if (matches.length !== 1)
+      throw new BadRequestException(
+        'گیرنده فعال منابع انسانی برای مرخصی در این شعبه به‌صورت یکتا تعریف نشده است.',
+      );
+    return matches[0]!;
+  }
   async leaveRoute(actor: AuthenticatedActor, branchId: string) {
     const account = await this.database.client.user.findFirst({
       where: { id: actor.userId, status: 'ACTIVE' },
