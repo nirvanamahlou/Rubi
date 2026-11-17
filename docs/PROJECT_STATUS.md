@@ -1,3 +1,7 @@
+## NORA-PERSIAN-RESPONSE-1117 — PC-C — VALIDATING
+
+Persian public business wording and localized source/date/time labels; safe actual headings/emphasis/lists/tables replace raw Markdown markers.139 service and282 Assistant/i18n checks pass; scoped lint/format pass. Numbers, permissions, evidence, SQL and private runtime configuration unchanged. Clean hosted and live-browser gates remain separate. See [task](tasks/NORA-PERSIAN-RESPONSE-1117.md).
+
 ## NORA-CHAT-RECOVERY-1117 — PC-C — VALIDATING
 
 Confirmed production Web client uses legacy v2 despite Agent runtime policy; Germany provider/native tool-planning checks succeed. Prepare a current-source Web-only build with explicit public compile flag and fresh-bundle admission. Five guard regressions pass; no data/migration/dependency/assistant/API replacement. Final browser/rollout evidence belongs to the PR release notes. See [task](tasks/NORA-CHAT-RECOVERY-1117.md).
