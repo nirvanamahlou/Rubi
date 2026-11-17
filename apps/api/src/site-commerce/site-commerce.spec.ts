@@ -153,6 +153,11 @@ function fixture() {
     },
   };
   const sales = {
+    financeCustomerDocumentDeliveryFacts: vi.fn().mockResolvedValue({
+      cancelled: false,
+      hasConfirmedPayment: false,
+      fullySettled: false,
+    }),
     createdByKey: vi.fn().mockResolvedValue(null),
     create: vi.fn().mockResolvedValue({ data: contract }),
     detail: vi.fn().mockImplementation(async () => ({ data: contract })),

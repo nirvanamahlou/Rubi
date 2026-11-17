@@ -286,3 +286,7 @@ Owner supersedes the all-guests-priced requirement: hotel purchase accepts a non
 ## استثنای مجوز رزرواسیون — 2026-10-24
 
 طبق تأیید صریح مالک، کاربر دارای مجوز صدور رزرواسیون می‌تواند با دلیل اجباری، تحویل مدارک مشتری را بدون تأیید دریافت یا تسویه کامل مجاز کند. مالک رکورد و گردش ثبت همچنان Finance است؛ مبنای مستقل RESERVATION_PERMISSION، نسخه، شعبه، ثبت مسئول و تاریخ، دلیل و کنترل لغو قرارداد حفظ می‌شوند. این مسیر مجوز پرداخت یا دسترسی عمومی مالی ایجاد نمی‌کند و تأیید مالی دیگری لازم ندارد. جزئیات در تصمیم RESERVATION-DELIVERY-PERMIT-1024 ثبت شده است.
+
+
+## NSS-BANK-SETTLEMENT-1117 — verified gateway exception
+Owner explicitly authorizes automatic Finance confirmation only for bank-verified NSS gateway receipts bound by a server-only signature to the linked order and configured SEP terminal/account. Ordinary BANK_TRANSFER/unsigned receipts retain manual Finance review. Finance validates the active branch/IRR/BANK account and emits the existing native receipt confirmation; it preserves accounting events, audit, idempotency, correction/void rejection and real settlement. SiteCommerce uses the existing fresh full-settlement document release, retaining explicit revocation/cancellation. No new generic site Finance permission or direct cross-module table write. No migration or dependency change. See tasks/NSS-BANK-SETTLEMENT-1117.md; validation/release pending.
