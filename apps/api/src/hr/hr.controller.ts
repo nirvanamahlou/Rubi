@@ -114,6 +114,19 @@ export class HrController {
   ) {
     return this.service.leaveOptions(branchId, req.actor);
   }
+  @Post('mission-evidence')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 10 * 1024 * 1024, files: 1 },
+    }),
+  )
+  uploadMissionEvidence(
+    @Body('branchId') branchId: string,
+    @UploadedFile() file: UploadedDocumentFile | undefined,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.uploadMissionEvidence(branchId, file, req.actor);
+  }
   @Post('leave-evidence')
   @UseInterceptors(
     FileInterceptor('file', {

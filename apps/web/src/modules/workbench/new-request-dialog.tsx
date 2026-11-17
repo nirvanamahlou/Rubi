@@ -1,4 +1,6 @@
 'use client';
+import { MissionFields, emptyMission } from './mission-fields';
+import type { WorkbenchMissionV1 } from '@nora/contracts';
 import type { WorkbenchLeaveInputV1 } from '@nora/contracts';
 import { LeaveFields, type LeaveUser } from '@/modules/hr/leave-fields';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -46,6 +48,7 @@ function NewRequestForm({
 }: NewRequestDialogProps) {
   const [selectedBranchId, setSelectedBranchId] = useState<string>();
   const branchId = selectedBranchId ?? initialBranchId;
+  const [mission, setMission] = useState<WorkbenchMissionV1 | null>(null);
   const [leave, setLeave] = useState<WorkbenchLeaveInputV1 | null>(null);
   const [correction, setCorrection] = useState<{
     wrongDate: string;
@@ -64,6 +67,7 @@ function NewRequestForm({
     version: number;
     units: WorkbenchRequestOptionsV1['units'];
     substituteUsers?: LeaveUser[] | undefined;
+    missionRoute?: WorkbenchRequestOptionsV1['missionRoute'];
     leaveRoute?: WorkbenchRequestOptionsV1['leaveRoute'];
     error: string;
   } | null>(null);
@@ -73,9 +77,9 @@ function NewRequestForm({
   const optionsLoading = Boolean(open && branchId && !optionsMatch);
   const optionsError = optionsMatch ? options!.error : '';
   const { unitId: unit, recipientId: recipient } = requestRecipientSelection(
-    leave !== null,
+    leave !== null || mission !== null,
     optionsMatch,
-    options?.leaveRoute,
+    mission ? options?.missionRoute : options?.leaveRoute,
     { unitId: manualUnit, recipientId: manualRecipient },
   );
   const [priority, setPriority] = useState('normal');
@@ -87,7 +91,17 @@ function NewRequestForm({
   const key = useRef<string | null>(null);
   useEffect(() => {
     key.current = null;
-  }, [branchId, title, body, unit, recipient, priority, leave, correction]);
+  }, [
+    branchId,
+    title,
+    body,
+    unit,
+    recipient,
+    priority,
+    leave,
+    mission,
+    correction,
+  ]);
   useEffect(() => {
     if (!open || !branchId) return;
     let active = true;
@@ -100,6 +114,7 @@ function NewRequestForm({
             version: optionsVersion,
             units: data.units,
             leaveRoute: data.leaveRoute,
+            missionRoute: data.missionRoute,
             substituteUsers: data.substituteUsers,
             error: '',
           });
@@ -176,6 +191,7 @@ function NewRequestForm({
               .createWorkbenchRequest(
                 {
                   ...(leave ? { leave } : {}),
+                  ...(mission ? { mission } : {}),
                   subject: title.trim(),
                   description: correction
                     ? `اصلاح تردد
@@ -267,7 +283,7 @@ ${body.trim()}`
               units={units}
               unitId={unit}
               recipientId={recipient}
-              disabled={pending || optionsLoading || !!leave}
+              disabled={pending || optionsLoading || !!leave || !!mission}
               onUnitChange={setUnit}
               onRecipientChange={setRecipient}
             />
@@ -310,6 +326,7 @@ ${body.trim()}`
                   onClick={() => {
                     setRequestKind('advance');
                     setLeave(null);
+                    setMission(null);
                     setCorrection(null);
                     setTitle('درخواست مساعده');
                     setBody(
@@ -321,11 +338,30 @@ ${body.trim()}`
                 </Button>
                 <Button
                   type="button"
+                  variant={requestKind === 'mission' ? 'primary' : 'outline'}
+                  aria-pressed={requestKind === 'mission'}
+                  disabled={pending || uploading}
+                  onClick={() => {
+                    setMission(emptyMission());
+                    setLeave(null);
+                    setCorrection(null);
+                    setRequestKind('mission');
+                    setTitle('درخواست مأموریت');
+                    setBody(
+                      'با سلام، درخواست مأموریت مطابق زمان و مقصد درج‌شده را دارم.',
+                    );
+                  }}
+                >
+                  مأموریت
+                </Button>
+                <Button
+                  type="button"
                   variant={requestKind === 'leave' ? 'primary' : 'outline'}
                   aria-pressed={requestKind === 'leave'}
                   disabled={pending || uploading}
                   onClick={() => {
                     setRequestKind(leave ? '' : 'leave');
+                    setMission(null);
                     setCorrection(null);
                     setLeave(
                       leave
@@ -356,6 +392,7 @@ ${body.trim()}`
                   onClick={() => {
                     setRequestKind('correction');
                     setLeave(null);
+                    setMission(null);
                     setCorrection({
                       wrongDate: initialDate ?? '',
                       wrongTime: '',
@@ -383,6 +420,13 @@ ${body.trim()}`
               onChange={(e) => setBody(e.target.value)}
             />
           </label>
+          {mission && (
+            <MissionFields
+              value={mission}
+              onChange={setMission}
+              disabled={pending || uploading}
+            />
+          )}
           {correction ? (
             <fieldset className="grid gap-4 rounded-xl border p-4 sm:grid-cols-2">
               <legend className="px-2 font-semibold">اصلاح تردد</legend>

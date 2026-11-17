@@ -1,3 +1,4 @@
+import { MissionDetails } from '@/modules/workbench/mission-fields';
 import {
   BrokerLedger,
   BrokerPaymentControls,
@@ -1788,6 +1789,18 @@ export function FinanceInboxLiveWorkspace() {
                         key={selected.sourceContextReference}
                         id={selected.sourceContextReference}
                       />
+                    )}
+                  {selected.hrReferral?.mission &&
+                    selected.hrReferral.sourceId && (
+                      <details className="rounded-xl border p-4">
+                        <summary className="cursor-pointer font-semibold">
+                          مشخصات کلی
+                        </summary>
+                        <MissionDetails
+                          mission={selected.hrReferral.mission}
+                          id={selected.hrReferral.sourceId}
+                        />
+                      </details>
                     )}
                   {selected.hrReferral ? (
                     <div className="space-y-2">

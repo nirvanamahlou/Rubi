@@ -533,6 +533,7 @@ export class CustomerAffairsRepository {
               in: [
                 'WORKBENCH_SUBSTITUTE',
                 'WORKBENCH_LEAVE',
+                'WORKBENCH_MISSION',
                 'WORKBENCH_RECIPIENT_REVIEW',
                 'WORKBENCH_HR_REVIEW',
               ],
@@ -578,7 +579,15 @@ export class CustomerAffairsRepository {
       include: {
         createdBy: { select: { displayName: true } },
         timeline: {
-          where: { type: { in: ['WORKBENCH_LEAVE', 'WORKBENCH_SUBSTITUTE'] } },
+          where: {
+            type: {
+              in: [
+                'WORKBENCH_LEAVE',
+                'WORKBENCH_MISSION',
+                'WORKBENCH_SUBSTITUTE',
+              ],
+            },
+          },
         },
       },
       orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],

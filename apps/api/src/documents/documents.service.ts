@@ -596,6 +596,7 @@ export class DocumentsService {
     file: UploadedDocumentFile | undefined,
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
+    kind: 'LeaveEvidence' | 'MissionEvidence' = 'LeaveEvidence',
   ) {
     if (!actor.branchIds.includes(branchId)) throw new ForbiddenException();
     if (
@@ -620,17 +621,21 @@ export class DocumentsService {
     const result = await this.upload(
       {
         validUntil,
-        title: 'مدرک مرخصی استعلاجی',
+        title:
+          kind === 'MissionEvidence'
+            ? 'مدرک هزینه مأموریت'
+            : 'مدرک مرخصی استعلاجی',
         documentTypeId: type.id,
         categoryId: category.id,
         branchId,
         ownerUserId: actor.userId,
         confidentiality: 'RESTRICTED',
         sourceModule: 'HUMAN_RESOURCES',
-        sourceEntityType: 'LeaveEvidence',
+        sourceEntityType: kind,
         sourceEntityId: actor.userId,
-        sourceDisplayLabel: 'مدرک مرخصی',
-        versionNote: 'مدرک مرخصی',
+        sourceDisplayLabel:
+          kind === 'MissionEvidence' ? 'مدرک مأموریت' : 'مدرک مرخصی',
+        versionNote: kind === 'MissionEvidence' ? 'مدرک مأموریت' : 'مدرک مرخصی',
       },
       file,
       {
@@ -650,6 +655,7 @@ export class DocumentsService {
     ids: readonly string[],
     branchId: string,
     ownerId: string,
+    kind: 'LeaveEvidence' | 'MissionEvidence' = 'LeaveEvidence',
   ) {
     if (ids.length > 5 || new Set(ids).size !== ids.length)
       throw new BadRequestException('حداکثر ۵ مدرک مجاز است.');
@@ -665,7 +671,7 @@ export class DocumentsService {
         row.ownerUserId !== ownerId ||
         row.branchId !== branchId ||
         row.sourceModule !== 'HUMAN_RESOURCES' ||
-        row.sourceEntityType !== 'LeaveEvidence' ||
+        row.sourceEntityType !== kind ||
         row.sourceEntityId !== ownerId ||
         row.confidentiality !== 'RESTRICTED' ||
         row.deletedAt ||
@@ -680,6 +686,7 @@ export class DocumentsService {
     id: string,
     branchId: string,
     actor: AuthenticatedActor,
+    kind: 'LeaveEvidence' | 'MissionEvidence' = 'LeaveEvidence',
   ) {
     if (!actor.branchIds.includes(branchId)) throw new ForbiddenException();
     const row = await this.repository.findDetail(
@@ -691,7 +698,7 @@ export class DocumentsService {
     if (
       !row ||
       row.sourceModule !== 'HUMAN_RESOURCES' ||
-      row.sourceEntityType !== 'LeaveEvidence' ||
+      row.sourceEntityType !== kind ||
       row.confidentiality !== 'RESTRICTED'
     )
       throw new NotFoundException();
@@ -708,10 +715,15 @@ export class DocumentsService {
           'documents.sensitive.download',
         ],
       },
-      { sensitiveReason: 'بررسی مدرک درخواست مرخصی' },
+      {
+        sensitiveReason:
+          kind === 'MissionEvidence'
+            ? 'بررسی مدرک مأموریت'
+            : 'بررسی مدرک درخواست مرخصی',
+      },
       {
         sourceModule: 'HUMAN_RESOURCES',
-        sourceEntityType: 'LeaveEvidence',
+        sourceEntityType: kind,
         sourceEntityId: row.sourceEntityId!,
       },
     );

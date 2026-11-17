@@ -453,7 +453,12 @@ export class FinanceInboxService {
         amount: item.amount ?? null,
         settlement: null,
         status: hrStatus[item.status],
-        hrReferral: { canRespond: item.canRespond, response: item.response },
+        hrReferral: {
+          canRespond: item.canRespond,
+          response: item.response,
+          sourceId: item.sourceId,
+          mission: item.mission,
+        },
         dueAt: item.dueAt,
         createdAt: item.createdAt,
         requesterDisplaySnapshot: null,

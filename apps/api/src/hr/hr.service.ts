@@ -3041,6 +3041,27 @@ export class HrService {
       throw new ForbiddenException();
     return { users: await this.departmentSubstitutes(branchId, actor.userId) };
   }
+  async uploadMissionEvidence(
+    branchId: string,
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+  ) {
+    this.branch(actor, branchId);
+    await this.workbenchLeaveEmployee(
+      this.database.client,
+      branchId,
+      actor.userId,
+      actor,
+    );
+    return this.documents.uploadLeaveEvidence(
+      branchId,
+      '2099-12-31',
+      file,
+      actor,
+      {},
+      'MissionEvidence',
+    );
+  }
   async uploadLeaveEvidence(
     branchId: string,
     validUntil: string,
