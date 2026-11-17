@@ -170,7 +170,16 @@ export class SiteCommerceService {
     if (!['ticket', 'tour', 'floating-tour'].includes(kind))
       throw new BadRequestException();
     const periodKey = this.publicationPeriod(kind, requestedPeriod);
+    const delivery = await this.db.client.websiteCatalogDelivery.findFirst({
+      where: { siteCode: site, branchId },
+      select: { lastError: true, deliveredAt: true, deliveredRevision: true, revision: true },
+    });
+    const deliveryStatus = !delivery ? 'unconfigured'
+      : delivery.lastError ? 'error'
+      : delivery.deliveredAt && delivery.deliveredRevision === delivery.revision ? 'accepted'
+      : 'pending';
     return {
+      deliveryStatus,
       data: await this.db.client.websitePublication.findFirst({
         where: { siteCode: site, kind, resourceId, branchId, periodKey },
       }),
