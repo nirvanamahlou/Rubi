@@ -13,6 +13,7 @@ const actor = {
 };
 const person = {
   kind: 'person' as const,
+  roles: ['passenger' as const],
   displayName: 'Synthetic Passenger',
   firstName: 'Synthetic',
   lastName: 'Passenger',

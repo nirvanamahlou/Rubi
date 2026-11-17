@@ -13064,4 +13064,3 @@ CHECKOUT-ADVISORY-1117 bounded catalogue compatibility: full CI found twenty mis
 
 ## PASSENGER-IDENTITY-PREFLIGHT-1117 — PC-A — ACTIVE
 Owner request: read-only passenger identity/passport preflight before review/payment; preserve uniqueness, no auto merge, no writes during checking. Reserve customers service/repository bounded public method, SiteCommerce controller/DTO and own tests/docs. Site consumer ERP booking/start and travel form require current-source/image CAS. No migration/dependency/financial write; order22 remains pending identity correction.
-
