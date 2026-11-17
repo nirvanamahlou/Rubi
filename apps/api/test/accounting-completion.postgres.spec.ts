@@ -3,6 +3,23 @@ import {
   assertAccountingTestDatabase,
 } from './accounting-test-database';
 import { randomUUID } from 'node:crypto';
+import {
+  importTaxReference,
+  saveTaxMapping,
+  taxMappingView,
+} from '../src/finance/accounting/tax-reference';
+import {
+  finalizeSeasonal,
+  seasonalPreview,
+  seasonalSnapshot,
+  setSeasonalRegion,
+} from '../src/finance/accounting/seasonal-report';
+import {
+  saveTreasuryInstrument,
+  treasuryInstruments,
+} from '../src/finance/accounting/treasury-instruments';
+import { treasuryConfigAttributes } from '../src/finance/accounting/accounting-treasury';
+import { readAccountBrowser } from '../src/finance/accounting/accounting-account-browser';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 import type { AuthenticatedActor } from '@nora/contracts';
@@ -152,6 +169,334 @@ describe.skipIf(!url)('independent completion on isolated PostgreSQL', () => {
     await db?.$disconnect();
   });
 
+  it('gates only required row mappings, preserves text codes and freezes finalized report values', async () => {
+    const window = {
+      period: { id: periodId },
+      from: '2026-01-01',
+      to: '2026-03-31',
+    };
+    const journal = await db.accountingJournal.findFirstOrThrow({
+      where: { bookId, status: 'POSTED' },
+    });
+    const stamp = { createdByUserId: userId, updatedByUserId: userId };
+    const currency = await db.masterCurrency.upsert({
+      where: { code: 'ZXQ' },
+      update: {},
+      create: { ...stamp, code: 'ZXQ', name: 'Synthetic currency' },
+    });
+    const country = await db.masterCountry.upsert({
+      where: { code: 'XZ' },
+      update: {},
+      create: { ...stamp, code: 'XZ', name: 'Synthetic country' },
+    });
+    const region = await db.masterRegion.create({
+      data: {
+        ...stamp,
+        countryId: country.id,
+        code: randomUUID().slice(0, 12),
+        name: 'Synthetic region',
+      },
+    });
+    const eventId = randomUUID();
+    await db.financeAccountingEvent.create({
+      data: {
+        sourceKey: eventId,
+        fingerprint: 'a'.repeat(64),
+        source: 'SALES',
+        recordId: eventId,
+        requestId: randomUUID(),
+        kind: 'SALES_CONTRACT_CONFIRMED',
+        occurredAt: new Date(),
+        branchId,
+        actorId: userId,
+        currency: currency.code,
+        amount: '42.1500',
+        journalId: journal.id,
+        trackingNumber: 'C-0004',
+      },
+    });
+    const read = (layout: 'CURRENCY' | 'REGION' | 'CURRENCY_REGION') =>
+      db.$transaction((tx) => seasonalPreview(tx, bookId, window, layout));
+    const finalize = (layout: 'CURRENCY' | 'CURRENCY_REGION', digest: string) =>
+      db.$transaction((tx) =>
+        finalizeSeasonal(tx, bookId, window, layout, digest, userId),
+      );
+    expect((await read('CURRENCY_REGION')).rows[0]?.missing).toEqual([
+      'CURRENCY',
+      'REGION',
+    ]);
+    await expect(finalize('CURRENCY', 'wrong')).rejects.toThrow();
+    const imp = (
+      kind: string,
+      label: string,
+      csv: string,
+      previousReleaseId: string | null,
+    ) =>
+      db.$transaction((tx) =>
+        importTaxReference(
+          tx,
+          bookId,
+          { kind, label, csv, previousReleaseId },
+          userId,
+        ),
+      );
+    const map = (
+      kind: string,
+      sourceId: string,
+      entryId: string,
+      releaseId: string,
+    ) =>
+      db.$transaction((tx) =>
+        saveTaxMapping(tx, bookId, {
+          kind,
+          sourceId,
+          entryId,
+          releaseId,
+          previousEntryId: null,
+        }),
+      );
+    const release = await imp(
+      'CURRENCY',
+      'test 1',
+      'code,title\n0007,"Currency, test"',
+      null,
+    );
+    const entry = await db.taxReferenceEntry.findFirstOrThrow({
+      where: { releaseId: release.id },
+    });
+    await expect(
+      imp('CURRENCY', 'bad', 'code,title\n001,A\n001,B', release.id),
+    ).rejects.toThrow();
+    await map('CURRENCY', currency.id, entry.id, release.id);
+    const ready = await read('CURRENCY');
+    expect(ready.rows[0]).toMatchObject({
+      reference: 'C-0004',
+      amount: '42.15',
+      missing: [],
+      currencyTarget: { code: '0007' },
+    });
+    await expect(finalize('CURRENCY', 'stale')).rejects.toThrow();
+    const snapshot = await finalize('CURRENCY', ready.digest);
+    await expect(finalize('CURRENCY', ready.digest)).resolves.toEqual(snapshot);
+    const both = await read('CURRENCY_REGION');
+    expect(both.rows[0]?.missing).toEqual(['REGION']);
+    await expect(finalize('CURRENCY_REGION', both.digest)).rejects.toThrow();
+    const geo = await imp('REGION', 'test 1', 'code,title\n009,Region', null);
+    await expect(map('REGION', region.id, entry.id, geo.id)).rejects.toThrow();
+    const geoEntry = await db.taxReferenceEntry.findFirstOrThrow({
+      where: { releaseId: geo.id },
+    });
+    await map('REGION', region.id, geoEntry.id, geo.id);
+    await db.$transaction((tx) =>
+      setSeasonalRegion(tx, bookId, window, {
+        journalId: journal.id,
+        regionId: region.id,
+        previousRegionId: null,
+      }),
+    );
+    expect((await read('CURRENCY_REGION')).rows[0]?.missing).toEqual([]);
+    const same = await imp(
+      'CURRENCY',
+      'test 2',
+      'code,title\n0007,"Currency, test"',
+      release.id,
+    );
+    expect((await read('CURRENCY')).rows[0]?.currencyTarget?.version).toBe(
+      'test 2',
+    );
+    await imp('CURRENCY', 'test 3', 'code,title\n0007,New meaning', same.id);
+    expect((await read('CURRENCY')).rows[0]?.missing).toEqual(['CURRENCY']);
+    expect(
+      (
+        await db.$transaction((tx) => taxMappingView(tx, bookId, 'CURRENCY'))
+      ).sources.find((s) => s.id === currency.id)?.entryId,
+    ).toBeNull();
+    const saved = await db.$transaction((tx) =>
+      seasonalSnapshot(tx, bookId, periodId, snapshot.id),
+    );
+    expect(saved.rows).toMatchObject([
+      {
+        currencyTarget: {
+          code: '0007',
+          title: 'Currency, test',
+          version: 'test 1',
+        },
+      },
+    ]);
+    await expect(
+      db.$transaction((tx) =>
+        seasonalSnapshot(tx, randomUUID(), periodId, snapshot.id),
+      ),
+    ).rejects.toThrow();
+  });
+  it('creates operational accounts and preserves cashier assignment intervals through changes', async () => {
+    const book = { id: bookId, branchId, baseCurrency: 'IRR' };
+    const person = await db.accountingConfiguration.create({
+      data: {
+        bookId,
+        kind: 'detail-types',
+        code: 'P',
+        title: 'شخص',
+        attributes: {},
+      },
+    });
+    const people = await Promise.all(
+      ['001', '002'].map((code) =>
+        db.accountingDetail.create({
+          data: {
+            bookId,
+            typeId: person.id,
+            code,
+            title: 'Synthetic ' + code,
+            attributes: {},
+          },
+        }),
+      ),
+    );
+    const save = (p: Record<string, unknown>, version?: number) =>
+      db.$transaction((tx) =>
+        saveTreasuryInstrument(tx, book, p, version, userId),
+      );
+    const p = {
+      kind: 'cashboxes',
+      title: 'Synthetic cash',
+      operatorId: people[0]!.id,
+    };
+    const box = await save(p);
+    await save({ ...p, id: box.id, title: 'New cash title' }, box.version);
+    await expect(save({ ...p, id: box.id }, box.version)).rejects.toThrow();
+    await save(
+      { ...p, id: box.id, operatorId: people[1]!.id },
+      box.version + 1,
+    );
+    const intervals = await db.treasuryCashierAssignment.findMany({
+      where: { instrumentId: box.id },
+      orderBy: { startsAt: 'asc' },
+    });
+    expect(intervals).toHaveLength(2);
+    expect(intervals[0]!.endsAt).toEqual(intervals[1]!.startsAt);
+    expect(intervals[1]!.endsAt).toBeNull();
+    const history = await db.$transaction((tx) =>
+      treasuryInstruments(tx, book, {
+        view: 'cashiers',
+        instrumentId: box.id,
+        from: '2020-01-01',
+        to: '2099-01-01',
+      }),
+    );
+    expect(history.rows).toHaveLength(2);
+    const bank = await db.financeSettlementAccount.create({
+      data: {
+        branchId,
+        kind: 'BANK',
+        title: 'Synthetic bank account',
+        currencyCode: 'IRR',
+        createdByUserId: userId,
+      },
+    });
+    const provider = await db.accountingConfiguration.create({
+      data: {
+        bookId,
+        kind: 'payment-providers',
+        code: '001',
+        title: 'Synthetic PSP',
+        attributes: {},
+      },
+    });
+    const terminal = {
+      kind: 'terminals',
+      providerId: provider.id,
+      deviceType: 'کارت خوان',
+      terminalNumber: '00015',
+      merchantNumber: '00001',
+      receivingBankId: bank.id,
+    };
+    const pos = await save(terminal);
+    expect(
+      await db.financeSettlementAccount.findUniqueOrThrow({
+        where: { id: pos.id },
+      }),
+    ).toMatchObject({
+      kind: 'POS',
+      currencyCode: 'IRR',
+      branchId,
+      title: '00015',
+    });
+    await expect(
+      save({ ...terminal, deviceType: 'unknown' }),
+    ).rejects.toThrow();
+    await expect(
+      save({ ...terminal, receivingBankId: box.id }),
+    ).rejects.toThrow();
+    await expect(save(terminal)).rejects.toThrow();
+    expect(
+      await db.financeSettlementAccount.count({
+        where: { branchId, kind: 'POS' },
+      }),
+    ).toBe(1);
+    expect(() =>
+      treasuryConfigAttributes('treasury-causes', '01', {
+        documentType: 'unknown',
+      }),
+    ).toThrow();
+  });
+  it('filters by whole-document debit before account selection and uses the same scope for drilldown', async () => {
+    const browse = (
+      filters: Record<string, string>,
+      from = '2026-01-01',
+      scope = periodId,
+    ) =>
+      db.$transaction((tx) =>
+        readAccountBrowser(tx, bookId, scope, from, '2026-12-31', {
+          axis: 'SUBSIDIARY',
+          accountIds: debitId,
+          ...filters,
+        }),
+      );
+    const filters = {
+      minAmount: '26000000000000000000.26',
+      maxAmount: '26000000000000000000.26',
+    };
+    const report = await browse(filters);
+    expect(report.rows).toMatchObject([
+      {
+        key: debitId,
+        opening: '0',
+        debit: filters.minAmount,
+        balance: filters.minAmount,
+      },
+    ]);
+    const turnover = await browse({ ...filters, selectedKey: debitId });
+    expect(turnover.lines).toHaveLength(26);
+    expect(
+      turnover.lines.every(
+        (l) => l.number === 1 && l.debit === '1000000000000000000.01',
+      ),
+    ).toBe(true);
+    expect((await browse(filters, '2026-04-01')).rows[0]).toMatchObject({
+      opening: filters.minAmount,
+      debit: '0',
+    });
+    expect((await browse({ ...filters, currencyOnly: 'true' })).rows).toEqual(
+      [],
+    );
+    expect((await browse({ ...filters, traceableOnly: 'true' })).rows).toEqual(
+      [],
+    );
+    expect((await browse(filters, undefined, randomUUID())).rows).toEqual([]);
+    expect(
+      (
+        await browse({
+          ...filters,
+          minAmount: '26000000000000000000.27',
+          maxAmount: '',
+        })
+      ).rows,
+    ).toEqual([]);
+    await expect(
+      browse({ minAmount: '100', maxAmount: '99' }),
+    ).rejects.toThrow();
+  });
   it('paginates 52 posted lines with exact whole-filter totals and excludes the draft', async () => {
     const first = await service.journalLines(bookId, { periodId }, actor);
     const second = await service.journalLines(

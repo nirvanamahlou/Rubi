@@ -11,6 +11,78 @@ datasource db {
   provider = "postgresql"
 }
 
+enum TaxReferenceKind {
+  CURRENCY
+  REGION
+}
+
+model TaxReferenceRelease {
+  id String @id @default(uuid()) @db.Uuid
+  bookId String @db.Uuid
+  book AccountingBook @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  kind TaxReferenceKind
+  label String @db.VarChar(80)
+  active Boolean @default(true)
+  importedAt DateTime @default(now()) @db.Timestamptz(3)
+  importedById String @db.Uuid
+  importedBy User @relation(fields: [importedById], references: [id], onDelete: Restrict)
+  entries TaxReferenceEntry[]
+  @@unique([bookId, kind, label])
+  @@map("tax_reference_releases")
+}
+
+model TaxReferenceEntry {
+  id String @id @default(uuid()) @db.Uuid
+  releaseId String @db.Uuid
+  release TaxReferenceRelease @relation(fields: [releaseId], references: [id], onDelete: Restrict)
+  code String @db.VarChar(80)
+  title String @db.VarChar(200)
+  mappings TaxReferenceMapping[]
+  @@unique([releaseId, code])
+  @@map("tax_reference_entries")
+}
+
+model TaxReferenceMapping {
+  id String @id @default(uuid()) @db.Uuid
+  bookId String @db.Uuid
+  book AccountingBook @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  currencyId String? @db.Uuid
+  currency MasterCurrency? @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+  regionId String? @db.Uuid
+  region MasterRegion? @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  entryId String @db.Uuid
+  entry TaxReferenceEntry @relation(fields: [entryId], references: [id], onDelete: Restrict)
+  @@unique([bookId, currencyId])
+  @@unique([bookId, regionId])
+  @@map("tax_reference_mappings")
+}
+
+model SeasonalJournalRegion {
+  journalId String @id @db.Uuid
+  journal AccountingJournal @relation(fields: [journalId], references: [id], onDelete: Restrict)
+  regionId String @db.Uuid
+  region MasterRegion @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  @@map("seasonal_journal_regions")
+}
+
+model SeasonalReportSnapshot {
+  id String @id @default(uuid()) @db.Uuid
+  bookId String @db.Uuid
+  book AccountingBook @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  periodId String @db.Uuid
+  period AccountingPeriod @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  dateFrom String @db.VarChar(10)
+  dateTo String @db.VarChar(10)
+  layout String @db.VarChar(20)
+  digest String @db.Char(64)
+  rows Json
+  approvedAt DateTime @default(now()) @db.Timestamptz(3)
+  approvedById String @db.Uuid
+  approvedBy User @relation(fields: [approvedById], references: [id], onDelete: Restrict)
+  @@unique([bookId, periodId, dateFrom, dateTo, layout, digest])
+  @@map("seasonal_report_snapshots")
+}
+
 enum UserStatus {
   ACTIVE
   INACTIVE
@@ -30,6 +102,8 @@ enum AuditOutcome {
 }
 
 model User {
+  taxCatalogImports TaxReferenceRelease[]
+  taxReportApprovals SeasonalReportSnapshot[]
   standaloneInsuranceApplicants   ReservationInsuranceApplicant[]
   insuranceApplicantReads         ReservationInsuranceApplicantAccess[]
   exchangeAudits                  FinanceExchangeAudit[]
@@ -1117,6 +1191,8 @@ model MasterCity {
 }
 
 model MasterRegion {
+  taxMappings TaxReferenceMapping[]
+  seasonalSources SeasonalJournalRegion[]
   id                  String           @id @default(uuid()) @db.Uuid
   countryId           String           @db.Uuid
   parentRegionId      String?          @db.Uuid
@@ -1230,6 +1306,7 @@ model MasterRailTerminal {
 }
 
 model MasterCurrency {
+  taxMappings TaxReferenceMapping[]
   exchangeBalances                     FinanceExchangeBalance[]
   hotels                               MasterHotel[]
   procurementRequestCurrencycodeRows   ProcurementRequest[]        @relation("ProcurementRequestCurrencycode")
@@ -1323,6 +1400,7 @@ model MasterBank {
 }
 
 model MasterBankBranch {
+  settlementAccounts FinanceSettlementAccount[]
   id                  String     @id @default(uuid()) @db.Uuid
   bankId              String     @db.Uuid
   cityId              String     @db.Uuid
@@ -4786,7 +4864,54 @@ enum FinanceSupplierPaymentStatus {
   REJECTED
 }
 
+model TreasuryInstrument {
+  id String @id @db.Uuid
+  account FinanceSettlementAccount @relation("TreasuryOperationalAccount",fields:[id],references:[id],onDelete:Restrict)
+  bookId String @db.Uuid
+  book AccountingBook @relation(fields:[bookId],references:[id],onDelete:Restrict)
+  providerId String? @db.Uuid
+  provider AccountingConfiguration? @relation(fields:[providerId,bookId],references:[id,bookId],onDelete:Restrict)
+  receivingBankId String? @db.Uuid
+  receivingBank FinanceSettlementAccount? @relation("TreasuryReceivingAccount",fields:[receivingBankId], references:[id],onDelete:Restrict)
+  operatorId String? @db.Uuid
+  operator AccountingDetail? @relation(fields:[operatorId,bookId],references:[id,bookId],onDelete:Restrict)
+  merchantNumber String? @db.VarChar(80)
+  terminalNumber String? @db.VarChar(80)
+  deviceType String? @db.VarChar(32)
+  titleEn String? @db.VarChar(160)
+  location String? @db.VarChar(240)
+  description String? @db.VarChar(2000)
+  descriptionEn String? @db.VarChar(2000)
+  assignments TreasuryCashierAssignment[]
+  @@unique([id,bookId])
+  @@unique([bookId,providerId,merchantNumber,terminalNumber])
+  @@index([receivingBankId])
+  @@map("treasury_instruments")
+}
+
+model TreasuryCashierAssignment {
+  id String @id @default(uuid()) @db.Uuid
+  instrumentId String @db.Uuid
+  bookId String @db.Uuid
+  instrument TreasuryInstrument @relation(fields:[instrumentId,bookId],references:[id,bookId],onDelete:Restrict)
+  cashierId String @db.Uuid
+  cashier AccountingDetail @relation(fields:[cashierId,bookId],references:[id,bookId],onDelete:Restrict)
+  startsAt DateTime @db.Timestamptz(3)
+  endsAt DateTime? @db.Timestamptz(3)
+  @@index([instrumentId,startsAt])
+  @@map("treasury_cashier_assignments")
+}
+
 model FinanceSettlementAccount {
+  treasuryInstrument TreasuryInstrument? @relation("TreasuryOperationalAccount")
+  receivingTerminals TreasuryInstrument[] @relation("TreasuryReceivingAccount")
+  treasuryBookId String? @db.Uuid
+  bankAccountTypeId String? @db.Uuid
+  bankAccountType AccountingConfiguration? @relation(fields:[bankAccountTypeId,treasuryBookId], references:[id,bookId],onDelete:Restrict)
+  bankBranchId String? @db.Uuid
+  bankBranch MasterBankBranch? @relation(fields:[bankBranchId], references:[id],onDelete:Restrict)
+  @@index([bankAccountTypeId,treasuryBookId])
+  @@index([bankBranchId])
   accountingCode             String?                                @unique @db.VarChar(7)
   isExternal                 Boolean                                @default(false)
   deletedAt                  DateTime?                              @db.Timestamptz(3)
@@ -7235,6 +7360,10 @@ model MasterBrokerCity {
 }
 
 model AccountingBook {
+  taxReferenceReleases TaxReferenceRelease[]
+  taxReferenceMappings TaxReferenceMapping[]
+  seasonalReports SeasonalReportSnapshot[]
+  treasuryInstruments TreasuryInstrument[]
   legalEntityId      String?                          @unique @db.Uuid
   legalEntity        LegalEntity?                     @relation(fields: [legalEntityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   financialWorkflows AccountingWorkflow[]
@@ -7277,6 +7406,8 @@ model AccountingBook {
 }
 
 model AccountingConfiguration {
+  treasuryProviders TreasuryInstrument[]
+  settlementAccounts FinanceSettlementAccount[]
   standardEntities  AccountingStandardEntity[]
   id                String                           @id @default(uuid()) @db.Uuid
   bookId            String                           @db.Uuid
@@ -7305,6 +7436,7 @@ model AccountingConfiguration {
 }
 
 model AccountingPeriod {
+  seasonalReports SeasonalReportSnapshot[]
   financialRequests FinanceOperationalRequest[]
   financialEvents   FinanceAccountingEvent[]
   statements        AccountingStatement[]
@@ -7416,6 +7548,8 @@ model AccountingStandardMapping {
 }
 
 model AccountingDetail {
+  treasuryInstruments TreasuryInstrument[]
+  cashierAssignments TreasuryCashierAssignment[]
   customerId              String?                        @db.Uuid
   customer                Customer?                      @relation(fields: [customerId], references: [id], onDelete: Restrict)
   statements              AccountingStatement[]
@@ -7454,6 +7588,7 @@ model AccountingDetail {
 }
 
 model AccountingJournal {
+  seasonalRegion SeasonalJournalRegion?
   financialWorkflow     AccountingWorkflow?
   financialEvent        FinanceAccountingEvent?
   id                    String                           @id @default(uuid()) @db.Uuid

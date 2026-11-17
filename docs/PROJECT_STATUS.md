@@ -1,3 +1,7 @@
+## 2026-11-17 — FINANCE-RAHKARAN-PARITY-1117
+
+PC-D added ledger-scoped tax reference import and mapping, internal seasonal report validation and snapshots, the analytical account browser, Treasury definitions and year-end readiness. Source inspection used period 1405. See [implementation, evidence and outstanding dependencies](tasks/FINANCE-RAHKARAN-PARITY-1117.md).
+
 ## NORA-LIVE-MATRIX-1116 — PC-C — IN_PROGRESS
 
 Original final-source live validation stopped at four real Groq cases plus one source-down control because of TPD quota; full30 not certified. All original120 service tests and10 hosted gates passed. User authorizes PR1761 conflict repair/develop merge on2026-11-17. Integration preserves the newly merged token-saving native route and restores per-request evidence IDs in its model options. No production change. See tasks/NORA-LIVE-MATRIX-1116.md.

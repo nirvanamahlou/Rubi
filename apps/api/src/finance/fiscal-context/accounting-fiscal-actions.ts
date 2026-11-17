@@ -2,6 +2,9 @@
 export const accountingFiscalMetadataActions = new Set([
   'save-book',
   'save-configuration',
+  'save-treasury-instrument',
+  'tax-reference-import',
+  'tax-map-save',
   'save-period',
   'delete-period',
   'set-default-period',
@@ -37,7 +40,7 @@ export function fiscalYearIndependentRequest(
     return true;
   if (action && accountingFiscalMetadataActions.has(action)) return true;
   if (
-    /^\/finance\/accounting\/books\/[^/]+\/reports\/analytical\/standard-mapping$/.test(
+    /^\/finance\/accounting\/books\/[^/]+\/reports\/analytical\/(?:standard-mapping|treasury-instruments|tax-mapping)$/.test(
       path,
     ) &&
     method === 'GET'
