@@ -141,7 +141,7 @@ describe('read-only website passenger preflight', () => {
     expect(request.where.OR).toHaveLength(2);
     expect(
       Object.keys(request.select).some((key) =>
-        /Encrypted|Masked|displayName/.test(key),
+        /Encrypted|Masked|displayName|firstName|lastName|birthDate/.test(key),
       ),
     ).toBe(false);
   });
