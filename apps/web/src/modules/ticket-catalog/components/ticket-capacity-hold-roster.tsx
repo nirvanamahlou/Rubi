@@ -166,7 +166,7 @@ export function TicketCapacityHoldRoster({
                 }
               >
                 {row.paymentPendingAt ? (
-                  'در انتظار نتیجه قطعی بانک؛ ظرفیت محفوظ است'
+                  'رزرو مرتبط با پرداخت؛ ظرفیت تا تعیین تکلیف خرید محفوظ است'
                 ) : seconds === null ? (
                   'زمان انقضای رزرو در دسترس نیست.'
                 ) : seconds === 0 ? (

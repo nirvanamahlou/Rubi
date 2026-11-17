@@ -140,7 +140,7 @@ it('keeps pending bank holds visible after expiry and never signals capacity rel
   await vi.advanceTimersByTimeAsync(3000);
   const result = canonicalTestTree(html(load, notify));
   expect(result).toContain('SYNTHETIC-42');
-  expect(result).toContain('در انتظار نتیجه قطعی بانک؛ ظرفیت محفوظ است');
+  expect(result).toContain('رزرو مرتبط با پرداخت؛ ظرفیت تا تعیین تکلیف خرید محفوظ است');
   expect(result).not.toContain('۰:۰۰');
   expect(notify).not.toHaveBeenCalled();
 });
