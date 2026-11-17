@@ -299,9 +299,22 @@ export function MissionFinanceEditor({
     [value, setValue] = useState(mission),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const end = Date.parse(mission.to + 'T' + mission.endTime + ':00+03:30');
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      const current = Date.now();
+      setNow(current);
+      if (end >= current)
+        timer = setTimeout(tick, Math.min(end - current + 1, 2147483647));
+    };
+    timer = setTimeout(tick, 0);
+    return () => clearTimeout(timer);
+  }, [mission.to, mission.endTime]);
   if (
     mission.finance ||
-    Date.now() <= Date.parse(mission.to + 'T' + mission.endTime + ':00+03:30')
+    now <= Date.parse(mission.to + 'T' + mission.endTime + ':00+03:30')
   )
     return null;
   return (
