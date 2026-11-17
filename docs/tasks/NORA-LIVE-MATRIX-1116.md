@@ -76,4 +76,3 @@ Groq ابتدا TPM و سپس TPD اعلام کرد. حتی پس از رعایت
 ## PR1761 integration — 2026-11-17
 
 Owner explicitly authorizes conflict repair and develop merge. Integrated develop59d750dfe without dropping its native-count/token-efficiency route. Combined currentResultIds with nativeStep selection; regression captures each provider option and proves final citations receive only current evidence IDs. All136 integrated service tests pass. Existing four live model passes and one source-down control are historical pinned-source evidence, not a new30-case certification. Final-head hosted checks gate merge; no deployment.
-
