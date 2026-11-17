@@ -78,13 +78,11 @@ function fixture() {
     applyFinancePaymentConfirmed: vi.fn().mockResolvedValue('confirmed'),
   };
   service.gatewayReceipts = {
-    resolve: vi
-      .fn()
-      .mockResolvedValue({
-        ...proof,
-        accountId: 'mapped-bank',
-        branchId: 'branch',
-      }),
+    resolve: vi.fn().mockResolvedValue({
+      ...proof,
+      accountId: 'mapped-bank',
+      branchId: 'branch',
+    }),
     confirm: vi
       .fn()
       .mockImplementation(
@@ -99,15 +97,13 @@ function fixture() {
       ),
   };
   service.releaseSettledWebsiteDocuments = vi.fn();
-  service.status = vi
-    .fn()
-    .mockResolvedValue({
-      data: {
-        paymentStatus: 'paid',
-        hasConfirmedPayment: true,
-        fullySettled: true,
-      },
-    });
+  service.status = vi.fn().mockResolvedValue({
+    data: {
+      paymentStatus: 'paid',
+      hasConfirmedPayment: true,
+      fullySettled: true,
+    },
+  });
   return { service, row, contract };
 }
 describe('Verified site gateway orchestration', () => {

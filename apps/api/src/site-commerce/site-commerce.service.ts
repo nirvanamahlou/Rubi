@@ -857,9 +857,19 @@ export class SiteCommerceService {
   async status(site: string, externalId: string, actor: AuthenticatedActor) {
     const { row, scoped } = await this.order(site, externalId, actor);
     const { data: contract } = await this.sales.detail(row.contractId, scoped);
+    const facts = await this.sales.financeCustomerDocumentDeliveryFacts(
+      row.contractId,
+      scoped.branchIds,
+    );
     return {
       version: 1,
       data: {
+        paymentStatus:
+          !facts.cancelled && facts.hasConfirmedPayment && facts.fullySettled
+            ? 'paid'
+            : 'unpaid',
+        hasConfirmedPayment: facts.hasConfirmedPayment,
+        fullySettled: facts.fullySettled,
         externalId,
         contractId: contract.id,
         contractNumber: contract.contractNumber,
@@ -1054,6 +1064,54 @@ export class SiteCommerceService {
     return this.sales.paymentAccounts(row.contractId, scoped);
   }
 
+  private async releaseSettledWebsiteDocuments(
+    row: { contractId: string; paymentFingerprint: string | null },
+    scoped: AuthenticatedActor,
+  ) {
+    const current = await this.delivery.readCustomerContract(row.contractId);
+    // Never override an explicit finance decision (including a revoked approval).
+    if (current.approved || current.version !== 0) return current;
+    const facts = await this.sales.financeCustomerDocumentDeliveryFacts(
+      row.contractId,
+      scoped.branchIds,
+    );
+    if (facts.cancelled || !facts.hasConfirmedPayment || !facts.fullySettled)
+      return current;
+    try {
+      return await this.delivery.updateCustomerContract(
+        {
+          expectedVersion: current.version,
+          approved: true,
+          basis: 'FULL_SETTLEMENT',
+          reason:
+            'تحویل خودکار خرید سایت پس از تأیید پرداخت و تسویه کامل در سامانه مرکزی',
+        },
+        facts,
+        scoped,
+        async (tx) => {
+          const fresh = await this.sales.financeCustomerDocumentDeliveryFacts(
+            row.contractId,
+            scoped.branchIds,
+            tx,
+          );
+          if (
+            fresh.cancelled ||
+            !fresh.hasConfirmedPayment ||
+            !fresh.fullySettled
+          )
+            throw new ConflictException(
+              'تسویه کامل تأییدشده برای تحویل مدارک لازم است.',
+            );
+          return fresh;
+        },
+      );
+    } catch (error) {
+      if (!(error instanceof ConflictException)) throw error;
+      // A simultaneous finance decision wins; do not overwrite or retry it.
+      return this.delivery.readCustomerContract(row.contractId);
+    }
+  }
+
   async travelDocuments(
     site: string,
     externalId: string,
@@ -1065,9 +1123,11 @@ export class SiteCommerceService {
       row.contractId,
       scoped.branchIds,
     );
-    const authorization = await this.delivery.readCustomerContract(
-      row.contractId,
-    );
+    const authorization =
+      contract.status !== 'CANCELLED' &&
+      intake.workflow.supplierStatus !== 'CANCELLED'
+        ? await this.releaseSettledWebsiteDocuments(row, scoped)
+        : await this.delivery.readCustomerContract(row.contractId);
     if (
       !authorization.approved ||
       contract.status === 'CANCELLED' ||
