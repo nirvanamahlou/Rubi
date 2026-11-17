@@ -3,6 +3,7 @@ import type { TicketOfferV1 } from '@nora/contracts';
 import {
   completePublicationFilters,
   matchingPublicationTickets,
+  matchingPublicationTicketRows,
   publishTicketSelection,
 } from './ticket-bulk-publication';
 const filters = {
@@ -32,6 +33,50 @@ const offer = (id: string, extra = {}) =>
     ...extra,
   }) as TicketOfferV1;
 const label = (row: TicketOfferV1) => row.serviceNumber;
+it('retains the exact matched fare rows for display while publishing canonical offer identities', () => {
+  const outbound = offer('both-fares', {
+    baseRoundTripSalePrices: ['r1', 'r2'].map((returnOfferId) => ({
+      returnOfferId,
+      amount: '20',
+      currencyCode: 'IRR',
+      revision: 1,
+    })),
+  });
+  const returns = ['r1', 'r2'].map((id) =>
+    offer(id, {
+      originId: 'destination',
+      destinationId: 'origin',
+      departureAt: '2027-02-01T10:00:00Z',
+    }),
+  );
+  const tickets = [outbound, ...returns];
+  const before = JSON.stringify(tickets);
+  expect(
+    matchingPublicationTicketRows(tickets, 'branch', filters, label).map(
+      (row) => row.returnOfferId,
+    ),
+  ).toEqual([null]);
+  expect(
+    matchingPublicationTicketRows(
+      tickets,
+      'branch',
+      { ...filters, tripType: 'ROUNDTRIP', query: 'r2' },
+      label,
+    ).map((row) => row.returnOfferId),
+  ).toEqual(['r2']);
+  expect(
+    matchingPublicationTicketRows(
+      tickets,
+      'branch',
+      { ...filters, tripType: '' },
+      label,
+    ).map((row) => row.returnOfferId),
+  ).toEqual([null, 'r1', 'r2']);
+  expect(matchingPublicationTickets(tickets, 'branch', filters, label)).toEqual(
+    [outbound],
+  );
+  expect(JSON.stringify(tickets)).toBe(before);
+});
 it('selects all matching active priced offers in the branch and inclusive Tehran departure-date range', () => {
   const rows = [
     offer('yes'),
