@@ -1,5 +1,4 @@
 'use client';
-/** @jsxImportSource react */
 import { useState } from 'react';
 import { masterDataApi } from '../api/client';
 

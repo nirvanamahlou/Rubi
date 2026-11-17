@@ -6671,5 +6671,22 @@
   "نوع درخواست را مشخص کنید.": "Select the request type.",
   "ویرایش اطلاعات مالی مأموریت": "Edit mission financial details",
   "هزینه (ریال)": "Expense (IRR)",
-  "هزینه مأموریت ثبت شد.": "Mission expenses submitted."
+  "هزینه مأموریت ثبت شد.": "Mission expenses submitted.",
+  "بین یک تا شش عکس انتخاب کنید.": "Select one to six images.",
+  "تصاویر هتل": "Hotel images",
+  "حجم هر عکس باید حداکثر ۱۰ مگابایت باشد.": "Each image must be no larger than 10 MB.",
+  "حذف عکس گالری": "Remove gallery image",
+  "دانلود عکس": "Download image",
+  "در حال بارگذاری عکس‌ها…": "Uploading images…",
+  "عکس اصلی": "Main image",
+  "عکس اصلی هتل": "Main hotel image",
+  "عکس باید PNG، JPEG یا WebP معتبر و حداکثر ۴۰ مگاپیکسل باشد.": "Use a valid PNG, JPEG or WebP image of up to 40 megapixels.",
+  "عکس‌ها با فرمت WebP ذخیره می‌شوند. حداکثر حجم هر عکس ۱۰ مگابایت.": "Images are saved as WebP. Maximum image size is 10 MB.",
+  "گالری · حداکثر ۶ عکس": "Gallery · up to 6 images",
+  "گالری حداکثر ۶ عکس می‌پذیرد.": "The gallery accepts up to 6 images.",
+  "گالری هتل حداکثر ۶ عکس می‌پذیرد.": "The hotel gallery accepts up to 6 images.",
+  "هنوز عکسی برای هتل ثبت نشده است.": "No hotel images have been saved yet.",
+  "حذف عکس اصلی": "Remove main image",
+  "بارگذاری عکس انجام نشد.": "Image upload failed.",
+  "عکس گالری": "Gallery image"
 }
