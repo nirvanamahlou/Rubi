@@ -1,3 +1,7 @@
+## NORA-CHAT-SCROLL-RELEASE-1117 — PC-C — VERIFIED
+
+PR1768 UI is active in ERP with PR1769 Persian/source presentation preserved. Published Web build08Ajp-thgUW8QA5lVntoo;291 integrated tests and server compile/type/Agent admission pass. Authenticated browser confirms immediate messages, waiting spinner, transcript bottom scrolling, pause while reading, latest arrow, next-draft and close/reopen retention. No SQL/financial acceptance claim, migration, business writes or non-Web replacement. [Release receipt](tasks/NORA-CHAT-SCROLL-RELEASE-1117.md).
+
 ## NORA-PERSIAN-RESPONSE-1117 — PC-C — VALIDATING
 
 Persian public business wording and localized source/date/time labels; safe actual headings/emphasis/lists/tables replace raw Markdown markers.139 service and282 Assistant/i18n checks pass; scoped lint/format pass. Numbers, permissions, evidence, SQL and private runtime configuration unchanged. Clean hosted and live-browser gates remain separate. See [task](tasks/NORA-PERSIAN-RESPONSE-1117.md).
