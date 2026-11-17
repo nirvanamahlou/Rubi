@@ -148,7 +148,7 @@ export function createDataAgent({
     )
       fail('INVALID_AGENT_CATALOG');
     const finalProtocol =
-      'For the final response return ONLY a JSON object with status,text,resultIds,limitations and optional calculationExplanation as assistant content; do not call a final-answer function. Final schema: status must be exactly ANSWER, CLARIFY or REPLY (never success). ANSWER covers every data-derived finding, including zero or no matching record, and requires current resultIds. CLARIFY asks for material ambiguity; REPLY explains unsupported scope. text is a nonempty string of at most 6000 characters; resultIds is an array of strings; limitations is an array of strings, never a single string. Example: {"status":"CLARIFY","text":"Which calendar?","resultIds":[],"limitations":[]}. Use those four keys plus calculationExplanation for calculated answers; no other keys or wrapper. calculationExplanation is a string of at most 4000 characters explaining the result from current evidence in your chosen prose/table layout; combined displayed text must fit 6000 characters. It is mandatory when a cited tool marks calculation.required=true. A non-calculated reply may omit it or set it to null. Never call tools named commentary, final or analysis. Use actual resultIds and limitations in the final JSON; do not invent results, columns or IDs. ';
+      'For the final response call the advertised json function or return ONLY a JSON object as assistant content, with status,text,resultIds,limitations and optional calculationExplanation. Use only the advertised tools. Final schema: status must be exactly ANSWER, CLARIFY or REPLY (never success). ANSWER covers unambiguous data-derived findings, including zero or no matching record, and requires current resultIds. Fresh query evidence does not resolve an ambiguous record selection: when the user asks to inspect one contract by customer name and multiple authorized contract numbers match, return CLARIFY with their current resultIds and explicitly ask which matching contract number to inspect. Merely listing all candidate contracts is not a clarification and must not be labelled ANSWER for that single-contract request. An explicit request to list matching contracts may be answered as a list. CLARIFY asks for material ambiguity; REPLY explains unsupported scope. text is a nonempty string of at most 6000 characters; resultIds is an array of strings; limitations is an array of strings, never a single string. Example: {"status":"CLARIFY","text":"Which calendar?","resultIds":[],"limitations":[]}. Use those four keys plus calculationExplanation for calculated answers; no other keys or wrapper. calculationExplanation is a string of at most 4000 characters explaining the result from current evidence in your chosen prose/table layout; combined displayed text must fit 6000 characters. It is mandatory when a cited tool marks calculation.required=true. A non-calculated reply may omit it or set it to null. Never call tools named commentary, final or analysis. Copy each complete resultId UUID exactly from current tool evidence; never invent, shorten or reconstruct it. Use actual resultIds and limitations in the final JSON; do not invent results, columns or IDs. ';
     const messages = [
       {
         role: 'system',
@@ -180,6 +180,7 @@ export function createDataAgent({
               signal,
               remainingTokens: 40000 - tokens,
               allowFinalResponse: Boolean(plan),
+              currentResultIds: [...evidence.keys()],
               allowedTools: !plan
                 ? ['set_plan']
                 : !described.size
@@ -211,7 +212,7 @@ export function createDataAgent({
           messages.push({
             role: 'system',
             content: plan
-              ? 'The last call was rejected by the provider. Use only the listed tools for further evidence, or return the final JSON (including calculationExplanation for calculated results) as assistant content, not a JSON/commentary function call. No previous failed output was executed.'
+              ? 'The last call was rejected by the provider. Use only the listed tools for further evidence, or return the final JSON (including calculationExplanation for calculated results) as assistant content or through the advertised json function, never an unlisted function. No previous failed output was executed.'
               : 'The last call was rejected. This turn ONLY call set_plan with 1 to 5 brief steps, each <=200 characters. Ask clarifying questions only after the plan has been accepted.',
           });
           continue;

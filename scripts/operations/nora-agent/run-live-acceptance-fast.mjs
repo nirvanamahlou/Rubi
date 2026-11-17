@@ -30,6 +30,8 @@ const pinnedFiles = [
 
   'apps/api/src/sales/assistant-agent/live-acceptance.spec.ts',
   'apps/api/src/sales/assistant-agent/query.service.ts',
+  'apps/api/src/sales/assistant-agent/count-breakdown.ts',
+  'apps/api/src/reservations/reservation-reporting-cancellations.public.ts',
   'apps/api/src/sales/assistant-agent/sql-policy.ts',
   'apps/api/src/sales/assistant-agent/catalog.ts',
   'scripts/operations/nora-agent/live-provider.mjs',

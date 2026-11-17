@@ -197,6 +197,7 @@ const result = {
 function harness(steps = [plan, describe, query, finish], override) {
   const calls = [];
   const payloads = [];
+  const providerOptions = [];
   const audits = [];
   let index = 0;
   const agent = createDataAgent({
@@ -204,7 +205,8 @@ function harness(steps = [plan, describe, query, finish], override) {
     erpBaseUrl: 'http://127.0.0.1:4301/api/v1',
     audit: (value) => audits.push(value),
     provider: {
-      async step(messages) {
+      async step(messages, options) {
+        providerOptions.push(structuredClone(options.currentResultIds));
         payloads.push(structuredClone(messages));
         const next = steps[index++];
         if (next instanceof Error) throw next;
@@ -219,7 +221,7 @@ function harness(steps = [plan, describe, query, finish], override) {
       );
     },
   });
-  return { agent, calls, payloads, audits };
+  return { agent, calls, payloads, audits, providerOptions };
 }
 
 test('provider protocol repair is bounded, charged and never executed as evidence', async () => {
@@ -502,6 +504,7 @@ test('native counts reach the model and retain its own prose/calculation layout'
     { ...message, message: 'تعداد قراردادها چقدر است؟' },
     { cookie: 'nora_access=synthetic', signal: signal() },
   );
+  assert.deepEqual(h.providerOptions, [[], [], [resultId]]);
   assert.match(response.text, /۷ \+ ۲ \+ ۳ = ۱۲/);
   assert.doesNotMatch(response.text, /100.0000 USD/);
   assert.doesNotMatch(response.text, /\| وضعیت \|/);
