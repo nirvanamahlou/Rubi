@@ -69,6 +69,7 @@ export function createDataAgent({
     const requestId = randomUUID();
     let contextId;
     let tokens = 0;
+    const attemptBudget = { attempts: 0, retryTokens: 0 };
     let queries = 0;
     let evidenceBytes = 0;
     let plan;
@@ -179,7 +180,9 @@ export function createDataAgent({
           ? nativeStep(messages)
           : await provider.step(messages, {
               signal,
-              remainingTokens: 40000 - tokens,
+              remainingTokens: 40000 - tokens - attemptBudget.retryTokens,
+              attemptBudget,
+              beforeRetry: () => call('catalog'),
               allowFinalResponse: Boolean(plan),
               currentResultIds: [...evidence.keys()],
               allowedTools: !plan
@@ -208,7 +211,7 @@ export function createDataAgent({
           error.tokenCharge > 0
         ) {
           tokens += error.tokenCharge;
-          if (tokens > 40000)
+          if (tokens + attemptBudget.retryTokens > 40000)
             throw new ServiceError(429, 'AGENT_TOKEN_BUDGET_EXCEEDED');
           messages.push({
             role: 'system',
@@ -243,7 +246,10 @@ export function createDataAgent({
         /* Audit failure never exposes source content. */
       }
       tokens += step.tokens;
-      if (!Number.isSafeInteger(tokens) || tokens > 40000)
+      if (
+        !Number.isSafeInteger(tokens) ||
+        tokens + attemptBudget.retryTokens > 40000
+      )
         throw new ServiceError(429, 'AGENT_TOKEN_BUDGET_EXCEEDED');
       const args = step.args;
       let output;

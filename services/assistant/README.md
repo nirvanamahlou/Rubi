@@ -6,6 +6,14 @@ read-only SQL and sends it to the Sales-owned ERP execution boundary.
 
 ## Agent v3 — 2026-11-14
 
+All Groq consumers now use one process-local credential pool through
+`groqConfigurations()` at startup. `GROQ_KEY_POOL_FILE` selects a private,
+read-only ordered credential file; without it `GROQ_API_KEY` remains supported.
+Never construct separate pools per request or bypass the shared factory in a
+custom runtime. Organization quotas are shared, not multiplied by key count.
+Configuration, scoped failover, budget/auth rules and Nora-only rollback:
+[NORA-GROQ-KEY-POOL-1117](../../docs/tasks/NORA-GROQ-KEY-POOL-1117.md).
+
 Every answer-authoring model entry point shares the module-independent calculation-explanation
 policy. Groq chooses text or table; derived answers require a user-facing method
 summary from current evidence, with at most one bounded formatting repair.

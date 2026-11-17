@@ -20,16 +20,18 @@ export function validateWorkbenchGuide(value) {
 
 export function createWorkbenchGuideSelector({
   apiKey,
+  transport,
   fetcher = fetch,
   now = Date.now,
 } = {}) {
   let unavailableUntil = 0;
-  return async (input, signal) => {
+  return async (input, signal, { beforeRetry } = {}) => {
     const safe = validateWorkbenchGuide(input);
     const fallback = () => ({ ...safe, selection: 'internal' });
-    if (!apiKey || now() < unavailableUntil) return fallback();
+    if ((!apiKey && !transport) || (!transport && now() < unavailableUntil))
+      return fallback();
     try {
-      const response = await fetcher(
+      const response = await (transport?.fetch ?? fetcher)(
         'https://api.groq.com/openai/v1/chat/completions',
         {
           method: 'POST',
@@ -37,7 +39,7 @@ export function createWorkbenchGuideSelector({
           cache: 'no-store',
           signal: AbortSignal.any([signal, AbortSignal.timeout(5000)]),
           headers: {
-            authorization: `Bearer ${apiKey}`,
+            ...(!transport ? { authorization: `Bearer ${apiKey}` } : {}),
             'content-type': 'application/json',
           },
           body: JSON.stringify({
@@ -76,6 +78,7 @@ export function createWorkbenchGuideSelector({
             ],
           }),
         },
+        { beforeRetry },
       );
       if (!response.ok) {
         if (response.status === 429) {
@@ -116,9 +119,12 @@ export function createWorkbenchGuideSelector({
   };
 }
 
-export function workbenchGuideConfiguration(env = process.env) {
+export function workbenchGuideConfiguration(
+  env = process.env,
+  { transport } = {},
+) {
   // Reuse the existing Germany-only startup admission; never add a direct fallback.
   if (env.ASSISTANT_AGENT_ENABLED !== 'true') return {};
-  dataAgentConfiguration(env);
-  return { apiKey: env.GROQ_API_KEY };
+  dataAgentConfiguration(env, { transport });
+  return transport ? { transport } : { apiKey: env.GROQ_API_KEY };
 }
