@@ -29,10 +29,13 @@ const cell = (column: number, row: number, value: string, style: number) =>
 /** Blank merged inputs match the selected itinerary; they contain no sale data. */
 export function buildFloatingTourTemplate(
   tour: TourPackageInputV1,
+  destinationCount?: number,
 ): Uint8Array {
-  const count = tour.details?.isCombined
-    ? Math.max(2, tour.details.destinations?.length ?? 0)
-    : 1;
+  const count =
+    destinationCount ??
+    (tour.details?.isCombined
+      ? Math.max(2, tour.details.destinations?.length ?? 0)
+      : 1);
   const header = `<row r="1" ht="32" customHeight="1">${columns.map((name, index) => cell(index, 1, name, 1)).join('')}</row>`;
   const rows = Array.from({ length: count }, (_, index) => {
     const row = index + 2;

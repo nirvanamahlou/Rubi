@@ -149,6 +149,9 @@ export function FloatingTourPricingWorkspace() {
             setOptions((old) => ({
               ...old,
               combined: !!selected.details?.isCombined,
+              destinationNights: selected.details?.isCombined
+                ? [0, 0]
+                : undefined,
             }));
           }
         }
@@ -176,12 +179,25 @@ export function FloatingTourPricingWorkspace() {
     };
   }, [id, session]);
   const patch = (next: Partial<FloatingTourImportOptions>) => {
-    setOptions({ ...options, ...next });
+    const updated = { ...options, ...next };
+    if (updated.combined) {
+      updated.destinationNights ??= [0, 0];
+      updated.nights = updated.destinationNights.reduce((sum, n) => sum + n, 0);
+    } else updated.destinationNights = undefined;
+    setOptions(updated);
     setPreview(null);
     setMessage('');
   };
+  const validNights =
+    Number.isInteger(options.nights) &&
+    options.nights >= 1 &&
+    options.nights <= 365 &&
+    (!options.combined ||
+      (!!options.destinationNights &&
+        options.destinationNights.length >= 2 &&
+        options.destinationNights.every((n) => Number.isInteger(n) && n >= 1)));
   async function run(commit = false) {
-    if (!session || !file || !id || busy) return;
+    if (!session || !file || !id || busy || !validNights) return;
     setBusy(true);
     setError('');
     setMessage('');
@@ -223,7 +239,13 @@ export function FloatingTourPricingWorkspace() {
             setError('');
             setCatalog(null);
             setPeriod('');
-            patch({ combined: !!selected?.details?.isCombined, nights: 0 });
+            patch({
+              combined: !!selected?.details?.isCombined,
+              nights: 0,
+              destinationNights: selected?.details?.isCombined
+                ? [0, 0]
+                : undefined,
+            });
           }}
         >
           <option value="">انتخاب تور شناور</option>
@@ -245,6 +267,7 @@ export function FloatingTourPricingWorkspace() {
                   min={1}
                   max={365}
                   value={options.nights || ''}
+                  readOnly={options.combined}
                   disabled={busy || !canManage}
                   onChange={(e) => patch({ nights: Number(e.target.value) })}
                 />
@@ -275,6 +298,60 @@ export function FloatingTourPricingWorkspace() {
                 تور ترکیبی با قیمت مشترک اقامت‌ها
               </label>
             </div>
+            {options.combined && (
+              <div className="space-y-4 rounded-2xl border border-blue-100 bg-blue-50/40 p-4">
+                <label className="block max-w-xs">
+                  تعداد مقصد
+                  <NativeSearchSelect
+                    aria-label="تعداد مقصد"
+                    value={options.destinationNights?.length ?? 2}
+                    disabled={busy || !canManage}
+                    onChange={(e) =>
+                      patch({
+                        destinationNights: Array.from(
+                          { length: Number(e.target.value) },
+                          (_, i) => options.destinationNights?.[i] ?? 0,
+                        ),
+                      })
+                    }
+                  >
+                    {Array.from({ length: 9 }, (_, i) => i + 2).map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </NativeSearchSelect>
+                </label>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  {(options.destinationNights ?? [0, 0]).map((n, i) => (
+                    <label key={i}>
+                      تعداد شب مقصد {i + 1}
+                      <Input
+                        aria-label={`تعداد شب مقصد ${i + 1}`}
+                        type="number"
+                        min={1}
+                        max={365}
+                        value={n || ''}
+                        disabled={busy || !canManage}
+                        onChange={(e) =>
+                          patch({
+                            destinationNights: (
+                              options.destinationNights ?? [0, 0]
+                            ).map((old, index) =>
+                              index === i ? Number(e.target.value) : old,
+                            ),
+                          })
+                        }
+                      />
+                    </label>
+                  ))}
+                </div>
+                <p className="text-sm text-slate-600">
+                  شهر هر مقصد از هتل داخل اکسل خوانده می‌شود؛ ترتیب ردیف‌های هتل
+                  باید با ترتیب مقصدها برابر باشد.
+                </p>
+              </div>
+            )}
             {options.mode === 'MONTHLY' && (
               <>
                 <NativeSearchSelect
@@ -315,7 +392,7 @@ export function FloatingTourPricingWorkspace() {
               className="inline-flex w-fit items-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-medium text-blue-800 hover:bg-blue-50"
               href={
                 options.combined && getPublicApiBaseUrl()
-                  ? `${getPublicApiBaseUrl()}/sales/pricing/floating-tours/${encodeURIComponent(id)}/template`
+                  ? `${getPublicApiBaseUrl()}/sales/pricing/floating-tours/${encodeURIComponent(id)}/template?destinationCount=${options.destinationNights?.length ?? 2}`
                   : '/templates/floating-tour-price.xlsx'
               }
               download
@@ -332,13 +409,7 @@ export function FloatingTourPricingWorkspace() {
               aria-label="فایل قیمت تور"
               type="file"
               accept=".xlsx"
-              disabled={
-                busy ||
-                !canManage ||
-                !Number.isInteger(options.nights) ||
-                options.nights < 1 ||
-                options.nights > 365
-              }
+              disabled={busy || !canManage || !validNights}
               onChange={(e) => {
                 setFile(e.target.files?.[0] ?? null);
                 setPreview(null);
@@ -346,7 +417,7 @@ export function FloatingTourPricingWorkspace() {
               }}
             />
             <Button
-              disabled={busy || !canManage || !file}
+              disabled={busy || !canManage || !file || !validNights}
               onClick={() => void run()}
             >
               پیش‌نمایش قیمت فروش

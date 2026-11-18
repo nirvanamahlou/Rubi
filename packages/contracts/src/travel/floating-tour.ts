@@ -24,6 +24,8 @@ export interface FloatingTourSaleRow {
   commission: FloatingTourMoney[];
 }
 export interface FloatingTourImportOptions {
+  /** Ordered stay nights; cities are resolved from the Excel hotel references. */
+  destinationNights?: number[] | undefined;
   nights: number;
   mode: 'DATED' | 'MONTHLY';
   calendar?: 'PERSIAN' | 'GREGORIAN';

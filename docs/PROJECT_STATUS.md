@@ -10355,6 +10355,12 @@ Reproduced missing floating-package card on current production code as a manual-
 
 Optional identificationCode (up to160 characters) is editable directly below English name in both hotel create/edit forms and shown in the profile basic-information card. Leading zeroes and mixed text are preserved; blank clears to null. Existing internal hotel code and UUID remain unchanged. Additive migration20261118110000_hotel_identification_code required before API rollout.22 focused Web/API tests and scoped lint passed; Web production build (including TypeScript) and API typecheck passed. Prisma validation/generation and contracts/database builds passed. API required a larger Node heap after the default2GB run exhausted memory. No production changes. PR1792.
 
+## FLOATING-DESTINATION-NIGHTS-1118 — PC-A
+
+Combined floating-price imports accept destination count (2–10) and ordered nights per destination. Web computes the total; API validates the sum and resolves destination cities from active saleable hotel references in Excel, independently of the saved tour itinerary. Flat and merged multi-hotel groups use one shared per-person price; template merge height follows the selected count. Legacy imports remain supported. Preview digest/CAS, permissions, currencies and passenger-age price rules remain intact. No migration/dependency or operational-data changes; scoped develop merge requested by owner.
+
+Validation: 46 focused API tests and 6 Web/i18n tests passed, including configured three/four-stop imports, monthly dates, invalid sums, merged group height, master-data filters and preview/commit. Scoped Web/API lint and API build passed. Generated English mirrors retain all existing translations.
+
 ## FORM-SAVE-SHORTCUT — PC-B
 
 Alt+S activates the save or register control of the focused form or active dialog using its existing submission path. Disabled and ambiguous actions are skipped.

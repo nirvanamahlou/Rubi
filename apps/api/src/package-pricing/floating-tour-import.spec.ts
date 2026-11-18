@@ -60,6 +60,97 @@ const tour = {
 } satisfies TourPackageInputV1;
 const hotels = [{ id: 'h1', name: 'Hotel One', cityId: 'city' }];
 const options = { nights: 7, mode: 'DATED' as const };
+it('infers three destination cities from Excel hotels and assigns form nights without changing the saved route', () => {
+  const refs = [1, 2, 3].map((n) => ({
+    id: `h${n}`,
+    name: `Hotel ${n}`,
+    cityId: `city${n}`,
+  }));
+  const workbook = [
+    headers.map((h) => c(h)),
+    ...refs.map((h) => book({ hotel_name: h.name })[1]!),
+  ];
+  const input = { ...options, combined: true, destinationNights: [2, 3, 2] };
+  const row = parseFloatingRows(workbook, input, tour, refs)[0]!;
+  expect(row.stays.map((s) => [s.cityId, s.nights])).toEqual([
+    ['city1', 2],
+    ['city2', 3],
+    ['city3', 2],
+  ]);
+  expect(row.prices).toEqual(
+    parseFloatingRows(book({ hotel_name: 'Hotel 1' }), options, tour, refs)[0]!
+      .prices,
+  );
+  expect(row.endsOn).toBe('2026-08-08');
+  expect(tour.destinationId).toBe('city');
+  const monthly = parseFloatingRows(
+    workbook,
+    { ...input, mode: 'MONTHLY', calendar: 'PERSIAN', months: [1] },
+    tour,
+    refs,
+  )[0]!;
+  expect(monthly.startsOn).toBeNull();
+  expect(monthly.stays.map((s) => s.nights)).toEqual([2, 3, 2]);
+  expect(() =>
+    parseFloatingRows(
+      workbook,
+      { ...input, destinationNights: [2, 2] },
+      tour,
+      refs,
+    ),
+  ).toThrow();
+  expect(() =>
+    parseFloatingRows(
+      workbook,
+      { ...input, destinationNights: [2, 2, 2] },
+      tour,
+      refs,
+    ),
+  ).toThrow();
+  expect(() =>
+    parseFloatingRows(
+      workbook,
+      input,
+      tour,
+      refs.map((h) => ({ ...h, cityId: 'same' })),
+    ),
+  ).toThrow();
+});
+it('uses the configured destination count for merged Excel groups', () => {
+  const refs = [1, 2, 3, 4].map((n) => ({
+    id: `h${n}`,
+    name: `Hotel ${n}`,
+    cityId: `city${n}`,
+  }));
+  const workbook = [
+    headers.map((h) => c(h)),
+    ...refs.map((h) => book({ hotel_name: h.name })[1]!),
+  ];
+  workbook.slice(1).forEach((row) => {
+    row[5]!.mergedRows = { first: 2, last: 5 };
+  });
+  const input = { ...options, combined: true, destinationNights: [1, 2, 3, 1] };
+  expect(
+    parseFloatingRows(workbook, input, tour, refs)[0]!.stays.map(
+      (s) => s.nights,
+    ),
+  ).toEqual([1, 2, 3, 1]);
+  expect(() =>
+    parseFloatingRows(
+      workbook,
+      { ...input, destinationNights: [3, 4] },
+      tour,
+      refs,
+    ),
+  ).toThrow();
+  const template = readFloatingWorkbook(
+    buildFloatingTourTemplate(
+      { ...tour, details: { ...tour.details, isCombined: true } },
+      4,
+    ),
+  );
+  expect(template[1]?.[5]?.mergedRows).toEqual({ first: 2, last: 5 });
+});
 it('reads the actual customer template, keeping guide content out of data', () => {
   expect(
     readFloatingWorkbook(

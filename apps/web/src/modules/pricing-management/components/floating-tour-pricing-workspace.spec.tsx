@@ -43,13 +43,27 @@ function seed(nights: number) {
     false,
     '',
     '',
-    { nights, mode: 'DATED', calendar: 'PERSIAN', months: [], combined: true },
+    {
+      nights,
+      destinationNights: nights ? [3, nights - 3] : [0, 0],
+      mode: 'DATED',
+      calendar: 'PERSIAN',
+      months: [],
+      combined: true,
+    },
   ];
 }
 it('requires an explicitly entered night count before enabling the Excel picker', () => {
   seed(0);
   const html = renderToStaticMarkup(<FloatingTourPricingWorkspace />);
   expect(html).toContain('تعداد شب این بازه');
+  expect(html).toContain('تعداد مقصد');
+  expect(html).toContain('تعداد شب مقصد 1');
+  expect(html).toContain('تعداد شب مقصد 2');
+  expect(html).toContain('شهر هر مقصد از هتل داخل اکسل خوانده می‌شود');
+  expect(
+    html.match(/<input[^>]*aria-label="تعداد شب این بازه"[^>]*>/)?.[0],
+  ).toContain('readOnly=""');
   expect(html).toContain('دانلود قالب قیمت تور');
   expect(html).toContain('/api/v1/sales/pricing/floating-tours/tour/template');
   expect(html).toContain('قیمت مشترک را در سلول ادغام‌شده وارد کنید');
@@ -64,6 +78,21 @@ it('requires an explicitly entered night count before enabling the Excel picker'
     enabled.match(/<input[^>]*aria-label="فایل قیمت تور"[^>]*>/)?.[0],
   ).not.toContain('disabled=""');
   expect(enabled).toContain('فروش نفری');
+});
+it('matches the merged template to three destinations and blocks incomplete stops', () => {
+  seed(7);
+  h.states[9] = {
+    nights: 7,
+    mode: 'DATED',
+    combined: true,
+    destinationNights: [2, 0, 5],
+  };
+  const html = renderToStaticMarkup(<FloatingTourPricingWorkspace />);
+  expect(html).toContain('destinationCount=3');
+  expect(html).toContain('تعداد شب مقصد 3');
+  expect(
+    html.match(/<input[^>]*aria-label="فایل قیمت تور"[^>]*>/)?.[0],
+  ).toContain('disabled=""');
 });
 it('keeps preview and final confirmation separate and blocks mutation for read-only users', () => {
   seed(7);

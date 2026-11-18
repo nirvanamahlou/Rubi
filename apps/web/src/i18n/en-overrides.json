@@ -6724,5 +6724,13 @@
   "سطح تفصیلی خارج از محدوده حساب است.": "The detail level is outside the account range.",
   "وضعیت سطح تفصیلی معتبر نیست.": "Invalid detail level status.",
   "سطح تفصیلی اجباری باید فعال باشد.": "A required detail level must be enabled.",
-  "برای این حساب فعال نیست.": "is disabled for this account."
+  "برای این حساب فعال نیست.": "is disabled for this account.",
+  "تعداد مقصد": "Destination count",
+  "تعداد شب مقصد": "Nights at destination",
+  "تعداد شب مقصد {0}": "Nights at destination {0}",
+  "شهر هر مقصد از هتل داخل اکسل خوانده می‌شود؛ ترتیب ردیف‌های هتل باید با ترتیب مقصدها برابر باشد.": "Each destination city is read from its Excel hotel; hotel rows must follow destination order.",
+  "تعداد مقصد باید بین ۲ تا ۱۰ باشد.": "Destination count must be between 2 and 10.",
+  "مجموع شب‌های مقصدها باید با تعداد شب بازه برابر باشد.": "Destination nights must add up to the period night count.",
+  "تعداد مقصدها، شب‌ها، شهر هتل‌ها و قیمت مشترک تور ترکیبی را بررسی کنید.": "Check destination count, nights, hotel cities and the combined tour shared price.",
+  "شب‌های فایل باید با شب‌های مقصدهای فرم برابر باشد.": "File nights must match the destination nights entered in the form."
 }
