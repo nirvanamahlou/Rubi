@@ -55,6 +55,7 @@ export const hotelProfileFields: readonly MasterDataFieldDefinition[] = [
 export const hotelProfileTextLimits: Readonly<Record<string, number>> = {
   name: 160,
   englishName: 160,
+  identificationCode: 160,
   address: 1000,
   website: 320,
   serviceLevel: 160,

@@ -56,7 +56,10 @@ function fixture(to = '2020-01-01') {
     },
     documents: { assertLeaveEvidence: vi.fn() },
     requestDirectory: {
-      hrLeaveRecipient: vi
+      options: vi
+        .fn()
+        .mockResolvedValue({ units: [{ id: 'hr', name: 'منابع انسانی' }] }),
+      missionRecipient: vi
         .fn()
         .mockResolvedValue({ recipientId: 'nima', unitId: 'hr' }),
     },

@@ -10348,3 +10348,9 @@ COMPUTER_ID=PC-A; branch codex/pc-a-checkout-advisory-1117 from develop4d1182948
 # 2026-11-18 — FLOATING-PACKAGE-RESTORE-1118 — PC-A
 
 Reproduced missing floating-package card on current production code as a manual-v3 access inheritance defect, not missing source/controller/migration. Owner approves only sales.pricing.management -> sales.pricing.floating inheritance with explicit denial and native write permissions preserved. Five focused access cases,40 API import/service/manual-policy tests and3 Web floating/hub tests pass. Separate feature-only main backport and guarded Web-only publication are pending their own validation; no business-data or live-grant changes. See [task](tasks/FLOATING-PACKAGE-RESTORE-1118.md).
+
+
+
+## HOTEL-IDENTIFICATION-1118 — PC-B
+
+Optional identificationCode (up to160 characters) is editable directly below English name in both hotel create/edit forms and shown in the profile basic-information card. Leading zeroes and mixed text are preserved; blank clears to null. Existing internal hotel code and UUID remain unchanged. Additive migration20261118110000_hotel_identification_code required before API rollout.22 focused Web/API tests and scoped lint passed; Web production build (including TypeScript) and API typecheck passed. Prisma validation/generation and contracts/database builds passed. API required a larger Node heap after the default2GB run exhausted memory. No production changes. PR1792.

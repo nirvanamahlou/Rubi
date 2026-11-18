@@ -1321,6 +1321,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: 'Hotel English Name',
       },
       {
+        key: 'identificationCode',
+        label: 'کد شناسایی',
+        type: 'text',
+        placeholder: '',
+      },
+      {
         key: 'cityId',
         label: 'شهر',
         type: 'text',

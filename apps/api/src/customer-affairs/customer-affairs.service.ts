@@ -2283,7 +2283,7 @@ export class CustomerAffairsService {
         start.toISOString().slice(0, 10) > mission.to
       )
         throw new BadRequestException('بازه مأموریت معتبر نیست.');
-      const route = await this.requestDirectory!.hrLeaveRecipient(
+      const route = await this.requestDirectory!.missionRecipient(
         actor,
         branchId,
       );
@@ -2362,7 +2362,7 @@ export class CustomerAffairsService {
           actor,
           branchScope(actor, requestedBranch),
         )),
-        missionRoute: await this.requestDirectory!.hrLeaveRecipient(
+        missionRoute: await this.requestDirectory!.missionRecipient(
           actor,
           branchScope(actor, requestedBranch),
         ).catch(() => undefined),
@@ -2441,7 +2441,7 @@ export class CustomerAffairsService {
         actor.userId,
         'MissionEvidence',
       );
-      const route = await this.requestDirectory!.hrLeaveRecipient(
+      const route = await this.requestDirectory!.missionRecipient(
         actor,
         row.branchId,
       );
@@ -2461,7 +2461,11 @@ export class CustomerAffairsService {
       await tx.customerAffairsTicket.update({
         where: { id },
         data: {
-          executionUnit: 'منابع انسانی',
+          executionUnit:
+            (
+              await this.requestDirectory!.options(actor, row.branchId)
+            ).units.find((unit) => unit.id === route.unitId)?.name ??
+            row.executionUnit,
           executionOwnerUserId: route.recipientId,
           status: 'IN_PROGRESS',
           resolutionOutcome: null,
@@ -2557,7 +2561,9 @@ export class CustomerAffairsService {
           recipientReview:
             row.executionOwnerUserId === actor.userId &&
             !isHrRequestUnit(row.executionUnit) &&
-            row.timeline?.some((e) => e.type === 'WORKBENCH_LEAVE'),
+            row.timeline?.some((e) =>
+              ['WORKBENCH_LEAVE', 'WORKBENCH_MISSION'].includes(e.type),
+            ),
           branchId: row.branchId,
           mission: row.timeline?.find((e) => e.type === 'WORKBENCH_MISSION')
             ? (JSON.parse(
@@ -2783,26 +2789,29 @@ export class CustomerAffairsService {
         const leaveEvent = row.timeline.find(
           (e) => e.type === 'WORKBENCH_LEAVE',
         );
+        const mission = row.timeline.some(
+          (e) => e.type === 'WORKBENCH_MISSION',
+        );
         if (
-          !leaveEvent ||
+          (!leaveEvent && !mission) ||
           row.version !== input.version ||
           !['APPROVED', 'REJECTED', 'NEEDS_REVISION'].includes(input.status) ||
           ['RESOLVED', 'CANCELLED'].includes(row.status)
         )
           throw conflict();
         const hrRoute =
-          input.status === 'APPROVED'
+          input.status === 'APPROVED' && !mission
             ? await this.requestDirectory!.hrLeaveRecipient(actor, row.branchId)
             : undefined;
         const recipients = hrRoute ? [hrRoute.recipientId] : [];
-        if (input.status === 'APPROVED' && !recipients.length)
+        if (input.status === 'APPROVED' && !mission && !recipients.length)
           throw new ConflictException(
             'گیرنده منابع انسانی در این شعبه تعریف نشده است.',
           );
         await tx.customerAffairsTicket.update({
           where: { id },
           data: {
-            ...(input.status === 'APPROVED'
+            ...(input.status === 'APPROVED' && !mission
               ? {
                   executionUnit: 'منابع انسانی',
                   executionOwnerUserId: recipients[0]!,
@@ -2811,9 +2820,11 @@ export class CustomerAffairsService {
                 }
               : {
                   status:
-                    input.status === 'REJECTED'
-                      ? 'CANCELLED'
-                      : 'WAITING_CUSTOMER',
+                    input.status === 'APPROVED'
+                      ? 'RESOLVED'
+                      : input.status === 'REJECTED'
+                        ? 'CANCELLED'
+                        : 'WAITING_CUSTOMER',
                   resolutionOutcome: `WORKBENCH_HR:${input.status}`,
                 }),
             version: { increment: 1 },
@@ -2835,7 +2846,7 @@ export class CustomerAffairsService {
             afterSnapshot: json({
               decision: input.status,
               executionUnit:
-                input.status === 'APPROVED'
+                input.status === 'APPROVED' && !mission
                   ? 'منابع انسانی'
                   : row.executionUnit,
             }),
@@ -2853,7 +2864,9 @@ export class CustomerAffairsService {
         });
         await this.notifications.createWithinTransaction(tx, {
           recipientUserIds:
-            input.status === 'APPROVED' ? recipients : [row.createdByUserId],
+            input.status === 'APPROVED' && !mission
+              ? recipients
+              : [row.createdByUserId],
           actorUserId: actor.userId,
           sourceModule: 'customer-affairs',
           eventType: 'ticket.updated',
@@ -2862,7 +2875,7 @@ export class CustomerAffairsService {
           entityType: 'customer-affairs-ticket',
           entityId: id,
           href:
-            input.status === 'APPROVED'
+            input.status === 'APPROVED' && !mission
               ? '/hr?section=requests'
               : '/workbench?tab=requests',
         });
