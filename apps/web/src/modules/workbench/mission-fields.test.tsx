@@ -8,8 +8,7 @@ describe('mission request fields', () => {
     );
     expect(html).toContain('هدف مأموریت');
     expect(html).toContain('ساعت برگشت');
-    expect(html).toMatch(/<fieldset disabled=""/);
-    expect(html).toContain('ثبت هزینه پس از پایان مأموریت');
+    expect(html).not.toContain('اطلاعات هزینه');
   });
   it('allows only financial editing after the mission', () => {
     const html = renderToStaticMarkup(
