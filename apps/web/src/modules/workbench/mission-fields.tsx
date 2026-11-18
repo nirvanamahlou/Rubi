@@ -88,13 +88,12 @@ export function MissionFields({
           />
         </label>
       ))}
-      <fieldset
-        disabled={!financial}
-        className="grid gap-4 sm:col-span-2 sm:grid-cols-2"
-      >
-        <legend>اطلاعات هزینه</legend>
-        {(['amount', 'title', 'costCenter', 'fee', 'description'] as const).map(
-          (key, i) => (
+      {financial && (
+        <fieldset className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
+          <legend>اطلاعات هزینه</legend>
+          {(
+            ['amount', 'title', 'costCenter', 'fee', 'description'] as const
+          ).map((key, i) => (
             <label className="grid gap-2 text-sm" key={key}>
               {
                 [
@@ -113,64 +112,59 @@ export function MissionFields({
                 onChange={(e) => updateFinance(key, e.target.value)}
               />
             </label>
-          ),
-        )}
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={finance.referToPetty}
-            onChange={(e) => updateFinance('referToPetty', e.target.checked)}
-          />
-          ارجاع به تنخواه
-        </label>
-        <label className="grid gap-2 text-sm sm:col-span-2">
-          فیش و مدارک
-          <Input
-            type="file"
-            accept="image/png,image/jpeg,application/pdf"
-            disabled={
-              uploading || !branchId || finance.attachmentIds.length >= 5
-            }
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file || !branchId) return;
-              setUploading(true);
-              onBusy?.(true);
-              setError('');
-              try {
-                const form = new FormData();
-                form.set('file', file);
-                form.set('branchId', branchId);
-                const doc = await hrRequest<{ id: string; name: string }>(
-                  '/mission-evidence',
-                  { method: 'POST', body: form },
-                );
-                updateFinance('attachmentIds', [
-                  ...finance.attachmentIds,
-                  doc.id,
-                ]);
-              } catch (cause) {
-                setError(
-                  cause instanceof Error
-                    ? cause.message
-                    : 'بارگذاری انجام نشد.',
-                );
-              } finally {
-                setUploading(false);
-                onBusy?.(false);
+          ))}
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={finance.referToPetty}
+              onChange={(e) => updateFinance('referToPetty', e.target.checked)}
+            />
+            ارجاع به تنخواه
+          </label>
+          <label className="grid gap-2 text-sm sm:col-span-2">
+            فیش و مدارک
+            <Input
+              type="file"
+              accept="image/png,image/jpeg,application/pdf"
+              disabled={
+                uploading || !branchId || finance.attachmentIds.length >= 5
               }
-            }}
-          />
-          <span>
-            {finance.attachmentIds.length.toLocaleString('fa-IR')} مدرک
-            بارگذاری‌شده
-          </span>
-        </label>
-      </fieldset>
-      {!financial && (
-        <p className="text-sm text-muted-foreground sm:col-span-2">
-          ثبت هزینه پس از پایان مأموریت فعال می‌شود.
-        </p>
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file || !branchId) return;
+                setUploading(true);
+                onBusy?.(true);
+                setError('');
+                try {
+                  const form = new FormData();
+                  form.set('file', file);
+                  form.set('branchId', branchId);
+                  const doc = await hrRequest<{ id: string; name: string }>(
+                    '/mission-evidence',
+                    { method: 'POST', body: form },
+                  );
+                  updateFinance('attachmentIds', [
+                    ...finance.attachmentIds,
+                    doc.id,
+                  ]);
+                } catch (cause) {
+                  setError(
+                    cause instanceof Error
+                      ? cause.message
+                      : 'بارگذاری انجام نشد.',
+                  );
+                } finally {
+                  setUploading(false);
+                  onBusy?.(false);
+                }
+              }}
+            />
+            <span>
+              {finance.attachmentIds.length.toLocaleString('fa-IR')} مدرک
+              بارگذاری‌شده
+            </span>
+          </label>
+        </fieldset>
       )}
       {error && <p role="alert">{error}</p>}
       {uploading && <p role="status">در حال بارگذاری…</p>}
