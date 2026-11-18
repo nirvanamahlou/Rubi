@@ -68,6 +68,8 @@ import {
   samePublishedFlight,
 } from '../model/published-catalog';
 import { PublishedOfferForm } from './published-offer-form';
+import { TicketCreationBranch } from './ticket-creation-branch';
+import { ticketCreationBranch } from '../model/publication-branch';
 
 const actor = 'کاربر جاری';
 
@@ -214,6 +216,8 @@ export function TicketWorkspace() {
 }
 
 function TicketCatalogWorkspace() {
+  const [creationBranch, setCreationBranch] = useState('');
+  const [formSaving, setFormSaving] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [references, setReferences] = useState<Reference[]>([]);
   const [hydrated, setHydrated] = useState(false);
@@ -382,6 +386,7 @@ function TicketCatalogWorkspace() {
     inputs: readonly ProductInput[],
     productIds: readonly string[],
     allowPastDate = false,
+    selectedBranch?: string,
   ) => {
     const publishable = inputs
       .map((input, index) => ({
@@ -399,7 +404,10 @@ function TicketCatalogWorkspace() {
     const base = getPublicApiBaseUrl();
     if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
     const session = await refreshAuthenticatedSession(base);
-    const branchId = session?.user.branches[0]?.id;
+    const branchId =
+      selectedBranch === undefined
+        ? session?.user.branches[0]?.id
+        : ticketCreationBranch(session?.user.branches ?? [], selectedBranch);
     if (!branchId) throw new Error('شعبه مجاز برای ثبت بلیط پیدا نشد.');
     // Settle each bounded group before exposing a retry; a failed request must
     // not leave other in-flight writes racing with the next submission.
@@ -645,7 +653,7 @@ function TicketCatalogWorkspace() {
     if (current && inputs.length !== 1)
       throw new Error('ویرایش باید روی همان بلیط انجام شود.');
     let updated = products;
-    const signature = JSON.stringify(inputs);
+    const signature = JSON.stringify({ inputs, branchId: creationBranch });
     if (!current && pendingCreate.current?.signature !== signature) {
       const groupId = browserRandomUuid();
       pendingCreate.current = {
@@ -697,7 +705,7 @@ function TicketCatalogWorkspace() {
     }
     if (!current) {
       try {
-        await publishFlights(inputs, createdIds, allowPastDate);
+        await publishFlights(inputs, createdIds, allowPastDate, creationBranch);
       } catch (error) {
         await refreshPublishedOffers();
         throw error;
@@ -1129,6 +1137,14 @@ function TicketCatalogWorkspace() {
           ) : null}
           {form ? (
             <div className="mt-5">
+              {form.mode === 'create' &&
+              (!form.initial || form.initial.transport === 'flight') ? (
+                <TicketCreationBranch
+                  value={creationBranch}
+                  onChange={setCreationBranch}
+                  disabled={formSaving}
+                />
+              ) : null}
               {form.mode === 'view' && form.product ? (
                 <TicketDetails
                   product={form.product}
@@ -1144,7 +1160,14 @@ function TicketCatalogWorkspace() {
                   editing={form.mode === 'edit'}
                   references={references}
                   onReference={rememberReference}
-                  onSave={save}
+                  onSave={async (...args) => {
+                    setFormSaving(true);
+                    try {
+                      await save(...args);
+                    } finally {
+                      setFormSaving(false);
+                    }
+                  }}
                   onCancel={() => setForm(null)}
                 />
               ) : (
@@ -1154,7 +1177,14 @@ function TicketCatalogWorkspace() {
                   }
                   references={references}
                   onReference={rememberReference}
-                  onSave={save}
+                  onSave={async (...args) => {
+                    setFormSaving(true);
+                    try {
+                      await save(...args);
+                    } finally {
+                      setFormSaving(false);
+                    }
+                  }}
                   onCancel={() => setForm(null)}
                   allowRoundTrip={form.mode === 'create' && !form.initial}
                   allowMultipleClasses={form.mode === 'create'}

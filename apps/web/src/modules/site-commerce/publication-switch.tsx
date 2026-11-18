@@ -58,8 +58,16 @@ function PublicationSwitch({
         },
         body: JSON.stringify({ enabled, version: state.version }),
       });
-      if (!response.ok)
-        throw Error('ثبت انتشار سایت ناموفق بود؛ وضعیت را دوباره دریافت کنید.');
+      if (!response.ok) {
+        const problem = await response.json().catch(() => null);
+        throw Error(
+          typeof problem?.error?.message === 'string'
+            ? problem.error.message
+            : typeof problem?.message === 'string'
+              ? problem.message
+              : 'ثبت انتشار سایت ناموفق بود؛ وضعیت را دوباره دریافت کنید.',
+        );
+      }
       const result = await response.json();
       setState(result.data);
     } catch (e) {

@@ -29,6 +29,7 @@ import {
   assertWebsiteDraft,
   externalOrderId,
   siteBinding,
+  siteConfiguration,
   stableFingerprint,
 } from './site-commerce.policy';
 
@@ -96,6 +97,10 @@ export class SiteCommerceService {
       kind === 'ticket'
         ? await this.tickets.websiteOffer(resourceId, actor.branchIds)
         : await this.tours.pricingDeparture(resourceId, actor.branchIds);
+    if (input.enabled && siteConfiguration(site).branchId !== resource.branchId)
+      throw new BadRequestException(
+        'این محصول در شعبه اتصال سایت تعریف نشده است.',
+      );
     const key = {
       siteCode: site,
       kind,

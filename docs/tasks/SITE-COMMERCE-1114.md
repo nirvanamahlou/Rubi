@@ -8,6 +8,11 @@ flow. Existing NSS products/orders and agency wallet sales retain their old flow
 
 - A Ticket Catalog manager selects **Publish on Niyayesh website** on a saved
   flight or tour departure. Every flag starts off; there is no historical import.
+- New ticket definitions require an explicit branch choice when the user has
+  multiple authorized branches. The current session revalidates that choice on
+  save; changing it starts a separate create identity. Enabling a website flag
+  requires the source branch to equal the configured connection branch. Existing
+  out-of-branch flags can still be removed, without widening site-account access.
 - Website customers browse `/erp-travel`. Flights, actual airports, schedules,
   included services and published room prices originate in ERP. Native flight
   quote logic handles direct fares, pair prices, tier crossings and held seats.
@@ -90,3 +95,14 @@ stable identity, ownership, payment outage recovery, and native PDF proxy;
 frontend types/build and existing frontend tests. Hosted final-head CI and actual
 server activation results must be recorded separately; a local pass is not a live
 transaction or Finance/airline issuance claim.
+
+Live E2E follow-up on 2026-11-14 created only the synthetic one-way offer
+`TEST-NO-PAY-1114` (2036-01-15, THR to KIH, four seats), ID
+`23659b0f-134f-4473-b270-dc85cffe7692`. The UI selected HQ implicitly despite the
+active issuer being Niyayesh. Read-only checks found no sale price, website flag,
+or capacity allocation for this offer. Do not duplicate or publish this HQ offer
+as a Niyayesh source. The browser connection failed after submission and is
+unavailable in the current tools. Tour creation, a simulated paid order, native
+contract confirmation and PDF acceptance remain unperformed; do not report this
+as a completed end-to-end test. Resume with normal authorized ERP access and a
+deliberately selected Niyayesh branch after the branch correction is released.

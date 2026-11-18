@@ -10036,3 +10036,7 @@ HISTORY-ACTION-LABELS-1114: history shows Persian action labels instead of HTTP 
 
 
 DEPLOY-FORMAT-1114: repair Prisma alignment only for section contract visibility fields. Prisma format/validate and diff checks pass. Hosted quality, tests, build and migrations gate final publication; owner requests deployment without a fresh backup.
+
+## SITE-COMMERCE-PUBLICATION-BRANCH-1118 — PC-A — IN_PROGRESS
+
+Found new-flight creation implicitly selected the first authorized branch, causing a Niyayesh website flag to be invisible when its source belonged to HQ. Local correction adds explicit branch selection, current-session validation and server-side publication binding checks. API/Web scoped tests, lint and types pass; refreshed Prisma client resolves the local generated-client mismatch. Production synthetic tour/ticket flow and exact-head hosted checks remain pending. No payment moved or privileged account created. See docs/tasks/SITE-COMMERCE-1114.md.

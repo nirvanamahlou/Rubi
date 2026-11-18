@@ -125,6 +125,15 @@ function fixture() {
   const db = {
     client: {
       websitePublication: {
+        create: vi.fn().mockImplementation(async ({ data }) => ({
+          ...data,
+          id: 'publication-1',
+          version: 1,
+        })),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        findUniqueOrThrow: vi
+          .fn()
+          .mockResolvedValue({ enabled: false, version: 2 }),
         findUnique: vi.fn().mockResolvedValue({ enabled: true }),
         findMany: vi.fn().mockResolvedValue([]),
       },
@@ -183,6 +192,56 @@ function fixture() {
 }
 
 describe('website connection policy', () => {
+  it('rejects publishing a staff-accessible product outside the configured website branch', async () => {
+    const f = fixture();
+    f.tickets.websiteOffer.mockResolvedValue({
+      ...flight,
+      branchId: 'other-branch',
+    });
+    await expect(
+      f.service.publish(
+        'nss',
+        'ticket',
+        ids.offer,
+        { enabled: true, version: 0 },
+        actor,
+      ),
+    ).rejects.toThrow('شعبه اتصال سایت');
+    expect(f.db.client.websitePublication.create).not.toHaveBeenCalled();
+    expect(f.db.client.websitePublication.updateMany).not.toHaveBeenCalled();
+  });
+  it('publishes in the configured branch and still permits removing an old out-of-branch flag', async () => {
+    const f = fixture();
+    f.db.client.websitePublication.findUnique.mockResolvedValueOnce(null);
+    const published = await f.service.publish(
+      'nss',
+      'ticket',
+      ids.offer,
+      { enabled: true, version: 0 },
+      actor,
+    );
+    expect(published.data?.branchId).toBe(ids.branch);
+    f.tickets.websiteOffer.mockResolvedValue({
+      ...flight,
+      branchId: 'old-branch',
+    });
+    f.db.client.websitePublication.findUnique.mockResolvedValueOnce({
+      id: 'old-publication',
+      enabled: true,
+      version: 1,
+    });
+    await f.service.publish(
+      'nss',
+      'ticket',
+      ids.offer,
+      { enabled: false, version: 1 },
+      actor,
+    );
+    expect(f.db.client.websitePublication.updateMany).toHaveBeenCalledWith({
+      where: { id: 'old-publication', version: 1 },
+      data: { enabled: false, version: { increment: 1 } },
+    });
+  });
   it('is disabled by default and binds site to one real actor and branch', () => {
     expect(() => siteBinding('nss', actor, '{}')).toThrow();
     expect(siteBinding('nss', actor, binding).branchId).toBe(ids.branch);

@@ -21,9 +21,8 @@ export function stableFingerprint(value: unknown): string {
     .digest('hex');
 }
 
-export function siteBinding(
+export function siteConfiguration(
   site: string,
-  actor: AuthenticatedActor,
   raw = process.env.SITE_COMMERCE_BINDINGS ?? '{}',
 ) {
   let bindings: Record<string, { userId: string; branchId: string }>;
@@ -37,6 +36,22 @@ export function siteBinding(
   const binding = Object.hasOwn(bindings, site) ? bindings[site] : undefined;
   if (
     !binding ||
+    typeof binding.userId !== 'string' ||
+    !binding.userId ||
+    typeof binding.branchId !== 'string' ||
+    !binding.branchId
+  )
+    throw new ForbiddenException('اتصال سایت تنظیم نشده است.');
+  return binding;
+}
+
+export function siteBinding(
+  site: string,
+  actor: AuthenticatedActor,
+  raw = process.env.SITE_COMMERCE_BINDINGS ?? '{}',
+) {
+  const binding = siteConfiguration(site, raw);
+  if (
     binding.userId !== actor.userId ||
     !actor.branchIds.includes(binding.branchId)
   )
