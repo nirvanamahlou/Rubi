@@ -25,6 +25,7 @@ import { SiteTicketFacts } from './site-ticket-facts';
 import { TicketBulkPublication } from './ticket-bulk-publication';
 import { matchingPublicationTicketRows } from '../ticket-bulk-publication';
 import styles from './site-management.module.css';
+import { HotelPublicationManager } from './hotel-publication';
 import {
   publishableTickets,
   websiteDestinations,
@@ -382,7 +383,7 @@ export function SiteManagement({
   ticketLink?: URLSearchParams | undefined;
 }) {
   const [tab, setTab] = useState<'tours' | 'tickets' | 'hotels'>(
-    ticketLink ? 'tickets' : 'tours',
+    ticketLink?.get('view') === 'hotels' ? 'hotels' : ticketLink ? 'tickets' : 'tours',
   );
   const [branches, setBranches] = useState<BranchReference[]>([]);
   const [branchId, setBranchId] = useState(ticketLink?.get('branchId') ?? '');
@@ -585,10 +586,7 @@ export function SiteManagement({
         ))}
       </nav>
       {tab === 'hotels' ? (
-        <Alert
-          title="هتل‌ها"
-          description="این بخش فعلاً به منبع هتل یا سایت‌ها متصل نیست."
-        />
+        <HotelPublicationManager selected={ticketLink?.get('hotelId')} />
       ) : (
         <>
           <div className="flex flex-wrap gap-3">
