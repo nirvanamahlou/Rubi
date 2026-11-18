@@ -1203,6 +1203,17 @@ export function MasterDataAccommodationWorkspace() {
                 label="نام انگلیسی"
                 value={attribute(selected, 'englishName')}
               />
+              <MasterDataDetailItem
+                label="کد شناسایی"
+                value={
+                  <span
+                    dir="auto"
+                    className="inline-block max-w-full break-all rounded-lg bg-primary/5 px-3 py-2 font-mono text-sm text-primary"
+                  >
+                    {attribute(selected, 'identificationCode')}
+                  </span>
+                }
+              />
               <Detail
                 label="زنجیره"
                 value={attribute(selected, 'chainName', 'مستقل')}
