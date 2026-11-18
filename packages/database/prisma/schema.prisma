@@ -2335,6 +2335,7 @@ model MasterHotel {
   code                 String                       @unique @db.VarChar(32)
   name                 String                       @db.VarChar(160)
   englishName          String?                      @db.VarChar(160)
+  identificationCode   String?                      @db.VarChar(160)
   address              String?                      @db.VarChar(1000)
   description          String?                      @db.VarChar(2000)
   hotelRules           String?                      @db.VarChar(2000)

@@ -36,6 +36,62 @@ function row(id: string, extra: Record<string, unknown> = {}) {
 }
 
 describe('MasterDataService accommodation', () => {
+  it('creates, reads, edits and clears the optional identification code without changing internal code', async () => {
+    let hotel = row(ids.chain, { cityId: ids.city, identificationCode: null });
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      find: vi
+        .fn()
+        .mockImplementation(async (resource) =>
+          resource === 'hotels' ? hotel : row(ids.city),
+        ),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource, data) => (hotel = { ...hotel, ...data }),
+        ),
+      update: vi
+        .fn()
+        .mockImplementation(
+          async (_resource, _id, data) => (hotel = { ...hotel, ...data }),
+        ),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    const created = await service.create(
+      'hotels',
+      { name: 'Hotel', cityId: ids.city, identificationCode: '  001-ABC  ' },
+      actor,
+    );
+    expect(created.data.attributes.identificationCode).toBe('001-ABC');
+    const internalCode = created.data.code;
+    const edited = await service.update(
+      'hotels',
+      ids.chain,
+      { identificationCode: '002-XYZ' },
+      1,
+      actor,
+    );
+    expect(edited.data.attributes.identificationCode).toBe('002-XYZ');
+    expect(edited.data.code).toBe(internalCode);
+    await expect(
+      service.update(
+        'hotels',
+        ids.chain,
+        { identificationCode: 'x'.repeat(161) },
+        1,
+        actor,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    const cleared = await service.update(
+      'hotels',
+      ids.chain,
+      { identificationCode: '' },
+      1,
+      actor,
+    );
+    expect(cleared.data.attributes.identificationCode).toBeNull();
+  });
+
   it('limits persisted hotel galleries to six images on edits', async () => {
     const update = vi
       .fn()

@@ -218,6 +218,7 @@ export const MASTER_DATA_EDITABLE_FIELDS = {
     'name',
     'currencyId',
     'englishName',
+    'identificationCode',
     'cityId',
     'chainId',
     'starRating',
