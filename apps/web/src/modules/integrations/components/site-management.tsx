@@ -383,7 +383,11 @@ export function SiteManagement({
   ticketLink?: URLSearchParams | undefined;
 }) {
   const [tab, setTab] = useState<'tours' | 'tickets' | 'hotels'>(
-    ticketLink?.get('view') === 'hotels' ? 'hotels' : ticketLink ? 'tickets' : 'tours',
+    ticketLink?.get('view') === 'hotels'
+      ? 'hotels'
+      : ticketLink
+        ? 'tickets'
+        : 'tours',
   );
   const [branches, setBranches] = useState<BranchReference[]>([]);
   const [branchId, setBranchId] = useState(ticketLink?.get('branchId') ?? '');
@@ -889,9 +893,11 @@ export function SiteManagement({
                                           '')
                                         : ''
                                     }
-                                    offer={tickets.find(
-                                      (offer) => offer.id === row.id,
-                                    )!}
+                                    offer={
+                                      tickets.find(
+                                        (offer) => offer.id === row.id,
+                                      )!
+                                    }
                                     site={site}
                                     targets={targets}
                                   />

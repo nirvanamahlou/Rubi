@@ -92,7 +92,12 @@ import {
 import { MasterDataLogoCell } from './master-data-logo-cell';
 
 type AccommodationTab =
-  'hotels' | 'chains' | 'meals' | 'facilities' | 'import' | 'combined';
+  | 'hotels'
+  | 'chains'
+  | 'meals'
+  | 'facilities'
+  | 'import'
+  | 'combined';
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
 const tabs = [
@@ -750,10 +755,18 @@ export function MasterDataAccommodationWorkspace() {
   function actions(record: MasterDataRecord) {
     return (
       <div className="flex flex-wrap justify-center gap-2">
-        {record.resource === 'hotels' && <details>
-          <summary className="cursor-pointer rounded-lg border p-2" aria-label={`انتشار ${record.name} در سایت`} title="انتشار در سایت">↗</summary>
-          <HotelPublication id={record.id} />
-        </details>}
+        {record.resource === 'hotels' && (
+          <details>
+            <summary
+              className="cursor-pointer rounded-lg border p-2"
+              aria-label={`انتشار ${record.name} در سایت`}
+              title="انتشار در سایت"
+            >
+              ↗
+            </summary>
+            <HotelPublication id={record.id} />
+          </details>
+        )}
         <Button
           aria-label={`مشاهده ${record.name}`}
           onClick={() => {
