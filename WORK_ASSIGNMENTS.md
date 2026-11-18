@@ -13083,3 +13083,5 @@ COMPUTER_ID=PC-B; base origin/develop48d72de41. User requests optional hotel ide
 HOTEL-IDENTIFICATION-1118 CI integration: reserve only hr-penalties.spec.ts and hr-workbench-leave-identity.spec.ts fixture expectations for the already-published leave behavior. Supply the persisted required non-WB code and assert both employee-scoped reconciliation arguments. No HR production-code/policy change.
 
 SCOPED_RUNTIME base refresh: the live host advanced to 9ea8a329668f12a98300fb1ab8b989a9a0cef34e during preparation. Merge that exact deployed source, retain its API/worker/other Web changes, and rebuild the same bounded Web overlay. Previous prepared images were never activated.
+
+SCOPED_RUNTIME airport follow-up: preserve the country context of authenticated country-filtered airport lookups whose native projection contains cityId only. Explicit foreign-country metadata is retained for rejection; unfiltered reads remain unlabelled. No reference record, authorization, backend, payment or dependency changes. Native read-only API confirmed four active Iranian airports with this sparse projection.
