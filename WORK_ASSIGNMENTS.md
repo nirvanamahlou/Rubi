@@ -13061,3 +13061,5 @@ CHECKOUT-ADVISORY-1117 bounded catalogue compatibility: full CI found twenty mis
 ## SITE-COMMERCE-PUBLICATION-BRANCH-1118 — PC-A — SCOPED_RUNTIME
 
 Owner-authorized production synthetic acceptance. This temporary runtime branch starts at the currently deployed aaeb7553e and contains only the explicit ticket branch selection Web change. API, worker, finance gates, schema, dependencies and legacy products/orders remain on the existing deployed version. The develop PR uses the current develop base separately. Activate only after hosted checks and a successful immutable Web build, using the shared host deployment lock and expected current images/compose checksum.
+
+SCOPED_RUNTIME follow-up: also include only the TourWorkspace selected-date inventory query helper and its behavioral regressions. Native search now receives its required departure date; no API, bank, finance, inventory mutation or unrelated Web feature is changed. Current-develop PR consumes published HR CI repairs separately; those do not enter this production overlay.
