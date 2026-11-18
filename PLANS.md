@@ -1,5 +1,17 @@
 # برنامه اجرای Nora
 
+## NORA-FINAL-ACCEPTANCE-1118 — PC-C
+
+- [x] Synchronize published develop and verify the other PC's release receipts; preserve its work.
+- [x] Verify Germany relay, deployed pool/source and isolated native-count PostgreSQL preflight.
+- [x] Current195 assistant regressions and73 SQL/access/PostgreSQL tests pass; API typecheck/build and scoped lint pass.
+- [ ] Complete all30 real-Groq scenarios on one final source fingerprint; correct demonstrated defects without weakening oracles or access/budget controls.
+- [ ] Publish scoped validation, documentation and handoff for review; no automatic merge/deploy.
+
+Final-source matrix is not certified: cases1–2 pass; remaining execution waits for the six-key pool's real daily quota. No additional key is available. Same-source resume must verify original receipts; a changed source restarts the matrix.
+
+PR1787's original financial workflow is already deployed/browser accepted per its final release receipt. Older pending lines below are historical; full30-case acceptance remains separate. See [current task](docs/tasks/NORA-FINAL-ACCEPTANCE-1118.md).
+
 ## NORA-DATA-AGENT-V1 — PC-C
 
 - [x] Owner approves model-authored curated SQL, authorized result analysis by Groq and Sales-first delivery.

@@ -1,3 +1,7 @@
+## 2026-11-18 — Nora final acceptance (PC-C)
+
+Latest fetched develop48d72de41 and the other computer's published Nora work are preserved. The final release receipt at74dec8a71 supersedes the older pending PR1787 statements below: Sales evidence correction is merged, activated and authenticated-browser accepted; PR1785 quota-group hardening is also merged. Independent30-case acceptance has uncovered and corrected citation transcription, schema/FK discovery, calculation formatting, relay connection reuse and quota/resume defects.195 current service regressions,73 SQL/access/PostgreSQL tests, API typecheck/build and scoped lint pass. Full final-source acceptance remains incomplete: cases1–2 pass; subsequent execution waits for provider-confirmed daily TPD capacity on the existing six-key pool. Owner has no additional key. No migration, merge or production activation in this unit. Current source fingerprint, evidence and remaining gate: [NORA-FINAL-ACCEPTANCE-1118](tasks/NORA-FINAL-ACCEPTANCE-1118.md).
+
 ## DETAIL-OWNER-FORMS-1117 — PC-D — IMPLEMENTED
 
 Eight predefined typed detail title lookups and create/edit dialogs, seven-digit defaults for newly introduced types, native fiscal year/bank/cash references, and additive restrictive links. Existing definitions, contract numbers and party codes are preserved. Validation and rollout: [detail owner forms](tasks/DETAIL-OWNER-FORMS-1117.md). Not deployed.

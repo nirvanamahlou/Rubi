@@ -47,8 +47,15 @@ export const AGENT_TOOLS = Object.freeze([
   ),
   tool(
     'catalog_describe',
-    'Read exact columns, grain and meaning of one authorized source.',
-    { source: text },
+    'Read exact columns, grain and meaning of authorized sources. For multi-source questions describe all needed sources together using a source array; a single source string remains supported.',
+    {
+      source: {
+        type: ['string', 'array'],
+        items: text,
+        minItems: 1,
+        maxItems: 5,
+      },
+    },
   ),
   tool(
     'database_query',
@@ -120,6 +127,7 @@ export function createAgentProvider({
       {
         signal,
         remainingTokens = 40000,
+        requireCalculationExplanation = false,
         allowedTools,
         allowFinalResponse = false,
         currentResultIds,
@@ -155,6 +163,63 @@ export function createAgentProvider({
           (allowedTools && !allowedTools.includes('finish_answer')))
       )
         throw new ServiceError(502, 'INVALID_AGENT_SOURCE');
+      // Short transport references avoid model transcription of opaque UUIDs.
+      // Only trusted current evidence supplies the mapping; public IDs stay UUIDs.
+      const references = new Map(
+        (currentResultIds ?? []).map((id, index) => [id, `ref_${index + 1}`]),
+      );
+      const originals = new Map([...references].map(([id, ref]) => [ref, id]));
+      const decodeFinal = (final) => {
+        if (currentResultIds !== undefined && Array.isArray(final?.resultIds))
+          return {
+            ...final,
+            resultIds: final.resultIds.map((ref) => {
+              if (originals.has(ref)) return originals.get(ref);
+              if (references.has(ref)) return ref;
+              throw new ServiceError(502, 'INVALID_AGENT_PLAN');
+            }),
+          };
+        return final;
+      };
+      const wireMessages = compactMessages(messages).map((message) => {
+        if (
+          message.role !== 'tool' ||
+          typeof message.content !== 'string' ||
+          !references.size
+        )
+          return message;
+        let output;
+        try {
+          output = JSON.parse(message.content);
+        } catch {
+          return message;
+        }
+        if (references.has(output?.resultId))
+          output = { ...output, resultId: references.get(output.resultId) };
+        if (references.has(output?.verifiedSalesReport?.resultId))
+          output = {
+            ...output,
+            verifiedSalesReport: {
+              ...output.verifiedSalesReport,
+              resultId: references.get(output.verifiedSalesReport.resultId),
+            },
+          };
+        return { ...message, content: JSON.stringify(output) };
+      });
+      if (references.size)
+        wireMessages.push({
+          role: 'system',
+          content:
+            'Transport citation convention: current tool resultId values use short references ' +
+            [...originals.keys()].join(', ') +
+            '. Copy these exact short references into final resultIds only; do not include internal IDs/references in displayed text. Do not reconstruct UUIDs. Record IDs inside rows are data, never citation IDs.',
+        });
+      if (requireCalculationExplanation)
+        wireMessages.push({
+          role: 'system',
+          content:
+            'Current evidence includes a calculation: final calculationExplanation MUST be a nonempty string, never null, even if the same explanation appears in text. This is a public method summary, not private reasoning.',
+        });
       const tools = AGENT_TOOLS.filter(
         (t) =>
           (!allowedTools || allowedTools.includes(t.function.name)) &&
@@ -173,7 +238,7 @@ export function createAgentProvider({
                   ...finalJsonTool.function,
                   parameters: {
                     ...finalJsonTool.function.parameters,
-                    ...(finalTextChoices
+                    ...(finalTextChoices || requireCalculationExplanation
                       ? {
                           required: [
                             'status',
@@ -197,9 +262,20 @@ export function createAgentProvider({
                         maxItems: currentResultIds.length,
                         ...(finalTextChoices ? { minItems: 1 } : {}),
                         items: currentResultIds.length
-                          ? { type: 'string', enum: [...currentResultIds] }
+                          ? { type: 'string', enum: [...originals.keys()] }
                           : { type: 'string' },
                       },
+                      ...(requireCalculationExplanation && !finalTextChoices
+                        ? {
+                            calculationExplanation: {
+                              type: 'string',
+                              minLength: 1,
+                              maxLength: 4000,
+                              description:
+                                'Required nonempty public calculation summary from the cited evidence, even if also included in text. Never null.',
+                            },
+                          }
+                        : {}),
                       ...(finalTextChoices
                         ? {
                             status: { type: 'string', enum: ['ANSWER'] },
@@ -230,8 +306,12 @@ export function createAgentProvider({
         max_completion_tokens: 2048,
         stream: false,
         messages: [
-          { role: 'system', content: CALCULATION_POLICY },
-          ...compactMessages(messages),
+          ...(!allowFinalResponse &&
+          allowedTools?.length === 1 &&
+          allowedTools[0] === 'set_plan'
+            ? []
+            : [{ role: 'system', content: CALCULATION_POLICY }]),
+          ...wireMessages,
         ],
         ...(finalTextChoices
           ? {
@@ -292,7 +372,11 @@ export function createAgentProvider({
             response.headers.get('content-type')?.includes('application/json')
           ) {
             const rejected = await boundedAgentJson(response, 65536);
-            if (rejected?.error?.code === 'tool_use_failed') {
+            if (
+              ['tool_use_failed', 'output_parse_failed'].includes(
+                rejected?.error?.code,
+              )
+            ) {
               const error = new ServiceError(
                 503,
                 'AGENT_PROVIDER_TOOL_REJECTED',
@@ -355,7 +439,7 @@ export function createAgentProvider({
           return {
             id: 'final_' + crypto.randomUUID(),
             name: 'finish_answer',
-            args: final,
+            args: decodeFinal(final),
             tokens,
             usage: usageCounters(result.usage),
           };
@@ -386,7 +470,10 @@ export function createAgentProvider({
             call.function.name === 'json'
               ? 'finish_answer'
               : call.function.name,
-          args: JSON.parse(call.function.arguments),
+          args:
+            call.function.name === 'json'
+              ? decodeFinal(JSON.parse(call.function.arguments))
+              : JSON.parse(call.function.arguments),
           tokens,
         };
       } catch (error) {

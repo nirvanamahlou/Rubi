@@ -9,11 +9,16 @@ import {
   openSync,
   closeSync,
   unlinkSync,
+  existsSync,
 } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as pause } from 'node:timers/promises';
-import { runAcceptanceCases } from './acceptance-pacing.mjs';
+import {
+  runAcceptanceCases,
+  verifiedCompletedCases,
+} from './acceptance-pacing.mjs';
+import { startSshPoolBroker } from './ssh-pool-provider.mjs';
 
 if (!process.argv.includes('--run-synthetic'))
   throw Error('EXPLICIT_SYNTHETIC_RUN_REQUIRED');
@@ -35,6 +40,7 @@ const pinnedFiles = [
   'apps/api/src/sales/assistant-agent/sql-policy.ts',
   'apps/api/src/sales/assistant-agent/catalog.ts',
   'scripts/operations/nora-agent/live-provider.mjs',
+  'scripts/operations/nora-agent/ssh-pool-provider.mjs',
   'packages/database/prisma/migrations/20261114120000_nora_agent_sales_views/migration.sql',
 ];
 const fingerprint = () =>
@@ -56,19 +62,28 @@ const fingerprint = () =>
 const sourceHash = fingerprint();
 mkdirSync(directory, { recursive: true });
 const lockPath = resolve(directory, 'nora-live-acceptance.lock');
+const statePath = resolve(directory, 'nora-live-acceptance-progress.json');
+if (existsSync(statePath) && !process.argv.includes('--resume'))
+  throw Error('EXISTING_RECEIPTS_REQUIRE_EXPLICIT_RESUME');
+const state = process.argv.includes('--resume')
+  ? JSON.parse(readFileSync(statePath, 'utf8'))
+  : {
+      source: 'NORA-ACCEPTANCE-PACING-1116',
+      sourceHash,
+      status: 'READY',
+      startedAt: new Date().toISOString(),
+      cases: [],
+      nextAttemptAt: null,
+    };
+const completed = verifiedCompletedCases(state, sourceHash, (name) =>
+  readFileSync(resolve(directory, name), 'utf8'),
+);
+delete state.reason;
 const lock = openSync(lockPath, 'wx');
 writeFileSync(lock, String(process.pid));
-const statePath = resolve(directory, 'nora-live-acceptance-progress.json');
-const state = {
-  source: 'NORA-ACCEPTANCE-PACING-1116',
-  sourceHash,
-  status: 'READY',
-  startedAt: new Date().toISOString(),
-  cases: [],
-  nextAttemptAt: null,
-};
 let stopping = false;
 let child;
+let poolBroker;
 const save = () => writeFileSync(statePath, JSON.stringify(state, null, 2));
 for (const event of ['SIGINT', 'SIGTERM'])
   process.once(event, () => {
@@ -86,6 +101,7 @@ async function wait(ms) {
   if (stopping) throw Error('STOPPED');
 }
 async function runCase(index) {
+  poolBroker?.assertHealthy();
   if (fingerprint() !== sourceHash)
     throw Error('SOURCE_CHANGED_RESTART_FULL_MATRIX');
   const existing = new Set(readdirSync(directory));
@@ -95,6 +111,9 @@ async function runCase(index) {
     child = spawn(
       process.execPath,
       [
+        ...(process.env.NORA_ACCEPTANCE_GROQ_MODE === 'local-proxy'
+          ? ['--use-env-proxy']
+          : []),
         '--env-file=' + privateEnv,
         'node_modules/vitest/vitest.mjs',
         'run',
@@ -129,15 +148,27 @@ async function runCase(index) {
   );
   if (files.length !== 1)
     throw Error('ACCEPTANCE_RECEIPT_MISSING_OR_AMBIGUOUS');
-  const rows = JSON.parse(readFileSync(resolve(directory, files[0]), 'utf8'));
+  const raw = readFileSync(resolve(directory, files[0]), 'utf8');
+  const rows = JSON.parse(raw);
   if (fingerprint() !== sourceHash)
     throw Error('SOURCE_CHANGED_RESTART_FULL_MATRIX');
   if (rows.length !== 1 || rows[0].id !== index)
     throw Error('ACCEPTANCE_CASE_MISMATCH');
-  return { exitCode: code, receiptFile: files[0], ...rows[0] };
+  return {
+    exitCode: code,
+    receiptFile: files[0],
+    receiptSha256: createHash('sha256').update(raw).digest('hex'),
+    ...rows[0],
+  };
 }
 try {
+  if (process.env.NORA_ACCEPTANCE_GROQ_MODE === 'ssh-pool') {
+    poolBroker = await startSshPoolBroker();
+    process.env.NORA_ACCEPTANCE_POOL_PIPE = poolBroker.pipe;
+  }
   await runAcceptanceCases({
+    continueOnFailure: process.argv.includes('--diagnose-all'),
+    completed,
     runCase,
     wait,
     onProgress(event) {
@@ -159,6 +190,7 @@ try {
   state.reason = error.message;
   process.exitCode = 1;
 } finally {
+  poolBroker?.close();
   state.finishedAt = new Date().toISOString();
   save();
   closeSync(lock);

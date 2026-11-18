@@ -198,6 +198,7 @@ function harness(steps = [plan, describe, query, finish], override) {
   const calls = [];
   const payloads = [];
   const providerOptions = [];
+  const providerFlags = [];
   const audits = [];
   let index = 0;
   const agent = createDataAgent({
@@ -207,6 +208,7 @@ function harness(steps = [plan, describe, query, finish], override) {
     provider: {
       async step(messages, options) {
         providerOptions.push(structuredClone(options.currentResultIds));
+        providerFlags.push(options.requireCalculationExplanation);
         payloads.push(structuredClone(messages));
         const next = steps[index++];
         if (next instanceof Error) throw next;
@@ -221,8 +223,122 @@ function harness(steps = [plan, describe, query, finish], override) {
       );
     },
   });
-  return { agent, calls, payloads, audits, providerOptions };
+  return { agent, calls, payloads, audits, providerOptions, providerFlags };
 }
+
+test('only validated current calculated evidence enables the provider explanation requirement', async () => {
+  const h = harness(
+    [
+      plan,
+      describe,
+      query,
+      step(
+        'finish_answer',
+        {
+          ...finish.args,
+          calculationExplanation:
+            'منبع مبالغ قراردادی؛ جمع USD در همه زمان‌ها برای دامنه مجاز برابر 100 است.',
+        },
+        4,
+      ),
+    ],
+    (url) =>
+      url.endsWith('/catalog')
+        ? undefined
+        : Response.json({
+            ...result,
+            calculation: { required: true, operations: ['sum'] },
+          }),
+  );
+  assert.equal(
+    (
+      await h.agent(message, {
+        cookie: 'nora_access=synthetic',
+        signal: signal(),
+      })
+    ).status,
+    'ANSWER',
+  );
+  assert.deepEqual(h.providerFlags, [false, false, false, true]);
+});
+
+test('fresh native schemas permit a planned query without redundant model discovery turns', async () => {
+  const h = harness([plan, query, finish]);
+  assert.equal(
+    (
+      await h.agent(message, {
+        cookie: 'nora_access=synthetic',
+        signal: signal(),
+      })
+    ).status,
+    'ANSWER',
+  );
+  assert.equal(h.payloads.length, 3);
+  assert.ok(
+    h.payloads[0].some(
+      (value) =>
+        value.role === 'system' &&
+        value.content.includes('authorizedSourceDefinitions') &&
+        value.content.includes('currency_code'),
+    ),
+  );
+  assert.equal(
+    h.calls.filter((call) => call.options.method === 'POST').length,
+    1,
+  );
+});
+
+test('batched source descriptions preserve single-source compatibility and reject unauthorized members atomically', async () => {
+  const batch = step(
+    'catalog_describe',
+    { source: ['amounts', 'contracts'] },
+    2,
+  );
+  const expanded = {
+    ...catalog,
+    sources: [
+      ...catalog.sources,
+      {
+        id: 'contracts',
+        columns: ['id', 'contract_number'],
+        description: 'Visible contract identity',
+        grain: 'contract',
+      },
+    ],
+  };
+  const h = harness([plan, batch, query, finish], (url) =>
+    url.endsWith('/catalog') ? Response.json(expanded) : undefined,
+  );
+  assert.equal(
+    (
+      await h.agent(message, {
+        cookie: 'nora_access=synthetic',
+        signal: signal(),
+      })
+    ).status,
+    'ANSWER',
+  );
+  const tool = h.payloads[2].findLast((value) => value.role === 'tool');
+  assert.deepEqual(
+    JSON.parse(tool.content).map((value) => value.id),
+    ['amounts', 'contracts'],
+  );
+  const denied = harness([
+    plan,
+    step('catalog_describe', { source: ['amounts', 'payments'] }, 2),
+  ]);
+  await assert.rejects(
+    denied.agent(message, {
+      cookie: 'nora_access=synthetic',
+      signal: signal(),
+    }),
+    /SOURCE_NOT_ALLOWED/,
+  );
+  assert.equal(
+    denied.calls.filter((call) => call.options.method === 'POST').length,
+    0,
+  );
+});
 
 test('provider protocol repair is bounded, charged and never executed as evidence', async () => {
   const rejection = () =>

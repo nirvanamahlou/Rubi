@@ -26,7 +26,7 @@ function duration(v) {
         Number(match[4] ?? 0)
     : NaN;
 }
-export function groqRetryDelay(headers, now) {
+export function groqRetryDelay(headers, now, unit) {
   const header = headers.get('retry-after');
   const retry =
     header && /^\d+(?:\.\d+)?$/.test(header)
@@ -35,7 +35,11 @@ export function groqRetryDelay(headers, now) {
         ? Date.parse(header) - now
         : NaN;
   const resets = ['requests', 'tokens']
-    .filter((k) => headers.get('x-ratelimit-remaining-' + k) === '0')
+    .filter(
+      (k) =>
+        headers.get('x-ratelimit-remaining-' + k) === '0' ||
+        (k === 'tokens' && ['TPM', 'ITPM', 'OTPM'].includes(unit)),
+    )
     .map((k) => duration(headers.get('x-ratelimit-reset-' + k)));
   const valid = [retry, ...resets].filter(
     (v) => Number.isFinite(v) && v > 0 && Number.isSafeInteger(Math.ceil(v)),
@@ -279,6 +283,9 @@ export function createGroqKeyPool({
           budget.attempts++;
           const headers = new Headers(init.headers);
           headers.set('authorization', 'Bearer ' + key.apiKey);
+          // The Germany CONNECT relay bounds each tunnel's absolute lifetime.
+          // Do not reuse a TLS connection across that boundary on a later turn.
+          headers.set('connection', 'close');
           let response;
           try {
             response = await fetcher(url, {
@@ -335,7 +342,8 @@ export function createGroqKeyPool({
             emit(key, 'group-access-denied', attempt);
             return new Response(null, { status: 403 });
           } else {
-            const until = now() + groqRetryDelay(response.headers, now());
+            const until =
+              now() + groqRetryDelay(response.headers, now(), quotaUnit(error));
             block(key, until);
             const org = group('org:' + key.organization);
             if (scope === 'organization') {

@@ -2,9 +2,26 @@ import { appendFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 import { createAgentProvider } from '../../../services/assistant/agent-provider.mjs';
+import { groqConfigurations } from '../../../services/assistant/groq-runtime.mjs';
+import { sshPoolProvider } from './ssh-pool-provider.mjs';
 
 // Synthetic acceptance payloads only; no files or environment changes on ERP.
 export function liveProvider() {
+  if (process.env.NORA_ACCEPTANCE_GROQ_MODE === 'ssh-pool')
+    return sshPoolProvider();
+  // Local acceptance can reuse an owned SSH CONNECT forward and the exact
+  // shared production transport (including pool admission/revalidation), without
+  // reading credentials from a remote running service or changing its state.
+  if (process.env.NORA_ACCEPTANCE_GROQ_MODE === 'local-proxy') {
+    const { agent } = groqConfigurations();
+    if (!agent.enabled || !agent.provider) throw Error('AGENT_DISABLED');
+    return agent.provider;
+  }
+  if (
+    process.env.NORA_ACCEPTANCE_GROQ_MODE &&
+    process.env.NORA_ACCEPTANCE_GROQ_MODE !== 'ssh'
+  )
+    throw Error('UNKNOWN_ACCEPTANCE_GROQ_MODE');
   const diagnosticDirectory =
     process.env.NORA_ACCEPTANCE_SYNTHETIC_DIAGNOSTICS === 'true'
       ? process.env.NORA_AGENT_ACCEPTANCE_RECEIPT_DIR
@@ -22,7 +39,7 @@ export function liveProvider() {
             'BatchMode=yes',
             '-o',
             'StrictHostKeyChecking=yes',
-            'erp-server',
+            process.env.NORA_ACCEPTANCE_SSH_HOST ?? 'erp-server',
             `sudo -n docker exec -i rubi-nora-assistant node --input-type=module -e "eval(Buffer.from('${encoded}','base64').toString())"`,
           ],
           { windowsHide: true, signal: options.signal },
