@@ -13079,3 +13079,7 @@ COMPUTER_ID=PC-A; branch codex/pc-a-floating-package-restore-1118 from develop54
 COMPUTER_ID=PC-B; base origin/develop48d72de41. User requests optional hotel identification code beneath English name in create/edit and visible in profile. Reserve bounded hotel catalog/profile, editable-fields contract and Master Data service validation; additive nullable MasterHotel.identificationCode migration/schema lease. Prior PC-D detail_owner_sources migration is already published in develop (3bf6ba85b); preserve it unchanged. Producer Master Data and Web consumer change together; existing records remain null, internal code/UUID unchanged. No dependency or operational-data changes.
 
 HOTEL-IDENTIFICATION-1118 CI integration: reserve only hr-penalties.spec.ts and hr-workbench-leave-identity.spec.ts fixture expectations for the already-published leave behavior. Supply the persisted required non-WB code and assert both employee-scoped reconciliation arguments. No HR production-code/policy change.
+
+## FORM-SAVE-SHORTCUT — PC-B — IMPLEMENTED
+
+Reserve the Web root layout and shared keyboard handler for Alt+S on the active form. Preserve local shortcuts and existing submit callbacks. No API, schema or dependency changes.

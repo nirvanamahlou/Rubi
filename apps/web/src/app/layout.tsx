@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { cookies } from 'next/headers';
 
+import { FormSaveShortcut } from '@/components/form-save-shortcut';
 import { Providers } from '@/components/providers';
 import {
   displayLanguageCookieName,
@@ -64,6 +65,7 @@ export default async function RootLayout({
           <a className="skip-link" href="#main-content">
             رفتن به محتوای اصلی
           </a>
+          <FormSaveShortcut />
           {children}
         </Providers>
       </body>
