@@ -11,8 +11,9 @@ flow. Existing NSS products/orders and agency wallet sales retain their old flow
 - New ticket definitions require an explicit branch choice when the user has
   multiple authorized branches. The current session revalidates that choice on
   save; changing it starts a separate create identity. Enabling a website flag
-  requires the source branch to equal the configured connection branch. Existing
-  out-of-branch flags can still be removed, without widening site-account access.
+  requires the source branch to equal the configured connection branch. A listing
+  in that branch can still be disabled after sale eligibility changes, without
+  widening site-account access. Preserve the current multi-site delivery rules.
 - Website customers browse `/erp-travel`. Flights, actual airports, schedules,
   included services and published room prices originate in ERP. Native flight
   quote logic handles direct fares, pair prices, tier crossings and held seats.
@@ -101,8 +102,27 @@ Live E2E follow-up on 2026-11-14 created only the synthetic one-way offer
 `23659b0f-134f-4473-b270-dc85cffe7692`. The UI selected HQ implicitly despite the
 active issuer being Niyayesh. Read-only checks found no sale price, website flag,
 or capacity allocation for this offer. Do not duplicate or publish this HQ offer
-as a Niyayesh source. The browser connection failed after submission and is
-unavailable in the current tools. Tour creation, a simulated paid order, native
-contract confirmation and PDF acceptance remain unperformed; do not report this
-as a completed end-to-end test. Resume with normal authorized ERP access and a
-deliberately selected Niyayesh branch after the branch correction is released.
+as a Niyayesh source. The browser connection failed after that submission.
+
+Acceptance resumed on 2026-11-18 through the owner's real logged-in ERP session.
+Created Niyayesh test tour `ad5cd887-352d-4294-b7b3-388a2d12c779`, named
+`TEST-NO-PAY-1118 | تور آزمایشی اتصال ERP کیش`, with THR/KIH references. Created
+hotel-rate batch `a85369d5-d435-4673-a2f4-dd8398786b31` for 2036-01-15 to
+2036-01-18 and room type `TEST-NO-PAY-1118 STANDARD`; base purchase per night is
+1,000,000 IRR, double factor 2 and single factor 1.5. No real funds or supplier
+request is involved. The inline tour-flight form rejects creation because its
+airport inputs are disabled; no test flight was saved by that attempt. Continue
+using the corrected ordinary ticket-definition form. Website publication,
+simulated paid orders, native contract confirmation and PDF acceptance remain
+pending; do not describe this partial state as a completed end-to-end test.
+
+Current-develop integration retains its newer multi-site publication, banking,
+capacity-hold and document guards. The superseded API branch patch is replaced by
+the native current publication binding checks; both branch rejection and safe
+disable regression tests remain. Local validation: 37 API publication/connector
+tests, 10 Web branch/workspace tests, 3 i18n checks, scoped lint and Web TypeScript.
+Production Web is based on aaeb7553e; the scoped runtime branch applies only the
+ticket branch picker to that base so unrelated newer develop features do not ship
+during acceptance. Runtime CI, immutable build and exact image/compose checks
+precede Web activation. API, worker, database and financial permissions stay at
+their existing production versions.
