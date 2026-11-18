@@ -1,0 +1,7 @@
+# Floating packages — scoped main backport
+
+Owner explicitly requests only floating-package functionality and its necessary dependencies on main, not the3500-commit develop delta. Base main5cb1b8a4b remains the parent. Backport the November15 sale-only catalogue/import and November16 merged-cell/template and dated-browser-option corrections. Keep the original20261115120000_floating_tour_sales migration bytes unchanged. No website checkout/publication, inventory, Finance, HR or other feature is imported.
+
+Necessary bounded dependencies: optional floating/combined definition metadata, city/night validation and editing, active approved BUY-rate lookup with frozen snapshot, existing active hotel reference directory, dynamic merged combined template, domain read/write guards and owner-approved manual-profile parent visibility with explicit denials retained. The old main tour editor remains otherwise unchanged; floating definition creation needs no charter ticket or supplier purchase. Revision history prevents changing route/services once sale prices exist.
+
+Validation so far: API85 pricing/policy tests, Contracts150 tests, Web3 floating/hub tests and English completeness3 tests pass. API/Web typechecks, scoped ESLint and Web production build pass. Additive migration validation and full exact-head CI still gate merge. No live test records, grant writes or production schema changes. Production visibility is released separately as a small overlay on the currently running newer source; deploying this older main baseline over production is expressly excluded.

@@ -330,7 +330,11 @@ export function TourWorkspace({
   };
   const selectTour = (item: TourPackageV1) => {
     if (mode === 'definition') {
-      router.push('/sales/pricing');
+      router.push(
+        item.details?.isFloating
+          ? '/sales/pricing/floating?tour=' + encodeURIComponent(item.id)
+          : '/sales/pricing',
+      );
       return;
     }
     setSelected(item.id);
@@ -344,7 +348,12 @@ export function TourWorkspace({
   };
   const repeatTour = (item: TourDepartureV1) => {
     if (mode === 'definition') {
-      router.push('/sales/pricing');
+      router.push(
+        item.package.details?.isFloating
+          ? '/sales/pricing/floating?tour=' +
+              encodeURIComponent(item.package.id)
+          : '/sales/pricing',
+      );
       return;
     }
     selectTour(item.package);
@@ -372,6 +381,23 @@ export function TourWorkspace({
             </p>
           </div>
         ) : null}
+        {mode === 'definition' && (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={busy || loading}
+            onClick={() => {
+              showEditor();
+              setDraft({
+                ...emptyPackage,
+                hotelIds: [],
+                details: { version: 1, isFloating: true },
+              });
+            }}
+          >
+            تعریف تور شناور
+          </Button>
+        )}
         {mode === 'definition' ? (
           <Button
             size="sm"
@@ -433,7 +459,11 @@ export function TourWorkspace({
           <Card className="space-y-4 p-5">
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-bold">
-                {editing ? `ویرایش تور: ${editing.name}` : 'تعریف تور جدید'}
+                {editing
+                  ? `ویرایش تور: ${editing.name}`
+                  : draft.details?.isFloating
+                    ? 'تعریف تور شناور'
+                    : 'تعریف تور جدید'}
               </h3>
               <Button
                 variant="outline"
@@ -539,6 +569,131 @@ export function TourWorkspace({
                 branches={branches}
                 branchId={branch}
               />
+              {draft.details?.isFloating && (
+                <div className="col-span-full space-y-3 rounded-xl border p-4">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={draft.details.isCombined ?? false}
+                      onChange={(event) => {
+                        const details = {
+                          ...draft.details,
+                          version: 1 as const,
+                          isCombined: event.target.checked,
+                        };
+                        if (event.target.checked)
+                          details.destinations ??= [
+                            { cityId: draft.destinationId, nights: 1 },
+                            { cityId: '', nights: 1 },
+                          ];
+                        else delete details.destinations;
+                        setDraft({ ...draft, details });
+                      }}
+                    />
+                    تور ترکیبی
+                  </label>
+                  {draft.details.isCombined &&
+                    (draft.details.destinations ?? []).map(
+                      (stay, index, stays) => (
+                        <div key={index} className="grid gap-3 sm:grid-cols-3">
+                          <Choice
+                            label={`شهر مقصد ${index + 1}`}
+                            value={stay.cityId}
+                            options={references.cities.filter(
+                              (city) =>
+                                !stays.some(
+                                  (other, i) =>
+                                    i !== index && other.cityId === city.id,
+                                ),
+                            )}
+                            onChange={(cityId) => {
+                              const destinations = stays.map((item, i) =>
+                                i === index ? { ...item, cityId } : item,
+                              );
+                              setDraft({
+                                ...draft,
+                                destinationId: destinations[0]!.cityId,
+                                hotelIds: [],
+                                details: {
+                                  ...draft.details,
+                                  version: 1,
+                                  destinations,
+                                },
+                              });
+                            }}
+                          />
+                          <label>
+                            تعداد شب
+                            <Input
+                              type="number"
+                              min={1}
+                              max={365}
+                              value={stay.nights || ''}
+                              onChange={(event) =>
+                                setDraft({
+                                  ...draft,
+                                  details: {
+                                    ...draft.details,
+                                    version: 1,
+                                    destinations: stays.map((item, i) =>
+                                      i === index
+                                        ? {
+                                            ...item,
+                                            nights: Number(event.target.value),
+                                          }
+                                        : item,
+                                    ),
+                                  },
+                                })
+                              }
+                            />
+                          </label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={stays.length <= 2}
+                            onClick={() =>
+                              setDraft({
+                                ...draft,
+                                details: {
+                                  ...draft.details,
+                                  version: 1,
+                                  destinations: stays.filter(
+                                    (_, i) => i !== index,
+                                  ),
+                                },
+                              })
+                            }
+                          >
+                            حذف مقصد
+                          </Button>
+                        </div>
+                      ),
+                    )}
+                  {draft.details.isCombined && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={(draft.details.destinations?.length ?? 0) >= 10}
+                      onClick={() =>
+                        setDraft({
+                          ...draft,
+                          details: {
+                            ...draft.details,
+                            version: 1,
+                            destinations: [
+                              ...(draft.details?.destinations ?? []),
+                              { cityId: '', nights: 1 },
+                            ],
+                          },
+                        })
+                      }
+                    >
+                      افزودن مقصد
+                    </Button>
+                  )}
+                </div>
+              )}
               <Button
                 className="col-span-full justify-self-end"
                 size="sm"
