@@ -6331,16 +6331,7 @@ export class HrService {
                   Number(validate.digits(shiftValues?.[3] ?? '0')) || 0,
                   validate.localClockToUtc(
                     date,
-                    (
-                      source.find(
-                        (r) =>
-                          r.tab === 'workingHours' &&
-                          r.status === 'فعال' &&
-                          (r.values as string[])[2] === shiftValues?.[1],
-                      )?.values as string[] | undefined
-                    )?.[9] ||
-                      shiftValues?.[2] ||
-                      '17:30',
+                    new Date(date).getUTCDay() === 4 ? '14:30' : '17:30',
                   ),
                 )
               : null;
@@ -6451,7 +6442,7 @@ export class HrService {
                 Boolean((row.data as HrWorkflowData).attendanceSource),
               )
                 ? (metrics?.overtimeMinutes ?? null)
-                : projected.overtime;
+                : Math.min(projected.overtime, metrics?.overtimeMinutes ?? 0);
             calculationMetrics = projected.metrics;
           }
           if (result.exceptions.length) exceptions++;
