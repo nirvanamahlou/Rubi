@@ -134,6 +134,23 @@ function fixture() {
   };
   Object.assign(client, { $transaction: db.$transaction });
   const directory = {
+    floatingHotelReferences: vi.fn(async () => ({
+      data: [
+        {
+          id: 'h1',
+          name: 'Hotel One',
+          englishName: 'Hotel One',
+          cityId: 'excel-city-1',
+        },
+        {
+          id: 'h2',
+          name: 'Hotel Two',
+          englishName: 'Hotel Two',
+          cityId: 'excel-city-2',
+        },
+      ],
+      meta: { total: 2 },
+    })),
     hotelRatePackChoices: vi.fn(async () => ({
       data: [
         { id: 'h1', name: 'Hotel One', englishName: 'Hotel One' },
@@ -150,9 +167,73 @@ function fixture() {
     directory as never,
     pricing as never,
   );
-  return { service, client, pricing, imports, getState: () => state };
+  return {
+    service,
+    client,
+    directory,
+    pricing,
+    imports,
+    getState: () => state,
+  };
 }
 beforeEach(() => vi.clearAllMocks());
+it('previews and commits cities resolved from Excel independently of the saved route', async () => {
+  const f = fixture();
+  const combined = {
+    ...definition,
+    details: { ...definition.details, isCombined: true },
+  };
+  f.client.tourPackage.findFirst.mockResolvedValue({
+    id: 'tour',
+    branchId: 'branch',
+    version: 1,
+    definition: combined,
+  } as never);
+  const archive = unzipSync(workbook());
+  const sheet = strFromU8(archive['xl/worksheets/sheet1.xml']!);
+  const second = sheet
+    .match(/<row r="2">.*?<\/row>/)![0]
+    .replace(/r="([A-Z]*)2"/g, 'r="$13"')
+    .replace('Hotel One', 'Hotel Two');
+  const bytes = zipSync({
+    ...archive,
+    'xl/worksheets/sheet1.xml': strToU8(
+      sheet.replace('</sheetData>', second + '</sheetData>'),
+    ),
+  });
+  const input = { ...options, combined: true, destinationNights: [3, 4] };
+  const p = await f.service.preview('tour', bytes, input, actor);
+  expect(p.rows[0]!.stays.map((s) => [s.cityId, s.nights])).toEqual([
+    ['excel-city-1', 3],
+    ['excel-city-2', 4],
+  ]);
+  expect(f.directory.hotelRatePackChoices).not.toHaveBeenCalled();
+  await f.service.commit(
+    'tour',
+    bytes,
+    input,
+    p.expectedVersion,
+    p.digest,
+    actor,
+  );
+  expect(f.getState()!.payload.dated[0]!.stays).toEqual(p.rows[0]!.stays);
+  await expect(
+    f.service.preview(
+      'tour',
+      bytes,
+      { ...input, destinationNights: [2, 4] },
+      actor,
+    ),
+  ).rejects.toThrow();
+  await expect(
+    f.service.preview(
+      'tour',
+      bytes,
+      { ...input, destinationNights: [0, 7] },
+      actor,
+    ),
+  ).rejects.toThrow();
+});
 it('lists floating definitions for site managers and projects only the selected sale period', async () => {
   const f = fixture();
   for (const date of ['2026-08-01', '2026-08-08']) {

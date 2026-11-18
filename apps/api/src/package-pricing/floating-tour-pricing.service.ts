@@ -41,6 +41,11 @@ const optionsSchema = Joi.object({
     .max(12)
     .when('mode', { is: 'MONTHLY', then: Joi.array().min(1).required() }),
   combined: Joi.boolean(),
+  destinationNights: Joi.array()
+    .items(Joi.number().integer().min(1).max(365))
+    .min(2)
+    .max(10)
+    .when('combined', { is: true, otherwise: Joi.forbidden() }),
 });
 @Injectable()
 export class FloatingTourPricingService {
@@ -206,10 +211,24 @@ export class FloatingTourPricingService {
         }
       : { version: 0, dated: [], monthly: null };
   }
-  async template(id: string, actor: AuthenticatedActor) {
+  async template(
+    id: string,
+    actor: AuthenticatedActor,
+    destinationCount?: string,
+  ) {
     this.authorize(actor);
     const { definition } = await this.definition(id, actor);
-    return buildFloatingTourTemplate(definition);
+    const count =
+      destinationCount === undefined ? undefined : Number(destinationCount);
+    if (
+      count !== undefined &&
+      (!Number.isInteger(count) ||
+        count < 2 ||
+        count > 10 ||
+        !definition.details?.isCombined)
+    )
+      throw new BadRequestException('تعداد مقصد باید بین ۲ تا ۱۰ باشد.');
+    return buildFloatingTourTemplate(definition, count);
   }
   async preview(
     id: string,
@@ -222,6 +241,14 @@ export class FloatingTourPricingService {
     if (parsed.error)
       throw new BadRequestException('تعداد شب و تنظیمات بازه را بررسی کنید.');
     const options = parsed.value as FloatingTourImportOptions;
+    if (
+      options.destinationNights &&
+      options.destinationNights.reduce((sum, n) => sum + n, 0) !==
+        options.nights
+    )
+      throw new BadRequestException(
+        'مجموع شب‌های مقصدها باید با تعداد شب بازه برابر باشد.',
+      );
     const { row, definition } = await this.definition(id, actor);
     if (!definition.originId || !definition.destinationId)
       throw new BadRequestException('مسیر تور را تکمیل کنید.');
@@ -233,10 +260,19 @@ export class FloatingTourPricingService {
     const cities = options.combined
       ? (definition.details?.destinations?.map((s) => s.cityId) ?? [])
       : [definition.destinationId];
-    if (!cities.length)
+    if (!cities.length && !options.destinationNights)
       throw new BadRequestException('مسیر تور ترکیبی را تکمیل کنید.');
     const hotels: FloatingHotelReference[] = [];
-    for (const cityId of new Set(cities)) {
+    if (options.destinationNights) {
+      for (let page = 1; page <= 100; page++) {
+        const result = await this.directory.floatingHotelReferences(page);
+        hotels.push(...result.data.filter((hotel) => hotel.cityId));
+        if (page * 100 >= result.meta.total) break;
+        if (page === 100)
+          throw new BadRequestException('تعداد هتل‌ها از سقف مجاز بیشتر است.');
+      }
+    }
+    for (const cityId of new Set(options.destinationNights ? [] : cities)) {
       for (let page = 1; page <= 100; page++) {
         const result = await this.directory.hotelRatePackChoices(
           'hotels',

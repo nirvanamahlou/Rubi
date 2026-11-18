@@ -3,6 +3,40 @@ import { MasterTravelDirectory } from './master-travel-directory';
 import type { MasterDataService } from './master-data.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
+it('resolves floating hotel cities using active saleable master references without a selected city', async () => {
+  const list = vi
+    .fn()
+    .mockResolvedValue({
+      data: [
+        {
+          id: 'hotel',
+          name: 'Hotel',
+          attributes: { englishName: 'Hotel EN', cityId: 'excel-city' },
+        },
+      ],
+      meta: { total: 1 },
+    });
+  const directory = new MasterTravelDirectory({ list } as never);
+  expect((await directory.floatingHotelReferences(2)).data).toEqual([
+    {
+      id: 'hotel',
+      name: 'Hotel',
+      englishName: 'Hotel EN',
+      cityId: 'excel-city',
+    },
+  ]);
+  expect(list).toHaveBeenCalledWith(
+    'hotels',
+    expect.objectContaining({
+      page: 2,
+      pageSize: 100,
+      status: 'active',
+      saleableOnly: true,
+    }),
+  );
+  expect(list.mock.calls[0]![1]).not.toHaveProperty('cityId');
+});
+
 it('accepts the same registered broker for rate saving as voucher selection', async () => {
   const detail = vi.fn().mockImplementation(async (kind: string) => ({
     data:
