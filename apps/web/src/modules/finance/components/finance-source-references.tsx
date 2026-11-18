@@ -71,7 +71,15 @@ function Facts({ values }: { values: [string, ReactNode][] }) {
     </dl>
   );
 }
-function Rows({ headers, rows }: { headers: string[]; rows: ReactNode[][] }) {
+function Rows({
+  headers,
+  rows,
+  highlight,
+}: {
+  headers: string[];
+  rows: ReactNode[][];
+  highlight?: number;
+}) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-start text-sm">
@@ -86,7 +94,16 @@ function Rows({ headers, rows }: { headers: string[]; rows: ReactNode[][] }) {
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i}>
+            <tr
+              key={i}
+              aria-current={i === highlight || undefined}
+              className={i === highlight ? 'bg-primary/10' : undefined}
+              ref={
+                i === highlight
+                  ? (node) => node?.scrollIntoView?.({ block: 'nearest' })
+                  : undefined
+              }
+            >
               {row.map((cell, j) => (
                 <td key={j} className="border p-2 whitespace-pre-wrap">
                   {cell ?? '—'}
@@ -254,13 +271,17 @@ export function FinanceContractReadView({ id }: { id: string }) {
 export function FinanceJournalReadView({
   bookId,
   id,
+  focusPosition,
+  periodId,
 }: {
   bookId: string;
   id: string;
+  focusPosition?: number;
+  periodId?: string;
 }) {
   return (
     <ReadResult<FinanceJournalReadV1>
-      path={`/finance/accounting/books/${encodeURIComponent(bookId)}/journals/${encodeURIComponent(id)}/read`}
+      path={`/finance/accounting/books/${encodeURIComponent(bookId)}/journals/${encodeURIComponent(id)}/read${periodId ? `?${new URLSearchParams({ periodId })}` : ''}`}
     >
       {(j) => (
         <article aria-label="متن سند حسابداری" className="space-y-4">
@@ -293,6 +314,9 @@ export function FinanceJournalReadView({
               'مبلغ ارزی',
               'نرخ',
             ]}
+            highlight={j.lines.findIndex(
+              (line) => line.position === focusPosition,
+            )}
             rows={j.lines.map((l) => [
               l.position,
               l.account ? `${l.account.code} — ${l.account.title}` : '—',

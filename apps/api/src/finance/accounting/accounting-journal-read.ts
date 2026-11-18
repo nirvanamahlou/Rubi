@@ -19,10 +19,11 @@ export async function readAccountingJournal(
   db: Prisma.TransactionClient,
   bookId: string,
   journalId: string,
+  periodId?: string,
 ): Promise<FinanceJournalReadV1> {
   const identity = { code: true, title: true } as const;
   const row = await db.accountingJournal.findFirst({
-    where: { id: journalId, bookId },
+    where: { id: journalId, bookId, ...(periodId ? { periodId } : {}) },
     include: {
       book: { select: { title: true, baseCurrency: true } },
       period: { select: { fiscalYear: { select: { title: true } } } },

@@ -1,3 +1,7 @@
+## ACCOUNT-REVIEW-1118 — PC-D — IMPLEMENTED
+
+Expanded the General Ledger account browser with scoped breakdowns across the chart, detail levels and types, currency and dated tracking. Added period-aware read-only movement/document navigation, stable running balances, filters and permission-checked export. No schema or operational data changes. See [task](tasks/ACCOUNT-REVIEW-1118.md).
+
 ## DETAIL-OWNER-FORMS-1117 — PC-D — IMPLEMENTED
 
 Eight predefined typed detail title lookups and create/edit dialogs, seven-digit defaults for newly introduced types, native fiscal year/bank/cash references, and additive restrictive links. Existing definitions, contract numbers and party codes are preserved. Validation and rollout: [detail owner forms](tasks/DETAIL-OWNER-FORMS-1117.md). Not deployed.

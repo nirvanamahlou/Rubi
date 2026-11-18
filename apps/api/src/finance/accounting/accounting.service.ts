@@ -6422,13 +6422,17 @@ export class AccountingService {
     bookId: string,
     journalId: string,
     actor: AuthenticatedActor,
+    periodId?: string,
   ) {
     this.require(actor);
     await this.book(this.database.client, bookId, actor);
+    const requestedPeriod = v.uuid(periodId, true);
+    if (requestedPeriod) this.fiscal?.assertPeriod(bookId, requestedPeriod);
     return readAccountingJournal(
       this.database.client,
       bookId,
       v.uuid(journalId)!,
+      requestedPeriod ?? undefined,
     );
   }
 
@@ -6838,6 +6842,8 @@ export class AccountingService {
     }
     if (kind !== 'standard-mapping')
       query = this.fiscal?.query(bookId, query) ?? query;
+    if (kind === 'account-browser' && query.export === 'true')
+      this.require(actor, 'finance.export');
     if (kind === 'account-browser')
       return this.database.client.$transaction(
         async (tx) => {

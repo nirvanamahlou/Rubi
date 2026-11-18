@@ -979,6 +979,7 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
       <AccountingAccountBrowser
         key={bookId + (fiscal?.period?.id ?? '')}
         book={snapshot}
+        activePeriodId={fiscal?.period?.id}
       />
     );
   else if (snapshot && section === 'general-ledger/reports/trial-balance')
