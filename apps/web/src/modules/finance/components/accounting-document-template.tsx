@@ -1,4 +1,9 @@
 'use client';
+import {
+  accountingDetailLevels,
+  accountingDetailTypeIds,
+  isAccountingDetailLevelEnabled,
+} from '@nora/contracts';
 import { useState, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type {
@@ -219,9 +224,7 @@ function TemplateGrid({
               {[
                 ...(inclusion ? ['شمول/عدم شمول'] : []),
                 'کد حساب معین',
-                'سطح 4',
-                'سطح 5',
-                'سطح 6',
+                ...accountingDetailLevels.map((level) => `سطح ${level}`),
                 ...(role === 'TARGET' ? ['درصد'] : []),
               ].map((heading) => (
                 <th key={heading} className="border p-2 text-right">
@@ -290,22 +293,22 @@ function TemplateGrid({
                         onValueChange={(accountId) =>
                           update(index, {
                             accountId,
-                            detail4Id: null,
-                            detail5Id: null,
-                            detail6Id: null,
+                            ...Object.fromEntries(
+                              accountingDetailLevels.map((level) => [
+                                `detail${level}Id`,
+                                null,
+                              ]),
+                            ),
                           })
                         }
                       />
                     </td>
-                    {([4, 5, 6] as const).map((level) => {
+                    {accountingDetailLevels.map((level) => {
                       const attributes = account?.attributes ?? {};
-                      const allowed = Array.isArray(
-                        attributes[`detail${level}TypeIds`],
-                      )
-                        ? (attributes[`detail${level}TypeIds`] as string[])
-                        : [
-                            String(attributes[`detail${level}TypeId`] ?? ''),
-                          ].filter(Boolean);
+                      const allowed = accountingDetailTypeIds(
+                        attributes,
+                        level,
+                      );
                       return (
                         <td key={level} className="border p-1">
                           <SearchCombobox
@@ -321,7 +324,11 @@ function TemplateGrid({
                                 value: detail.id,
                                 label: `${detail.code} — ${detail.title}`,
                               }))}
-                            disabled={busy || !allowed.length}
+                            disabled={
+                              busy ||
+                              !allowed.length ||
+                              !isAccountingDetailLevelEnabled(attributes, level)
+                            }
                             onValueChange={(value) =>
                               update(index, {
                                 [`detail${level}Id`]: value || null,
@@ -440,9 +447,9 @@ function TemplateGrid({
                       !matching.some(
                         ({ row }) =>
                           row.accountId === accountId &&
-                          !row.detail4Id &&
-                          !row.detail5Id &&
-                          !row.detail6Id,
+                          accountingDetailLevels.every(
+                            (level) => !row[`detail${level}Id`],
+                          ),
                       ),
                   )
                   .map((accountId) => ({

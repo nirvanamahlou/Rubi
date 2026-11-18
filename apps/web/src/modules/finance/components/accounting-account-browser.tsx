@@ -1,4 +1,6 @@
 'use client';
+import { accountingDetailLevels } from '@nora/contracts';
+import { chartDetailLevelTitles } from '../accounting-chart-form';
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -16,9 +18,10 @@ const axes: readonly (readonly [string, string])[] = [
   ['GROUP', 'گروه حساب'],
   ['GENERAL', 'حساب کل'],
   ['SUBSIDIARY', 'حساب معین'],
-  ['DETAIL4', 'تفصیلی سطح چهار'],
-  ['DETAIL5', 'تفصیلی سطح پنج'],
-  ['DETAIL6', 'تفصیلی سطح شش'],
+  ...accountingDetailLevels.map(
+    (level) =>
+      [`DETAIL${level}`, `تفصیلی ${chartDetailLevelTitles[level]}`] as const,
+  ),
   ['DETAIL', 'حساب تفصیلی (همه سطوح)'],
   ['CURRENCY', 'ارز'],
   ['TRACKING', 'پیگیری'],

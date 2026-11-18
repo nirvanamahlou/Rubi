@@ -1,3 +1,5 @@
+import type { AccountingLineV1 } from '@nora/contracts';
+import { accountingDetailLevels } from '@nora/contracts';
 import { accountingFinancialEventLabels } from '@nora/contracts';
 import type { Prisma } from '@nora/database';
 import * as v from './accounting.validation';
@@ -27,7 +29,7 @@ export function financialEventLines(
   event: Prisma.FinanceAccountingEventGetPayload<object>,
   mapping: Record<string, unknown>,
   fx?: { id: string; rate: Prisma.Decimal; baseCurrency: string },
-) {
+): (AccountingLineV1 & { accountId: string })[] {
   const amount = fx
     ? DecimalValue.parse(event.amount.toString())
         .multiply(DecimalValue.parse(fx.rate.toString()))
@@ -42,6 +44,12 @@ export function financialEventLines(
     detail4Id: v.uuid(mapping[`${side}Detail4Id`], true),
     detail5Id: v.uuid(mapping[`${side}Detail5Id`], true),
     detail6Id: v.uuid(mapping[`${side}Detail6Id`], true),
+    ...Object.fromEntries(
+      accountingDetailLevels.slice(3).flatMap((level) => {
+        const id = v.uuid(mapping[`${side}Detail${level}Id`], true);
+        return id ? [[`detail${level}Id`, id]] : [];
+      }),
+    ),
     debit: side === 'debit' ? amount : '0',
     credit: side === 'credit' ? amount : '0',
     ...(fx
@@ -51,7 +59,7 @@ export function financialEventLines(
           rate: fx.rate.toString(),
           fxSnapshotId: fx.id,
         }
-      : {}),
+      : { currency: null, foreignAmount: null, rate: null }),
     description: accountingFinancialEventLabels[event.kind] ?? 'عملیات مالی',
     attributes: {
       trackingNumber: event.trackingNumber ?? event.requestId,

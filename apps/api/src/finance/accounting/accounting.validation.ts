@@ -1,3 +1,4 @@
+import { detailFields } from './accounting.detail-levels';
 import {
   BadRequestException,
   UnprocessableEntityException,
@@ -150,6 +151,13 @@ export function lines(value: unknown, internal = false): AccountingLineV1[] {
       detail4Id: uuid(v.detail4Id, true),
       detail5Id: uuid(v.detail5Id, true),
       detail6Id: uuid(v.detail6Id, true),
+      ...Object.fromEntries(
+        detailFields
+          .slice(3)
+          .flatMap((field) =>
+            v[field] === undefined ? [] : [[field, uuid(v[field], true)]],
+          ),
+      ),
       description: text(v.description, 2000),
       debit: decimal(v.debit === '' ? '0' : (v.debit ?? '0'))!,
       credit: decimal(v.credit === '' ? '0' : (v.credit ?? '0'))!,

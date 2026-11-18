@@ -4,10 +4,12 @@ import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
-import type {
-  AccountingAccountV1,
-  AccountingAttributes,
-  AccountingSnapshotV1,
+import {
+  accountingDetailLevelLimit,
+  maxAccountingDetailLevel,
+  type AccountingAccountV1,
+  type AccountingAttributes,
+  type AccountingSnapshotV1,
 } from '@nora/contracts';
 import {
   Tabs,
@@ -30,7 +32,9 @@ import {
   accountNatureOptions,
   accountTypeOptions,
   accountToDraft,
+  addChartDetailLevel,
   chartChildAction,
+  chartDetailLevels,
   chartPayload,
   descriptionRows,
   natureControlOptions,
@@ -339,7 +343,28 @@ export function AccountingChartEditor({
               });
             }}
           >
-            <AccountingSaveButtons busy={busy || !book} />
+            <div className="flex flex-wrap items-center gap-2">
+              <AccountingSaveButtons busy={busy || !book} />
+              {draft.level === 'SUBSIDIARY' &&
+                accountingDetailLevelLimit(draft.attributes) <
+                  maxAccountingDetailLevel && (
+                  <AccountingButton
+                    type="button"
+                    permission="finance.account.manage"
+                    disabled={creationDisabled}
+                    onClick={() => {
+                      const next = addChartDetailLevel(draft.attributes);
+                      setDraft({ ...draft, attributes: next });
+                      setTab('main');
+                      setSubTab(subsidiaryTabs[0]);
+                      setDetailLevel(chartDetailLevels(next).at(-1) ?? null);
+                    }}
+                  >
+                    <Plus className="size-4" aria-hidden="true" />
+                    اضافه کردن سطح جدید
+                  </AccountingButton>
+                )}
+            </div>
             <Tabs value={tab} onValueChange={setTab} dir="rtl">
               <TabsList className="w-full justify-start rounded-none border-b bg-slate-50 p-0">
                 <TabsTrigger value="main" className="rounded-none">

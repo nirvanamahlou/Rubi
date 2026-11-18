@@ -1,3 +1,5 @@
+import { accountingDetailLevels } from '@nora/contracts';
+import { journalDetailSql } from './accounting.detail-levels';
 import { Prisma } from '@nora/database';
 import * as v from './accounting.validation';
 
@@ -7,11 +9,12 @@ const hierarchy = {
   GENERAL: sql`gl`,
   SUBSIDIARY: sql`sub`,
 };
-const detailLevels = {
-  DETAIL4: sql`l."detail4Id"`,
-  DETAIL5: sql`l."detail5Id"`,
-  DETAIL6: sql`l."detail6Id"`,
-};
+const detailLevels = Object.fromEntries(
+  accountingDetailLevels.map((level) => [
+    `DETAIL${level}`,
+    Prisma.raw(`l."detail${level}Id"`),
+  ]),
+);
 
 function dimension(axis: string) {
   if (Object.hasOwn(hierarchy, axis)) {
@@ -26,7 +29,7 @@ function dimension(axis: string) {
   if (Object.hasOwn(detailLevels, axis) || axis === 'DETAIL') {
     const match =
       axis === 'DETAIL'
-        ? sql`d.id IN (l."detail4Id", l."detail5Id", l."detail6Id")`
+        ? sql`d.id IN (${journalDetailSql})`
         : sql`d.id = ${detailLevels[axis as keyof typeof detailLevels]}`;
     return {
       join: sql`JOIN accounting_details d ON d."bookId"=j."bookId" AND ${match}`,

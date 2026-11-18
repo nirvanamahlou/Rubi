@@ -9240,5 +9240,10 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "حداکثر سطح تفصیلی معتبر نیست.": "Invalid maximum detail level.",
+  "سطح تفصیلی خارج از محدوده حساب است.": "The detail level is outside the account range.",
+  "وضعیت سطح تفصیلی معتبر نیست.": "Invalid detail level status.",
+  "سطح تفصیلی اجباری باید فعال باشد.": "A required detail level must be enabled.",
+  "برای این حساب فعال نیست.": "is disabled for this account."
 }

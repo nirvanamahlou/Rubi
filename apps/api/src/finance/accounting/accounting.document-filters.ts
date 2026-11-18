@@ -1,3 +1,4 @@
+import { detailFields } from './accounting.detail-levels';
 import { Prisma } from '@nora/database';
 import * as v from './accounting.validation';
 
@@ -29,9 +30,12 @@ const lineFields: Record<string, Field> = {
   descriptionEn: { column: 'descriptionEn', kind: 'text', attribute: true },
   trackingNumber: { column: 'trackingNumber', kind: 'text', attribute: true },
   trackingDate: { column: 'trackingDate', kind: 'date', attribute: true },
-  detail4Id: { column: 'detail4Id', kind: 'uuid' },
-  detail5Id: { column: 'detail5Id', kind: 'uuid' },
-  detail6Id: { column: 'detail6Id', kind: 'uuid' },
+  ...Object.fromEntries(
+    detailFields.map((field) => [
+      field,
+      { column: field, kind: 'uuid' as const },
+    ]),
+  ),
   currency: { column: 'currency', kind: 'text' },
   accountId: { column: 'accountId', kind: 'uuid' },
 };
@@ -144,9 +148,7 @@ export function journalFilter(
         'periodId',
         'typeId',
         'accountId',
-        'detail4Id',
-        'detail5Id',
-        'detail6Id',
+        ...detailFields,
         'currency',
         'rate',
       ].includes(field.column);

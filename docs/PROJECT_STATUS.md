@@ -1,3 +1,7 @@
+## 2026-11-18 — ACCOUNT-DETAIL-LEVELS-1118 — PC-D
+
+Subsidiary account forms expose levels 4–8 by default and add one account-local level at a time up to 12. Independent type selections persist on the account. Additional detail references flow through journal entry, posting, reports, templates and subsidiary mappings. A real PostgreSQL regression posts and reports a level-7 detail with level 6 empty. The full scoped results are in [ACCOUNT-DETAIL-LEVELS-1118](tasks/ACCOUNT-DETAIL-LEVELS-1118.md).
+
 ## DETAIL-OWNER-FORMS-1117 — PC-D — IMPLEMENTED
 
 Eight predefined typed detail title lookups and create/edit dialogs, seven-digit defaults for newly introduced types, native fiscal year/bank/cash references, and additive restrictive links. Existing definitions, contract numbers and party codes are preserved. Validation and rollout: [detail owner forms](tasks/DETAIL-OWNER-FORMS-1117.md). Not deployed.
