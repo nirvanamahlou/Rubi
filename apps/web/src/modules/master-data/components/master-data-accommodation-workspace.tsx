@@ -1,5 +1,6 @@
 'use client';
 import { HotelImageStrip } from './hotel-images';
+import { HotelPublication } from '../../integrations/components/hotel-publication';
 import { HotelProfileInformation } from './hotel-profile-information';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import {
@@ -749,6 +750,18 @@ export function MasterDataAccommodationWorkspace() {
   function actions(record: MasterDataRecord) {
     return (
       <div className="flex flex-wrap justify-center gap-2">
+        {record.resource === 'hotels' && (
+          <details>
+            <summary
+              className="cursor-pointer rounded-lg border p-2"
+              aria-label={`انتشار ${record.name} در سایت`}
+              title="انتشار در سایت"
+            >
+              ↗
+            </summary>
+            <HotelPublication id={record.id} />
+          </details>
+        )}
         <Button
           aria-label={`مشاهده ${record.name}`}
           onClick={() => {

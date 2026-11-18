@@ -1,5 +1,6 @@
 import { WebsiteCheckoutHoldsService } from './website-checkout-holds.service';
 import { commerceSites, isDeliverySite } from './commerce-sites';
+import { createHmac } from 'node:crypto';
 import {
   VerifiedGatewayReceiptPublic,
   type VerifiedGatewayProof,
@@ -82,6 +83,80 @@ export class SiteCommerceService {
   private scoped(site: string, actor: AuthenticatedActor) {
     const binding = siteBinding(site, actor);
     return { ...actor, branchIds: [binding.branchId] };
+  }
+
+  async publishHotelProfile(
+    site: string,
+    id: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (site !== 'jahan-bastan') throw new BadRequestException();
+    this.publicationBranch(site, actor);
+    if (!actor.permissions.includes('master_data.read'))
+      throw new ForbiddenException();
+    const { data } = await this.references.detail('hotels', id);
+    const fields = data.attributes;
+    if (!String(fields.identificationCode ?? '').trim())
+      throw new BadRequestException('کد شناسایی هتل را وارد کنید.');
+    const config = commerceSites[site];
+    const secret = process.env[config.signingKey];
+    if (!secret || secret.length < 32)
+      throw new BadRequestException('اتصال سایت پیکربندی نشده است.');
+    const allowed = [
+      'identificationCode',
+      'cityName',
+      'countryName',
+      'starRating',
+      'address',
+      'regionName',
+      'facilityNames',
+      'mealServiceNames',
+      'roomTypeNames',
+      'englishName',
+      'chainName',
+      'checkInTime',
+      'checkOutTime',
+      'website',
+    ];
+    const body = JSON.stringify({
+      site,
+      kind: 'hotel-profile',
+      name: data.name,
+      ...Object.fromEntries(allowed.map((key) => [key, fields[key] ?? null])),
+    });
+    const stamp = String(Math.floor(Date.now() / 1000));
+    const signature = createHmac('sha256', secret)
+      .update(stamp + '.' + body)
+      .digest('hex');
+    const response = await fetch(config.origin + '/api/v1/erp/hotel-profile', {
+      method: 'POST',
+      redirect: 'error',
+      signal: AbortSignal.timeout(15000),
+      headers: {
+        'content-type': 'application/json',
+        'x-erp-timestamp': stamp,
+        'x-erp-signature': signature,
+      },
+      body,
+    });
+    const receipt = (await response.json().catch(() => null)) as {
+      identificationCode?: string;
+      slug?: string;
+    } | null;
+    if (
+      !response.ok ||
+      receipt?.identificationCode !==
+        String(fields.identificationCode).trim() ||
+      typeof receipt.slug !== 'string'
+    )
+      throw new BadRequestException(
+        response.status === 409
+          ? 'کد شناسایی یا مقصد هتل را در جهان باستان بررسی کنید.'
+          : 'ثبت اطلاعات هتل در جهان باستان تأیید نشد.',
+      );
+    return {
+      url: config.origin + '/hotels/' + encodeURIComponent(receipt.slug) + '/',
+    };
   }
 
   private async ticketTarget(site: string, branchId: string) {

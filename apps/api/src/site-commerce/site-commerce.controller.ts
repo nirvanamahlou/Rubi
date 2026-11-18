@@ -94,6 +94,15 @@ export class SiteCommerceController {
   ) {
     return this.service.catalog(site, req.actor, floatingTours === 'true');
   }
+  @Post('hotel-profiles/:id')
+  @Header('Cache-Control', 'private, no-store')
+  publishHotel(
+    @Param('site') site: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.publishHotelProfile(site, id, req.actor);
+  }
   @Post('flight-quote')
   @Header('Cache-Control', 'private, no-store')
   flightQuote(
