@@ -88,7 +88,7 @@ export function HotelPublicationManager({
 }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [records, setRecords] = useState<MasterDataRecord[]>([]);
+  const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [status, setStatus] = useState('');
   useEffect(() => {
