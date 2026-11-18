@@ -10,7 +10,10 @@ import {
   type AuthenticatedActor,
 } from '@nora/contracts';
 import { AccountingService } from '../src/finance/accounting/accounting.service';
-import { detailOwners } from '../src/finance/accounting/detail-owners';
+import {
+  detailOwners,
+  newOwnerTypes,
+} from '../src/finance/accounting/detail-owners';
 const url = process.env.DETAIL_OWNER_TEST_DATABASE_URL;
 describe.skipIf(!url)('typed detail owners on disposable PostgreSQL', () => {
   let db: DatabaseClient,
@@ -116,7 +119,12 @@ describe.skipIf(!url)('typed detail owners on disposable PostgreSQL', () => {
   afterAll(async () => {
     await db?.$disconnect();
   });
-  it('adds only missing eight-digit definitions and preserves pre-existing widths and IDs', async () => {
+  it('adds only missing seven-digit definitions and preserves pre-existing widths and IDs', async () => {
+    expect(
+      newOwnerTypes(bookId).map(
+        (type) => type.attributes.classificationNumberLength,
+      ),
+    ).toEqual(Array<string>(accountingDetailOwners.length).fill('7'));
     const legacy = await db.accountingConfiguration.create({
       data: {
         bookId,
@@ -151,7 +159,7 @@ describe.skipIf(!url)('typed detail owners on disposable PostgreSQL', () => {
     for (const def of accountingDetailOwners.filter((d) => d.kind !== 'BANK'))
       expect(
         types.find((t) => t.title === def.title)?.attributes,
-      ).toMatchObject({ classificationNumberLength: '8', isSystem: true });
+      ).toMatchObject({ classificationNumberLength: '7', isSystem: true });
   });
   const records: Record<string, AccountingDetailOwnerV1> = {};
   for (const def of accountingDetailOwners.filter((d) => d.kind !== 'BANK')) {
@@ -196,7 +204,7 @@ describe.skipIf(!url)('typed detail owners on disposable PostgreSQL', () => {
         attributes: {},
       });
       expect(detail.title).toBe(row.title);
-      expect(detail.code).toBe('00000000');
+      expect(detail.code).toBe('0000000');
       expect(detail.sourceConfigurationId).toBe(row.configurationId);
       const reloaded = await api.snapshot(bookId, actor);
       expect(
@@ -429,7 +437,7 @@ describe.skipIf(!url)('typed detail owners on disposable PostgreSQL', () => {
     )) as unknown as AccountingDetailV1;
     expect(result.title).toBe(account.title);
     expect(result.sourceAccountId).toBe(account.id);
-    expect(result.code).toHaveLength(8);
+    expect(result.code).toBe('0000000');
     await expect(
       db.financeSettlementAccount.delete({ where: { id: account.id } }),
     ).rejects.toThrow();
@@ -491,7 +499,38 @@ describe.skipIf(!url)('typed detail owners on disposable PostgreSQL', () => {
       ),
     );
     expect(new Set(results.map((d) => d.code)).size).toBe(4);
-    expect(results.every((d) => /^0{6}[0-9]{2}$/.test(d.code))).toBe(true);
+    expect(results.every((d) => /^0{6}[0-9]$/.test(d.code))).toBe(true);
+  });
+
+  it('pads manual codes and offers the first free seven-digit code for the same type', async () => {
+    const type = await db.accountingConfiguration.findFirstOrThrow({
+      where: { bookId, kind: 'detail-types', title: 'شعبه' },
+    });
+    const payload = {
+      typeId: type.id,
+      title: 'x',
+      sourceConfigurationId: records.BRANCH!.id,
+      attributes: {},
+    };
+    const manual = await act<AccountingDetailV1>('save-detail', {
+      ...payload,
+      code: '۳',
+    });
+    expect(manual.code).toBe('0000003');
+    await expect(
+      act('save-detail', { ...payload, code: '0000003' }),
+    ).rejects.toThrow('کد در این نوع تفصیلی تکراری است.');
+    await expect(
+      act('save-detail', { ...payload, code: '10000000' }),
+    ).rejects.toThrow('کد با طول نوع تفصیلی سازگار نیست.');
+
+    for (const expected of ['0000001', '0000002', '0000004']) {
+      const next = await act<AccountingDetailV1>('save-detail', {
+        ...payload,
+        code: '',
+      });
+      expect(next.code).toBe(expected);
+    }
   });
   it('rejects a new detail bound to an inactive source', async () => {
     const row = await act<AccountingDetailOwnerV1>('save-detail-owner', {

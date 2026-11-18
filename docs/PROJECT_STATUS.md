@@ -1,6 +1,6 @@
 ## DETAIL-OWNER-FORMS-1117 — PC-D — IMPLEMENTED
 
-Eight predefined typed detail title lookups and create/edit dialogs, eight-digit defaults for newly introduced types, native fiscal year/bank/cash references, and additive restrictive links. Existing definitions, contract numbers and party codes are preserved. Validation and rollout: [detail owner forms](tasks/DETAIL-OWNER-FORMS-1117.md). Not deployed.
+Eight predefined typed detail title lookups and create/edit dialogs, seven-digit defaults for newly introduced types, native fiscal year/bank/cash references, and additive restrictive links. Existing definitions, contract numbers and party codes are preserved. Validation and rollout: [detail owner forms](tasks/DETAIL-OWNER-FORMS-1117.md). Not deployed.
 
 ## 2026-11-17 — Nora Sales evidence correction (PC-C)
 

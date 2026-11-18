@@ -30,7 +30,7 @@ export const newOwnerTypes = (bookId: string) =>
     title: x.title,
     attributes: {
       isSystem: true,
-      classificationNumberLength: '8',
+      classificationNumberLength: '7',
       defaultFirstCode: '',
       parentTypeId: '',
       enforceParent: false,
