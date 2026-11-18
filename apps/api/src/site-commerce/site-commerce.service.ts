@@ -139,7 +139,10 @@ export class SiteCommerceService {
       },
       body,
     });
-    const receipt = await response.json().catch(() => null);
+    const receipt = (await response.json().catch(() => null)) as {
+      identificationCode?: string;
+      slug?: string;
+    } | null;
     if (
       !response.ok ||
       receipt?.identificationCode !==
@@ -579,12 +582,10 @@ export class SiteCommerceService {
         });
       } catch (error) {
         // Preserve explicit tombstones, but never hide infrastructure failure as deletion.
-        if (
-          !(
-            error instanceof BadRequestException ||
-            error instanceof NotFoundException
-          )
-        )
+        if (!(
+          error instanceof BadRequestException ||
+          error instanceof NotFoundException
+        ))
           throw error;
         data.push({
           id: row.id,

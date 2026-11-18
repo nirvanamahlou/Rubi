@@ -893,11 +893,9 @@ export function SiteManagement({
                                           '')
                                         : ''
                                     }
-                                    offer={
-                                      tickets.find(
-                                        (offer) => offer.id === row.id,
-                                      )!
-                                    }
+                                    offer={tickets.find(
+                                      (offer) => offer.id === row.id,
+                                    )!}
                                     site={site}
                                     targets={targets}
                                   />

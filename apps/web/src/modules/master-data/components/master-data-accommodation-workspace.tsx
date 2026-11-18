@@ -92,12 +92,7 @@ import {
 import { MasterDataLogoCell } from './master-data-logo-cell';
 
 type AccommodationTab =
-  | 'hotels'
-  | 'chains'
-  | 'meals'
-  | 'facilities'
-  | 'import'
-  | 'combined';
+  'hotels' | 'chains' | 'meals' | 'facilities' | 'import' | 'combined';
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
 const tabs = [
