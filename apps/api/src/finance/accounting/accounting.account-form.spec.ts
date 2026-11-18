@@ -60,6 +60,33 @@ describe('observed account form rules', () => {
       ),
     ).not.toThrow();
   });
+
+  it('validates independent custom levels and rejects levels above the per-account and global limits', () => {
+    const type = '00000000-0000-4000-8000-000000000001';
+    const attrs = {
+      detailLevels: ['7', '12'],
+      detail7Required: true,
+      detail7TypeIds: [type],
+      detailLevelLimit: '12',
+    };
+    expect(() => validateAccountForm(attrs, true)).not.toThrow();
+    expect(() =>
+      validateAccountForm({ ...attrs, detailLevelLimit: '8' }, true),
+    ).toThrow();
+    expect(() =>
+      validateAccountForm({ ...attrs, detailLevelLimit: '13' }, true),
+    ).toThrow();
+    expect(() =>
+      validateAccountForm({ ...attrs, detail13Required: true }, true),
+    ).toThrow();
+    expect(
+      accountControlFilters(
+        { natureControlScope: 'ALL_DETAILS' },
+        { detail4Id: null, detail5Id: null, detail6Id: null, detail7Id: type },
+        {},
+      ),
+    ).toEqual([{}, { detail7Id: type }]);
+  });
   it('checks each detail prefix without changing the account-wide check', () => {
     const row = { detail4Id: 'a', detail5Id: 'b', detail6Id: null };
     expect(

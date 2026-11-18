@@ -1,3 +1,15 @@
+## 2026-11-18 — ACCOUNT-DETAIL-LEVELS-1118 — PC-D
+
+Subsidiary account forms expose levels 4–8 by default and add one account-local level at a time up to 12. Independent type selections persist on the account. Additional detail references flow through journal entry, posting, reports, templates and subsidiary mappings. A real PostgreSQL regression posts and reports a level-7 detail with level 6 empty. The full scoped results are in [ACCOUNT-DETAIL-LEVELS-1118](tasks/ACCOUNT-DETAIL-LEVELS-1118.md).
+
+## DETAIL-OWNER-FORMS-1117 — PC-D — IMPLEMENTED
+
+Eight predefined typed detail title lookups and create/edit dialogs, seven-digit defaults for newly introduced types, native fiscal year/bank/cash references, and additive restrictive links. Existing definitions, contract numbers and party codes are preserved. Validation and rollout: [detail owner forms](tasks/DETAIL-OWNER-FORMS-1117.md). Not deployed.
+
+## 2026-11-17 — Nora Sales evidence correction (PC-C)
+
+NORA-SALES-EVIDENCE-1117: reproduced Persian calendar/Tehran-boundary and contract-currency row-count defects. Added deterministic period resolution, same-snapshot authorized reconciliation and typed financial fact binding with model-chosen layout.180 service tests pass; real Groq/Germany plus native-session-scoped PostgreSQL passes in three model calls and two reads, matching independent count/currency oracles. No migration or operational writes. Exact-head CI, Nora-only activation and authenticated browser acceptance remain pending. See [task](tasks/NORA-SALES-EVIDENCE-1117.md).
+
 ## NORA-GROQ-QUOTA-GROUPS-1117 — PC-C — VALIDATING
 
 Confirmed private configuration used one unverified alias for all six keys; a primary organization429 therefore suppressed unrelated credentials. Owner corrects account provenance. Independent synthetic Germany probes return200 for all six. Replace universal grouping with provisional per-credential groups; provider-confirmed shared organization identities still coalesce through private equality hashes. Safe quota-unit diagnostics added; no ERP permissions/SQL/model/relay changes. Tests/CI and guarded Nora-only rollout remain required. See [task](tasks/NORA-GROQ-QUOTA-GROUPS-1117.md). Earlier same-organization claims were configuration assumptions, not verified provider identities.
@@ -10333,3 +10345,8 @@ Hotel create/edit forms now support one main image and a six-image gallery. Uplo
 ## CHECKOUT-ADVISORY-1117 — PC-A — ACTIVE
 
 COMPUTER_ID=PC-A; branch codex/pc-a-checkout-advisory-1117 from develop4d1182948. User reports ERP checkout connection failure and requests real flight/passenger confirmation before Saman payment, with ten-minute inventory acquisition only on the explicit payment action. Reserve only WebsiteCheckoutHoldsService prepare advisory command, one isolated PostgreSQL regression and own append-only task/status notes. Production read-only diagnostic proved P2010: pg_advisory_xact_lock returns PostgreSQL void, which Prisma queryRaw cannot deserialize. Use executeRaw for this command, preserving the identical transaction-scoped lock key and all ownership/replay/capacity/quote/expiry rules. No schema, migration, dependency, permission or financial mutation. Site consumer/UI changes are separate files; no active overlapping writer found. Merge/release use existing user publication authorization and exact-head quality/test/build/DB gates, latest-runtime source/image CAS and shared deployment lock. No live synthetic orders/holds/payments.
+
+
+## HOTEL-IDENTIFICATION-1118 — PC-B
+
+Optional identificationCode (up to160 characters) is editable directly below English name in both hotel create/edit forms and shown in the profile basic-information card. Leading zeroes and mixed text are preserved; blank clears to null. Existing internal hotel code and UUID remain unchanged. Additive migration20261118110000_hotel_identification_code required before API rollout.22 focused Web/API tests and scoped lint passed; Web production build (including TypeScript) and API typecheck passed. Prisma validation/generation and contracts/database builds passed. API required a larger Node heap after the default2GB run exhausted memory. No production changes. PR1792.

@@ -217,7 +217,7 @@ export class IamWorkbenchRequestDirectory {
   async leaveRoute(actor: AuthenticatedActor, branchId: string) {
     const account = await this.database.client.user.findFirst({
       where: { id: actor.userId, status: 'ACTIVE' },
-      select: { displayName: true },
+      select: { displayName: true, username: true },
     });
     const normalize = (name: string) =>
       name
@@ -227,7 +227,10 @@ export class IamWorkbenchRequestDirectory {
         .replace(/ك/g, 'ک')
         .replace(/[\s‌]/g, '')
         .replace('مهسااعلایی', 'مهساعلایی');
-    const name = normalize(account?.displayName ?? '');
+    const name =
+      account?.username.toLowerCase() === 'nima'
+        ? 'نیمانادری'
+        : normalize(account?.displayName ?? '');
     const routes: [string[], string][] = [
       [['الناز'], 'رویابهزادنیا'],
       [['بهناز', 'ناهید', 'اتنا', 'شیدا', 'شهرزاد'], 'مهساعلایی'],

@@ -1,4 +1,6 @@
 'use client';
+import { accountingDetailLevels } from '@nora/contracts';
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type {
@@ -496,7 +498,7 @@ export function AccountingWorkflowsPanel({ book, busy, run }: Props) {
                       setMapping((p) => ({ ...p, [`${role}AccountId`]: value }))
                     }
                   />
-                  {[4, 5, 6].map((n) => (
+                  {accountingDetailLevels.map((n) => (
                     <SearchCombobox
                       key={n}
                       label={`تفصیلی ${n}`}

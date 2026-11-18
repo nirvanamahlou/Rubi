@@ -1,3 +1,4 @@
+import { detailFields } from './accounting.detail-levels';
 import type { Prisma } from '@nora/database';
 import * as v from './accounting.validation';
 import { journalFilter } from './accounting.document-filters';
@@ -13,12 +14,7 @@ export function validateTemplateAssignments(input: unknown[], kind: string) {
   if (!parents.length) v.rule('حداقل یک حساب مقصد یا تسعیر لازم است.');
   const assignments: Record<string, number> = {};
   const key = (row: Record<string, unknown>) =>
-    [
-      row.accountId,
-      row.detail4Id ?? '',
-      row.detail5Id ?? '',
-      row.detail6Id ?? '',
-    ].join(':');
+    [row.accountId, ...detailFields.map((field) => row[field] ?? '')].join(':');
   const parentKeys = new Set(parents.map(({ row }) => key(row)));
   if (parentKeys.size !== parents.length)
     v.rule('حساب مقصد یا تسعیر تکراری است.');

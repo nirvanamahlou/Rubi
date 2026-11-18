@@ -1,3 +1,10 @@
+import { accountingDetailLevels } from '@nora/contracts';
+import type { AccountingDetailIds } from '@nora/contracts';
+import {
+  detailFields,
+  journalDetailSql,
+  lineDetails,
+} from './accounting.detail-levels';
 import { createHash } from 'node:crypto';
 import { Prisma } from '@nora/database';
 import type { AccountingLineV1 } from '@nora/contracts';
@@ -10,14 +17,8 @@ export function automaticTransferPair(
   balance: string,
   percentage: string,
   digits: number,
-  source: Pick<
-    AccountingLineV1,
-    'accountId' | 'detail4Id' | 'detail5Id' | 'detail6Id'
-  >,
-  target: Pick<
-    AccountingLineV1,
-    'accountId' | 'detail4Id' | 'detail5Id' | 'detail6Id'
-  >,
+  source: Pick<AccountingLineV1, 'accountId'> & AccountingDetailIds,
+  target: Pick<AccountingLineV1, 'accountId'> & AccountingDetailIds,
   description: string,
 ): AccountingLineV1[] {
   const percent = DecimalValue.parse(percentage);
@@ -167,7 +168,7 @@ export async function automaticDocumentPreview(
       Prisma.sql`l."accountId"=${source.accountId}::uuid`,
       documentFigureStatuses,
     ];
-    for (const level of [4, 5, 6] as const) {
+    for (const level of accountingDetailLevels) {
       const detailId = source[`detail${level}Id`];
       if (detailId)
         clauses.push(
@@ -179,33 +180,40 @@ export async function automaticDocumentPreview(
         detail4Id: string | null;
         detail5Id: string | null;
         detail6Id: string | null;
+        detail7Id?: string | null;
+        detail8Id?: string | null;
+        detail9Id?: string | null;
+        detail10Id?: string | null;
+        detail11Id?: string | null;
+        detail12Id?: string | null;
         currency: string | null;
         balance: Prisma.Decimal;
       }[]
     >(Prisma.sql`
-      SELECT l."detail4Id",l."detail5Id",l."detail6Id",l.currency,SUM(l.debit-l.credit) AS balance
+      SELECT ${journalDetailSql},l.currency,SUM(l.debit-l.credit) AS balance
       FROM accounting_journal_lines l JOIN accounting_journals j ON j.id=l."journalId"
       WHERE ${Prisma.join(
         clauses.map((clause) => Prisma.sql`(${clause})`),
         ' AND ',
       )}
-      GROUP BY l."detail4Id",l."detail5Id",l."detail6Id",l.currency
-      ORDER BY l."detail4Id",l."detail5Id",l."detail6Id",l.currency`);
+      GROUP BY ${journalDetailSql},l.currency
+      ORDER BY ${journalDetailSql},l.currency`);
     basis.push([source.position, balances]);
     for (const balance of balances) {
       if (balance.currency && balance.currency !== book.baseCurrency)
         v.rule('مانده ارزی برای حساب غیرارزی قابل انتقال نیست.');
       const origin = {
         accountId: source.accountId,
-        detail4Id: balance.detail4Id,
-        detail5Id: balance.detail5Id,
-        detail6Id: balance.detail6Id,
+        ...lineDetails(balance),
       };
       const destination = {
         accountId: target.accountId,
-        detail4Id: target.detail4Id ?? balance.detail4Id,
-        detail5Id: target.detail5Id ?? balance.detail5Id,
-        detail6Id: target.detail6Id ?? balance.detail6Id,
+        ...lineDetails(balance),
+        ...Object.fromEntries(
+          detailFields.flatMap((field) =>
+            target[field] ? [[field, target[field]]] : [],
+          ),
+        ),
       };
       if (JSON.stringify(origin) === JSON.stringify(destination))
         v.rule('مبدا و مقصد واقعی انتقال نمی‌توانند یکسان باشند.');

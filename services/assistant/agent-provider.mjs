@@ -123,6 +123,7 @@ export function createAgentProvider({
         allowedTools,
         allowFinalResponse = false,
         currentResultIds,
+        finalTextChoices,
         beforeRetry,
         attemptBudget,
       },
@@ -139,6 +140,19 @@ export function createAgentProvider({
           currentResultIds.some(
             (id) => typeof id !== 'string' || !/^[a-f0-9-]{36}$/.test(id),
           ))
+      )
+        throw new ServiceError(502, 'INVALID_AGENT_SOURCE');
+      if (
+        finalTextChoices !== undefined &&
+        (!Array.isArray(finalTextChoices) ||
+          !finalTextChoices.length ||
+          finalTextChoices.length > 12 ||
+          finalTextChoices.some(
+            (s) => typeof s !== 'string' || s.length > 300,
+          ) ||
+          !currentResultIds?.length ||
+          !allowFinalResponse ||
+          (allowedTools && !allowedTools.includes('finish_answer')))
       )
         throw new ServiceError(502, 'INVALID_AGENT_SOURCE');
       const tools = AGENT_TOOLS.filter(
@@ -159,6 +173,17 @@ export function createAgentProvider({
                   ...finalJsonTool.function,
                   parameters: {
                     ...finalJsonTool.function.parameters,
+                    ...(finalTextChoices
+                      ? {
+                          required: [
+                            'status',
+                            'text',
+                            'resultIds',
+                            'limitations',
+                            'calculationExplanation',
+                          ],
+                        }
+                      : {}),
                     properties: {
                       ...finalJsonTool.function.parameters.properties,
                       status: {
@@ -170,10 +195,29 @@ export function createAgentProvider({
                       resultIds: {
                         type: 'array',
                         maxItems: currentResultIds.length,
+                        ...(finalTextChoices ? { minItems: 1 } : {}),
                         items: currentResultIds.length
                           ? { type: 'string', enum: [...currentResultIds] }
                           : { type: 'string' },
                       },
+                      ...(finalTextChoices
+                        ? {
+                            status: { type: 'string', enum: ['ANSWER'] },
+                            text: {
+                              type: 'string',
+                              enum: [...finalTextChoices],
+                            },
+                            calculationExplanation: {
+                              type: 'string',
+                              enum: ['[[sales:method]]'],
+                            },
+                            limitations: {
+                              type: 'array',
+                              maxItems: 0,
+                              items: { type: 'string' },
+                            },
+                          }
+                        : {}),
                     },
                   },
                 },
@@ -189,13 +233,29 @@ export function createAgentProvider({
           { role: 'system', content: CALCULATION_POLICY },
           ...compactMessages(messages),
         ],
-        tools,
-        tool_choice: allowFinalResponse
-          ? 'auto'
-          : allowedTools?.length === 1
-            ? { type: 'function', function: { name: allowedTools[0] } }
-            : 'required',
-        parallel_tool_calls: false,
+        ...(finalTextChoices
+          ? {
+              // Final facts are already complete. Groq's documented constrained
+              // JSON output is separate from tool calling (they cannot be mixed).
+              response_format: {
+                type: 'json_schema',
+                json_schema: {
+                  name: 'verified_sales_answer',
+                  strict: true,
+                  schema: tools.find((t) => t.function.name === 'json').function
+                    .parameters,
+                },
+              },
+            }
+          : {
+              tools,
+              tool_choice: allowFinalResponse
+                ? 'auto'
+                : allowedTools?.length === 1
+                  ? { type: 'function', function: { name: allowedTools[0] } }
+                  : 'required',
+              parallel_tool_calls: false,
+            }),
       });
       const wireBody = body;
       if (Buffer.byteLength(wireBody) > 256 * 1024)

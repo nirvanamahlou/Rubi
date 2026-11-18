@@ -486,6 +486,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'currencyId',
     'name',
     'englishName',
+    'identificationCode',
     'cityId',
     'chainId',
     'starRating',
@@ -3135,6 +3136,7 @@ export class MasterDataService {
       )
         throw new BadRequestException('گالری هتل حداکثر ۶ عکس می‌پذیرد.');
       for (const [field, limit] of [
+        ['identificationCode', 160],
         ['serviceLevel', 160],
         ['sourceDestination', 160],
         ['internalNote', 2000],

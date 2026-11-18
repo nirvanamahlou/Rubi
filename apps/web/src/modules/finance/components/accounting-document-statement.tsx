@@ -1,4 +1,6 @@
 'use client';
+import { accountingDetailLevels } from '@nora/contracts';
+
 import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -254,7 +256,7 @@ export function AccountingDocumentStatement({
             aria-label="سطح اعلامیه"
             className="absolute bottom-full z-30 min-w-32 rounded border bg-surface p-1 shadow"
           >
-            {[4, 5, 6].map((level) => (
+            {accountingDetailLevels.map((level) => (
               <button
                 type="button"
                 role="menuitem"
