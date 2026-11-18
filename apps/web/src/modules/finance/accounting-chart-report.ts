@@ -1,3 +1,4 @@
+import { accountingDetailLevels } from '@nora/contracts';
 import type {
   AccountingAccountV1,
   AccountingSnapshotV1,
@@ -113,7 +114,7 @@ export function createChartReport(
       ? selection.structure === 'detail-types'
         ? [
             ...base,
-            ...[4, 5, 6].map((level) => ({
+            ...accountingDetailLevels.map((level) => ({
               key: `detail${level}`,
               title: `سطح ${level}`,
             })),
@@ -156,8 +157,8 @@ export function createChartReport(
         (account.level === 'SUBSIDIARY' &&
           (selection.structure === 'counterparts'
             ? !!accountLabel(account.attributes.counterpartId)
-            : [4, 5, 6].some((level) =>
-                detailTypeIds(account.attributes, level as 4 | 5 | 6).some(
+            : accountingDetailLevels.some((level) =>
+                detailTypeIds(account.attributes, level).some(
                   (id) => !!typeLabel(id),
                 ),
               ))),
@@ -209,8 +210,8 @@ export function createChartReport(
                     ['4', '5', '6'].includes(level),
                   ),
                 ).size
-              : [4, 5, 6].filter(
-                  (level) => detailTypeIds(attr, level as 4 | 5 | 6).length > 0,
+              : accountingDetailLevels.filter(
+                  (level) => detailTypeIds(attr, level).length > 0,
                 ).length,
           ),
           counterpart,
@@ -235,9 +236,9 @@ export function createChartReport(
                 : '',
           taxType: typeof attr.taxType === 'string' ? attr.taxType : '',
           ...Object.fromEntries(
-            [4, 5, 6].map((level) => [
+            accountingDetailLevels.map((level) => [
               `detail${level}`,
-              detailTypeIds(attr, level as 4 | 5 | 6)
+              detailTypeIds(attr, level)
                 .map(typeLabel)
                 .filter(Boolean)
                 .join('، '),

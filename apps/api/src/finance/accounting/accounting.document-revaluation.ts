@@ -1,3 +1,6 @@
+import { accountingDetailLevels } from '@nora/contracts';
+import type { AccountingDetailLevel } from '@nora/contracts';
+import { journalDetailSql, lineDetails } from './accounting.detail-levels';
 import { createHash } from 'node:crypto';
 import { Prisma } from '@nora/database';
 import type { AccountingLineV1 } from '@nora/contracts';
@@ -120,6 +123,12 @@ export async function sourceRevaluationPreview(
     detail4Id: string | null;
     detail5Id: string | null;
     detail6Id: string | null;
+    detail7Id?: string | null;
+    detail8Id?: string | null;
+    detail9Id?: string | null;
+    detail10Id?: string | null;
+    detail11Id?: string | null;
+    detail12Id?: string | null;
     quantity: string;
     base: string;
     difference: string;
@@ -148,7 +157,7 @@ export async function sourceRevaluationPreview(
     ];
     if (excludeJournalId)
       clauses.push(Prisma.sql`j.id<>${excludeJournalId}::uuid`);
-    for (const level of [4, 5, 6] as const)
+    for (const level of accountingDetailLevels)
       if (source[`detail${level}Id`])
         clauses.push(
           Prisma.sql`${Prisma.raw(`l."detail${level}Id"`)}=${source[`detail${level}Id`]}::uuid`,
@@ -158,11 +167,17 @@ export async function sourceRevaluationPreview(
         detail4Id: string | null;
         detail5Id: string | null;
         detail6Id: string | null;
+        detail7Id?: string | null;
+        detail8Id?: string | null;
+        detail9Id?: string | null;
+        detail10Id?: string | null;
+        detail11Id?: string | null;
+        detail12Id?: string | null;
         quantity: Prisma.Decimal;
         base: Prisma.Decimal;
       }[]
     >(Prisma.sql`
-      SELECT l."detail4Id",l."detail5Id",l."detail6Id",
+      SELECT ${journalDetailSql},
         SUM(CASE WHEN l.currency=${currency} THEN CASE WHEN l.debit>0 THEN COALESCE(l."foreignAmount",0) ELSE -COALESCE(l."foreignAmount",0) END ELSE 0 END) AS quantity,
         SUM(l.debit-l.credit) AS base
       FROM accounting_journal_lines l JOIN accounting_journals j ON j.id=l."journalId"
@@ -170,8 +185,15 @@ export async function sourceRevaluationPreview(
         clauses.map((clause) => Prisma.sql`(${clause})`),
         ' AND ',
       )}
-      GROUP BY 1,2,3 ORDER BY 1,2,3`);
-    basis.push([source.position, positions]);
+      GROUP BY ${journalDetailSql} ORDER BY ${journalDetailSql}`);
+    basis.push([
+      source.position,
+      positions.map((position) => ({
+        ...lineDetails(position),
+        quantity: position.quantity,
+        base: position.base,
+      })),
+    ]);
     for (const position of positions) {
       const quantity = DecimalValue.parse(position.quantity.toString());
       const base = DecimalValue.parse(position.base.toString());
@@ -181,9 +203,7 @@ export async function sourceRevaluationPreview(
       const delta = revised.subtract(base);
       changes.push({
         accountId: source.accountId!,
-        detail4Id: position.detail4Id,
-        detail5Id: position.detail5Id,
-        detail6Id: position.detail6Id,
+        ...lineDetails(position),
         quantity: quantity.toString(),
         base: base.toString(),
         difference: delta.toString(),
@@ -194,9 +214,7 @@ export async function sourceRevaluationPreview(
       ).toString();
       lines.push({
         accountId: source.accountId,
-        detail4Id: position.detail4Id,
-        detail5Id: position.detail5Id,
-        detail6Id: position.detail6Id,
+        ...lineDetails(position),
         description: lineDescription,
         debit: delta.isNegative ? '0' : amount,
         credit: delta.isNegative ? amount : '0',
@@ -210,18 +228,23 @@ export async function sourceRevaluationPreview(
         },
       });
       const offsetAttrs = v.attributes(byId.get(offset.accountId!)!.attributes);
-      const inheritedDetail = (level: 4 | 5 | 6) =>
+      const inheritedDetail = (level: AccountingDetailLevel) =>
         offset[`detail${level}Id`] ??
         (offsetAttrs[`detail${level}TypeId`] ||
         (Array.isArray(offsetAttrs[`detail${level}TypeIds`]) &&
           (offsetAttrs[`detail${level}TypeIds`] as string[]).length)
-          ? position[`detail${level}Id`]
+          ? (position[`detail${level}Id`] ?? null)
           : null);
       lines.push({
         accountId: offset.accountId,
         detail4Id: inheritedDetail(4),
         detail5Id: inheritedDetail(5),
         detail6Id: inheritedDetail(6),
+        ...Object.fromEntries(
+          accountingDetailLevels
+            .slice(3)
+            .map((level) => [`detail${level}Id`, inheritedDetail(level)]),
+        ),
         description: lineDescription,
         debit: delta.isNegative ? amount : '0',
         credit: delta.isNegative ? '0' : amount,

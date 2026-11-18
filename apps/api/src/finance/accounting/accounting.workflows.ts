@@ -1,3 +1,6 @@
+import { accountingDetailLevels } from '@nora/contracts';
+import type { AccountingDetailIds } from '@nora/contracts';
+import { detailFields, lineDetails } from './accounting.detail-levels';
 import {
   assertSalesContractAccountingEditable,
   salesContractDeferredBasis,
@@ -56,17 +59,11 @@ const positive = (x: unknown) => {
   return n;
 };
 const sameDetails = (
-  a: {
-    accountId: string | null;
-    detail4Id: string | null;
-    detail5Id: string | null;
-    detail6Id: string | null;
-  },
+  a: { accountId: string | null } & AccountingDetailIds,
   b: typeof a,
 ) =>
-  ['accountId', 'detail4Id', 'detail5Id', 'detail6Id'].every(
-    (k) => a[k as keyof typeof a] === b[k as keyof typeof a],
-  );
+  a.accountId === b.accountId &&
+  detailFields.every((field) => (a[field] ?? null) === (b[field] ?? null));
 
 async function sourceEvent(tx: Tx, book: Book, id: string) {
   const event = await tx.financeAccountingEvent.findFirst({
@@ -269,9 +266,7 @@ async function fxBasis(tx: Tx, book: Book, e: Event) {
   const allValuations = await tx.accountingJournalLine.findMany({
     where: {
       accountId: basis.liability.accountId,
-      detail4Id: basis.liability.detail4Id,
-      detail5Id: basis.liability.detail5Id,
-      detail6Id: basis.liability.detail6Id,
+      ...lineDetails(basis.liability),
       OR: [
         { currency: e.currency },
         { attributes: { path: ['valuationCurrency'], equals: e.currency } },
@@ -290,9 +285,7 @@ async function fxBasis(tx: Tx, book: Book, e: Event) {
   const revaluations = await tx.accountingJournalLine.findMany({
     where: {
       accountId: basis.liability.accountId,
-      detail4Id: basis.liability.detail4Id,
-      detail5Id: basis.liability.detail5Id,
-      detail6Id: basis.liability.detail6Id,
+      ...lineDetails(basis.liability),
       attributes: { path: ['trackingNumber'], equals: tracking },
       AND: [
         {
@@ -641,9 +634,7 @@ const carryLine = (
   foreign?: string,
 ): Line => ({
   accountId: l.accountId,
-  detail4Id: l.detail4Id,
-  detail5Id: l.detail5Id,
-  detail6Id: l.detail6Id,
+  ...lineDetails(l),
   debit,
   credit,
   currency: l.currency,
@@ -656,7 +647,7 @@ function roleLine(p: Facts, role: string, debit: string, credit: string): Line {
   return {
     accountId: v.uuid(p[`${role}AccountId`])!,
     ...Object.fromEntries(
-      [4, 5, 6].map((n) => [
+      accountingDetailLevels.map((n) => [
         `detail${n}Id`,
         v.uuid(p[`${role}Detail${n}Id`], true),
       ]),
@@ -843,9 +834,7 @@ export async function workflowJournal(
         const revaluations = await tx.accountingJournalLine.findMany({
           where: {
             accountId: b.liability.accountId,
-            detail4Id: b.liability.detail4Id,
-            detail5Id: b.liability.detail5Id,
-            detail6Id: b.liability.detail6Id,
+            ...lineDetails(b.liability),
             attributes: { path: ['trackingNumber'], equals: tracking },
             AND: [
               {

@@ -5,11 +5,11 @@ import type {
   AccountingSnapshotV1,
 } from '@nora/contracts';
 import {
+  changeChartDetailLevel,
   changeDetailType,
   chartDetailLevels,
   chartDetailLevelTitles,
   detailTypeIds,
-  enableChartDetailLevel,
   type ChartDetailLevel,
 } from '../accounting-chart-form';
 
@@ -46,7 +46,7 @@ export function AccountingChartDetailLevels({
             </tr>
           </thead>
           <tbody>
-            {chartDetailLevels.map((item) => (
+            {chartDetailLevels(attributes).map((item) => (
               <tr
                 key={item}
                 onDoubleClick={() => onSelect(item)}
@@ -60,12 +60,13 @@ export function AccountingChartDetailLevels({
                     checked={attributes[`detail${item}Required`] === true}
                     onDoubleClick={(event) => event.stopPropagation()}
                     onChange={(event) =>
-                      onChange({
-                        ...(event.target.checked
-                          ? enableChartDetailLevel(attributes, item)
-                          : attributes),
-                        [`detail${item}Required`]: event.target.checked,
-                      })
+                      onChange(
+                        changeChartDetailLevel(
+                          attributes,
+                          item,
+                          event.target.checked,
+                        ),
+                      )
                     }
                   />
                 </td>

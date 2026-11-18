@@ -1,6 +1,12 @@
-import type {
-  AccountingAccountV1,
-  AccountingAttributes,
+import {
+  accountingDetailLevels,
+  accountingDetailLevelLimit,
+  accountingDetailTypeIds as detailTypeIds,
+  isAccountingDetailLevelEnabled,
+  maxAccountingDetailLevel,
+  type AccountingAccountV1,
+  type AccountingAttributes,
+  type AccountingDetailLevel,
 } from '@nora/contracts';
 
 export const accountTypeOptions = [
@@ -58,36 +64,49 @@ export function chartChildAction(parent?: AccountingAccountV1) {
       : { level: 'GROUP' as const, parentId: '', label: 'گروه حساب جدید' };
 }
 
-export const chartDetailLevels = [4, 5, 6] as const;
-export type ChartDetailLevel = (typeof chartDetailLevels)[number];
+export type ChartDetailLevel = AccountingDetailLevel;
+export { detailTypeIds };
+
 export const chartDetailLevelTitles = {
   4: 'سطح چهار',
   5: 'سطح پنج',
   6: 'سطح شش',
+  7: 'سطح هفت',
+  8: 'سطح هشت',
+  9: 'سطح نه',
+  10: 'سطح ده',
+  11: 'سطح یازده',
+  12: 'سطح دوازده',
 } as const;
 
-export function detailTypeIds(
-  attributes: AccountingAttributes,
-  level: ChartDetailLevel,
-): string[] {
-  const ids = attributes[`detail${level}TypeIds`];
-  if (Array.isArray(ids)) return ids;
-  const legacy = attributes[`detail${level}TypeId`];
-  return legacy ? [String(legacy)] : [];
+export function chartDetailLevels(attributes: AccountingAttributes) {
+  return accountingDetailLevels.filter(
+    (level) => level <= accountingDetailLevelLimit(attributes),
+  );
 }
 
-export function enableChartDetailLevel(
+export function addChartDetailLevel(attributes: AccountingAttributes) {
+  const limit = accountingDetailLevelLimit(attributes);
+  return limit < maxAccountingDetailLevel
+    ? { ...attributes, detailLevelLimit: String(limit + 1) }
+    : attributes;
+}
+
+export function changeChartDetailLevel(
   attributes: AccountingAttributes,
   level: ChartDetailLevel,
+  checked: boolean,
 ): AccountingAttributes {
-  // Older imports captured only enabled rows. Editing a newly visible level
-  // must also make it available to the existing detail-allocation API.
-  if (!Array.isArray(attributes.detailLevels)) return attributes;
   return {
     ...attributes,
-    detailLevels: [
-      ...new Set([...attributes.detailLevels, String(level)]),
-    ].sort(),
+    detailLevels: chartDetailLevels(attributes)
+      .filter((item) =>
+        item === level
+          ? checked
+          : isAccountingDetailLevelEnabled(attributes, item),
+      )
+      .map(String),
+    [`detail${level}Required`]: checked,
   };
 }
 
@@ -101,10 +120,15 @@ export function changeDetailType(
   const ids = checked
     ? [...new Set([...selected, id])]
     : selected.filter((value) => value !== id);
-  const next = {
-    ...(checked ? enableChartDetailLevel(attributes, level) : attributes),
+  const next: AccountingAttributes = {
+    ...attributes,
     [`detail${level}TypeIds`]: ids,
   };
+  if (checked && !isAccountingDetailLevelEnabled(attributes, level)) {
+    const enabled = changeChartDetailLevel(attributes, level, true);
+    next.detailLevels = enabled.detailLevels!;
+    if (level > 6) next[`detail${level}Required`] = true;
+  }
   delete next[`detail${level}TypeId`];
   const controlled = next[`detail${level}NatureTypeIds`];
   if (Array.isArray(controlled))
@@ -148,7 +172,7 @@ export function chartPayload(draft: ChartDraft, id?: string) {
         ? 'WARN'
         : 'BLOCK';
   if (attributes.multiCurrency !== true) attributes.revaluable = false;
-  for (const n of [4, 5, 6]) {
+  for (const n of accountingDetailLevels) {
     const ids = attributes[`detail${n}TypeIds`];
     if (Array.isArray(ids)) {
       delete attributes[`detail${n}TypeId`];

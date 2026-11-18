@@ -1,3 +1,4 @@
+import { accountingDetailLevels } from '@nora/contracts';
 import { NotFoundException } from '@nestjs/common';
 import type { FinanceJournalReadV1 } from '@nora/contracts';
 import type { Prisma } from '@nora/database';
@@ -30,9 +31,15 @@ export async function readAccountingJournal(
         orderBy: { position: 'asc' },
         include: {
           account: { select: identity },
-          detail4: { select: identity },
-          detail5: { select: identity },
-          detail6: { select: identity },
+          ...(Object.fromEntries(
+            accountingDetailLevels.map((level) => [
+              `detail${level}`,
+              { select: identity },
+            ]),
+          ) as Record<
+            `detail${(typeof accountingDetailLevels)[number]}`,
+            { select: typeof identity }
+          >),
         },
       },
     },
@@ -65,9 +72,10 @@ export async function readAccountingJournal(
     lines: row.lines.map((line) => ({
       position: line.position,
       account: line.account,
-      details: [line.detail4, line.detail5, line.detail6].flatMap(
-        (detail, index) => (detail ? [{ ...detail, level: index + 4 }] : []),
-      ),
+      details: accountingDetailLevels.flatMap((level) => {
+        const detail = line[`detail${level}`];
+        return detail ? [{ ...detail, level }] : [];
+      }),
       description: line.description,
       debit: line.debit.toString(),
       credit: line.credit.toString(),
