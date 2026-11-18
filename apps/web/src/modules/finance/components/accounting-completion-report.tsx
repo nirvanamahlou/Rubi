@@ -1,4 +1,6 @@
 'use client';
+import { accountingDetailLevels } from '@nora/contracts';
+
 import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { AccountingSnapshotV1 } from '@nora/contracts';
@@ -171,7 +173,7 @@ export function AccountingCompletionReport({
             />
           </FormField>
         ))}
-        {[4, 5, 6].map((level) => (
+        {accountingDetailLevels.map((level) => (
           <FormField key={level} label={`سطح ${level}`}>
             <SearchCombobox
               label={`سطح ${level}`}

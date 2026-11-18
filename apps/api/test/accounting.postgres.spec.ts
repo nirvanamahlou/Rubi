@@ -210,6 +210,7 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
   afterAll(async () => {
     await db?.$disconnect();
   });
+
   it('persists observed detail setup, fixed classification length and server-authored notes', async () => {
     const noteId = randomUUID();
     const type = await command<{ id: string; version: number }>(
@@ -480,23 +481,22 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
         sourceDetail5Id: sourceDetail.id,
         targetAccountId: subsidiary.id,
       },
+      {
+        sourceAccountId: debitId,
+        sourceDetail5Id: sourceDetail.id,
+        targetAccountId: subsidiary.id,
+      },
     ];
     const pathResult = await command<{
       rows: { id: string; version: number }[];
     }>('save-subsidiary-mappings', { rows: pathRows, versions: initial.rows });
-    expect(pathResult.rows).toHaveLength(3);
-    await expect(
-      command('save-subsidiary-mappings', {
-        rows: [
-          {
-            sourceAccountId: debitId,
-            sourceDetail5Id: sourceDetail.id,
-            targetAccountId: subsidiary.id,
-          },
-        ],
-        versions: pathResult.rows,
+    expect(pathResult.rows).toHaveLength(4);
+    expect(pathResult.rows).toContainEqual(
+      expect.objectContaining({
+        sourceDetail4Id: null,
+        sourceDetail5Id: sourceDetail.id,
       }),
-    ).rejects.toMatchObject({ status: 422 });
+    );
     await expect(
       command('save-subsidiary-mappings', {
         rows: [
@@ -6073,4 +6073,169 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
       vi.useRealTimers();
     }
   }, 30000);
+  it('persists and posts level seven without level six and reads it back in the detail report', async () => {
+    const book = await service.createBook(
+      {
+        id: randomUUID(),
+        branchId,
+        code: '02',
+        title: 'Independent levels',
+        baseCurrency: 'IRR',
+        approvalPolicy: 'DUAL_CONTROL',
+      },
+      maker,
+    );
+    const run = async <T>(
+      action: string,
+      payload: Record<string, unknown>,
+      expectedVersion?: number,
+      actor = maker,
+    ) =>
+      (await service.command(
+        book.id,
+        action,
+        { key: randomUUID(), payload, expectedVersion },
+        actor,
+      )) as T;
+    const year = await run<{ id: string }>('save-configuration', {
+      kind: 'fiscal-years',
+      code: '2026',
+      title: 'Fiscal 2026',
+    });
+    const period = await run<{ id: string }>('save-period', {
+      fiscalYearId: year.id,
+      startDate: '2026-01-01',
+      endDate: '2026-12-31',
+    });
+    const voucher = await run<{ id: string }>('save-configuration', {
+      kind: 'voucher-types',
+      code: '01',
+      title: 'Manual',
+    });
+    const group = await run<{ id: string }>('save-account', {
+      code: '11',
+      title: 'Group',
+      level: 'GROUP',
+      nature: 'DEBIT',
+    });
+    const general = await run<{ id: string }>('save-account', {
+      code: '1110',
+      title: 'General',
+      level: 'GENERAL',
+      nature: 'DEBIT',
+      parentId: group.id,
+    });
+    const account = {
+      level: 'SUBSIDIARY',
+      nature: 'DEBIT',
+      parentId: general.id,
+    };
+    const debit = await run<{ id: string; version: number }>('save-account', {
+      ...account,
+      code: '111001',
+      title: 'Debit',
+      attributes: { detailLevels: ['6'], detail6Required: true },
+    });
+    const credit = await run<{ id: string }>('save-account', {
+      ...account,
+      code: '111002',
+      title: 'Credit',
+    });
+    const type = await run<{ id: string }>('save-configuration', {
+      kind: 'detail-types',
+      title: 'Selected type',
+      attributes: { classificationNumberLength: '7' },
+    });
+    const detail = await run<{ id: string }>('save-detail', {
+      typeId: type.id,
+      code: '0000001',
+      title: 'Level seven reference',
+    });
+    const attributes = {
+      detailLevelLimit: '12',
+      detailLevels: ['7'],
+      detail6Required: false,
+      detail7Required: true,
+      detail7TypeIds: [type.id],
+    };
+    const request = {
+      ...account,
+      id: debit.id,
+      code: '111001',
+      title: 'Debit',
+      attributes,
+    };
+    await run('save-account', request, debit.version);
+    expect(
+      (
+        await db.accountingAccount.findUniqueOrThrow({
+          where: { id: debit.id },
+        })
+      ).attributes,
+    ).toMatchObject(attributes);
+
+    const document = {
+      periodId: period.id,
+      typeId: voucher.id,
+      documentDate: '2026-05-12',
+      description: 'Level seven independent detail',
+      lines: [
+        {
+          accountId: debit.id,
+          debit: '70',
+          credit: '0',
+          detail7Id: detail.id,
+          description: 'Assigned debit',
+        },
+        {
+          accountId: credit.id,
+          debit: '0',
+          credit: '70',
+          description: 'Offset',
+        },
+      ],
+    };
+    let journal = await run<AccountingJournalV1>(
+      'journal-document-save',
+      document,
+    );
+    expect(journal.lines[0]).toMatchObject({
+      detail6Id: null,
+      detail7Id: detail.id,
+    });
+    journal = await run<AccountingJournalV1>(
+      'submit',
+      { id: journal.id },
+      journal.version,
+    );
+    journal = await run<AccountingJournalV1>(
+      'approve',
+      { id: journal.id },
+      journal.version,
+      checker,
+    );
+    await run('post', { id: journal.id }, journal.version, checker);
+    expect(
+      await db.accountingJournalLine.findFirst({
+        where: { journalId: journal.id, position: 0 },
+      }),
+    ).toMatchObject({ detail6Id: null, detail7Id: detail.id });
+    const result = await service.analyticalReport(
+      book.id,
+      'account-browser',
+      {
+        axis: 'DETAIL7',
+        periodId: period.id,
+        from: '2026-01-01',
+        to: '2026-12-31',
+      },
+      maker,
+    );
+    expect(result).toMatchObject({
+      rows: [expect.objectContaining({ key: detail.id, debit: '70' })],
+    });
+    await expect(
+      run('delete-base-record', { entity: 'detail', id: detail.id }, 1),
+    ).rejects.toThrow();
+  });
 });

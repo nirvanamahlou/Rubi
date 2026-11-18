@@ -1,4 +1,6 @@
 'use client';
+import { accountingDetailLevels } from '@nora/contracts';
+
 import { useState } from 'react';
 import { AccountingWorkflowsPanel } from './accounting-workflows-panel';
 import { ReceiptAllocationPanel } from './receipt-allocation-panel';
@@ -501,7 +503,7 @@ export function AccountingFinancialEvents({
                         ),
                       )}
                     />
-                    {[4, 5, 6].map((level) => (
+                    {accountingDetailLevels.map((level) => (
                       <SearchCombobox
                         key={level}
                         label={`تفصیلی ${level} ${side === 'debit' ? 'بدهکار' : 'بستانکار'}`}

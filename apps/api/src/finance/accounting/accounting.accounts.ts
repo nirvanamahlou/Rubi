@@ -1,3 +1,12 @@
+import {
+  accountingDetailLevels,
+  accountingDetailTypeIds,
+} from '@nora/contracts';
+import type {
+  AccountingDetailLevel,
+  AccountingDetailIds,
+  AccountingSourceDetailField,
+} from '@nora/contracts';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@nora/database';
 import type { AuthenticatedActor } from '@nora/contracts';
@@ -60,22 +69,18 @@ export async function executeAccountSetup(
       const row = v.object(raw),
         sourceAccountId = v.uuid(row.sourceAccountId)!.toLowerCase(),
         targetAccountId = v.uuid(row.targetAccountId)!.toLowerCase();
-      const sourceDetail4Id =
-        v.uuid(row.sourceDetail4Id, true)?.toLowerCase() ?? null;
-      const sourceDetail5Id =
-        v.uuid(row.sourceDetail5Id, true)?.toLowerCase() ?? null;
-      const sourceDetail6Id =
-        v.uuid(row.sourceDetail6Id, true)?.toLowerCase() ?? null;
-      if (
-        (sourceDetail5Id && !sourceDetail4Id) ||
-        (sourceDetail6Id && !sourceDetail5Id)
-      )
-        v.rule('سطوح تفصیلی اصلی باید به ترتیب انتخاب شوند.');
+      const sourceDetails = Object.fromEntries(
+        accountingDetailLevels.map((level) => [
+          `sourceDetail${level}Id`,
+          v.uuid(row[`sourceDetail${level}Id`], true)?.toLowerCase() ?? null,
+        ]),
+      ) as Record<AccountingSourceDetailField, string | null>;
+      const keyDetails = Object.values(sourceDetails);
       const sourceKey = [
         sourceAccountId,
-        sourceDetail4Id ?? '',
-        sourceDetail5Id ?? '',
-        sourceDetail6Id ?? '',
+        ...(keyDetails.slice(3).some(Boolean)
+          ? keyDetails
+          : keyDetails.slice(0, 3)),
       ].join(':');
       if (seen.has(sourceKey)) v.rule('مسیر معین اصلی تکراری است.');
       seen.add(sourceKey);
@@ -99,21 +104,26 @@ export async function executeAccountSetup(
         !actor.branchIds.includes(target.book.branchId)
       )
         v.rule('معین اصلی و معین فرعی باید در دو دفتر مجاز و متفاوت باشند.');
-      for (const [level, detailId] of [
-        [4, sourceDetail4Id],
-        [5, sourceDetail5Id],
-        [6, sourceDetail6Id],
-      ] as const) {
+      for (const level of accountingDetailLevels) {
+        const detailId = sourceDetails[`sourceDetail${level}Id`];
         if (detailId)
           await validateSetupDetail(tx, bookId, source, detailId, level);
       }
-      const detailIds = {
+      const detailIds: AccountingDetailIds = {
         detail4Id: v.uuid(row.detail4Id, true),
         detail5Id: v.uuid(row.detail5Id, true),
         detail6Id: v.uuid(row.detail6Id, true),
+        ...Object.fromEntries(
+          accountingDetailLevels
+            .slice(3)
+            .map((level) => [
+              `detail${level}Id`,
+              v.uuid(row[`detail${level}Id`], true),
+            ]),
+        ),
       };
       const attrs = v.attributes(target.attributes);
-      for (const level of [4, 5, 6] as const) {
+      for (const level of accountingDetailLevels) {
         const id = detailIds[`detail${level}Id`];
         if (!id) {
           if (attrs[`detail${level}Required`] === true)
@@ -124,9 +134,7 @@ export async function executeAccountSetup(
       }
       rows.push({
         sourceAccountId,
-        sourceDetail4Id,
-        sourceDetail5Id,
-        sourceDetail6Id,
+        ...sourceDetails,
         sourceKey,
         targetAccountId,
         ...detailIds,
@@ -227,14 +235,14 @@ export async function validateSetupDetail(
   bookId: string,
   account: { attributes: unknown },
   detailId: string,
-  level?: 4 | 5 | 6,
+  level?: AccountingDetailLevel,
 ) {
   const detail = await tx.accountingDetail.findFirst({
     where: { id: detailId, bookId, active: true },
   });
   if (!detail) v.rule('تفصیلی فعال متعلق به همین دفتر انتخاب کنید.');
   const attrs = v.attributes(account.attributes);
-  const levels = level ? [level] : [4, 5, 6];
+  const levels = level ? [level] : accountingDetailLevels;
   const allowed = levels.some((n) => {
     if (
       Array.isArray(attrs.detailLevels) &&
@@ -243,6 +251,8 @@ export async function validateSetupDetail(
       return false;
     const types = attrs[`detail${n}TypeIds`];
     const single = attrs[`detail${n}TypeId`];
+    if (n > 6 && !accountingDetailTypeIds(attrs, n).includes(detail.typeId))
+      return false;
     return (
       (!Array.isArray(types) ||
         !types.length ||

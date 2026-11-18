@@ -1,4 +1,5 @@
 'use client';
+import { accountingDetailLevels } from '@nora/contracts';
 import {
   useState,
   useEffect,
@@ -170,9 +171,11 @@ const lineFields: [string, string, Kind][] = [
   ['descriptionEn', 'شرح به زبان دوم', 'text'],
   ['trackingNumber', 'شماره پیگیری', 'text'],
   ['trackingDate', 'تاریخ پیگیری', 'date'],
-  ['detail4Id', 'سطح 4', 'uuid'],
-  ['detail5Id', 'سطح 5', 'uuid'],
-  ['detail6Id', 'سطح 6', 'uuid'],
+  ...accountingDetailLevels.map<[string, string, Kind]>((level) => [
+    `detail${level}Id`,
+    `سطح ${level}`,
+    'uuid',
+  ]),
   ['taxAccountType', 'نوع حساب مالیاتی', 'text'],
   ['taxStatus', 'وضعیت مالیاتی', 'text'],
   ['transactionType', 'نوع معامله', 'text'],

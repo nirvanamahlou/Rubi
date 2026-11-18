@@ -1,3 +1,8 @@
+import {
+  accountingDetailLevels,
+  type AccountingDetailLevel,
+  type AccountingSourceDetailField,
+} from '@nora/contracts';
 import type {
   AccountingSnapshotV1,
   AccountingSubsidiaryMappingV1,
@@ -89,40 +94,43 @@ export function accountListProjection(
 
 export type MappingPath = Pick<
   AccountingSubsidiaryMappingV1,
-  'sourceAccountId' | 'sourceDetail4Id' | 'sourceDetail5Id' | 'sourceDetail6Id'
+  'sourceAccountId' | AccountingSourceDetailField
 >;
-export const mappingKey = (row: MappingPath) =>
-  [
+
+export const mappingKey = (row: MappingPath) => {
+  const details = accountingDetailLevels.map(
+    (level) => row[`sourceDetail${level}Id`] ?? '',
+  );
+  return [
     row.sourceAccountId,
-    row.sourceDetail4Id ?? '',
-    row.sourceDetail5Id ?? '',
-    row.sourceDetail6Id ?? '',
+    ...(details.slice(3).some(Boolean) ? details : details.slice(0, 3)),
   ].join(':');
+};
 export function mappingChildren(
   rows: MappingPath[],
   accountId: string,
   path: string[],
+  levels: readonly AccountingDetailLevel[] = [4, 5, 6],
 ) {
-  const depth = path.length;
-  const keys = [
-    'sourceDetail4Id',
-    'sourceDetail5Id',
-    'sourceDetail6Id',
-  ] as const;
+  const keys = levels.map((level) => `sourceDetail${level}Id` as const);
+  const nextKey = keys[path.length];
+  if (!nextKey) return [];
   const result = new Map<string, MappingPath>();
   for (const row of rows) {
     if (
       row.sourceAccountId !== accountId ||
-      path.some((id, i) => row[keys[i]!] !== id)
+      path.some((id, i) => row[keys[i]!] !== id) ||
+      !row[nextKey]
     )
       continue;
-    const next = row[keys[depth]!];
-    if (!next) continue;
     const item: MappingPath = {
       sourceAccountId: accountId,
-      sourceDetail4Id: row.sourceDetail4Id ?? null,
-      sourceDetail5Id: depth >= 1 ? (row.sourceDetail5Id ?? null) : null,
-      sourceDetail6Id: depth >= 2 ? (row.sourceDetail6Id ?? null) : null,
+      sourceDetail4Id: null,
+      sourceDetail5Id: null,
+      sourceDetail6Id: null,
+      ...Object.fromEntries(
+        keys.slice(0, path.length + 1).map((key) => [key, row[key]]),
+      ),
     };
     result.set(mappingKey(item), item);
   }

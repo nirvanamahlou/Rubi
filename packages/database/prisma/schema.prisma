@@ -7625,6 +7625,12 @@ model AccountingDetail {
   sourceMappings4         AccountingSubsidiaryMapping[]  @relation("MappingSourceDetail4")
   sourceMappings5         AccountingSubsidiaryMapping[]  @relation("MappingSourceDetail5")
   sourceMappings6         AccountingSubsidiaryMapping[]  @relation("MappingSourceDetail6")
+  sourceMappings7         AccountingSubsidiaryMapping[]  @relation("MappingSourceDetail7")
+  sourceMappings8         AccountingSubsidiaryMapping[]  @relation("MappingSourceDetail8")
+  sourceMappings9         AccountingSubsidiaryMapping[]  @relation("MappingSourceDetail9")
+  sourceMappings10        AccountingSubsidiaryMapping[]  @relation("MappingSourceDetail10")
+  sourceMappings11        AccountingSubsidiaryMapping[]  @relation("MappingSourceDetail11")
+  sourceMappings12        AccountingSubsidiaryMapping[]  @relation("MappingSourceDetail12")
   accountGroupAllocations AccountingAccountGroupDetail[]
   id                      String                         @id @default(uuid()) @db.Uuid
   bookId                  String                         @db.Uuid
@@ -7643,13 +7649,31 @@ model AccountingDetail {
   lines4                  AccountingJournalLine[]        @relation("Detail4")
   lines5                  AccountingJournalLine[]        @relation("Detail5")
   lines6                  AccountingJournalLine[]        @relation("Detail6")
+  lines7                  AccountingJournalLine[]        @relation("Detail7")
+  lines8                  AccountingJournalLine[]        @relation("Detail8")
+  lines9                  AccountingJournalLine[]        @relation("Detail9")
+  lines10                 AccountingJournalLine[]        @relation("Detail10")
+  lines11                 AccountingJournalLine[]        @relation("Detail11")
+  lines12                 AccountingJournalLine[]        @relation("Detail12")
   groupMembers            AccountingDetailGroupMember[]
   mappings4               AccountingSubsidiaryMapping[]  @relation("MappingDetail4")
   mappings5               AccountingSubsidiaryMapping[]  @relation("MappingDetail5")
   mappings6               AccountingSubsidiaryMapping[]  @relation("MappingDetail6")
+  mappings7               AccountingSubsidiaryMapping[]  @relation("MappingDetail7")
+  mappings8               AccountingSubsidiaryMapping[]  @relation("MappingDetail8")
+  mappings9               AccountingSubsidiaryMapping[]  @relation("MappingDetail9")
+  mappings10              AccountingSubsidiaryMapping[]  @relation("MappingDetail10")
+  mappings11              AccountingSubsidiaryMapping[]  @relation("MappingDetail11")
+  mappings12              AccountingSubsidiaryMapping[]  @relation("MappingDetail12")
   templateLines4          AccountingTemplateLine[]       @relation("AccountingTemplateDetail4")
   templateLines5          AccountingTemplateLine[]       @relation("AccountingTemplateDetail5")
   templateLines6          AccountingTemplateLine[]       @relation("AccountingTemplateDetail6")
+  templateLines7          AccountingTemplateLine[]       @relation("AccountingTemplateDetail7")
+  templateLines8          AccountingTemplateLine[]       @relation("AccountingTemplateDetail8")
+  templateLines9          AccountingTemplateLine[]       @relation("AccountingTemplateDetail9")
+  templateLines10         AccountingTemplateLine[]       @relation("AccountingTemplateDetail10")
+  templateLines11         AccountingTemplateLine[]       @relation("AccountingTemplateDetail11")
+  templateLines12         AccountingTemplateLine[]       @relation("AccountingTemplateDetail12")
 
   @@unique([bookId, typeId, code])
   @@unique([id, bookId])
@@ -7815,7 +7839,19 @@ model AccountingJournalLine {
   detail5Id        String?                  @db.Uuid
   detail5          AccountingDetail?        @relation("Detail5", fields: [detail5Id], references: [id], onDelete: Restrict)
   detail6Id        String?                  @db.Uuid
+  detail7Id        String?                  @db.Uuid
+  detail8Id        String?                  @db.Uuid
+  detail9Id        String?                  @db.Uuid
+  detail10Id       String?                  @db.Uuid
+  detail11Id       String?                  @db.Uuid
+  detail12Id       String?                  @db.Uuid
   detail6          AccountingDetail?        @relation("Detail6", fields: [detail6Id], references: [id], onDelete: Restrict)
+  detail7          AccountingDetail?        @relation("Detail7", fields: [detail7Id], references: [id], onDelete: Restrict)
+  detail8          AccountingDetail?        @relation("Detail8", fields: [detail8Id], references: [id], onDelete: Restrict)
+  detail9          AccountingDetail?        @relation("Detail9", fields: [detail9Id], references: [id], onDelete: Restrict)
+  detail10         AccountingDetail?        @relation("Detail10", fields: [detail10Id], references: [id], onDelete: Restrict)
+  detail11         AccountingDetail?        @relation("Detail11", fields: [detail11Id], references: [id], onDelete: Restrict)
+  detail12         AccountingDetail?        @relation("Detail12", fields: [detail12Id], references: [id], onDelete: Restrict)
   description      String                   @default("") @db.VarChar(2000)
   debit            Decimal                  @default(0) @db.Decimal(38, 18)
   credit           Decimal                  @default(0) @db.Decimal(38, 18)
@@ -7959,7 +7995,19 @@ model AccountingTemplateLine {
   detail5Id  String?            @db.Uuid
   detail5    AccountingDetail?  @relation("AccountingTemplateDetail5", fields: [detail5Id, bookId], references: [id, bookId], onDelete: Restrict)
   detail6Id  String?            @db.Uuid
+  detail7Id  String?            @db.Uuid
+  detail8Id  String?            @db.Uuid
+  detail9Id  String?            @db.Uuid
+  detail10Id String?            @db.Uuid
+  detail11Id String?            @db.Uuid
+  detail12Id String?            @db.Uuid
   detail6    AccountingDetail?  @relation("AccountingTemplateDetail6", fields: [detail6Id, bookId], references: [id, bookId], onDelete: Restrict)
+  detail7    AccountingDetail?  @relation("AccountingTemplateDetail7", fields: [detail7Id, bookId], references: [id, bookId], onDelete: Restrict)
+  detail8    AccountingDetail?  @relation("AccountingTemplateDetail8", fields: [detail8Id, bookId], references: [id, bookId], onDelete: Restrict)
+  detail9    AccountingDetail?  @relation("AccountingTemplateDetail9", fields: [detail9Id, bookId], references: [id, bookId], onDelete: Restrict)
+  detail10   AccountingDetail?  @relation("AccountingTemplateDetail10", fields: [detail10Id, bookId], references: [id, bookId], onDelete: Restrict)
+  detail11   AccountingDetail?  @relation("AccountingTemplateDetail11", fields: [detail11Id, bookId], references: [id, bookId], onDelete: Restrict)
+  detail12   AccountingDetail?  @relation("AccountingTemplateDetail12", fields: [detail12Id, bookId], references: [id, bookId], onDelete: Restrict)
   side       String             @db.VarChar(8)
   role       String?            @db.VarChar(8)
   percentage Decimal            @db.Decimal(20, 8)
@@ -8022,27 +8070,51 @@ model AccountingFxSnapshot {
 }
 
 model AccountingSubsidiaryMapping {
-  id              String            @id @default(uuid()) @db.Uuid
-  bookId          String            @db.Uuid
-  book            AccountingBook    @relation(fields: [bookId], references: [id], onDelete: Restrict)
-  sourceAccountId String            @db.Uuid
-  sourceAccount   AccountingAccount @relation("MappingSource", fields: [sourceAccountId], references: [id], onDelete: Restrict)
-  targetAccountId String            @db.Uuid
-  targetAccount   AccountingAccount @relation("MappingTarget", fields: [targetAccountId], references: [id], onDelete: Restrict)
-  detail4Id       String?           @db.Uuid
-  detail4         AccountingDetail? @relation("MappingDetail4", fields: [detail4Id], references: [id], onDelete: Restrict)
-  detail5Id       String?           @db.Uuid
-  detail5         AccountingDetail? @relation("MappingDetail5", fields: [detail5Id], references: [id], onDelete: Restrict)
-  detail6Id       String?           @db.Uuid
-  detail6         AccountingDetail? @relation("MappingDetail6", fields: [detail6Id], references: [id], onDelete: Restrict)
-  sourceDetail4Id String?           @db.Uuid
-  sourceDetail4   AccountingDetail? @relation("MappingSourceDetail4", fields: [sourceDetail4Id], references: [id], onDelete: Restrict)
-  sourceDetail5Id String?           @db.Uuid
-  sourceDetail5   AccountingDetail? @relation("MappingSourceDetail5", fields: [sourceDetail5Id], references: [id], onDelete: Restrict)
-  sourceDetail6Id String?           @db.Uuid
-  sourceDetail6   AccountingDetail? @relation("MappingSourceDetail6", fields: [sourceDetail6Id], references: [id], onDelete: Restrict)
-  sourceKey       String            @unique @db.VarChar(160)
-  version         Int               @default(1)
+  id               String            @id @default(uuid()) @db.Uuid
+  bookId           String            @db.Uuid
+  book             AccountingBook    @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  sourceAccountId  String            @db.Uuid
+  sourceAccount    AccountingAccount @relation("MappingSource", fields: [sourceAccountId], references: [id], onDelete: Restrict)
+  targetAccountId  String            @db.Uuid
+  targetAccount    AccountingAccount @relation("MappingTarget", fields: [targetAccountId], references: [id], onDelete: Restrict)
+  detail4Id        String?           @db.Uuid
+  detail4          AccountingDetail? @relation("MappingDetail4", fields: [detail4Id], references: [id], onDelete: Restrict)
+  detail5Id        String?           @db.Uuid
+  detail5          AccountingDetail? @relation("MappingDetail5", fields: [detail5Id], references: [id], onDelete: Restrict)
+  detail6Id        String?           @db.Uuid
+  detail7Id        String?           @db.Uuid
+  detail8Id        String?           @db.Uuid
+  detail9Id        String?           @db.Uuid
+  detail10Id       String?           @db.Uuid
+  detail11Id       String?           @db.Uuid
+  detail12Id       String?           @db.Uuid
+  detail6          AccountingDetail? @relation("MappingDetail6", fields: [detail6Id], references: [id], onDelete: Restrict)
+  detail7          AccountingDetail? @relation("MappingDetail7", fields: [detail7Id], references: [id], onDelete: Restrict)
+  detail8          AccountingDetail? @relation("MappingDetail8", fields: [detail8Id], references: [id], onDelete: Restrict)
+  detail9          AccountingDetail? @relation("MappingDetail9", fields: [detail9Id], references: [id], onDelete: Restrict)
+  detail10         AccountingDetail? @relation("MappingDetail10", fields: [detail10Id], references: [id], onDelete: Restrict)
+  detail11         AccountingDetail? @relation("MappingDetail11", fields: [detail11Id], references: [id], onDelete: Restrict)
+  detail12         AccountingDetail? @relation("MappingDetail12", fields: [detail12Id], references: [id], onDelete: Restrict)
+  sourceDetail4Id  String?           @db.Uuid
+  sourceDetail4    AccountingDetail? @relation("MappingSourceDetail4", fields: [sourceDetail4Id], references: [id], onDelete: Restrict)
+  sourceDetail5Id  String?           @db.Uuid
+  sourceDetail5    AccountingDetail? @relation("MappingSourceDetail5", fields: [sourceDetail5Id], references: [id], onDelete: Restrict)
+  sourceDetail6Id  String?           @db.Uuid
+  sourceDetail7Id  String?           @db.Uuid
+  sourceDetail8Id  String?           @db.Uuid
+  sourceDetail9Id  String?           @db.Uuid
+  sourceDetail10Id String?           @db.Uuid
+  sourceDetail11Id String?           @db.Uuid
+  sourceDetail12Id String?           @db.Uuid
+  sourceDetail6    AccountingDetail? @relation("MappingSourceDetail6", fields: [sourceDetail6Id], references: [id], onDelete: Restrict)
+  sourceDetail7    AccountingDetail? @relation("MappingSourceDetail7", fields: [sourceDetail7Id], references: [id], onDelete: Restrict)
+  sourceDetail8    AccountingDetail? @relation("MappingSourceDetail8", fields: [sourceDetail8Id], references: [id], onDelete: Restrict)
+  sourceDetail9    AccountingDetail? @relation("MappingSourceDetail9", fields: [sourceDetail9Id], references: [id], onDelete: Restrict)
+  sourceDetail10   AccountingDetail? @relation("MappingSourceDetail10", fields: [sourceDetail10Id], references: [id], onDelete: Restrict)
+  sourceDetail11   AccountingDetail? @relation("MappingSourceDetail11", fields: [sourceDetail11Id], references: [id], onDelete: Restrict)
+  sourceDetail12   AccountingDetail? @relation("MappingSourceDetail12", fields: [sourceDetail12Id], references: [id], onDelete: Restrict)
+  sourceKey        String            @unique @db.VarChar(400)
+  version          Int               @default(1)
 
   @@index([bookId])
   @@map("accounting_subsidiary_mappings")
