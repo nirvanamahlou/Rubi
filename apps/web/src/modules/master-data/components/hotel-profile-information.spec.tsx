@@ -33,6 +33,7 @@ const record: MasterDataRecord = {
   updatedAt: '2026-10-12T00:00:00.000Z',
   attributes: {
     cityId: 'city-id',
+    identificationCode: '001-ABC',
     serviceLevel: 'لوکس',
     description: 'Imported description',
     hotelRules: 'Check in 14:00',
@@ -61,6 +62,7 @@ describe('imported hotel profile and editing', () => {
     const definition = getMasterDataDefinition('hotels');
     const values = masterDataFormValuesFrom(definition, record);
     expect(values).toMatchObject({
+      identificationCode: '001-ABC',
       description: 'Imported description',
       serviceLevel: 'لوکس',
       sourceFeatured: 'true',
@@ -81,6 +83,21 @@ describe('imported hotel profile and editing', () => {
       expect(html).toContain(`id="live-hotels-${field.key}"`);
     expect(html).toContain('Imported description');
     expect(html).toContain('<textarea');
+    expect(html).toContain('value="001-ABC"');
+    const keys = definition.fields.map((field) => field.key);
+    expect(keys.indexOf('identificationCode')).toBe(
+      keys.indexOf('englishName') + 1,
+    );
+    expect(
+      validateMasterDataDraft('hotels', { ...values, identificationCode: '' })
+        .success,
+    ).toBe(true);
+    expect(
+      validateMasterDataDraft('hotels', {
+        ...values,
+        identificationCode: 'x'.repeat(161),
+      }).success,
+    ).toBe(false);
     expect(
       validateMasterDataDraft('hotels', {
         ...values,

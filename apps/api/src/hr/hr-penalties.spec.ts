@@ -83,6 +83,7 @@ describe('daily attendance penalties', () => {
     ).toBeNull());
   it('exempts only approved hourly leave intervals', async () => {
     const leave = {
+      code: 'LEAVE-TEST',
       employeeId: 'person',
       tab: 'radanLeave',
       status: 'تأییدشده',
