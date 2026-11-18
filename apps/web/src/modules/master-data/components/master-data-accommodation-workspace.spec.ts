@@ -153,7 +153,10 @@ describe('accommodation workspace', () => {
     ]);
     expect((mealsCells.match(/<td\b/g) ?? []).length + 3).toBe(headers.length);
     expect(sharedRowPrefix.match(/<td\b/g)).toHaveLength(1);
-    expect(sharedRowPrefix).toContain('{record.code}');
+    expect(sharedRowPrefix).toContain(': record.code}');
+    expect(sharedRowPrefix).toContain(
+      "attribute(record, 'identificationCode', record.code)",
+    );
     expect(mealsCells).not.toContain('record.code');
     expect(headers.filter((header) => header === 'کد سرویس')).toHaveLength(1);
   });
