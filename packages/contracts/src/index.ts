@@ -28,3 +28,5 @@ export * from './accounting-tax';
 
 export * from './package-pricing/hotel-shared-period';
 export type { AccountingTaxpayerSeller } from './accounting-taxpayer';
+
+export * from './travel/floating-tour';

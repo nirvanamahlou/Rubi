@@ -6,6 +6,16 @@ import { cn } from '@/lib/utils';
 
 const sections = [
   {
+    title: 'پکیج‌های شناور',
+    description:
+      'ورود بازه‌ها و قیمت فروش نفری تورهای شناور از اکسل، با پیش‌نمایش و ثبت نهایی.',
+    href: '/sales/pricing/floating',
+    icon: BadgeDollarSign,
+    tone: 'bg-sky-100 text-sky-700',
+    glow: 'from-sky-400/14',
+    labels: ['قیمت فروش', 'ورود اکسل', 'تور شناور'],
+  },
+  {
     title: 'مدیریت قیمت',
     description:
       'محاسبه قیمت فروش، تنظیم سود و کمیسیون، ذخیره پیش‌نویس و انتشار نسخه قیمت پکیج.',

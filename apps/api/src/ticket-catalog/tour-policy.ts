@@ -45,6 +45,17 @@ const detailsSchema = Joi.object({
   refundRules: copy(),
   originAirportCode: Joi.string().pattern(/^[A-Z]{3}$/),
   durationDays: Joi.number().integer().min(1).max(366),
+  isFloating: Joi.boolean(),
+  isCombined: Joi.boolean(),
+  destinations: Joi.array()
+    .min(2)
+    .max(10)
+    .items(
+      Joi.object({
+        cityId: id.required(),
+        nights: Joi.number().integer().min(1).max(365).required(),
+      }),
+    ),
   rating: Joi.number().min(0).max(5),
   transport: Joi.string().valid('FLIGHT', 'TRAIN'),
   ticketIncluded: Joi.boolean(),
@@ -116,6 +127,18 @@ export function validateTourPackage(input: unknown): TourPackageInputV1 {
     throw new BadRequestException(`${label} را بررسی کنید.`);
   }
   const value = structuredClone(result.value) as TourPackageInputV1;
+  const stays = value.details?.destinations;
+  if (
+    stays &&
+    (!value.details?.isCombined ||
+      stays[0]?.cityId !== value.destinationId ||
+      new Set(stays.map((s) => s.cityId)).size !== stays.length ||
+      stays.some((s) => s.cityId === value.originId) ||
+      stays.reduce((n, s) => n + s.nights, 0) > 365)
+  )
+    throw new BadRequestException(
+      'مقصد اول، مقصدهای متفاوت و تعداد شب اقامت تور ترکیبی را بررسی کنید.',
+    );
   for (const key of ['basePrice', 'flightPrice'] as const) {
     const price = value.details?.[key];
     if (price?.currency !== 'IRT') continue;

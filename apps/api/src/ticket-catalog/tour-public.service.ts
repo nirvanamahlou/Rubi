@@ -279,6 +279,9 @@ export class TourPublicService {
     branchId: string,
   ) {
     await this.references.assertTourReferences(input);
+    for (const stay of input.details?.destinations ?? [])
+      if (stay.cityId !== input.destinationId)
+        await this.references.cityReference(stay.cityId);
     if (input.details?.imageDocumentId) {
       if (
         !this.documents ||
@@ -349,12 +352,22 @@ export class TourPublicService {
         JSON.stringify([
           value.originId,
           value.destinationId,
+          value.details?.destinations ?? null,
+          Boolean(value.details?.isFloating),
           [...value.hotelIds].sort(),
           value.insuranceId ?? null,
           value.transferOutbound,
           value.transferReturn,
           value.visa,
         ]);
+      if (
+        previous.details?.isFloating &&
+        core(previous) !== core(input) &&
+        (await tx.floatingTourSaleCatalog.count({ where: { packageId: id } }))
+      )
+        throw new ConflictException(
+          'این تور قیمت فروش ثبت‌شده دارد؛ برای تغییر مسیر یا خدمات، تور جدید تعریف کنید.',
+        );
       if (
         core(previous) !== core(input) &&
         (await tx.tourDeparture.count({ where: { packageId: id } }))

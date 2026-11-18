@@ -20,6 +20,10 @@ export interface TourPackageInputV1 {
     installmentTerms?: string;
     refundRules?: string;
     originAirportCode?: string;
+    isFloating?: boolean;
+    isCombined?: boolean;
+    /** Ordered destinations, including the primary destination, with consecutive hotel nights. */
+    destinations?: { cityId: string; nights: number }[] | undefined;
     durationDays?: number;
     rating?: number;
     transport?: 'FLIGHT' | 'TRAIN';

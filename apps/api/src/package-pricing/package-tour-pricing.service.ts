@@ -61,6 +61,29 @@ export class PackageTourPricingService {
     private readonly pricing: PackagePricingService,
   ) {}
 
+  /** Frozen active BUY rates used by floating sale import ordering/audit. */
+  async buyRates() {
+    const now = new Date();
+    const rows = await this.database.client.masterDraftExchangeRate.findMany({
+      where: {
+        isActive: true,
+        status: 'APPROVED',
+        rateType: 'BUY',
+        fromCurrency: { isActive: true },
+        toCurrency: { code: 'IRR', isActive: true },
+        validFrom: { lte: now },
+        OR: [{ validTo: null }, { validTo: { gt: now } }],
+      },
+      include: { fromCurrency: true },
+      orderBy: [{ validFrom: 'desc' }, { approvedAt: 'desc' }, { id: 'desc' }],
+    });
+    const rates: Record<string, string> = { IRR: '1' };
+    for (const row of rows)
+      if (!rates[row.fromCurrency.code] && row.rate.greaterThan(0))
+        rates[row.fromCurrency.code] = row.rate.toString();
+    return rates;
+  }
+
   async get(
     tourId: string,
     batchId: string,
