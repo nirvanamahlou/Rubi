@@ -270,7 +270,11 @@ const fieldType = (label: string): ContextualFieldType => {
     return 'file';
   if (label.includes('لینک')) return 'url';
   if (/ارزیاب|مصاحبه‌کننده|تأییدکننده/.test(label)) return 'combobox';
-  if (/ساعت (شروع|پایان|مصاحبه|تردد|تحویل|عودت)/.test(label)) return 'time';
+  if (
+    label === 'شروع اضافه‌کاری' ||
+    /ساعت (شروع|پایان|مصاحبه|تردد|تحویل|عودت)/.test(label)
+  )
+    return 'time';
   if (
     /تاریخ|موعد|تولد|انقضا|مهلت|آخرین روز کاری/.test(label) &&
     !label.includes('بازه')
@@ -426,6 +430,7 @@ const deviceFormOrder = [
 ];
 
 const workingHoursLabels: Record<string, string> = {
+  'شروع اضافه‌کاری': 'شروع اضافه‌کاری',
   'نام ساعت کاری': 'نام ساعت کاری',
   توضیحات: 'توضیحات ساعت کاری',
   'ساعت شروع': 'زمان آغاز',
@@ -857,6 +862,12 @@ export function ContextualHrForm({
           {renderedFields.map(({ field, index }) => {
             if (context.hiddenLabels?.includes(field.label)) return null;
             if (
+              context.section === 'time' &&
+              context.tab === 'workingHours' &&
+              field.label === 'توضیحات'
+            )
+              return null;
+            if (
               context.section === 'development' &&
               context.tab === 'goals' &&
               /^(عنوان هدف|وزن|پیشرفت)$/.test(field.label)
@@ -899,14 +910,6 @@ export function ContextualHrForm({
               context.presetValues?.[field.label] !== undefined;
             return (
               <Fragment key={field.id}>
-                {workingHours &&
-                ['ساعت شروع', 'ساعت قبل از شروع'].includes(field.label) ? (
-                  <h3 className={styles.fullWidth}>
-                    {field.label === 'ساعت شروع'
-                      ? 'ساعت کاری'
-                      : 'محدوده تردد پرسنل'}
-                  </h3>
-                ) : null}
                 <label
                   className={styles.fieldLabel}
                   htmlFor={inputId}
@@ -931,17 +934,7 @@ export function ContextualHrForm({
                       افزودن {field.label}
                     </button>
                   ) : null}
-                  {workingHours && field.label === 'تعریف ضرایب پیش‌فرض' ? (
-                    <input
-                      {...commonProps}
-                      type="checkbox"
-                      required={false}
-                      checked={derivedValues[field.id] === 'بله'}
-                      onChange={(event) =>
-                        update(field.id, event.target.checked ? 'بله' : 'خیر')
-                      }
-                    />
-                  ) : workingHours && field.label === 'رنگ' ? (
+                  {workingHours && field.label === 'رنگ' ? (
                     <input
                       {...commonProps}
                       type="color"

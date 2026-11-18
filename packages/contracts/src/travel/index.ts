@@ -14,6 +14,9 @@ export interface TicketSalePriceTierV1 {
 
 /** Catalog owns schedule, capacity and the public fare used for ticket-only sales. */
 export interface TicketStandaloneSalePriceV1 {
+  /** Same currency as the fare; null/absent preserves legacy group pricing. */
+  childAmount?: string | null | undefined;
+  infantAmount?: string | null | undefined;
   revision: number;
   amount: string;
   currencyCode: string;
@@ -44,6 +47,9 @@ export interface TicketTargetedStandaloneSalePriceV1 extends TicketStandaloneSal
 }
 
 export interface TicketStandaloneSalePriceUpdateV1 {
+  /** Same currency as the fare; null/absent preserves legacy group pricing. */
+  childAmount?: string | null | undefined;
+  infantAmount?: string | null | undefined;
   expectedRevision: number;
   amount: string;
   currencyCode: string;
@@ -53,6 +59,9 @@ export interface TicketStandaloneSalePriceUpdateV1 {
 }
 
 export interface TicketRoundTripSalePriceV1 {
+  /** Same currency as the fare; null/absent preserves legacy group pricing. */
+  childAmount?: string | null | undefined;
+  infantAmount?: string | null | undefined;
   /** Original pair base before direct-sale commission. */
   baseAmount?: string;
   /** Raw tier prices before the direct-sale commission. */
@@ -65,6 +74,9 @@ export interface TicketRoundTripSalePriceV1 {
 }
 
 export interface TicketRoundTripSalePriceUpdateV1 {
+  /** Same currency as the fare; null/absent preserves legacy group pricing. */
+  childAmount?: string | null | undefined;
+  infantAmount?: string | null | undefined;
   expectedRevision: number;
   amount: string;
   currencyCode: string;
@@ -73,6 +85,9 @@ export interface TicketRoundTripSalePriceUpdateV1 {
 
 /** Commission rules are versioned independently from the base fare. */
 export interface TicketSaleCommissionV1 {
+  /** Same currency as the fare; null/absent preserves legacy group pricing. */
+  childAmount?: string | null | undefined;
+  infantAmount?: string | null | undefined;
   /** 100 percent disables this destination; never publish its zero net amount. */
   isHidden?: boolean;
   returnOfferId: string | null;
@@ -484,6 +499,9 @@ export function reservationServicePurchaseTotal(
 }
 
 export interface FinanceSupplierPaymentCommandV1 {
+  beneficiaryId?: string | null;
+  brokerTransferId?: string | null;
+  brokerReceiptId?: string | null;
   payingSupplierId?: string | null;
   exchangeOfficeId?: string | null;
   expectedVersion: number;

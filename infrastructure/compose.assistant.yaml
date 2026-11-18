@@ -1,0 +1,48 @@
+# Explicit opt-in overlay for PC-C. Use only after the additive migration,
+# private SQL-role provisioning and an authorized local Germany tunnel exist.
+# The original rubi API/Web ports and volumes are retained.
+services:
+  web:
+    environment:
+      ASSISTANT_SERVICE_URL: http://127.0.0.1:4300
+      ASSISTANT_AGENT_ENABLED: 'true'
+      NEXT_PUBLIC_ASSISTANT_AGENT_ENABLED: 'true'
+
+  assistant-read:
+    image: ${RUBI_APP_IMAGE:-rubi-app-local:latest}
+    network_mode: service:web
+    env_file:
+      - ${RUBI_API_ENV_FILE:-../apps/api/.env}
+    environment:
+      ASSISTANT_AGENT_ENABLED: 'true'
+      ASSISTANT_AGENT_DATABASE_URL: ${ASSISTANT_AGENT_DATABASE_URL:?Provision the dedicated local SQL role first}
+      ERP_ASSISTANT_READ_PORT: '4301'
+    command: ['node', 'apps/api/dist/assistant-read/main.js']
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: unless-stopped
+
+  assistant:
+    image: ${RUBI_APP_IMAGE:-rubi-app-local:latest}
+    network_mode: service:web
+    environment:
+      ASSISTANT_AGENT_ENABLED: 'true'
+      ASSISTANT_MODEL_PROVIDER: groq
+      ASSISTANT_DATA_POLICY: authorized-erp-results
+      ASSISTANT_GROQ_EGRESS: germany-proxy
+      GROQ_API_KEY: ${GROQ_API_KEY:?Configure the private Groq key}
+      NODE_USE_ENV_PROXY: '1'
+      # A local host SSH forward is reached over the pinned host-gateway route.
+      # The relay remains CONNECT-only and must never listen publicly.
+      HTTPS_PROXY: ${NORA_AGENT_CONTAINER_HTTPS_PROXY:-http://172.18.0.1:4310}
+      NO_PROXY: localhost,127.0.0.1
+      ERP_API_BASE_URL: http://127.0.0.1:4301/api/v1
+      ERP_REPORTS_API_BASE_URL: http://127.0.0.1:4301/api/v1
+      ERP_AUTH_API_BASE_URL: http://127.0.0.1:4301/api/v1
+      ASSISTANT_PORT: '4300'
+    command: ['node', 'services/assistant/server.mjs']
+    depends_on:
+      assistant-read:
+        condition: service_started
+    restart: unless-stopped

@@ -111,3 +111,17 @@ it('finds Antalya with an unaccented Persian alef', () => {
     'antalya',
   ]);
 });
+
+it('hides draft tours but retains legacy and explicitly published definitions', () => {
+  const draft = {
+    ...tour('draft'),
+    package: { ...tour('draft').package, publicationStatus: 'DRAFT' },
+  } as TourDepartureV1;
+  const published = {
+    ...tour('published'),
+    package: { ...tour('published').package, publicationStatus: 'PUBLISHED' },
+  } as TourDepartureV1;
+  expect(
+    salesTourOptions([tour('legacy'), draft, published], 1).map((o) => o.value),
+  ).toEqual(['legacy', 'published']);
+});

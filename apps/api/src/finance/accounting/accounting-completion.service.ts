@@ -1,3 +1,5 @@
+import { accountingDetailLevels } from '@nora/contracts';
+import { detailFields, lineDetails } from './accounting.detail-levels';
 import {
   ForbiddenException,
   Inject,
@@ -9,6 +11,7 @@ import type { AuthenticatedActor } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../../database/database.service';
 import { AccountingCompanyScope } from './accounting-company-scope';
+import { FinanceFiscalStorage } from '../fiscal-context/finance-fiscal-storage';
 import { IamFinanceDirectory } from '../../iam/iam-finance-directory';
 import {
   journalBrowserAxes,
@@ -30,9 +33,7 @@ const allowed = [
   'from',
   'to',
   'accountId',
-  'detail4Id',
-  'detail5Id',
-  'detail6Id',
+  ...detailFields,
   'page',
 ];
 
@@ -223,16 +224,14 @@ export class AccountingCompletionService {
         }
         const extraFilters: Prisma.AccountingJournalLineWhereInput[] = [];
         if (query.noDetails === 'true')
-          extraFilters.push({
-            detail4Id: null,
-            detail5Id: null,
-            detail6Id: null,
-          });
+          extraFilters.push(
+            Object.fromEntries(detailFields.map((field) => [field, null])),
+          );
         if (query.detailId) {
           const id = v.uuid(query.detailId)!;
           if (!(await tx.accountingDetail.findFirst({ where: { id, bookId } })))
             throw new NotFoundException();
-          where.OR = [{ detail4Id: id }, { detail5Id: id }, { detail6Id: id }];
+          where.OR = detailFields.map((field) => ({ [field]: id }));
         }
         if (query.detailTypeId) {
           const id = v.uuid(query.detailTypeId)!;
@@ -243,15 +242,13 @@ export class AccountingCompletionService {
           )
             throw new NotFoundException();
           extraFilters.push({
-            OR: [
-              { detail4: { typeId: id, bookId } },
-              { detail5: { typeId: id, bookId } },
-              { detail6: { typeId: id, bookId } },
-            ],
+            OR: accountingDetailLevels.map((level) => ({
+              [`detail${level}`]: { typeId: id, bookId },
+            })),
           });
         }
         if (extraFilters.length) where.AND = extraFilters;
-        for (const level of [4, 5, 6] as const)
+        for (const level of accountingDetailLevels)
           if (query[`detail${level}Id`])
             where[`detail${level}Id`] = v.uuid(query[`detail${level}Id`])!;
         const count = await tx.accountingJournalLine.count({ where });
@@ -305,9 +302,7 @@ export class AccountingCompletionService {
           accountId: r.accountId!,
           accountCode: r.account?.bookId === bookId ? r.account.code : '',
           accountTitle: r.account?.bookId === bookId ? r.account.title : '',
-          detail4Id: r.detail4Id,
-          detail5Id: r.detail5Id,
-          detail6Id: r.detail6Id,
+          ...lineDetails(r),
           documentDate:
             kind === 'legal-ledgers'
               ? r.journal.generalDocumentMember!.document.documentDate
@@ -423,6 +418,9 @@ export class AccountingCompletionService {
     @Optional()
     @Inject(IamFinanceDirectory)
     private readonly identity?: IamFinanceDirectory,
+    @Optional()
+    @Inject(FinanceFiscalStorage)
+    private readonly fiscal?: FinanceFiscalStorage,
   ) {}
 
   async journalBrowser(
@@ -587,6 +585,9 @@ export class AccountingCompletionService {
       Object.values(query).some((value) => typeof value !== 'string')
     )
       v.invalid('فیلتر گزارش معتبر نیست.');
+    query =
+      this.fiscal?.query(bookId, query as Record<string, string>) ?? query;
+    if (endPeriodId) this.fiscal?.assertPeriod(bookId, endPeriodId);
     const period = await tx.accountingPeriod.findFirst({
       where: { id: v.uuid(query.periodId)!, bookId },
     });
@@ -742,7 +743,7 @@ export class AccountingCompletionService {
           if (!account) throw new NotFoundException();
           where.accountId = account.id;
         }
-        for (const level of [4, 5, 6] as const) {
+        for (const level of accountingDetailLevels) {
           const key = `detail${level}Id` as const;
           if (!query[key]) continue;
           const detail = await tx.accountingDetail.findFirst({

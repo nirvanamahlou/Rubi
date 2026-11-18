@@ -1,7 +1,23 @@
 import { createGroqProvider } from './groq-provider.mjs';
 
-export function conversationConfiguration(env = process.env) {
+export function conversationConfiguration(
+  env = process.env,
+  { transport } = {},
+) {
+  if (
+    env.GROQ_KEY_POOL_FILE &&
+    !transport &&
+    env.ASSISTANT_CONVERSATION_ENABLED === 'true'
+  )
+    throw new Error('GROQ_SHARED_POOL_REQUIRED');
   if (env.ASSISTANT_CONVERSATION_ENABLED !== 'true') return { enabled: false };
+  // v3 has its own explicit policy and provider. Keep v2 off rather than
+  // accidentally applying its obsolete messages-only contract to ERP results.
+  if (
+    env.ASSISTANT_AGENT_ENABLED === 'true' &&
+    env.ASSISTANT_DATA_POLICY === 'authorized-erp-results'
+  )
+    return { enabled: false };
   if (
     env.ASSISTANT_DATA_POLICY !== 'messages-only' ||
     env.ASSISTANT_MODEL_PROVIDER !== 'groq'
@@ -10,6 +26,10 @@ export function conversationConfiguration(env = process.env) {
   return {
     enabled: true,
     timeoutMs: 6000,
-    provider: createGroqProvider({ apiKey: env.GROQ_API_KEY, timeoutMs: 6000 }),
+    provider: createGroqProvider({
+      apiKey: env.GROQ_API_KEY,
+      transport,
+      timeoutMs: 6000,
+    }),
   };
 }

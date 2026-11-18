@@ -1,3 +1,5 @@
+import { matchesQuestion, normalizeQuestion } from './question-text';
+
 /** Instructions are derived from the owning Sales controls, not from legal advice.
  * Sources are repo-relative so changes to those controls can be reviewed with the guide.
  */
@@ -495,17 +497,7 @@ export const contractGuides: readonly ContractGuide[] = [
 ];
 
 export function normalizeContractQuestion(message: string): string {
-  return message
-    .replace(/ي/g, 'ی')
-    .replace(/ك/g, 'ک')
-    .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
-    .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
-    .replace(/[\u064b-\u065f\u0670]/g, '')
-    .replace(/[\u200c\u200d]/g, ' ')
-    .replace(/قرار\s+داد/g, 'قرارداد')
-    .replace(/[؟?!.،؛:]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return normalizeQuestion(message);
 }
 
 export interface ContractGuideReply {
@@ -535,18 +527,33 @@ const followup =
 const outsideSales =
   /مرخصی|حضور و غیاب|حقوق کارکنان|کال سنتر|آب و هوا|گزارش فروش/;
 
+export function isContractCountQuestion(message: string) {
+  const question = normalizeContractQuestion(message);
+  return (
+    /قرارداد|contract/i.test(question) &&
+    /تعداد|شمارش|عدد|اختلاف|محاسبه/.test(question) &&
+    !/(?:چطور|چجور|چگونه|نحوه|راهنمای).*(?:ثبت|ایجاد|اصلاح|تغییر|انتخاب|وارد|بزن)/.test(
+      question,
+    )
+  );
+}
+
 /** Return grounded instructions for the current Sales workflow; unknown topics get a local clarification. */
 export function resolveContractGuide(
   message: string,
   onSalesPage: boolean,
   previousTopicId?: string,
   recordAlreadyRead = false,
+  dataAgentAvailable = false,
 ): ContractGuideReply | undefined {
   const question = normalizeContractQuestion(message);
   const explicitContract = /قرارداد|contract/i.test(question);
   const continuing = Boolean(previousTopicId && followup.test(question));
   if (!onSalesPage && !explicitContract && !continuing) return;
   if (outsideSales.test(question) && !explicitContract) return;
+
+  // Count/evidence follow-ups are analytics, even when they contain "why/where".
+  if (dataAgentAvailable && isContractCountQuestion(question)) return;
 
   // A concrete record question belongs to the authorized reader, including follow-ups.
   if (!recordAlreadyRead && /قرارداد\s*(?:شماره\s*)?[A-Za-z0-9]/.test(question))
@@ -561,6 +568,9 @@ export function resolveContractGuide(
     /چقدر|چند تا|چنده|مانده|وضعیت/.test(question) &&
     !procedure
   ) {
+    // The data Agent can answer portfolio questions without a contract number.
+    // Keep the legacy clarification for callers without that reader.
+    if (dataAgentAvailable) return;
     return {
       topicId: 'record',
       text: [
@@ -593,7 +603,8 @@ export function resolveContractGuide(
     return { topicId: guide.id, text: formatContractGuide(guide) };
   }
   const candidates = contractGuides.filter(
-    (guide) => guide.id !== 'create' && guide.matches.test(question),
+    (guide) =>
+      guide.id !== 'create' && matchesQuestion(question, guide.matches),
   );
   // Prefer specific subtopics over their parents (e.g. multi-hotel before hotel).
   const specific = [
@@ -614,6 +625,7 @@ export function resolveContractGuide(
     'output',
     'purchase',
     'package',
+    'flight',
     'visa',
     'insurance',
     'transfer',

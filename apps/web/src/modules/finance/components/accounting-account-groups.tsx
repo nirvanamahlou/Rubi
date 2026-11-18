@@ -1,4 +1,5 @@
 'use client';
+import { accountingDetailLevels } from '@nora/contracts';
 
 import {
   AccountingSetupNotes,
@@ -62,7 +63,7 @@ export function AccountingAccountGroups({
   const [pendingMembers, setPendingMembers] = useState<string[]>([]);
   const [detailSearchType, setDetailSearchType] = useState('');
   const account = book.accounts.find((row) => row.id === activeAccount);
-  const allowedTypes = [4, 5, 6].flatMap((level) => {
+  const allowedTypes = accountingDetailLevels.flatMap((level) => {
     const value = account?.attributes[`detail${level}TypeIds`];
     const single = account?.attributes[`detail${level}TypeId`];
     return Array.isArray(value)

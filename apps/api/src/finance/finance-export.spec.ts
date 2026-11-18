@@ -28,6 +28,37 @@ function setup(items = [item]) {
   };
 }
 describe('Authorized Finance export snapshots', () => {
+  it('exports actual contract and journal numbers as text rather than internal identifiers', async () => {
+    const row = {
+      ...item,
+      references: {
+        contracts: [{ id: 'internal-contract', number: '00025' }],
+        journals: [
+          {
+            id: 'internal-journal',
+            bookId: 'book',
+            periodId: 'old',
+            number: 17,
+            documentDate: '2025-10-01',
+            status: 'POSTED',
+          },
+        ],
+      },
+    };
+    const result = await financeExportSnapshot(
+      setup([row]) as never,
+      {},
+      actor,
+    );
+    const contractColumn = result.columns.findIndex(
+      (c) => c.label === 'شماره قرارداد',
+    );
+    const journalColumn = result.columns.findIndex(
+      (c) => c.label === 'شماره سند حسابداری',
+    );
+    expect(result.rows[0]?.[contractColumn]).toBe('00025');
+    expect(result.rows[0]?.[journalColumn]).toBe('17');
+  });
   it('requires both read and export permission before reading sources', async () => {
     const inbox = setup();
     await expect(

@@ -1,4 +1,5 @@
-import { debitExchange } from './exchange-offices/exchange-payment';
+import { verifyBankPayment } from './payments/broker-transfer';
+import { FinanceSourceReferences } from './source-read/finance-source-references.service';
 import { voidSalesReceipt } from './operations/void-sales-receipt';
 import { financialDate } from './accounting/accounting.financial-events';
 import {
@@ -56,6 +57,8 @@ import { readFinanceInvoiceQueueStates } from './operations/finance-invoice-queu
 import type { FinanceHistoryQueryV1 } from '@nora/contracts';
 import { DecimalValue } from './finance.money';
 import { ContractCompanyScope } from '../sales/contract-company-scope.public';
+import { fiscalInboxItems } from './fiscal-context/finance-fiscal-inbox';
+import { currentFinanceFiscalRequest } from './fiscal-context/finance-fiscal-storage';
 
 import {
   compareFinanceQueueOrder,
@@ -97,10 +100,13 @@ export class FinanceInboxService {
     @Optional()
     @Inject(ContractCompanyScope)
     private readonly companyScope?: ContractCompanyScope,
+    @Optional()
+    @Inject(FinanceSourceReferences)
+    private readonly references?: FinanceSourceReferences,
   ) {}
 
-  history(query: FinanceHistoryQueryV1, actor: AuthenticatedActor) {
-    return readFinanceHistory(
+  async history(query: FinanceHistoryQueryV1, actor: AuthenticatedActor) {
+    const result = await readFinanceHistory(
       this.database,
       this.sales,
       this.reservations,
@@ -108,6 +114,12 @@ export class FinanceInboxService {
       actor,
       this.companyScope,
     );
+    return {
+      ...result,
+      items: this.references
+        ? await this.references.history(result.items, actor)
+        : result.items,
+    };
   }
 
   async payingSuppliers(search: string, page: number) {
@@ -120,6 +132,13 @@ export class FinanceInboxService {
         .filter((row) => row.isActive && row.collaborationStatus === 'ACTIVE')
         .map((row) => ({ id: row.id, name: row.name || row.code })),
     };
+  }
+
+  private enrichReferences(
+    items: readonly FinanceInboxItemV1[],
+    actor: AuthenticatedActor,
+  ) {
+    return this.references ? this.references.inbox(items, actor) : items;
   }
 
   private async completeReservationInbox(actor: AuthenticatedActor) {
@@ -159,7 +178,10 @@ export class FinanceInboxService {
     const result = await this.readQueue(actor, includeCompleted);
     return {
       ...result,
-      items: await this.enrichFx(result.items, actor),
+      items: await this.enrichReferences(
+        await this.enrichFx(result.items, actor),
+        actor,
+      ),
     };
   }
 
@@ -179,7 +201,10 @@ export class FinanceInboxService {
     return {
       ...result,
       ...selected,
-      items: await this.enrichFx(selected.items, actor),
+      items: await this.enrichReferences(
+        await this.enrichFx(selected.items, actor),
+        actor,
+      ),
       page,
       pageSize,
     };
@@ -281,7 +306,23 @@ export class FinanceInboxService {
       await this.database.client.financeOperationalRequest.findMany({
         where: {
           branchId: { in: actor.branchIds },
-          AND: [(await this.companyScope?.operationalWhere(actor)) ?? {}],
+          AND: [
+            (await this.companyScope?.operationalWhere(actor)) ?? {},
+            ...(currentFinanceFiscalRequest()
+              ? [
+                  {
+                    OR: [
+                      { fiscalPeriodId: null },
+                      {
+                        fiscalPeriod: {
+                          bookId: currentFinanceFiscalRequest()!.bookId ?? '',
+                        },
+                      },
+                    ],
+                  },
+                ]
+              : []),
+          ],
         },
         select: {
           id: true,
@@ -412,7 +453,12 @@ export class FinanceInboxService {
         amount: item.amount ?? null,
         settlement: null,
         status: hrStatus[item.status],
-        hrReferral: { canRespond: item.canRespond, response: item.response },
+        hrReferral: {
+          canRespond: item.canRespond,
+          response: item.response,
+          sourceId: item.sourceId,
+          mission: item.mission,
+        },
         dueAt: item.dueAt,
         createdAt: item.createdAt,
         requesterDisplaySnapshot: null,
@@ -675,7 +721,7 @@ export class FinanceInboxService {
     return {
       version: 1,
       generatedAt: new Date().toISOString(),
-      items,
+      items: fiscalInboxItems(items),
       sources: [
         ...sources,
         {
@@ -802,6 +848,8 @@ export class FinanceInboxService {
       where: {
         branchId: { in: [...actor.branchIds] },
         isActive: true,
+        isExternal: false,
+        deletedAt: null,
         currencyCode: { not: null },
       },
       include: { bank: { select: { name: true } } },
@@ -1369,6 +1417,23 @@ export class FinanceInboxService {
           current.cumulativePaid.toString(),
         ).add(paidAmount);
         const remainingAmount = currentRemaining.subtract(paidAmount);
+        const verified = await verifyBankPayment(
+          tx,
+          input,
+          { invoiceId: sourceId },
+          {
+            amount: paidAmount.toString(),
+            rate: exchangeRate.toString(),
+            remaining: currentRemaining.toString(),
+            currency: source.currencyCode,
+            actorId: actor.userId,
+            branchId: source.branchId,
+            date: transferAt,
+            payeeCurrency: account?.currencyCode,
+            channel: account ? method.channel : undefined,
+            party: { supplierId: source.supplier.id },
+          },
+        );
         const status = remainingAmount.isZero ? 'PAID' : 'PARTIALLY_PAID';
         const row = await tx.financeProcurementInvoiceRevision.create({
           data: {
@@ -1376,6 +1441,7 @@ export class FinanceInboxService {
             sourceVersion: source.sourceVersion,
             branchId: source.branchId,
             version: current.version + 1,
+            ...verified,
             status,
             accountId: account?.id ?? null,
             payingSupplierId,
@@ -1394,13 +1460,6 @@ export class FinanceInboxService {
             reason,
             actorUserId: actor.userId,
           },
-        });
-        await debitExchange(tx, {
-          officeId: exchangeOfficeId,
-          currencyCode: source.currencyCode,
-          amount: paidAmount.toString(),
-          actorUserId: actor.userId,
-          invoicePaymentId: row.id,
         });
         await recordFinancialEvent(tx, {
           source: 'INVOICE',

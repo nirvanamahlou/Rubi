@@ -1,5 +1,4 @@
 'use client';
-import { WebsitePublicationSwitch } from '@/modules/site-commerce/publication-switch';
 import { tourDestinationIds } from '@nora/contracts';
 import type { TourDepartureV1, TourPackageV1 } from '@nora/contracts';
 import {
@@ -184,6 +183,11 @@ export function TourOverview({
                   <header className="flex flex-wrap items-center justify-between gap-2 bg-primary/5 px-4 py-3">
                     <div>
                       <h4 className="font-bold">{pack.name}</h4>
+                      <span>
+                        {pack.publicationStatus === 'DRAFT'
+                          ? 'پیش‌نویس'
+                          : 'منتشرشده'}
+                      </span>
                       <p className="text-xs text-muted-foreground">
                         {city(pack.originId)} ←{' '}
                         {tourDestinationIds(pack).map(city).join(' ← ')}
@@ -257,11 +261,11 @@ export function TourOverview({
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {onPeriodStatus ? (
-                              <WebsitePublicationSwitch
-                                kind="tour"
-                                resourceId={item.id}
-                                disabled={busy}
-                              />
+                              <Button asChild variant="outline">
+                                <a href="/integrations">
+                                  مدیریت انتشار در سایت
+                                </a>
+                              </Button>
                             ) : null}
                             <Button
                               variant="outline"
@@ -356,6 +360,9 @@ export function TourOverview({
             >
               <div>
                 <h4 className="font-semibold">{item.name}</h4>
+                <span>
+                  {item.publicationStatus === 'DRAFT' ? 'پیش‌نویس' : 'منتشرشده'}
+                </span>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {city(item.originId)} ← {city(item.destinationId)}
                 </p>

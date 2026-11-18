@@ -12,6 +12,32 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 describe('Private Finance PDF route', () => {
+  it('forwards only the frozen fiscal constraints and authenticated cookies to the trusted API', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(Response.json({ scope: 'INBOX' }));
+    vi.stubGlobal('fetch', fetchMock);
+    await GET(
+      new Request('http://web.test/finance/export/pdf', {
+        headers: {
+          cookie: 'synthetic-session',
+          'x-finance-company': 'A',
+          'x-finance-actor-id': 'actor',
+          'x-finance-period-id': 'year',
+          'x-finance-period-version': '2',
+          'x-finance-period-mode': 'temporary',
+          authorization: 'not-forwarded',
+          'x-unrelated-header': 'not-forwarded',
+        },
+      }),
+    );
+    const headers = new Headers(fetchMock.mock.calls[0]?.[1].headers);
+    expect(headers.get('x-finance-period-id')).toBe('year');
+    expect(headers.get('x-finance-period-mode')).toBe('temporary');
+    expect(headers.get('cookie')).toBe('synthetic-session');
+    expect(headers.has('authorization')).toBe(false);
+    expect(headers.has('x-unrelated-header')).toBe(false);
+  });
   it.each([401, 403, 404])(
     'does not render unauthorized or absent data (%s)',
     async (status) => {

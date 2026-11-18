@@ -12,10 +12,21 @@ import {
 } from './contract-reports';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
+export type ContractLink = { id: string; contractNumber: string };
 export async function inspectContractQuestion(
   message: string,
   previousId?: string,
-): Promise<{ text: string; contractId?: string } | undefined> {
+  previousVersion?: number,
+  signal?: AbortSignal,
+): Promise<
+  | {
+      text: string;
+      contractId?: string;
+      version?: number;
+      links?: ContractLink[];
+    }
+  | undefined
+> {
   const normalized = normalizeContractQuestion(message);
   const refs = [
     ...normalized.matchAll(
@@ -52,7 +63,17 @@ export async function inspectContractQuestion(
       const session = base && (await refreshAuthenticatedSession(base));
       if (!session)
         return { text: 'برای گزارش قراردادها دوباره وارد حساب خود شوید.' };
-      return { text: await portfolioReport(message, session.user.id) };
+      const links: ContractLink[] = [];
+      return {
+        text: await portfolioReport(
+          message,
+          session.user.id,
+          (row) =>
+            links.push({ id: row.id, contractNumber: row.contractNumber }),
+          signal,
+        ),
+        links,
+      };
     }
     let id = previousId;
     if (reference || customerSearch) {
@@ -91,6 +112,9 @@ export async function inspectContractQuestion(
       const matches = candidates.filter(exact);
       if (matches.length !== 1) {
         return {
+          links: candidates
+            .slice(0, 10)
+            .map(({ id, contractNumber }) => ({ id, contractNumber })),
           text: candidates.length
             ? 'شماره کامل قرارداد موردنظر را بنویسید. قراردادهای قابل مشاهده در نتیجه جست‌وجو ' +
               candidates
@@ -109,9 +133,16 @@ export async function inspectContractQuestion(
     const { data } = await salesApi.detail(id);
     return {
       contractId: id,
+      version: data.version,
+      links: [{ id, contractNumber: data.contractNumber }],
       text: [
+        previousId === id &&
+        previousVersion !== undefined &&
+        previousVersion !== data.version
+          ? 'نسخه قرارداد تغییر کرده است؛ این پاسخ از نسخه تازه خوانده شد.'
+          : '',
         contractInspectionText(data),
-        await recordReport(message, data),
+        await recordReport(message, data, signal),
         /چطور|چجور|چگونه|کجا|مراحل|نحوه|راهنما/.test(message)
           ? contractGuideAnswer(message, true, true)
           : undefined,

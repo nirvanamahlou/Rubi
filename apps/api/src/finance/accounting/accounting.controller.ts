@@ -72,6 +72,15 @@ export class AccountingController {
   ) {
     return this.accounting.journals(id, query, request.actor);
   }
+  @Get('books/:bookId/journals/:journalId/read')
+  @Header('Cache-Control', 'private, no-store')
+  readJournal(
+    @Param('bookId') bookId: string,
+    @Param('journalId') journalId: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.accounting.readJournal(bookId, journalId, request.actor);
+  }
   @Get('books/:bookId/reports/trial-balance')
   @Header('Cache-Control', 'private, no-store')
   report(

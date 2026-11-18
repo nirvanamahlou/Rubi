@@ -1,0 +1,167 @@
+/** Immediate serial synthetic evaluation; only actual provider throttling delays a retry. */
+import { createHash } from 'node:crypto';
+import { spawn } from 'node:child_process';
+import {
+  readFileSync,
+  writeFileSync,
+  readdirSync,
+  mkdirSync,
+  openSync,
+  closeSync,
+  unlinkSync,
+} from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { setTimeout as pause } from 'node:timers/promises';
+import { runAcceptanceCases } from './acceptance-pacing.mjs';
+
+if (!process.argv.includes('--run-synthetic'))
+  throw Error('EXPLICIT_SYNTHETIC_RUN_REQUIRED');
+const privateEnv = process.env.NORA_ACCEPTANCE_ENV_FILE;
+const directory = process.env.NORA_AGENT_ACCEPTANCE_RECEIPT_DIR;
+if (!privateEnv || !directory)
+  throw Error('PRIVATE_ENV_AND_RECEIPT_DIRECTORY_REQUIRED');
+const root = fileURLToPath(new URL('../../../', import.meta.url));
+const api = resolve(root, 'apps/api');
+const pinnedFiles = [
+  'pnpm-lock.yaml',
+  'scripts/operations/nora-agent/run-live-acceptance-fast.mjs',
+  'scripts/operations/nora-agent/acceptance-pacing.mjs',
+
+  'apps/api/src/sales/assistant-agent/live-acceptance.spec.ts',
+  'apps/api/src/sales/assistant-agent/query.service.ts',
+  'apps/api/src/sales/assistant-agent/count-breakdown.ts',
+  'apps/api/src/reservations/reservation-reporting-cancellations.public.ts',
+  'apps/api/src/sales/assistant-agent/sql-policy.ts',
+  'apps/api/src/sales/assistant-agent/catalog.ts',
+  'scripts/operations/nora-agent/live-provider.mjs',
+  'packages/database/prisma/migrations/20261114120000_nora_agent_sales_views/migration.sql',
+];
+const fingerprint = () =>
+  createHash('sha256')
+    .update(
+      [
+        ...pinnedFiles,
+        ...readdirSync(resolve(root, 'services/assistant'))
+          .filter(
+            (name) => name.endsWith('.mjs') && !name.endsWith('.test.mjs'),
+          )
+          .sort()
+          .map((name) => 'services/assistant/' + name),
+      ]
+        .map((path) => path + '\n' + readFileSync(resolve(root, path), 'utf8'))
+        .join('\n'),
+    )
+    .digest('hex');
+const sourceHash = fingerprint();
+mkdirSync(directory, { recursive: true });
+const lockPath = resolve(directory, 'nora-live-acceptance.lock');
+const lock = openSync(lockPath, 'wx');
+writeFileSync(lock, String(process.pid));
+const statePath = resolve(directory, 'nora-live-acceptance-progress.json');
+const state = {
+  source: 'NORA-ACCEPTANCE-PACING-1116',
+  sourceHash,
+  status: 'READY',
+  startedAt: new Date().toISOString(),
+  cases: [],
+  nextAttemptAt: null,
+};
+let stopping = false;
+let child;
+const save = () => writeFileSync(statePath, JSON.stringify(state, null, 2));
+for (const event of ['SIGINT', 'SIGTERM'])
+  process.once(event, () => {
+    stopping = true;
+    child?.kill();
+  });
+async function wait(ms) {
+  state.nextAttemptAt = new Date(Date.now() + ms).toISOString();
+  save();
+  while (ms > 0 && !stopping) {
+    const step = Math.min(ms, 30000);
+    await pause(step);
+    ms -= step;
+  }
+  if (stopping) throw Error('STOPPED');
+}
+async function runCase(index) {
+  if (fingerprint() !== sourceHash)
+    throw Error('SOURCE_CHANGED_RESTART_FULL_MATRIX');
+  const existing = new Set(readdirSync(directory));
+  const logPath = resolve(directory, `scenario-${index}-${Date.now()}.log`);
+  let output = '';
+  const code = await new Promise((resolveExit, reject) => {
+    child = spawn(
+      process.execPath,
+      [
+        '--env-file=' + privateEnv,
+        'node_modules/vitest/vitest.mjs',
+        'run',
+        'src/sales/assistant-agent/live-acceptance.spec.ts',
+        '-t',
+        `live ${index}:`,
+      ],
+      {
+        cwd: api,
+        windowsHide: true,
+        signal: AbortSignal.timeout(240000),
+        env: {
+          ...process.env,
+          NORA_RUN_AGENT_LIVE_TESTS: '1',
+          NORA_ACCEPTANCE_SYNTHETIC_DIAGNOSTICS: 'true',
+        },
+      },
+    );
+    child.stdout.on('data', (value) => {
+      output += value;
+    });
+    child.stderr.on('data', (value) => {
+      output += value;
+    });
+    child.once('error', reject);
+    child.once('close', resolveExit);
+  });
+  writeFileSync(logPath, output);
+  const files = readdirSync(directory).filter(
+    (name) =>
+      !existing.has(name) && /^nora-live-matrix-[a-f0-9]{32}\.json$/.test(name),
+  );
+  if (files.length !== 1)
+    throw Error('ACCEPTANCE_RECEIPT_MISSING_OR_AMBIGUOUS');
+  const rows = JSON.parse(readFileSync(resolve(directory, files[0]), 'utf8'));
+  if (fingerprint() !== sourceHash)
+    throw Error('SOURCE_CHANGED_RESTART_FULL_MATRIX');
+  if (rows.length !== 1 || rows[0].id !== index)
+    throw Error('ACCEPTANCE_CASE_MISMATCH');
+  return { exitCode: code, receiptFile: files[0], ...rows[0] };
+}
+try {
+  await runAcceptanceCases({
+    runCase,
+    wait,
+    onProgress(event) {
+      if (event.result)
+        state.cases.push({
+          ...event.result,
+          attempt: event.attempt,
+          finishedAt: event.finishedAt,
+        });
+      if (event.status) state.status = event.status;
+      if (Object.hasOwn(event, 'nextAttemptAt'))
+        state.nextAttemptAt = event.nextAttemptAt;
+      save();
+    },
+  });
+  state.status = 'MODEL_MATRIX_PASSED_REQUIRES_BROWSER_AND_REVIEW';
+} catch (error) {
+  state.status = stopping ? 'STOPPED' : 'REVIEW_REQUIRED';
+  state.reason = error.message;
+  process.exitCode = 1;
+} finally {
+  state.finishedAt = new Date().toISOString();
+  save();
+  closeSync(lock);
+  if (readFileSync(lockPath, 'utf8') === String(process.pid))
+    unlinkSync(lockPath);
+}

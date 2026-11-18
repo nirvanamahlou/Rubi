@@ -125,7 +125,6 @@ export function StandaloneInsuranceDraft({
       person.passportNo,
       person.birthDate,
       person.mobile,
-      person.email,
     ].every((value) => value.trim()) &&
     ['M', 'F'].includes(person.gender) &&
     (person.nationalityCode !== 'IRN' || Boolean(person.nationalCode.trim()));

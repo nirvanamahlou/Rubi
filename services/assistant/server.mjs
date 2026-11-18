@@ -1,4 +1,9 @@
-import { conversationConfiguration } from './conversation-config.mjs';
+import { groqConfigurations } from './groq-runtime.mjs';
+import {
+  createWorkbenchGuideSelector,
+  validateWorkbenchGuide,
+} from './workbench-guide.mjs';
+import { createDataAgent, validateDataAgentMessage } from './data-agent.mjs';
 import { createOrchestrator, readMessage } from './orchestrator.mjs';
 import { parseFilterSearch, resolveReportFilters } from './report-filters.mjs';
 import { runPreparedAction } from './prepared-actions.mjs';
@@ -16,6 +21,10 @@ import {
 } from './authorization.mjs';
 import { createToolExecutor } from './tool-executor.mjs';
 import { recordRequestAudit } from './audit.mjs';
+import {
+  requestQuotaExemptions,
+  validateQuotaExemptions,
+} from './request-quota.mjs';
 export { accessCookie } from './authorization.mjs';
 export { configuredErpOrigin } from './erp-client.mjs';
 export { personalFollowUps } from './personal-source.mjs';
@@ -30,7 +39,11 @@ export function createAssistantServer({
   identityTimeoutMs = timeoutMs,
   now = () => new Date(),
   conversation,
+  agent,
+  workbenchGuide,
+  rateLimitExemptUserIds = requestQuotaExemptions(),
 }) {
+  const exemptUsers = new Set(validateQuotaExemptions(rateLimitExemptUserIds));
   const client = createErpClient({
     erpBaseUrl,
     erpReportsBaseUrl,
@@ -46,7 +59,15 @@ export function createAssistantServer({
     now,
   });
   const orchestrate = createOrchestrator({ ...conversation, now });
+  const dataAgent = createDataAgent({
+    ...agent,
+    erpBaseUrl: erpReportsBaseUrl,
+    fetcher,
+    now,
+    audit,
+  });
   const windows = new Map();
+  const selectWorkbenchGuide = createWorkbenchGuideSelector(workbenchGuide);
   let inFlight = 0;
   function withinLimit(key, limit) {
     const time = Date.now();
@@ -63,11 +84,19 @@ export function createAssistantServer({
       const correlationId = randomUUID();
       const started = Date.now();
       const deadline = new AbortController();
-      const timer = setTimeout(() => deadline.abort(), 10000);
+      const agentRequest = request.url === '/v3/assistant/conversation';
+      const guideRequest = request.url === '/v1/assistant/workbench-guide';
+      const timer = setTimeout(
+        () => deadline.abort(),
+        agentRequest ? 60000 : 10000,
+      );
       response.once('close', () => {
         if (!response.writableEnded) deadline.abort();
       });
-      const conversationRequest = request.url === '/v2/assistant/conversation';
+      const conversationRequest =
+        request.url === '/v2/assistant/conversation' ||
+        agentRequest ||
+        guideRequest;
       let actorId;
       let action;
       let optionsRequest = false;
@@ -157,23 +186,57 @@ export function createAssistantServer({
           !conversationRequest
         )
           throw new ServiceError(404, 'NOT_FOUND');
-        if (
-          inFlight >= 8 ||
-          !withinLimit(`ip:${request.socket.remoteAddress}`, 60)
-        )
-          throw new ServiceError(429, 'RATE_LIMITED');
-        inFlight++;
-        counted = true;
         const cookie = accessCookie(request.headers.cookie);
         if (!cookie) throw new ServiceError(401, 'UNAUTHENTICATED');
         const actor = await authenticate(cookie, deadline.signal);
         actorId = actor.userId;
-        if (!withinLimit(`user:${actorId}`, 12))
-          throw new ServiceError(429, 'RATE_LIMITED');
+        // Identify the account through native IAM before applying its quota.
+        // Exempt activity neither consumes shared IP counters nor occupies the
+        // ordinary-user concurrency pool. Data permissions are unaffected.
+        if (!exemptUsers.has(actorId.toLowerCase())) {
+          if (
+            inFlight >= 8 ||
+            !withinLimit(`ip:${request.socket.remoteAddress}`, 60) ||
+            !withinLimit(`user:${actorId}`, 12)
+          )
+            throw new ServiceError(429, 'RATE_LIMITED');
+          inFlight++;
+          counted = true;
+        }
+        if (guideRequest) {
+          const input = await readMessage(
+            request,
+            deadline.signal,
+            validateWorkbenchGuide,
+          );
+          const result = await selectWorkbenchGuide(input, deadline.signal, {
+            beforeRetry: () => authenticate(cookie, deadline.signal, actorId),
+          });
+          await authenticate(cookie, deadline.signal, actorId);
+          outcome = 'SUCCESS';
+          send(200, result);
+          return;
+        }
+        if (agentRequest) {
+          const message = await readMessage(
+            request,
+            deadline.signal,
+            validateDataAgentMessage,
+          );
+          const result = await dataAgent(message, {
+            cookie,
+            signal: deadline.signal,
+          });
+          await authenticate(cookie, deadline.signal, actorId);
+          outcome = 'SUCCESS';
+          send(200, result);
+          return;
+        }
         if (conversationRequest) {
           const message = await readMessage(request, deadline.signal);
           const result = await orchestrate(message, {
             signal: deadline.signal,
+            beforeRetry: () => authenticate(cookie, deadline.signal, actorId),
             runAction: async (selected, filters) => {
               action = selected;
               filteredRequest = true;
@@ -280,7 +343,9 @@ if (
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   const service = createAssistantServer({
-    conversation: conversationConfiguration(),
+    ...groqConfigurations(process.env, {
+      audit: (event) => process.stdout.write(JSON.stringify(event) + '\n'),
+    }),
     identityTimeoutMs: 5000,
     erpBaseUrl: process.env.ERP_API_BASE_URL,
     erpAuthBaseUrl:

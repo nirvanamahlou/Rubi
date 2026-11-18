@@ -2,6 +2,8 @@ import type { TicketOfferV1 } from './index';
 
 /** Ticket Catalog owns this bundle; capacity always belongs to its ticket offers. */
 export interface TourPackageInputV1 {
+  /** Omitted on legacy definitions means published. */
+  publicationStatus?: 'DRAFT' | 'PUBLISHED';
   name: string;
   /** Empty until the draft route is selected; required before departure creation. */
   originId: string;
@@ -25,6 +27,7 @@ export interface TourPackageInputV1 {
     refundRules?: string;
     originAirportCode?: string;
     destinationAirportCode?: string;
+    isFloating?: boolean;
     isCombined?: boolean;
     /** Ordered destinations, including the primary destination, with consecutive hotel nights. */
     destinations?: { cityId: string; nights: number }[] | undefined;

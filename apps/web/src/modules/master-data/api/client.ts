@@ -274,6 +274,17 @@ export const masterDataApi = {
       throw new MasterDataApiError('پاسخ لوگو تصویر PNG یا JPEG نیست.', 415);
     return blob;
   },
+  async uploadHotelImages(files: File[]) {
+    const form = new FormData();
+    for (const file of files) form.append('files', file);
+    const result = await request<{ data: string[] }>('/hotel-images', {
+      method: 'POST',
+      body: form,
+    });
+    return result.data.map(
+      (name) => `${getPublicApiBaseUrl()}/master-data/hotel-images/${name}`,
+    );
+  },
   async uploadLogo(input: {
     file: File;
     resource: MasterDataResource;

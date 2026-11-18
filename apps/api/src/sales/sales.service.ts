@@ -1,3 +1,4 @@
+import type { PackagePublishedSaleV1 } from '@nora/contracts';
 import { ContractCompanyScope } from '../sales/contract-company-scope.public';
 import { salesSupplyWhere } from './sales-supply-filter';
 import { isFloatingSalesContract } from '@nora/contracts';
@@ -90,6 +91,12 @@ import {
 
 function has(actor: AuthenticatedActor, permission: string): boolean {
   return actor.permissions.includes(permission as never);
+}
+
+function assertCreateKey(key: string | undefined): asserts key is string {
+  if (!key?.trim())
+    throw new BadRequestException('Idempotency-Key الزامی است.');
+  if (Array.from(key).length > 160) throw new BadRequestException();
 }
 
 function branch(actor: AuthenticatedActor, requested?: string): string {
@@ -478,6 +485,22 @@ function summary(detail: SalesContractDetail): SalesContractSummary {
 
 @Injectable()
 export class SalesService {
+  /** Minimal status facts for exact website-owned links supplied by Site Commerce. */
+  async cancelledWebsiteContracts(
+    contractIds: readonly string[],
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      !actor.permissions.includes('sales.contracts.create') ||
+      !actor.branchIds.length
+    )
+      throw new ForbiddenException();
+    const ids = [...new Set(contractIds)];
+    if (ids.length > 10000) throw new BadRequestException();
+    if (!ids.length) return [];
+    return this.repository.cancelledWebsiteContracts(ids, actor.branchIds);
+  }
+
   constructor(
     @Inject(SalesRepository) private readonly repository: SalesRepository,
     @Inject(SalesCustomersPublicAdapter)
@@ -1087,8 +1110,8 @@ export class SalesService {
     return rows.map((row) => ({
       id: row.id,
       source: 'SALES' as const,
-      requestId: row.id,
-      trackingNumber: row.contractId,
+      requestId: row.contractId,
+      trackingNumber: row.contract.contractNumber,
       trackingDate: financialDate(row.contract.createdAt),
       customerId: row.contract.customerId,
       direction: 'RECEIPT' as const,
@@ -1188,6 +1211,22 @@ export class SalesService {
       })),
     };
   }
+  async submissionStatus(key: string, actor: AuthenticatedActor) {
+    if (!has(actor, 'sales.contracts.create')) throw new ForbiddenException();
+    assertCreateKey(key);
+    const row = await this.repository.findByCreateKey(actor.userId, key);
+    if (!row) return { data: null };
+    this.assertRead(row, actor);
+    return {
+      data: {
+        id: row.id,
+        contractNumber: row.contractNumber,
+        status: row.status,
+        reservationStatus: row.reservationStatus,
+      },
+    };
+  }
+
   async detail(id: string, actor: AuthenticatedActor) {
     const row = await this.repository.findById(id);
     if (!row)
@@ -1228,11 +1267,11 @@ export class SalesService {
     requestedBranch: string | undefined,
     idempotencyKey: string | undefined,
     traceId?: string,
+    frozenPackageSales?: readonly PackagePublishedSaleV1[],
   ) {
     if (!has(actor, 'sales.contracts.create'))
       throw new ForbiddenException('مجوز ایجاد قرارداد وجود ندارد.');
-    if (!idempotencyKey?.trim())
-      throw new BadRequestException('Idempotency-Key الزامی است.');
+    assertCreateKey(idempotencyKey);
     domainCall(() => validateSalesContract(input));
     const fingerprint = salesFingerprint(input);
     const existing = await this.repository.findByCreateKey(
@@ -1266,6 +1305,7 @@ export class SalesService {
         input,
         actor,
         branchId,
+        frozenPackageSales,
       );
     } else if (input.services.some((s) => s.metadata?.packagePublishedSale))
       throw new BadRequestException('قیمت فروش معتبر نیست.');
@@ -1970,7 +2010,29 @@ export class SalesService {
                   )
                   .map((service) => [
                     service.clientKey,
-                    expectedTicketSale(service.pricing?.[0], service.metadata),
+                    {
+                      ...expectedTicketSale(
+                        service.pricing?.[0],
+                        service.metadata,
+                      ),
+                      passengerCounts: {
+                        adults: presented.passengersDetail.filter(
+                          (p) =>
+                            p.ageCategory === 'ADT' &&
+                            p.serviceClientKeys.includes(service.clientKey),
+                        ).length,
+                        children: presented.passengersDetail.filter(
+                          (p) =>
+                            p.ageCategory === 'CHD' &&
+                            p.serviceClientKeys.includes(service.clientKey),
+                        ).length,
+                        infants: presented.passengersDetail.filter(
+                          (p) =>
+                            p.ageCategory === 'INF' &&
+                            p.serviceClientKeys.includes(service.clientKey),
+                        ).length,
+                      },
+                    },
                   ]),
               ),
           Object.fromEntries(

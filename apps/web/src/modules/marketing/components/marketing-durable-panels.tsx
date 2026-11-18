@@ -589,7 +589,6 @@ export function DurableIntakesPanel({
   const [error, setError] = useState('');
   const [phone, setPhone] = useState('');
   const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [entryDate, setEntryDate] = useState('');
   const [source, setSource] = useState('');
   const [campaignId, setCampaignId] = useState('none');
@@ -733,7 +732,6 @@ export function DurableIntakesPanel({
               onAdd: () => {
                 setPhone('');
                 setFirstName('');
-                setLastName('');
                 setEntryDate('');
                 setSource('');
                 setCampaignId('none');
@@ -780,20 +778,12 @@ export function DurableIntakesPanel({
             <DialogTitle>افزودن سرنخ</DialogTitle>
             <DialogDescription>ثبت سرنخ و اتصال آن به کمپین</DialogDescription>
             <fieldset disabled={busy} className="grid gap-4 md:grid-cols-2">
-              <FormField id="intake-first-name" label="نام" required>
+              <FormField id="intake-first-name" label="عنوان" required>
                 <Input
                   id="intake-first-name"
                   value={firstName}
                   maxLength={100}
                   onChange={(event) => setFirstName(event.target.value)}
-                />
-              </FormField>
-              <FormField id="intake-last-name" label="نام خانوادگی" required>
-                <Input
-                  id="intake-last-name"
-                  value={lastName}
-                  maxLength={100}
-                  onChange={(event) => setLastName(event.target.value)}
                 />
               </FormField>
               <FormField id="intake-date" label="تاریخ" required>
@@ -877,13 +867,12 @@ export function DurableIntakesPanel({
                   }
                   if (
                     !firstName.trim() ||
-                    !lastName.trim() ||
                     !entryDate ||
                     !source ||
                     !phone.trim()
                   ) {
                     setFormError(
-                      'نام، نام خانوادگی، تلفن، تاریخ و منبع ورود را وارد کنید.',
+                      'عنوان، تلفن، تاریخ و منبع ورود را وارد کنید.',
                     );
                     return;
                   }
@@ -893,7 +882,6 @@ export function DurableIntakesPanel({
                     await marketingApi.createIntake(
                       {
                         firstName: firstName.trim(),
-                        lastName: lastName.trim(),
                         entryDate: new Date(
                           `${entryDate}T00:00:00+03:30`,
                         ).toISOString(),
@@ -910,7 +898,6 @@ export function DurableIntakesPanel({
                     );
                     setPhone('');
                     setFirstName('');
-                    setLastName('');
                     setEntryDate('');
                     setEditorOpen(false);
                     await load();
@@ -940,7 +927,6 @@ export function DurableIntakesPanel({
                 onClick={() => {
                   setPhone('');
                   setFirstName('');
-                  setLastName('');
                   setEntryDate('');
                   setSource('');
                   setCampaignId('none');

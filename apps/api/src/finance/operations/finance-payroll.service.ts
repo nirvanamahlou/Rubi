@@ -1,4 +1,9 @@
+import { validatePayee } from '../payments/bank-payee';
 import { grossAccrualCovers } from '../accounting/accounting.workflows';
+import {
+  assertFinanceFiscalWrite,
+  currentFinanceFiscalRequest,
+} from '../fiscal-context/finance-fiscal-storage';
 import { lockCustomerSettlement } from '../../sales/customer-purchase-settlement.public';
 import {
   lockReceiptFunds,
@@ -67,6 +72,16 @@ export class FinancePayrollService {
       include: { revisions: { orderBy: { version: 'asc' } } },
     });
     if (!row) throw new NotFoundException('درخواست حقوق یافت نشد.');
+    if (
+      currentFinanceFiscalRequest() &&
+      row.fiscalPeriodId &&
+      (
+        await this.database.client.accountingPeriod.findUnique({
+          where: { id: row.fiscalPeriodId },
+        })
+      )?.bookId !== currentFinanceFiscalRequest()?.bookId
+    )
+      throw new NotFoundException('درخواست در شرکت فعال در دسترس نیست.');
     return {
       id: row.id,
       version: row.version,
@@ -115,6 +130,7 @@ export class FinancePayrollService {
       'paidAmount',
       'accountId',
       'payingSupplierId',
+      'beneficiaryId',
       'methodId',
       'transferAt',
       'paymentReference',
@@ -159,6 +175,16 @@ export class FinancePayrollService {
         },
       });
     if (!initial) throw new NotFoundException('درخواست حقوق یافت نشد.');
+    if (
+      currentFinanceFiscalRequest() &&
+      initial.fiscalPeriodId &&
+      (
+        await this.database.client.accountingPeriod.findUnique({
+          where: { id: initial.fiscalPeriodId },
+        })
+      )?.bookId !== currentFinanceFiscalRequest()?.bookId
+    )
+      throw new NotFoundException('درخواست در شرکت فعال در دسترس نیست.');
     if (initial.kind === PAYROLL_WORKSHEET_KIND && !initial.hrRecordId)
       throw new ConflictException('منبع درخواست مالی حقوق معتبر نیست.');
     if (
@@ -232,6 +258,10 @@ export class FinancePayrollService {
     }
     try {
       await this.database.client.$transaction(async (tx) => {
+        await assertFinanceFiscalWrite(
+          tx,
+          typeof input.transferAt === 'string' ? input.transferAt : new Date(),
+        );
         if (initial.kind === 'PAYROLL' && action === 'APPROVE')
           await tx.$queryRaw`SELECT id FROM accounting_books WHERE "branchId"=${initial.branchId}::uuid AND active=true AND "allowsPosting"=true ORDER BY id FOR SHARE`;
         const grossCovered =
@@ -361,6 +391,7 @@ export class FinancePayrollService {
           methodId: string | null = null,
           transferAt: Date | null = null;
         let methodName: string | null = null;
+        let beneficiaryId: string | null = null;
         let payingSupplierId: string | null = null;
         let payingSupplierName: string | null = null;
         let cumulativePaid = last.cumulativePaid,
@@ -438,6 +469,34 @@ export class FinancePayrollService {
             throw new BadRequestException(
               'حساب هم‌ارز فعال یا روش پرداخت معتبر نیست.',
             );
+          if (
+            !isPetty &&
+            accountId &&
+            (('channel' in method && method.channel === 'BANK_TRANSFER') ||
+              input.beneficiaryId)
+          ) {
+            const designation =
+              !current.counterpartyOrganizationId && !refundReceipt?.customerId
+                ? await tx.financePayeeDesignation.findFirst({
+                    where: {
+                      operationalId: id,
+                      book: { branchId: current.branchId },
+                    },
+                  })
+                : null;
+            beneficiaryId = await validatePayee(
+              tx,
+              current.branchId,
+              currentFinanceFiscalRequest()?.bookId ?? undefined,
+              input.beneficiaryId,
+              current.currencyCode,
+              {
+                organizationId: current.counterpartyOrganizationId,
+                customerId: refundReceipt?.customerId ?? null,
+                ownerId: designation?.ownerId ?? null,
+              },
+            );
+          }
           methodName = method.name;
           const instant = validate.text(input.transferAt, 'زمان UTC', 30);
           if (
@@ -486,6 +545,7 @@ export class FinancePayrollService {
         await tx.financeOperationalRevision.create({
           data: {
             id: operationId,
+            beneficiaryId,
             requestId: id,
             actorId: actor.userId,
             version: expectedVersion + 1,
@@ -787,6 +847,7 @@ export class FinancePayrollService {
       .digest('hex');
     try {
       return await this.database.client.$transaction(async (tx) => {
+        const fiscalPeriod = await assertFinanceFiscalWrite(tx, new Date());
         await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`finance-create:${receipt?.id ?? id.toLowerCase()}`}, 0))::text`;
         const existing = await tx.financeOperationalRequest.findUnique({
           where: { id },
@@ -841,6 +902,7 @@ export class FinancePayrollService {
         }
         const row = await tx.financeOperationalRequest.create({
           data: {
+            ...(fiscalPeriod ? { fiscalPeriodId: fiscalPeriod.id } : {}),
             id,
             branchId,
             requesterId: actor.userId,
@@ -920,6 +982,7 @@ export class FinancePayrollService {
       .digest('hex');
     try {
       return await this.database.client.$transaction(async (tx) => {
+        const fiscalPeriod = await assertFinanceFiscalWrite(tx, new Date());
         const existing = await tx.financeOperationalRequest.findUnique({
           where: { hrRecordId: source.id },
         });
@@ -992,6 +1055,7 @@ export class FinancePayrollService {
         }
         const request = await tx.financeOperationalRequest.create({
           data: {
+            ...(fiscalPeriod ? { fiscalPeriodId: fiscalPeriod.id } : {}),
             id: source.id,
             branchId: source.branchId,
             requesterId: actor.userId,

@@ -40,6 +40,7 @@ describe('complete tour definition form', () => {
     expect(html).not.toContain('ورود دستی');
     for (const select of html.match(/<select[^>]*>/g) ?? [])
       expect(select).toContain('aria-hidden="true"');
+    expect(html).not.toContain('مدت سفر (روز)');
     expect(html).not.toContain('type="date"');
     expect(html).not.toContain('معرفی و توضیحات کلی تور');
     expect(html).not.toContain('قیمت پایه پکیج');

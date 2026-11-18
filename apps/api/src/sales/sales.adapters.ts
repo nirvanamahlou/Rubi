@@ -45,7 +45,19 @@ export interface SalesTicketAvailabilityPort {
     contractId: string,
     seatCount: number,
     expectedTicketTotals?: Readonly<
-      Record<string, { amount: string; currencyCode: string }>
+      Record<
+        string,
+        {
+          amount: string;
+          currencyCode: string;
+          salePriceTargetId?: string;
+          passengerCounts?: {
+            adults: number;
+            children: number;
+            infants: number;
+          };
+        }
+      >
     >,
     counts?: Readonly<Record<string, number>>,
   ): Promise<{
@@ -116,7 +128,19 @@ export class SalesTicketsPublicAdapter implements SalesTicketAvailabilityPort {
     contractId: string,
     seatCount: number,
     expectedTicketTotals?: Readonly<
-      Record<string, { amount: string; currencyCode: string }>
+      Record<
+        string,
+        {
+          amount: string;
+          currencyCode: string;
+          salePriceTargetId?: string;
+          passengerCounts?: {
+            adults: number;
+            children: number;
+            infants: number;
+          };
+        }
+      >
     >,
     counts?: Readonly<Record<string, number>>,
   ) {

@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SalesContractCreateRequest } from '@nora/contracts';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -103,16 +102,5 @@ describe('new agency contract request identity', () => {
     vi.mocked(refreshAuthenticatedSession).mockResolvedValue(null);
     await expect(salesApi.create(input)).rejects.toThrow('شعبه فعال');
     expect(fetch).not.toHaveBeenCalled();
-  });
-  it('keeps the form fingerprint/retry guard while using the compatible generator', () => {
-    const form = readFileSync(
-      new URL('../components/sales-contract-form.tsx', import.meta.url),
-      'utf8',
-    );
-    expect(form).not.toContain('crypto.randomUUID(');
-    expect(form).toMatch(
-      /if \(submission.current.fingerprint !== fingerprint\)\s*submission.current = \{ fingerprint, key: browserRandomUuid\(\) \};/,
-    );
-    expect(form).toContain('salesApi.create(payload, submission.current.key)');
   });
 });

@@ -1,3 +1,19 @@
+## Website publication presentation — 2026-11-16
+
+WebsitePublication gains nullable presentation JSON (title, description, commissionPercent), CAS-versioned with destination selection. Canonical package prices and descriptions remain unchanged. Prior automatic publication triggers are removed; existing selections and operational data are preserved. Disconnected destinations store intent only; catalog consumption retains authenticated site binding.
+
+## Nora Agent Sales read views — 2026-11-14
+
+Migration20261114120000 adds the Sales-owned nora_agent schema with contracts,
+passengers, services, amounts and payments security-barrier views and restricted
+NOLOGIN owner/reader roles. No operational rows, keys or Prisma models change.
+Views retain native own/branch/all plus company/hidden predicates from a trusted
+transaction-local context; payments require the independent payment permission.
+Amounts have contract/currency grain and exclude refund/allocation accounting
+semantics. Sensitive identity/contact/documents, card and free-text metadata are
+not projected. Dedicated SQL credentials cannot read base tables. Details and
+provisioning: [NORA-DATA-AGENT-V1](tasks/NORA-DATA-AGENT-V1.md).
+
 ## Standalone insurance applicants — 2026-11-09
 
 Reservations owns ReservationInsuranceApplicant (real Branch/User FKs, UUID replay key, keyed request fingerprint, basic display name and AES-256-GCM encrypted full applicant value bound by AAD to applicant/branch IDs). ReservationInsuranceApplicantAccess audits authorized private reads with real applicant/User FKs and UTC time, without plaintext identity/contact snapshots. ReservationInsurancePolicy keeps existing contract/intake/customer FKs for contract issuance; they are nullable only when a real unique applicant FK replaces all three. A source CHECK enforces exactly one complete linkage shape; standalone uses the existing sandbox automatic state machine. No dummy Sales contract/CRM customer and no Finance release record is created. Additive migration20261109100000 preserves all existing rows and constraints; keep it on application rollback, with no data deletion or forced NOT NULL restoration. Worker/DTO/UI changes ship together. Original sanitized provider error stays in automation JSON and active lastError through outcome reconciliation; corrected attempts/revisions retain prior error provenance without storing upstream free text or identity values.
@@ -1103,3 +1119,15 @@ AccountingBook retains its branch, currency and immutable financial references a
 ## Accounting standard catalogues and mappings (2026-11-11)
 
 AccountingStandardEntity projects one configuration-local metadata row into a separate UUID; (standardId,rowId) is unique, so legacy row UUIDs can repeat in different standards. Composite restrictive FKs enforce same-book Configuration→Entity→Code→Mapping and Account→Mapping. One account maps to at most one code per entity; a code may collect many accounts at its declared GROUP/GENERAL/SUBSIDIARY level. Metadata changes synchronize this projection atomically without rewriting legacy JSON IDs; referenced entity type/removal and mapped-account level changes are rejected. Mapping/code commands share Accounting's book lock, entity CAS version, replay key and durable AccountingCommand snapshots. Read paths check current metadata/projection consistency, live company and branch scope. Standard turnover groups the tuple of ancestor codes once per posted line, keeping incomplete mappings visible and exact Decimal totals. It is an internal report, not an official statutory filing. Additive migration appends the observed current SANAMA/SANA/SAMAD reference catalogues without replacing pre-existing configuration codes or financial rows. See docs/tasks/LEDGER-PARITY-1111.md for source limits and preservation evidence.
+
+## Company fiscal default and Finance request context (2026-11-15)
+
+AccountingPeriod.isDefault defaults false; a partial PostgreSQL unique index permits at most one true row per book. The default is company-owned and changed through the audited book-lock/CAS command, while each user's temporary selection is request-local and never persisted. Accounting's existing academy-to-parent ledger mapping remains. New Finance-scoped FinanceAccountingEvent and FinanceOperationalRequest rows have nullable restrictive fiscalPeriodId FKs; old rows are not backfilled and immutable source fingerprints stay unchanged. New settlements link to original prior-year obligations without copying them; exact currency balances and origin dates remain available separately. Reports/history filter the active period or Tehran business-day bounds before pagination/export. Referenced periods cannot be deleted or redated. See [FINANCE-FISCAL-CONTEXT-1115](tasks/FINANCE-FISCAL-CONTEXT-1115.md).
+
+## Website publication delivery — 2026-11-15
+
+WebsitePublication.salesStopped separates visible paused listings from removed listings. WebsiteCatalogDelivery is the Integration-owned coalescing outbox with a restrictive Branch FK, monotonically increasing revision, acknowledged revision and next capacity-hold expiry. Source-table triggers write only invalidation metadata in the same transaction. The website stores its own signed, monotonic JSON projection; bookings and financial data retain existing owners. Additive migration20261115090000 applies before the dispatcher.
+
+## Website payment-stage capacity leases (PAYMENT-HOLD-1117)
+
+WebsiteCheckoutSession is an operational Site Commerce record keyed by siteCode, bound branchId and external checkout identity. It references the authenticated integration user and branch, stores the immutable quote/composition hash and first ten-minute expiry, and has a nullable real SalesContract FK populated only after bank verification. It does not create an ERP Customer or SalesContract before payment. Native TicketOfferCapacityHold references the checkout session with a real FK; the optional post-bank checkoutContractId links native allocation conversion. Pending bank attempt identity is immutable and retains capacity beyond normal expiry until an authenticated final outcome. CONSUMED is a completed hold converted to allocation atomically; released/expired/consumed records remain audit history. Buyer name/phone and site order reference are visible only in branch-authorized ticket management, never the public catalogue. Full protocol and tests: docs/tasks/PAYMENT-HOLD-1117.md.

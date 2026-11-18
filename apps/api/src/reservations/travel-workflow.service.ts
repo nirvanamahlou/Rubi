@@ -331,7 +331,7 @@ export class TravelWorkflowService {
         };
       } else throw new BadRequestException('سربرگ معتبر انتخاب کنید.');
     }
-    return this.database.client.$transaction(
+    const result = await this.database.client.$transaction(
       async (tx) => {
         await tx.$queryRaw(
           Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${id}, 0))`,
@@ -505,5 +505,8 @@ export class TravelWorkflowService {
         ? { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
         : undefined,
     );
+    // A rejected/rolled-back transaction must never wake the SMTP dispatcher.
+    if (email) this.mail!.wake();
+    return result;
   }
 }

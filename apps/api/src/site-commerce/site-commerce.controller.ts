@@ -1,3 +1,4 @@
+import type { VerifiedGatewayProof } from '../finance/payments/verified-gateway-receipt.public';
 import {
   Body,
   Controller,
@@ -7,6 +8,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -44,15 +46,32 @@ export class SiteCommerceController {
     @Param('kind') kind: string,
     @Param('resourceId', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
+    @Query('branchId') branchId?: string,
+    @Query('periodKey') periodKey?: string,
   ) {
-    return this.service.publication(site, kind, id, req.actor);
+    return this.service.publication(
+      site,
+      kind,
+      id,
+      req.actor,
+      branchId,
+      periodKey,
+    );
   }
   @Post('publications/:kind/:resourceId')
   async publish(
     @Param('site') site: string,
     @Param('kind') kind: string,
     @Param('resourceId', ParseUUIDPipe) id: string,
-    @Body() body: { enabled: boolean; version: number },
+    @Body()
+    body: {
+      enabled: boolean;
+      salesStopped?: boolean;
+      version: number;
+      branchId?: string;
+      presentation?: unknown;
+      periodKey?: string;
+    },
     @Req() req: AuthenticatedRequest,
   ) {
     const result = await this.service.publish(site, kind, id, body, req.actor);
@@ -68,14 +87,23 @@ export class SiteCommerceController {
   }
   @Get('catalog')
   @Header('Cache-Control', 'private, no-store')
-  catalog(@Param('site') site: string, @Req() req: AuthenticatedRequest) {
-    return this.service.catalog(site, req.actor);
+  catalog(
+    @Param('site') site: string,
+    @Req() req: AuthenticatedRequest,
+    @Query('floatingTours') floatingTours?: string,
+  ) {
+    return this.service.catalog(site, req.actor, floatingTours === 'true');
   }
   @Post('flight-quote')
   @Header('Cache-Control', 'private, no-store')
   flightQuote(
     @Param('site') site: string,
-    @Body() body: { productIds: string[]; birthDates: string[] },
+    @Body()
+    body: {
+      productIds: string[];
+      birthDates?: string[];
+      passengerCounts?: { adults: number; children: number; infants: number };
+    },
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.flightQuote(site, body, req.actor);
@@ -87,32 +115,11 @@ export class SiteCommerceController {
     @Req() req: AuthenticatedRequest,
   ) {
     const binding = siteBinding(site, req.actor);
-    const scoped = this.customers.salesEntryActor({
-      ...req.actor,
-      branchIds: [binding.branchId],
-    });
-    if (body.nationalId) {
-      const existing = await this.customers.registrationLookup(
-        {
-          nationalId: body.nationalId,
-          firstName: body.firstName ?? '',
-          lastName: body.lastName ?? '',
-          ...(body.birthDate ? { birthDate: body.birthDate } : {}),
-        },
-        scoped,
-      );
-      if (existing.data)
-        return {
-          data: {
-            id: existing.data.id,
-            displayName: existing.data.displayName,
-          },
-        };
-    }
-    const result = await this.customers.createForSales(
+    const result = await this.customers.syncWebsitePassenger(
       body,
-      scoped,
+      { ...req.actor, branchIds: [binding.branchId] },
       binding.branchId,
+      `site:${site}:passenger-sync`,
     );
     return {
       data: { id: result.data.id, displayName: result.data.displayName },
@@ -162,10 +169,20 @@ export class SiteCommerceController {
   paid(
     @Param('site') site: string,
     @Param('externalId') id: string,
-    @Body() body: { payments: SalesPaymentCreateRequest[] },
+    @Body()
+    body: {
+      payments: SalesPaymentCreateRequest[];
+      gatewayReceipt?: VerifiedGatewayProof;
+    },
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.service.paid(site, id, body?.payments, req.actor);
+    return this.service.paid(
+      site,
+      id,
+      body?.payments,
+      req.actor,
+      body?.gatewayReceipt,
+    );
   }
   @Get('orders/:externalId/contract')
   @Header('Cache-Control', 'private, no-store')

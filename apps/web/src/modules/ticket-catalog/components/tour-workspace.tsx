@@ -48,6 +48,7 @@ import {
 } from './tour-departure-tickets';
 
 const emptyPackage: TourPackageInputV1 = {
+  publicationStatus: 'DRAFT',
   name: '',
   originId: '',
   destinationId: '',
@@ -377,6 +378,7 @@ export function TourWorkspace({
       item
         ? {
             name: item.name,
+            publicationStatus: item.publicationStatus ?? 'PUBLISHED',
             originId: item.originId,
             destinationId: item.destinationId,
             hotelIds: [...item.hotelIds],
@@ -398,7 +400,11 @@ export function TourWorkspace({
   };
   const selectTour = (item: TourPackageV1) => {
     if (mode === 'definition') {
-      router.push('/sales/pricing');
+      router.push(
+        item.details?.isFloating
+          ? '/sales/pricing/floating?tour=' + encodeURIComponent(item.id)
+          : '/sales/pricing',
+      );
       return;
     }
     setSelected(item.id);
@@ -442,6 +448,23 @@ export function TourWorkspace({
           </div>
         ) : null}
         <div className="ms-auto flex flex-wrap items-center gap-2">
+          {mode === 'definition' && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy || loading}
+              onClick={() => {
+                showEditor();
+                setDraft({
+                  ...emptyPackage,
+                  hotelIds: [],
+                  details: { version: 1, isFloating: true },
+                });
+              }}
+            >
+              تعریف تور شناور
+            </Button>
+          )}
           {mode === 'definition' ? (
             <Button
               className="order-last"
@@ -520,7 +543,11 @@ export function TourWorkspace({
           <Card className="space-y-4 p-5">
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-bold">
-                {editing ? `ویرایش تور: ${editing.name}` : 'تعریف تور جدید'}
+                {editing
+                  ? `ویرایش تور: ${editing.name}`
+                  : draft.details?.isFloating
+                    ? 'تعریف تور شناور'
+                    : 'تعریف تور جدید'}
               </h3>
               <Button
                 variant="outline"
@@ -543,6 +570,23 @@ export function TourWorkspace({
               disabled={busy}
               className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 [&_input:not([type=checkbox])]:h-9 [&_button[role=combobox]]:h-9"
             >
+              <FormField label="وضعیت انتشار">
+                <select
+                  aria-label="وضعیت انتشار"
+                  className="h-9 rounded-lg border bg-surface px-3"
+                  value={draft.publicationStatus ?? 'PUBLISHED'}
+                  onChange={(event) =>
+                    setDraft({
+                      ...draft,
+                      publicationStatus: event.target.value as
+                        'DRAFT' | 'PUBLISHED',
+                    })
+                  }
+                >
+                  <option value="DRAFT">پیش‌نویس</option>
+                  <option value="PUBLISHED">منتشرشده</option>
+                </select>
+              </FormField>
               <FormField id="tour-name" label="عنوان تور" required>
                 <Input
                   id="tour-name"
@@ -840,7 +884,6 @@ export function TourWorkspace({
                           ['خدمات', pack.details.services],
                           ['شرایط اقساط', pack.details.installmentTerms],
                           ['قوانین استرداد', pack.details.refundRules],
-                          ['مدت سفر (روز)', pack.details.durationDays],
                           ['امتیاز', pack.details.rating],
                           ['مبدأ فرودگاهی', pack.details.originAirportCode],
                           ['فرودگاه مقصد', pack.details.destinationAirportCode],

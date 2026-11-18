@@ -291,6 +291,11 @@ jobs:
           pnpm --filter @nora/config build
           pnpm --filter @nora/api exec vitest run src/assistant-read/assistant-read.postgres.spec.ts
 
+      - name: Prove model-authored Sales SQL isolation
+        env:
+          NORA_RUN_AGENT_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run src/sales/assistant-agent/query.postgres.spec.ts --maxWorkers=1
+
       - name: Prove partner360 role isolation and manual USD rate persistence
         env:
           NORA_RUN_B2B_POSTGRES_TESTS: '1'

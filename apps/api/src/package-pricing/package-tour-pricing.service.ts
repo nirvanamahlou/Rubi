@@ -107,9 +107,15 @@ export class PackageTourPricingService {
     input: SalesContractCreateRequest,
     actor: AuthenticatedActor,
     branchId: string,
+    frozenPackageSales?: readonly PackagePublishedSaleV1[],
   ) {
     if (input.services.some((s) => s.metadata?.packagePublishedSale))
-      return this.validateContractSale(input, actor, branchId);
+      return this.validateContractSale(
+        input,
+        actor,
+        branchId,
+        frozenPackageSales,
+      );
     const tourId = input.services.find(
       (s) => typeof s.metadata?.tourDepartureId === 'string',
     )?.metadata?.tourDepartureId;
@@ -125,6 +131,7 @@ export class PackageTourPricingService {
     input: SalesContractCreateRequest,
     actor: AuthenticatedActor,
     branchId?: string,
+    frozenPackageSales?: readonly PackagePublishedSaleV1[],
   ) {
     const values = input.services
       .map((s) => s.metadata?.packagePublishedSale)
@@ -157,7 +164,9 @@ export class PackageTourPricingService {
       quote.items.length !== hotel.rooms.length
     )
       throw new BadRequestException('قیمت فروش معتبر نیست.');
-    const catalog = await this.saleCatalog(tourId, actor, branchId);
+    const catalog = frozenPackageSales
+      ? { data: [...frozenPackageSales] }
+      : await this.saleCatalog(tourId, actor, branchId);
     const selected = hotel.rooms.map((room, index) =>
       matchingPublishedRooms(catalog.data, {
         ...room,
@@ -273,6 +282,34 @@ export class PackageTourPricingService {
           throw new BadRequestException('قیمت فروش معتبر نیست.');
       }
     }
+  }
+
+  async websitePublicationCandidates(actor: AuthenticatedActor) {
+    if (!actor.permissions.includes('ticket_catalog.manage'))
+      throw new ForbiddenException();
+    const rows = await this.database.client.packagePricingTourDraft.findMany({
+      where: {
+        branchId: { in: [...actor.branchIds] },
+        publications: { some: {} },
+        tour: { isActive: true, isDeleted: false },
+      },
+      select: {
+        tourDepartureId: true,
+        tour: { select: { version: true } },
+        publications: { select: { tourVersion: true } },
+      },
+    });
+    return {
+      data: [
+        ...new Set(
+          rows
+            .filter((row) =>
+              row.publications.some((p) => p.tourVersion === row.tour.version),
+            )
+            .map((row) => row.tourDepartureId),
+        ),
+      ],
+    };
   }
 
   async saleCatalog(

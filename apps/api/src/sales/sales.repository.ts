@@ -127,6 +127,20 @@ export class SalesRepository {
     });
   }
 
+  cancelledWebsiteContracts(
+    contractIds: readonly string[],
+    branchIds: readonly string[],
+  ) {
+    return this.database.client.salesContract.findMany({
+      where: {
+        id: { in: [...contractIds] },
+        branchId: { in: [...branchIds] },
+        status: 'CANCELLED',
+      },
+      select: { id: true },
+    });
+  }
+
   findUserDisplayNames(userIds: readonly string[]) {
     if (!userIds.length) return Promise.resolve([]);
     return this.database.client.user.findMany({

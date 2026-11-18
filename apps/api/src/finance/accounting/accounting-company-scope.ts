@@ -54,7 +54,13 @@ export class AccountingCompanyScope {
         throw new BadRequestException(
           'برای ثبت دفتر کل، یک شرکت را از بالای صفحه انتخاب کنید.',
         );
-      return { company: null, companies, isAggregate: true };
+      return {
+        company: null,
+        companies,
+        isAggregate: true,
+        selection: context.selection,
+        issuerCompanyId: context.legalEntity?.id ?? null,
+      };
     }
     const code =
       context.selection === 'JAHAN_ACADEMIA'
@@ -63,6 +69,15 @@ export class AccountingCompanyScope {
     const company = companies.find((entity) => entity.code === code);
     if (!company)
       throw new BadRequestException('شرکت فعال برای دفتر کل در دسترس نیست.');
-    return { company, companies, isAggregate: false };
+    return {
+      company,
+      companies,
+      isAggregate: false,
+      selection: context.selection,
+      issuerCompanyId:
+        context.legalEntity?.id ??
+        entities.find((entity) => entity.code === context.selection)?.id ??
+        null,
+    };
   }
 }

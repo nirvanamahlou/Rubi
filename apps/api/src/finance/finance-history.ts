@@ -10,6 +10,11 @@ import type { DatabaseService } from '../database/database.service';
 import type { SalesService } from '../sales/sales.service';
 import type { ReservationsPublicService } from '../reservations/reservations-public.service';
 import type { ContractCompanyScope } from '../sales/contract-company-scope.public';
+import {
+  FinanceFiscalStorage,
+  financeFiscalUtcRange,
+  currentFinanceFiscalRequest,
+} from './fiscal-context/finance-fiscal-storage';
 
 const sources: FinanceHistorySourceV1[] = [
   'SALES',
@@ -65,6 +70,23 @@ export function historyDateRange(query: FinanceHistoryQueryV1, field: string) {
     (query.from && query.to && query.from > query.to)
   )
     throw new BadRequestException('بازه تاریخچه معتبر نیست.');
+  const fiscal = new FinanceFiscalStorage();
+  const period = fiscal.require();
+  if (period) {
+    const from =
+      query.from && query.from > period.startDate
+        ? query.from
+        : period.startDate;
+    const to =
+      query.to && query.to < period.endDate ? query.to : period.endDate;
+    // An empty intersection must produce no records, including before pagination.
+    return {
+      [field]:
+        from > to
+          ? { gte: new Date(0), lt: new Date(0) }
+          : financeFiscalUtcRange(from, to),
+    };
+  }
   if (!query.from && !query.to) return {};
   return {
     [field]: {
@@ -142,6 +164,37 @@ export async function readFinanceHistory(
       source === 'OPERATIONAL' ||
       query.direction === (source === 'SALES' ? 'RECEIPT' : 'PAYMENT'));
   const db = database.client;
+  const selectedPeriod = currentFinanceFiscalRequest()?.period;
+  // Exclude facts explicitly captured in another company's/year's Finance context.
+  // Legacy source projections retain their native company/branch visibility.
+  const excludedFacts = selectedPeriod
+    ? await db.financeAccountingEvent.findMany({
+        where: {
+          branchId: { in: [...actor.branchIds] },
+          occurredAt: financeFiscalUtcRange(
+            selectedPeriod.startDate,
+            selectedPeriod.endDate,
+          ),
+          fiscalPeriodId: { not: null },
+          NOT: { fiscalPeriodId: selectedPeriod.id },
+        },
+        select: { source: true, recordId: true },
+      })
+    : [];
+  const fiscalRecords = (source: string) =>
+    selectedPeriod
+      ? {
+          AND: [
+            {
+              id: {
+                notIn: excludedFacts
+                  .filter((event) => event.source === source)
+                  .map((event) => event.recordId),
+              },
+            },
+          ],
+        }
+      : {};
   const take = pageSize + 1;
   const [receipts, tickets, invoices, descriptors, operational] =
     await Promise.all([
@@ -149,6 +202,7 @@ export async function readFinanceHistory(
         ? sales.financeReceiptHistory(
             actor,
             {
+              ...fiscalRecords('SALES'),
               ...historyAfter(cursor, 'SALES', 'financeConfirmedAt'),
               ...historyDateRange(query, 'financeConfirmedAt'),
               ...(query.recordId ? { id: query.recordId } : {}),
@@ -160,6 +214,7 @@ export async function readFinanceHistory(
       enabled('TICKET')
         ? db.financeTicketPurchasePaymentRevision.findMany({
             where: {
+              ...fiscalRecords('TICKET'),
               cost: {
                 branchId: { in: [...actor.branchIds] },
                 ...(query.requestId ? { requestId: query.requestId } : {}),
@@ -176,6 +231,7 @@ export async function readFinanceHistory(
       enabled('INVOICE')
         ? db.financeProcurementInvoiceRevision.findMany({
             where: {
+              ...fiscalRecords('INVOICE'),
               branchId: { in: [...actor.branchIds] },
               paidAmount: { gt: 0 },
               transferAt: { not: null },
@@ -199,10 +255,23 @@ export async function readFinanceHistory(
       enabled('OPERATIONAL')
         ? db.financeOperationalRevision.findMany({
             where: {
+              ...fiscalRecords('OPERATIONAL'),
               action: 'PAY',
               paidAmount: { gt: 0 },
               transferAt: { not: null },
               request: {
+                ...(currentFinanceFiscalRequest()
+                  ? {
+                      OR: [
+                        { fiscalPeriodId: null },
+                        {
+                          fiscalPeriod: {
+                            bookId: currentFinanceFiscalRequest()!.bookId ?? '',
+                          },
+                        },
+                      ],
+                    }
+                  : {}),
                 AND: [(await companyScope?.operationalWhere(actor)) ?? {}],
                 branchId: { in: actor.branchIds },
                 ...(query.direction === 'RECEIPT'
@@ -226,6 +295,7 @@ export async function readFinanceHistory(
   const payments = purchases.size
     ? await db.financeSupplierPaymentRevision.findMany({
         where: {
+          ...fiscalRecords('RESERVATIONS'),
           purchaseId: { in: [...purchases.keys()] },
           paidAmount: { gt: 0 },
           transferAt: { not: null },

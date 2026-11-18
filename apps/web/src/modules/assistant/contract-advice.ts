@@ -1,7 +1,9 @@
 import {
   normalizeContractQuestion,
   resolveContractGuide,
+  isContractCountQuestion,
 } from './contract-guides';
+import { matchesQuestion } from './question-text';
 
 const cases: [RegExp, string][] = [
   [
@@ -10,7 +12,7 @@ const cases: [RegExp, string][] = [
   ],
   [
     /ابطال|لغو|استرداد|جریمه/,
-    'وضعیت ابطال قرارداد، لغو خدمات تأمین‌کننده و برگشت وجه را جداگانه بررسی کنید. مبلغ قابل استرداد فقط پس از بررسی شرایط خدمت و تصمیم مالی مشخص است.',
+    'برای استرداد، در مالی درخواست جدید از نوع «استرداد» ایجاد و رسید اصلی را انتخاب کنید. تصمیم مالی و وضعیت درخواست را در همان پرونده پیگیری کنید. وضعیت ابطال قرارداد، لغو خدمات تأمین‌کننده و برگشت وجه را جداگانه بررسی کنید. مبلغ قابل استرداد فقط پس از بررسی شرایط خدمت و تصمیم مالی مشخص است.',
   ],
   [
     /تایم اوت|timeout|قطع ارتباط|تکراری|دوبار/,
@@ -33,20 +35,41 @@ const cases: [RegExp, string][] = [
     'پیش‌نویس فرم به حساب و نشست مرورگر وابسته است. برای ادامه از همان تب و حساب استفاده کنید؛ برای قرارداد ثبت‌شده از شماره قرارداد استفاده کنید.',
   ],
 ];
-export function contractAdvice(message: string, sales: boolean) {
+export function contractAdvice(
+  message: string,
+  sales: boolean,
+  dataAgentAvailable = false,
+) {
   const q = normalizeContractQuestion(message);
+  if (dataAgentAvailable && isContractCountQuestion(q)) return;
   if (!sales && !/قرارداد/.test(q)) return;
   if (/قرارداد\s*(?:شماره\s*)?[a-z0-9]/i.test(q)) return;
   const extra = cases
-    .filter(([pattern]) => pattern.test(q))
+    .filter(([pattern]) => matchesQuestion(q, pattern))
     .map(([, answer]) => answer);
   const parts = message
     .split(/(?:[؟?؛;\n]+|\s+و\s+(?=چطور|چگونه|چرا|از کجا|آیا|اگر))/u)
     .map((s) => s.trim())
     .filter(Boolean);
+  if (/هتل|اقامت/.test(q) && /تغییر|عوض|اصلاح/.test(q)) {
+    if (/قیمت|مبلغ|هزینه/.test(q))
+      extra.push(
+        'پس از اصلاح هتل، اتاق و شب‌های اقامت را با قیمت هر مسافر و مبلغ قرارداد به تفکیک ارز مقایسه کنید.',
+      );
+    if (/مدرک|واچر/.test(q))
+      extra.push(
+        'رزرواسیون باید اقامت اصلاح‌شده را با نسخه واچر تطبیق دهد؛ واچر قبلی را تا تأیید دوباره تحویل ندهید.',
+      );
+  }
   if (parts.length > 1) {
     for (const part of parts) {
-      const guide = resolveContractGuide(part, true);
+      const guide = resolveContractGuide(
+        part,
+        true,
+        undefined,
+        false,
+        dataAgentAvailable,
+      );
       if (guide) extra.push(guide.text);
     }
   }

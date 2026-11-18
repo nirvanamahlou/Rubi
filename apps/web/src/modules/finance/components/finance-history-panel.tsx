@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/surfaces';
 import { financeInboxApi } from '../api/finance-inbox-api';
 import { FinanceExportActions } from './finance-export-actions';
+import { FinanceSourceReferenceLinks } from './finance-source-references';
 
 const sourceNames: Record<FinanceHistorySourceV1, string> = {
   SALES: 'فروش',
@@ -211,15 +212,12 @@ export function FinanceHistoryPanel({
               </div>
               {!compact ? (
                 <div>
-                  <dt className="text-xs text-muted-foreground">
-                    منبع / شناسه درخواست
-                  </dt>
-                  <dd className="break-all">
-                    {sourceNames[row.source]} · {row.requestId}
-                  </dd>
+                  <dt className="text-xs text-muted-foreground">منبع</dt>
+                  <dd className="break-all">{sourceNames[row.source]}</dd>
                 </div>
               ) : null}
             </dl>
+            <FinanceSourceReferenceLinks references={row.references} />
             <FinanceExportActions
               receipt
               query={{

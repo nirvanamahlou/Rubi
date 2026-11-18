@@ -1,4 +1,6 @@
 'use client';
+import { TicketCapacityHoldRoster } from './ticket-capacity-hold-roster';
+import { TicketCapacityHoldAction } from './ticket-capacity-hold-action';
 import { loadWeekdayOffers } from '../model/load-weekday-edit';
 import { flightCabinCode } from '../model/flight-cabins';
 
@@ -346,7 +348,10 @@ function TicketCatalogWorkspace() {
         capacityHold.quantity < 1
       )
         throw new Error('تعداد نفرات رزرو باید حداقل ۱ باشد.');
-      if (capacityHold.quantity > capacityHold.offer.remainingCapacity)
+      const currentOffer =
+        publishedOffers.find((offer) => offer.id === capacityHold.offer.id) ??
+        capacityHold.offer;
+      if (capacityHold.quantity > currentOffer.remainingCapacity)
         throw new Error('تعداد واردشده از ظرفیت باقی‌مانده بیشتر است.');
       if (!capacityHold.requesterName.trim())
         throw new Error('نام درخواست‌کننده رزرو را وارد کنید.');
@@ -993,29 +998,14 @@ function TicketCatalogWorkspace() {
       >
         ویرایش روز هفته
       </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={
-          offer.status !== 'ACTIVE' ||
-          offer.remainingCapacity < 1 ||
-          new Date(offer.departureAt).getTime() <= catalogNow
-        }
-        title={
-          offer.status !== 'ACTIVE'
-            ? 'غیرفعال'
-            : new Date(offer.departureAt).getTime() <= catalogNow
-              ? 'تاریخ گذشته'
-              : offer.remainingCapacity < 1
-                ? 'ظرفیت تکمیل شده'
-                : undefined
-        }
-        onClick={() =>
+      <TicketCapacityHoldAction
+        mode="inspect"
+        offer={offer}
+        now={catalogNow}
+        onAction={() =>
           updateCapacityHold({ offer, quantity: 1, requesterName: '' })
         }
-      >
-        رزرو ظرفیت
-      </Button>
+      />
       <Button
         size="sm"
         variant="outline"
@@ -1218,7 +1208,10 @@ function TicketCatalogWorkspace() {
           if (!open && !capacityHoldSaving) updateCapacityHold(undefined);
         }}
       >
-        <DialogContent dir="rtl" className="start-auto! left-1/2!">
+        <DialogContent
+          dir="rtl"
+          className="start-auto! left-1/2! max-h-[85vh] overflow-y-auto"
+        >
           <DialogTitle>رزرو موقت ظرفیت</DialogTitle>
           <DialogDescription>
             ظرفیت تا زمان انقضا برای این بلیت نگه داشته می‌شود و پس از آن خودکار
@@ -1229,8 +1222,13 @@ function TicketCatalogWorkspace() {
             {capacityHold?.offer.carrierName} ·{' '}
             <span dir="ltr">{capacityHold?.offer.serviceNumber}</span> · ظرفیت
             باقی‌مانده:{' '}
-            {capacityHold?.offer.remainingCapacity.toLocaleString('fa-IR')}
+            {(
+              publishedOffers.find(
+                (offer) => offer.id === capacityHold?.offer.id,
+              )?.remainingCapacity ?? capacityHold?.offer.remainingCapacity
+            )?.toLocaleString('fa-IR')}
           </p>
+
           <FormField
             label="تعداد نفرات"
             id="ticket-capacity-hold-quantity"
@@ -1240,7 +1238,13 @@ function TicketCatalogWorkspace() {
               id="ticket-capacity-hold-quantity"
               type="number"
               min={1}
-              max={capacityHold?.offer.remainingCapacity ?? 1}
+              max={
+                publishedOffers.find(
+                  (offer) => offer.id === capacityHold?.offer.id,
+                )?.remainingCapacity ??
+                capacityHold?.offer.remainingCapacity ??
+                1
+              }
               value={capacityHold?.quantity ?? 1}
               onChange={(event) =>
                 capacityHold &&
@@ -1271,12 +1275,17 @@ function TicketCatalogWorkspace() {
             />
           </FormField>
           <div className="mt-2 flex gap-2">
-            <Button
-              disabled={capacityHoldSaving}
-              onClick={() => void submitCapacityHold()}
-            >
-              {capacityHoldSaving ? 'در حال ثبت…' : 'ثبت رزرو موقت'}
-            </Button>
+            <TicketCapacityHoldAction
+              mode="create"
+              offer={
+                publishedOffers.find(
+                  (offer) => offer.id === capacityHold?.offer.id,
+                ) ?? capacityHold?.offer
+              }
+              now={catalogNow}
+              busy={capacityHoldSaving}
+              onAction={() => void submitCapacityHold()}
+            />
             <Button
               disabled={capacityHoldSaving}
               variant="outline"
@@ -1285,6 +1294,16 @@ function TicketCatalogWorkspace() {
               انصراف
             </Button>
           </div>
+          {capacityHold ? (
+            <TicketCapacityHoldRoster
+              key={capacityHold.offer.id}
+              offerId={capacityHold.offer.id}
+              loadPage={toursApi.capacityHolds}
+              onCapacityChange={() => {
+                void refreshPublishedOffers();
+              }}
+            />
+          ) : null}
         </DialogContent>
       </Dialog>
       <Dialog

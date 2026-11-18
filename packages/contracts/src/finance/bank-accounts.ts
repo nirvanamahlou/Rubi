@@ -1,5 +1,11 @@
 /** Finance-owned company accounts; all identifiers in ordinary lists are masked. */
+export type TreasuryBankReferencesV1 = {
+  treasuryBookId: string;
+  bankAccountTypeId: string;
+  bankBranchId: string;
+};
 export interface CompanyBankAccountV1 {
+  treasury?: TreasuryBankReferencesV1;
   accountingCode?: string | null;
   id: string;
   bankId: string;
@@ -14,6 +20,7 @@ export interface CompanyBankAccountV1 {
   iban: string | null;
 }
 export interface CompanyBankAccountInputV1 {
+  treasury?: TreasuryBankReferencesV1;
   branchId?: string | null;
   title: string;
   currencyCode: string | null;

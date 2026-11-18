@@ -32,7 +32,14 @@ const schema = draftSchema
     sourceCountryCode: Joi.string()
       .pattern(/^\d{1,10}$/)
       .required(),
-    passenger: draftSchema.extract('passenger').required(),
+    passenger: draftSchema
+      .extract('passenger')
+      .fork(['mobile'], () =>
+        Joi.string()
+          .pattern(/^\+?[0-9]{10,15}$/)
+          .required(),
+      )
+      .required(),
   });
 export function parseStandaloneInsurance(
   raw: unknown,

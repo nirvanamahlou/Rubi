@@ -1,5 +1,7 @@
 'use client';
 import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
+import { useFinanceFiscalContext } from '../finance-fiscal-context';
+import { financeRouteNeedsYear } from './finance-fiscal-boundary';
 
 import { AccountingCodingStandard } from './accounting-coding-standard';
 import { AccountingStandardMapping } from './accounting-standard-mapping';
@@ -24,6 +26,11 @@ import { useAccessPermissions } from '@/modules/iam/access-context';
 import { journalDisplayTotals } from '../accounting-money';
 import { accountingApi } from '../api/accounting-api';
 import { AccountingReportWorkspace } from './accounting-report-workspace';
+import { AccountingAccountBrowser } from './accounting-account-browser';
+
+import { SeasonalReportWorkspace } from './seasonal-report-workspace';
+import { TreasuryDefinitionWorkspace } from './treasury-definition-workspace';
+import { treasuryDefinitions } from '@nora/contracts';
 import {
   AccountingSetupNotes,
   parseSetupNotes,
@@ -38,6 +45,7 @@ import {
 import { AccountingAccountGroups } from './accounting-account-groups';
 import { AccountingSubsidiaryMapping } from './accounting-subsidiary-mapping';
 import { AccountingLedgerEditor } from './accounting-ledger-editor';
+import { AccountingFiscalDefault } from './accounting-fiscal-default';
 import { AccountingBaseList } from './accounting-base-list';
 import { AccountingDefinitionToolbar } from './accounting-definition-toolbar';
 import {
@@ -268,6 +276,7 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
 }
 
 function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
+  const fiscal = useFinanceFiscalContext();
   const permissions = useAccessPermissions();
   const can = (p: string) => !!permissions?.includes(p);
   const queryClient = useQueryClient();
@@ -295,7 +304,22 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
     queryFn: () => accountingApi.snapshot(bookId),
     enabled: !!bookId,
   });
-  const snapshot = snapshotQuery.data ?? null;
+  const fullSnapshot = snapshotQuery.data ?? null;
+  // Setup and explicit destination pickers retain the full calendar. Other screens
+  // receive the active source year, including their default filter/form values.
+  const snapshot =
+    fullSnapshot &&
+    fiscal?.active &&
+    financeRouteNeedsYear(pathname) &&
+    !pathname.includes('/year-end/') &&
+    !pathname.endsWith('/documents/move')
+      ? {
+          ...fullSnapshot,
+          periods: fullSnapshot.periods.filter(
+            (period) => period.id === fiscal.period?.id,
+          ),
+        }
+      : fullSnapshot;
   const loading = booksQuery.isPending || (!!bookId && snapshotQuery.isPending);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
@@ -335,6 +359,7 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   const refresh = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['accounting'] }),
+      queryClient.invalidateQueries({ queryKey: ['finance-fiscal-context'] }),
       queryClient.invalidateQueries({
         queryKey: ['accounting-taxpayer-drafts', bookId],
       }),
@@ -405,10 +430,42 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
       value: r.id,
       label: `${r.code ? `${r.code} — ` : ''}${r.title}`,
     }));
+  const treasury = treasuryDefinitions.find(
+    (d) => 'receipts-payments/' + d.path === section,
+  );
   let content: ReactNode = null;
   if (!home && !sections.some(([route]) => route === section))
     content = <AccountingUnknownRoute route={section} />;
-  else if (booksQuery.isPending || (!!bookId && snapshotQuery.isPending))
+  else if (
+    treasury &&
+    (snapshot || ['banks', 'bank-branches'].includes(treasury.kind))
+  )
+    content = (
+      <TreasuryDefinitionWorkspace
+        key={bookId + section}
+        definition={treasury}
+        book={snapshot}
+        run={run}
+        busy={busy}
+      />
+    );
+  else if (
+    snapshot &&
+    section === 'tax-accounting/vat/quarterly-sales-report'
+  ) {
+    const period = fiscal?.period ?? snapshot.periods[0];
+    content = period ? (
+      <SeasonalReportWorkspace
+        key={bookId + period.id}
+        bookId={bookId}
+        period={period}
+        canManage={can('finance.account.manage')}
+        canFinalize={can('finance.export')}
+      />
+    ) : (
+      <p>دوره مالی گزارش را انتخاب کنید.</p>
+    );
+  } else if (booksQuery.isPending || (!!bookId && snapshotQuery.isPending))
     content = <p role="status">در حال دریافت دفترهای حسابداری…</p>;
   else if (booksQuery.isError || snapshotQuery.isError)
     content = (
@@ -530,6 +587,7 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   else if (snapshot && accountingCompletionRoute(section))
     content = (
       <AccountingCompletionWorkspace
+        canManage={can('finance.account.manage')}
         key={bookId + section}
         book={snapshot}
         route={section}
@@ -916,16 +974,18 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
         }
       />
     );
-  else if (
-    snapshot &&
-    (section === 'general-ledger/reports/trial-balance' ||
-      section === 'general-ledger/reports/account-browser')
-  )
+  else if (snapshot && section === 'general-ledger/reports/account-browser')
+    content = (
+      <AccountingAccountBrowser
+        key={bookId + (fiscal?.period?.id ?? '')}
+        book={snapshot}
+      />
+    );
+  else if (snapshot && section === 'general-ledger/reports/trial-balance')
     content = (
       <AccountingReportWorkspace
-        key={bookId + section}
+        key={bookId + (fiscal?.period?.id ?? '')}
         book={snapshot}
-        turnoverMode={section.endsWith('/account-browser')}
       />
     );
   else if (
@@ -940,6 +1000,7 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
     content = (
       <AccountingYearEndWorkspace
         book={snapshot}
+        periodId={fiscal?.period?.id ?? snapshot.periods[0]?.id}
         run={run}
         busy={busy}
         mode={
@@ -1248,6 +1309,16 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
                     hidden={fiscalTab !== 'main'}
                     className="min-h-32 border bg-muted/20 p-3 [&>div>div:last-child]:sm:col-span-2"
                   >
+                    {editing && (
+                      <div className="mb-3">
+                        <AccountingFiscalDefault
+                          book={snapshot}
+                          yearId={editing.id}
+                          busy={busy}
+                          run={run}
+                        />
+                      </div>
+                    )}
                     <Fields
                       fields={recordFields.map((field) =>
                         field.key === 'description'

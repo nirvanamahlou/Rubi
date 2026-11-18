@@ -16,6 +16,20 @@ function productionSources(excludeComposition = false) {
 }
 
 describe('finance foundation boundary', () => {
+  it('resolves readable contract references through owner ports without reading foreign tables', () => {
+    const source = readFileSync(
+      join(
+        process.cwd(),
+        'src/finance/source-read/finance-source-references.service.ts',
+      ),
+      'utf8',
+    );
+    expect(source).toContain('SalesFinanceContractRead');
+    expect(source).toContain('financeReservationContractReferences');
+    expect(source).not.toMatch(
+      /\b(?:client|tx|db)\.(?:sales\w*|reservation\w*|procurement\w*|customer\w*|user|hr\w*)\b/i,
+    );
+  });
   it('keeps the partner producer in an owner adapter consuming only public foreign APIs', () => {
     const source = readFileSync(
       join(process.cwd(), 'src/finance/partners/partner-finance.module.ts'),

@@ -1,6 +1,15 @@
+import { MissionDetails } from '@/modules/workbench/mission-fields';
+import {
+  BrokerLedger,
+  BrokerPaymentControls,
+  emptyBankSelection,
+} from './broker-payment-controls';
 import { ReceiptVoidDialog } from './receipt-void-dialog';
 import { useAccessPermissions } from '@/modules/iam/access-context';
-import { FinanceReservationDetails } from './finance-reservation-details';
+import {
+  FinanceContractReadView,
+  FinanceSourceReferenceLinks,
+} from './finance-source-references';
 import {
   RECEIPT_FILE_ACCEPT,
   attachmentMimeType,
@@ -171,6 +180,9 @@ export function FinanceInboxLiveWorkspace() {
     error: string;
   } | null>(null);
   const [search, setSearch] = useState('');
+  const [fiscalBucket, setFiscalBucket] = useState<'CURRENT' | 'CARRY_FORWARD'>(
+    'CURRENT',
+  );
   const [source, setSource] = useState<FinanceInboxSource | 'ALL'>('ALL');
   const [category, setCategory] = useState<'ALL' | 'PURCHASE' | 'RECEIPT'>(
     'ALL',
@@ -196,6 +208,7 @@ export function FinanceInboxLiveWorkspace() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const filterKey = JSON.stringify({
+    fiscalBucket,
     approvalGroup,
     category,
     search,
@@ -254,6 +267,7 @@ export function FinanceInboxLiveWorkspace() {
   const [paidAmount, setPaidAmount] = useState('');
   const [exchangeRate, setExchangeRate] = useState('');
   const [paidAt, setPaidAt] = useState(new Date().toISOString());
+  const [bankSelection, setBankSelection] = useState(emptyBankSelection);
   const [paymentReference, setPaymentReference] = useState('');
   const [ticketReceiptFile, setTicketReceiptFile] = useState<File | null>(null);
   const [accountDialog, setAccountDialog] = useState(false);
@@ -264,6 +278,7 @@ export function FinanceInboxLiveWorkspace() {
   const [accountMaskedId, setAccountMaskedId] = useState('');
   const inboxQuery = useMemo<FinanceInboxQueryV1>(
     () => ({
+      fiscalBucket,
       approvalGroup,
       search,
       source: source === 'ALL' ? undefined : source,
@@ -280,6 +295,7 @@ export function FinanceInboxLiveWorkspace() {
       pageSize: 25,
     }),
     [
+      fiscalBucket,
       approvalGroup,
       search,
       source,
@@ -513,6 +529,7 @@ export function FinanceInboxLiveWorkspace() {
     );
     setExchangeRate((item.amount?.currencyCode ?? 'IRR') === 'IRR' ? '1' : '');
     setPaidAt(new Date().toISOString());
+    setBankSelection(emptyBankSelection);
     setPaymentReference('');
     setTicketReceiptFile(null);
     setReason('');
@@ -534,6 +551,7 @@ export function FinanceInboxLiveWorkspace() {
     file: File,
     paymentId: string,
     item: FinanceInboxItemV1,
+    brokerTransfer = false,
   ) {
     const options = (await documentsApi.options()).data;
     const documentType = options.documentTypes.find(
@@ -562,17 +580,19 @@ export function FinanceInboxLiveWorkspace() {
     form.set('sourceModule', 'FINANCE');
     form.set(
       'sourceEntityType',
-      item.ticketPurchase
-        ? 'FinanceTicketPurchasePayment'
-        : item.source === 'RESERVATIONS'
-          ? 'FinanceSupplierPayment'
-          : 'FinanceProcurementInvoicePayment',
+      brokerTransfer
+        ? 'FinanceBrokerTransfer'
+        : item.ticketPurchase
+          ? 'FinanceTicketPurchasePayment'
+          : item.source === 'RESERVATIONS'
+            ? 'FinanceSupplierPayment'
+            : 'FinanceProcurementInvoicePayment',
     );
     form.set('sourceEntityId', paymentId);
     form.set('sourceDisplayLabel', `${item.title} · رسید پرداخت`);
     form.set('confidentiality', documentType.defaultConfidentiality);
     form.set('versionNote', 'بارگذاری از پرداخت مالی');
-    await documentsApi.upload(form);
+    return (await documentsApi.upload(form)).data.id;
   }
 
   async function attachPaymentReceipt(
@@ -595,6 +615,35 @@ export function FinanceInboxLiveWorkspace() {
     setActionBusy(true);
     setActionError('');
     try {
+      const evidence: {
+        brokerTransferId?: string;
+        brokerReceiptId?: string;
+        beneficiaryId?: string;
+      } = {};
+      if (actionKind === 'PAYMENT' && supplierPayment) {
+        if (!bankSelection.brokerTransferId)
+          throw new Error(
+            'ابتدا حواله صرافی به کارگزار را ثبت یا انتخاب کنید.',
+          );
+        evidence.brokerTransferId = bankSelection.brokerTransferId;
+        if (bankSelection.brokerReceiptId)
+          evidence.brokerReceiptId = bankSelection.brokerReceiptId;
+        if (!evidence.brokerReceiptId && ticketReceiptFile) {
+          evidence.brokerReceiptId = await uploadTicketPaymentReceipt(
+            ticketReceiptFile,
+            bankSelection.brokerTransferId,
+            actionItem,
+            true,
+          );
+          setBankSelection({
+            ...bankSelection,
+            brokerReceiptId: evidence.brokerReceiptId,
+          });
+        }
+        if (!evidence.brokerReceiptId)
+          throw new Error('برای تسویه، رسید کارگزار را بارگذاری کنید.');
+      } else if (bankSelection.beneficiaryId)
+        evidence.beneficiaryId = bankSelection.beneficiaryId;
       if (
         actionKind === 'HR_REVIEW' ||
         actionKind === 'HR_ANSWER' ||
@@ -623,6 +672,7 @@ export function FinanceInboxLiveWorkspace() {
           operationId: crypto.randomUUID(),
           expectedPaymentVersion: actionItem.ticketPurchase.paymentCount,
           costRevisionId: prepared.sourceContextReference,
+          ...evidence,
           accountId: supplierPayment ? null : accountId,
           exchangeOfficeId: supplierPayment ? exchangeOfficeId : null,
           paymentMethodId,
@@ -637,7 +687,7 @@ export function FinanceInboxLiveWorkspace() {
         setPaymentUncertain(true);
         const result = await paymentWithReceipt(
           () => financeInboxApi.payTicket(actionItem.sourceReference, command),
-          ticketReceiptFile
+          ticketReceiptFile && !supplierPayment
             ? (payment) =>
                 uploadTicketPaymentReceipt(
                   ticketReceiptFile,
@@ -679,6 +729,7 @@ export function FinanceInboxLiveWorkspace() {
               version: 1,
               expectedVersion: actionItem.financeVersion ?? 0,
               expectedSourceVersion: actionItem.sourceVersion,
+              ...evidence,
               accountId: supplierPayment ? null : accountId,
               exchangeOfficeId: supplierPayment ? exchangeOfficeId : null,
               paymentMethodId,
@@ -693,7 +744,8 @@ export function FinanceInboxLiveWorkspace() {
               reason,
             },
           );
-          await attachPaymentReceipt(result.data.id, actionItem);
+          if (!supplierPayment)
+            await attachPaymentReceipt(result.data.id, actionItem);
         } else {
           await financeInboxApi.decideInvoice(actionItem.sourceReference, {
             version: 1,
@@ -710,6 +762,7 @@ export function FinanceInboxLiveWorkspace() {
           {
             expectedVersion: actionItem.sourceVersion,
             status: 'PAID',
+            ...evidence,
             accountId: supplierPayment ? null : accountId,
             exchangeOfficeId: supplierPayment ? exchangeOfficeId : null,
             paymentMethodId,
@@ -724,7 +777,8 @@ export function FinanceInboxLiveWorkspace() {
             reason,
           },
         );
-        await attachPaymentReceipt(result.data.id, actionItem);
+        if (!supplierPayment)
+          await attachPaymentReceipt(result.data.id, actionItem);
       } else {
         await financeInboxApi.decideReceipt(actionItem.sourceReference, {
           version: 1,
@@ -757,9 +811,7 @@ export function FinanceInboxLiveWorkspace() {
         setPaymentUncertain(false);
       }
       setActionError(
-        cause instanceof FinanceInboxApiError
-          ? cause.message
-          : 'ثبت عملیات مالی ناموفق بود.',
+        cause instanceof Error ? cause.message : 'ثبت عملیات مالی ناموفق بود.',
       );
     } finally {
       submitting.current = false;
@@ -789,9 +841,7 @@ export function FinanceInboxLiveWorkspace() {
       setAccountMaskedId('');
     } catch (cause) {
       setActionError(
-        cause instanceof FinanceInboxApiError
-          ? cause.message
-          : 'تعریف حساب مالی ناموفق بود.',
+        cause instanceof Error ? cause.message : 'تعریف حساب مالی ناموفق بود.',
       );
     } finally {
       setActionBusy(false);
@@ -803,6 +853,7 @@ export function FinanceInboxLiveWorkspace() {
       className={`${styles.workspace} space-y-4`}
       aria-label="کارتابل یکپارچه مالی"
     >
+      <BrokerLedger />
       <Dialog
         open={Boolean(generalItem)}
         onOpenChange={(open) => {
@@ -814,16 +865,12 @@ export function FinanceInboxLiveWorkspace() {
           className="max-h-[90dvh] max-w-5xl overflow-y-auto"
         >
           <DialogTitle>مشخصات کلی</DialogTitle>
-          {generalItem?.source === 'SALES' ? (
-            <ContractFinancialSummary id={generalItem.sourceContextReference} />
+          {generalItem?.references?.contracts.length ? (
+            generalItem.references.contracts.map((contract) => (
+              <FinanceContractReadView key={contract.id} id={contract.id} />
+            ))
           ) : (
-            generalItem && (
-              <FinanceReservationDetails
-                key={generalItem.id}
-                id={generalItem.sourceContextReference}
-                contractNumber={generalItem.contractReference!}
-              />
-            )
+            <p>ارتباط قابل مشاهده با قرارداد ثبت نشده است.</p>
           )}
         </DialogContent>
       </Dialog>
@@ -1278,6 +1325,31 @@ export function FinanceInboxLiveWorkspace() {
             <div>
               <h3 className="font-bold">فهرست درخواست‌ها</h3>
               <div
+                className="mt-3 flex gap-2"
+                role="group"
+                aria-label="سال مبدأ درخواست"
+              >
+                {(
+                  [
+                    ['CURRENT', 'سال مالی فعال'],
+                    ['CARRY_FORWARD', 'بدهی و طلب سنوات قبل'],
+                  ] as const
+                ).map(([value, label]) => (
+                  <Button
+                    key={value}
+                    size="sm"
+                    variant={fiscalBucket === value ? 'primary' : 'outline'}
+                    aria-pressed={fiscalBucket === value}
+                    onClick={() => {
+                      setFiscalBucket(value);
+                      setSelectedId(null);
+                    }}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+              <div
                 className="mt-3 flex flex-wrap gap-2"
                 role="group"
                 aria-label="وضعیت تأیید مالی"
@@ -1398,11 +1470,15 @@ export function FinanceInboxLiveWorkspace() {
                   </p>
                 ) : null}
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-                  <bdi className="break-all">
-                    {item.contractReference
-                      ? `قرارداد ${item.contractReference}`
-                      : ''}
-                  </bdi>
+                  <FinanceSourceReferenceLinks references={item.references} />
+                  {!item.references?.contracts.length &&
+                  item.contractReference ? (
+                    <bdi className="break-all">
+                      {['SALES', 'RESERVATIONS'].includes(item.source)
+                        ? `قرارداد ${item.contractReference}`
+                        : item.contractReference}
+                    </bdi>
+                  ) : null}
                   <span>
                     {item.partyDisplaySnapshot ?? 'طرف‌حساب درج نشده'}
                   </span>
@@ -1499,6 +1575,49 @@ export function FinanceInboxLiveWorkspace() {
                   </p>
                 </div>
                 <div className="space-y-4 p-5">
+                  {selected.carryForward ? (
+                    <section
+                      className="rounded-md border border-border p-3"
+                      aria-label="مانده منتقل‌شده از سنوات قبل"
+                    >
+                      <strong>بدهی و طلب سنوات قبل</strong>
+                      <p>
+                        سال مبدأ:{' '}
+                        {selected.carryForward.originalYearTitle ??
+                          'فاقد تخصیص سال مالی'}{' '}
+                        — تاریخ مبدأ:{' '}
+                        {faDate(selected.carryForward.originalDate)}
+                      </p>
+                      <table className="mt-2 w-full text-sm">
+                        <thead>
+                          <tr>
+                            <th>ارز</th>
+                            <th>مبلغ اولیه</th>
+                            <th>مانده قابل تسویه</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selected.carryForward.balances.map(
+                            (balance, index) => (
+                              <tr key={index}>
+                                <td>{currencySymbol(balance.currencyCode)}</td>
+                                <td dir="ltr">
+                                  {formatSalesMoney(balance.originalAmount)}
+                                </td>
+                                <td dir="ltr">
+                                  {formatSalesMoney(balance.remainingAmount)}
+                                </td>
+                              </tr>
+                            ),
+                          )}
+                        </tbody>
+                      </table>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        تسویه در سال مالی فعال ثبت و به همین درخواست متصل
+                        می‌شود.
+                      </p>
+                    </section>
+                  ) : null}
                   {selected.purchaseFx?.length ? (
                     <div className={styles.detailFx}>
                       <PurchaseFxSummary entries={selected.purchaseFx} />
@@ -1568,9 +1687,27 @@ export function FinanceInboxLiveWorkspace() {
                       id={selected.sourceContextReference}
                     />
                   )}
+                  <FinanceSourceReferenceLinks
+                    references={selected.references}
+                  />
                   <dl className={styles.detailFacts}>
                     {[
-                      ['قرارداد', selected.contractReference ?? '—'],
+                      [
+                        'قرارداد',
+                        selected.references?.contracts
+                          .map((c) => c.number)
+                          .join('، ') ||
+                          (['SALES', 'RESERVATIONS'].includes(selected.source)
+                            ? selected.contractReference
+                            : null) ||
+                          '—',
+                      ],
+                      [
+                        'مرجع ثبت‌شده',
+                        ['SALES', 'RESERVATIONS'].includes(selected.source)
+                          ? '—'
+                          : (selected.contractReference ?? '—'),
+                      ],
                       [
                         'طرف‌حساب / کارمند',
                         selected.partyDisplaySnapshot ?? '—',
@@ -1652,6 +1789,18 @@ export function FinanceInboxLiveWorkspace() {
                         key={selected.sourceContextReference}
                         id={selected.sourceContextReference}
                       />
+                    )}
+                  {selected.hrReferral?.mission &&
+                    selected.hrReferral.sourceId && (
+                      <details className="rounded-xl border p-4">
+                        <summary className="cursor-pointer font-semibold">
+                          مشخصات کلی
+                        </summary>
+                        <MissionDetails
+                          mission={selected.hrReferral.mission}
+                          id={selected.hrReferral.sourceId}
+                        />
+                      </details>
                     )}
                   {selected.hrReferral ? (
                     <div className="space-y-2">
@@ -1861,6 +2010,7 @@ export function FinanceInboxLiveWorkspace() {
                           event.target.value as 'ACCOUNT' | 'EXCHANGE',
                         );
                         setAccountId('');
+                        setBankSelection(emptyBankSelection);
                         setExchangeOfficeId('');
                       }}
                     >
@@ -2026,6 +2176,31 @@ export function FinanceInboxLiveWorkspace() {
                       />
                     </label>
                   ) : null}
+                  {actionItem && (
+                    <BrokerPaymentControls
+                      key={actionItem.id}
+                      item={actionItem}
+                      exchange={!!supplierPayment}
+                      direct={
+                        methods.find((m) => m.id === paymentMethodId)
+                          ?.channel === 'BANK_TRANSFER'
+                      }
+                      office={exchangeOfficeId}
+                      amount={paidAmount}
+                      rate={exchangeRate}
+                      date={paidAt}
+                      selection={bankSelection}
+                      change={setBankSelection}
+                      selectTransfer={(r) => {
+                        setExchangeOfficeId(r.officeId);
+                        setPaidAmount(r.amount);
+                        setExchangeRate(r.rate);
+                        setPaidAt(new Date().toISOString());
+                        setTicketReceiptFile(null);
+                        ticketCommand.current = null;
+                      }}
+                    />
+                  )}
                   <PurchaseFxPaymentPreview
                     amount={paidAmount}
                     actualRate={exchangeRate}
@@ -2067,7 +2242,9 @@ export function FinanceInboxLiveWorkspace() {
                     <label className="grid gap-2 rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-3">
                       <span className="flex items-center gap-2 font-semibold">
                         <FileUp className="size-4 text-primary" />
-                        رسید پرداخت (اختیاری)
+                        {supplierPayment
+                          ? 'رسید دریافتی کارگزار'
+                          : 'رسید پرداخت (اختیاری)'}
                       </span>
                       <Input
                         type="file"
@@ -2184,12 +2361,21 @@ export function FinanceInboxLiveWorkspace() {
                     actionItem?.source === 'SALES' &&
                     !accountId) ||
                   (actionKind === 'PAYMENT' &&
-                    (!(supplierPayment ? exchangeOfficeId : accountId) ||
+                    ((supplierPayment &&
+                      (!bankSelection.brokerTransferId ||
+                        !(
+                          bankSelection.brokerReceiptId || ticketReceiptFile
+                        ))) ||
+                      !(supplierPayment ? exchangeOfficeId : accountId) ||
                       !paymentMethodId ||
                       !paidAmount))
                 }
               >
-                {actionBusy ? 'در حال ثبت…' : 'ثبت عملیات'}
+                {actionBusy
+                  ? 'در حال ثبت…'
+                  : actionKind === 'PAYMENT' && supplierPayment
+                    ? 'تأیید رسید و تسویه مبلغ حواله'
+                    : 'ثبت عملیات'}
               </Button>
               <Button
                 type="button"

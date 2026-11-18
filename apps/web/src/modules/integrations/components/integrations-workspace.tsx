@@ -1,4 +1,5 @@
 'use client';
+import { useTicketPublicationLink } from '../use-ticket-publication-link';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -48,6 +49,7 @@ import {
   SelectedSiteConnection,
 } from './site-connections-workspace';
 import { isGhestirooSystem } from '../system-connector';
+import { SiteManagement } from './site-management';
 import { SiteRegistrationDialog } from './site-registration-dialog';
 import {
   authenticationLabels,
@@ -87,7 +89,61 @@ export function IntegrationsWorkspace() {
     [...actor.branchIds].sort().join(','),
     [...actor.permissions].sort().join(','),
   ].join('|');
-  return <IntegrationWorkspaceBody key={context} actor={actor} />;
+  return <IntegrationEntry key={context} actor={actor} />;
+}
+
+function IntegrationEntry({ actor }: { actor: AuthenticatedActor }) {
+  const ticketRoute = useTicketPublicationLink();
+  const [selectedView, setView] = useState<'sites' | 'monitoring' | null>();
+  const view =
+    selectedView === undefined ? (ticketRoute ? 'sites' : null) : selectedView;
+  const ticketLink = selectedView === undefined ? ticketRoute : undefined;
+  if (view)
+    return (
+      <div className="grid gap-4" dir="rtl">
+        <Button
+          type="button"
+          variant="outline"
+          className="justify-self-start"
+          onClick={() => setView(null)}
+        >
+          بازگشت به یکپارچه‌سازی‌ها
+        </Button>
+        {view === 'sites' ? (
+          <SiteManagement actor={actor} ticketLink={ticketLink} />
+        ) : (
+          <IntegrationWorkspaceBody actor={actor} />
+        )}
+      </div>
+    );
+  return (
+    <div className="grid gap-5" dir="rtl">
+      <PageHeader title="یکپارچه‌سازی‌ها" />
+      <div className="grid gap-4 md:grid-cols-2">
+        {(
+          [
+            ['sites', 'مدیریت سایت', 'تور‌ها، بلیط‌ها و هتل‌ها'],
+            [
+              'monitoring',
+              'مانیتورینگ',
+              'برندها، اتصال‌ها، تنظیمات و پایش سامانه‌ها',
+            ],
+          ] as const
+        ).map(([id, title, description]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setView(id)}
+            className="rounded-2xl border border-border bg-surface p-6 text-start shadow-sm hover:border-primary"
+          >
+            <h2 className="text-xl font-bold text-primary">{title}</h2>
+            <p className="mt-3 text-sm text-muted-foreground">{description}</p>
+            <span className="mt-8 block text-sm text-primary">ورود به بخش</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function IntegrationWorkspaceBody({

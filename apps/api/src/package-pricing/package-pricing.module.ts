@@ -1,3 +1,5 @@
+import { FloatingTourPricingController } from './floating-tour-pricing.controller';
+import { FloatingTourPricingService } from './floating-tour-pricing.service';
 import { Module } from '@nestjs/common';
 
 import { AuthGuard } from '../iam/auth.guard';
@@ -27,12 +29,17 @@ import {
     TicketRuntimeModule,
     FinanceTicketCostModule,
   ],
-  controllers: [PackagePricingController, PackageTourPricingController],
+  controllers: [
+    PackagePricingController,
+    PackageTourPricingController,
+    FloatingTourPricingController,
+  ],
   providers: [
     AuthGuard,
     PermissionGuard,
     PackagePricingService,
     PackageTourPricingService,
+    FloatingTourPricingService,
     FailClosedPackagePricingSourceAdapter,
     VersionedPackagePricingSourceAdapter,
     {
@@ -40,6 +47,10 @@ import {
       useExisting: VersionedPackagePricingSourceAdapter,
     },
   ],
-  exports: [PackagePricingService, PackageTourPricingService],
+  exports: [
+    PackagePricingService,
+    PackageTourPricingService,
+    FloatingTourPricingService,
+  ],
 })
 export class PackagePricingModule {}

@@ -1,3 +1,17 @@
+## Nora data Agent policy — 2026-11-14 — NORA-DATA-AGENT-V1
+
+The owner explicitly supersedes messages-only for opt-in Agent v3: Groq may
+receive authorized Sales result rows and analyze them. First scope is Sales and
+contracts; names/contract numbers are permitted, identity/contact/document/card
+fields and credentials are excluded. The AI authors SQL and iterates against
+Sales-owned curated reporting views; ERP enforces native row/column permissions,
+company visibility, read-only execution and resource budgets. This resolves the
+conflict with the older no-tool-results rule without transferring data ownership
+or granting cross-module table access. Germany SSH/CONNECT egress remains
+mandatory; the other PC owns the currently available tunnel configuration.
+No write tools, durable conversation store or production deployment are implied.
+See [NORA-DATA-AGENT-V1](tasks/NORA-DATA-AGENT-V1.md).
+
 ## Standalone insurance issuance — 2026-11-09
 
 The owner explicitly requests a complete new-applicant issuance form without a Sales contract. This supersedes the earlier contract-only prerequisite for this one insurance path. Reservations owns a standalone applicant value object, with real Branch/User FKs, row-bound AES-GCM encrypted identity/contact data and audited private reads. No placeholder Customer, Sales contract, allocation or Finance release is fabricated. Existing insurance policies retain their contract linkage; standalone policies instead link a real applicant record. A database constraint requires exactly one complete linkage shape. One existing issuance state machine handles both paths; fingerprints, leases and confirmed original PDFs remain authoritative. No real insurer-mode change is implied. Only vendor-catalogue durations may be selected or submitted, without silent duration/price rounding. The initial safe provider diagnostic remains visible through ambiguous-result reconciliation.
@@ -838,3 +852,16 @@ outbox contract rather than reading domain tables directly.
 The owner's three-company ledger model uses LegalEntity ownership alongside the existing Branch permission boundary. Jahan Academia shares Jahan Bastan's accounting book only; Sales/branding issuer context is unchanged. The header is the sole company selector and supplies immutable canonical ledger title. Retain legacy IDs/currencies and bind unknown ownership only by explicit metadata save; never infer ownership or move historical financial records. Aggregate mode is read-only. Fiscal-year configuration plus assignment is one Accounting transaction. The additive DTO/FK migration is compatible with legacy readers. This resolves the older branch-only ledger model for the bounded Accounting scope; details and validation are in docs/tasks/COMPANY-LEDGER-1110.md.
 
 COMPANY-LEDGER-1110 publication authorization: the owner explicitly requests CI, a PR to develop and merge after all tests succeed. This concrete destination supersedes the generic PC-D-Integration destination for this work item only. No production deployment.
+
+
+## SITE-PASSENGER-SYNC-1115 — 2026-11-15 / PC-A
+
+The owner explicitly replaces website-only strict name/DOB matching with synchronization of supplied passenger identity fields to the active same-national-ID profile in the site's configured inventory branch. The regular registration lookup, manual Sales flow and cross-branch identity protections remain unchanged. The existing national ID is the lookup key and cannot be rewritten by this sync. Customers owns validation, encrypted passport storage, optimistic concurrency and atomic audit; Site Commerce consumes only its bounded public method. Website synchronization is not a general Customer update grant. Omitted fields are preserved and historical products/orders/payments are not rewritten.
+
+
+## NSS-BANK-SETTLEMENT-1117 — verified gateway exception
+Owner explicitly authorizes automatic Finance confirmation only for bank-verified NSS gateway receipts bound by a server-only signature to the linked order and configured SEP terminal/account. Ordinary BANK_TRANSFER/unsigned receipts retain manual Finance review. Finance validates the active branch/IRR/BANK account and emits the existing native receipt confirmation; it preserves accounting events, audit, idempotency, correction/void rejection and real settlement. SiteCommerce uses the existing fresh full-settlement document release, retaining explicit revocation/cancellation. No new generic site Finance permission or direct cross-module table write. No migration or dependency change. See tasks/NSS-BANK-SETTLEMENT-1117.md; validation/release pending.
+
+
+## SOLDOUT-SITE-STOP-1117
+The owner requests automatic stop/hide for exhausted tickets on connected sites. Catalog derives effective salesStopped from authoritative remainingCapacity<=0 while retaining an additive capacityStopped marker. Persistent manual stop/unpublish flags are not rewritten; newly available capacity clears only the derived state in a newer full snapshot. Existing capacity-change triggers, independent signed delivery/retries and timed refresh on unpinned hold expiry are reused. Site local reads also fail closed for zero/invalid ticket stock; normal search excludes stopped tickets, and native purchase capacity guards remain. No migration, dependency, business inventory mutation or polling added. Validation/release tracked in tasks/SOLDOUT-SITE-STOP-1117.md.

@@ -1,3 +1,17 @@
+import { WebsiteCheckoutHoldsService } from './website-checkout-holds.service';
+import { commerceSites, isDeliverySite } from './commerce-sites';
+import {
+  VerifiedGatewayReceiptPublic,
+  type VerifiedGatewayProof,
+} from '../finance/payments/verified-gateway-receipt.public';
+import { ageCounts } from '../ticket-catalog/ticket-age-fares';
+import { websitePresentation } from './publication-presentation';
+import { DocumentsService } from '../documents/documents.service';
+import {
+  attachAirlineLogos,
+  websiteAirlineLogo,
+  carrierKey,
+} from './airline-logos';
 import {
   BadRequestException,
   ConflictException,
@@ -5,6 +19,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { Prisma } from '@nora/database';
 import type {
@@ -16,20 +31,21 @@ import { DatabaseService } from '../database/database.service';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { TourPublicService } from '../ticket-catalog/tour-public.service';
 import { PackageTourPricingService } from '../package-pricing/package-tour-pricing.service';
+import { FloatingTourPricingService } from '../package-pricing/floating-tour-pricing.service';
 import { SalesService } from '../sales/sales.service';
 import { SalesOutputService } from '../sales/sales-output.service';
 import { MasterDataService } from '../master-data/master-data.service';
 import { TravelWorkflowService } from '../reservations/travel-workflow.service';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import { ReservationTicketDocumentsService } from '../reservations/reservation-ticket-documents';
-import { isFloatingSalesContract } from '@nora/contracts';
+import { salesContractFlights, isFloatingSalesContract } from '@nora/contracts';
 import { passengerAgeCategory } from '../sales/sales.domain';
 import { websiteFlightQuotes } from './ticket-quote';
 import {
+  actorSite,
   assertWebsiteDraft,
   externalOrderId,
   siteBinding,
-  siteConfiguration,
   stableFingerprint,
 } from './site-commerce.policy';
 
@@ -50,6 +66,17 @@ export class SiteCommerceService {
     private readonly delivery: FinanceDeliveryService,
     @Inject(ReservationTicketDocumentsService)
     private readonly ticketDocuments: ReservationTicketDocumentsService,
+    @Optional()
+    @Inject(DocumentsService)
+    private readonly documents?: DocumentsService,
+    @Inject(FloatingTourPricingService)
+    private readonly floating?: FloatingTourPricingService,
+    @Optional()
+    @Inject(VerifiedGatewayReceiptPublic)
+    private readonly gatewayReceipts?: VerifiedGatewayReceiptPublic,
+    @Optional()
+    @Inject(WebsiteCheckoutHoldsService)
+    private readonly checkoutHolds?: WebsiteCheckoutHoldsService,
   ) {}
 
   private scoped(site: string, actor: AuthenticatedActor) {
@@ -57,22 +84,117 @@ export class SiteCommerceService {
     return { ...actor, branchIds: [binding.branchId] };
   }
 
+  private async ticketTarget(site: string, branchId: string) {
+    const binding = await this.db.client.websiteCatalogDelivery.findUnique({
+      where: { siteCode: site },
+    });
+    if (binding?.branchId !== branchId || !binding.salePriceTargetId)
+      throw new BadRequestException(
+        'ابتدا درصد مقصد «نیایش سیر سحر» را در مدیریت قیمت بلیط ثبت کنید.',
+      );
+    return binding.salePriceTargetId;
+  }
+
+  /** Read-only normalized branding for an already linked website contract. */
+  async ticketAirlineLogo(
+    contractId: string,
+    carrierName: string,
+    actor: AuthenticatedActor,
+  ) {
+    const site = actorSite(actor);
+    if (!isDeliverySite(site)) throw new ForbiddenException();
+    const scoped = this.scoped(site, actor);
+    if (
+      !this.documents ||
+      typeof carrierName !== 'string' ||
+      carrierName.length > 200 ||
+      !carrierKey(carrierName)
+    )
+      throw new NotFoundException();
+    const link = await this.db.client.websiteOrder.findFirst({
+      where: { siteCode: site, branchId: scoped.branchIds[0]!, contractId },
+      select: { id: true },
+    });
+    if (!link) throw new NotFoundException();
+    const { data: contract } = await this.sales.detail(contractId, scoped);
+    if (
+      contract.status === 'CANCELLED' ||
+      !salesContractFlights(
+        contract.servicesDetail,
+        contract.ticketSelections,
+      ).some(
+        (flight) =>
+          carrierKey(flight.carrierNameSnapshot) === carrierKey(carrierName),
+      )
+    )
+      throw new NotFoundException();
+    const assets = await attachAirlineLogos([{ carrierName }], (name) =>
+      websiteAirlineLogo(name, scoped, this.references, this.documents!),
+    );
+    if (assets.length !== 1) throw new NotFoundException();
+    return Buffer.from(assets[0]!.dataBase64, 'base64');
+  }
+
+  private publicationBranch(
+    site: string,
+    actor: AuthenticatedActor,
+    requested?: string,
+  ) {
+    if (!actor.permissions.includes('ticket_catalog.manage'))
+      throw new ForbiddenException();
+    if (!['nss', 'jahan-bastan', 'ghestiroo', 'jahan-academy'].includes(site))
+      throw new BadRequestException('انتشار سایت معتبر نیست.');
+    let bindings: Record<string, { branchId?: string }> = {};
+    try {
+      bindings = JSON.parse(process.env.SITE_COMMERCE_BINDINGS ?? '{}');
+    } catch {
+      throw new ForbiddenException();
+    }
+    const bound = bindings?.[site]?.branchId;
+    const branchId = requested ?? bound;
+    if (
+      !branchId ||
+      !actor.branchIds.includes(branchId) ||
+      (bound && bound !== branchId) ||
+      (isDeliverySite(site) && !bound)
+    )
+      throw new ForbiddenException('این شعبه به سایت انتخاب‌شده دسترسی ندارد.');
+    return branchId;
+  }
+
   async publication(
     site: string,
     kind: string,
     resourceId: string,
     actor: AuthenticatedActor,
+    branch?: string,
+    requestedPeriod = '',
   ) {
-    if (!actor.permissions.includes('ticket_catalog.manage'))
-      throw new ForbiddenException();
+    const branchId = this.publicationBranch(site, actor, branch);
+    if (!['ticket', 'tour', 'floating-tour'].includes(kind))
+      throw new BadRequestException();
+    const periodKey = this.publicationPeriod(kind, requestedPeriod);
+    const delivery = await this.db.client.websiteCatalogDelivery.findFirst({
+      where: { siteCode: site, branchId },
+      select: {
+        lastError: true,
+        deliveredAt: true,
+        deliveredRevision: true,
+        revision: true,
+      },
+    });
+    const deliveryStatus = !delivery
+      ? 'unconfigured'
+      : delivery.lastError
+        ? 'error'
+        : delivery.deliveredAt &&
+            delivery.deliveredRevision === delivery.revision
+          ? 'accepted'
+          : 'pending';
     return {
+      deliveryStatus,
       data: await this.db.client.websitePublication.findFirst({
-        where: {
-          siteCode: site,
-          kind,
-          resourceId,
-          branchId: { in: actor.branchIds },
-        },
+        where: { siteCode: site, kind, resourceId, branchId, periodKey },
       }),
     };
   }
@@ -81,46 +203,96 @@ export class SiteCommerceService {
     site: string,
     kind: string,
     resourceId: string,
-    input: { enabled: boolean; version: number },
+    input: {
+      enabled: boolean;
+      salesStopped?: boolean;
+      version: number;
+      branchId?: string;
+      presentation?: unknown;
+      periodKey?: string;
+    },
     actor: AuthenticatedActor,
   ) {
     if (
-      !['ticket', 'tour'].includes(kind) ||
-      !['nss'].includes(site) ||
+      !['ticket', 'tour', 'floating-tour'].includes(kind) ||
+      !['nss', 'jahan-bastan', 'ghestiroo', 'jahan-academy'].includes(site) ||
       typeof input?.enabled !== 'boolean' ||
-      !Number.isInteger(input.version)
+      !Number.isInteger(input.version) ||
+      (input.salesStopped !== undefined &&
+        typeof input.salesStopped !== 'boolean')
     )
       throw new BadRequestException('انتشار سایت معتبر نیست.');
     if (!actor.permissions.includes('ticket_catalog.manage'))
       throw new ForbiddenException();
-    const resource =
-      kind === 'ticket'
-        ? await this.tickets.websiteOffer(resourceId, actor.branchIds)
-        : await this.tours.pricingDeparture(resourceId, actor.branchIds);
-    if (input.enabled && siteConfiguration(site).branchId !== resource.branchId)
-      throw new BadRequestException(
-        'این محصول در شعبه اتصال سایت تعریف نشده است.',
+    const branchId = this.publicationBranch(site, actor, input.branchId);
+    const periodKey = this.publicationPeriod(kind, input.periodKey ?? '');
+    if (kind === 'ticket') {
+      await this.tickets.documentSupply(resourceId, [branchId]);
+      if (input.enabled)
+        await this.tickets.websiteOffer(
+          resourceId,
+          [branchId],
+          isDeliverySite(site)
+            ? await this.ticketTarget(site, branchId)
+            : undefined,
+        );
+    } else if (kind === 'floating-tour') {
+      await this.floatingProduct(
+        resourceId,
+        [branchId],
+        periodKey,
+        input.enabled,
       );
+    } else {
+      await this.tours.pricingDeparture(resourceId, [branchId]);
+      if (
+        input.enabled &&
+        !(
+          await this.packages.websitePublicationCandidates({
+            ...actor,
+            branchIds: [branchId],
+          })
+        ).data.includes(resourceId)
+      )
+        throw new BadRequestException('قیمت منتشرشده پکیج الزامی است.');
+    }
+    const presentation =
+      input.presentation === undefined
+        ? undefined
+        : websitePresentation(input.presentation);
+    if (presentation && kind === 'ticket')
+      throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
     const key = {
       siteCode: site,
       kind,
       resourceId,
-      branchId: resource.branchId,
+      branchId,
+      periodKey,
     };
     const row = await this.db.client.websitePublication.findUnique({
-      where: { siteCode_branchId_kind_resourceId: key },
+      where: { siteCode_branchId_kind_resourceId_periodKey: key },
     });
     if ((row?.version ?? 0) !== input.version)
       throw new ConflictException('وضعیت انتشار تغییر کرده است.');
     if (!row)
       return {
         data: await this.db.client.websitePublication.create({
-          data: { ...key, enabled: input.enabled },
+          data: {
+            ...key,
+            ...(presentation ? { presentation } : {}),
+            enabled: input.enabled,
+            salesStopped: input.salesStopped ?? false,
+          },
         }),
       };
     const changed = await this.db.client.websitePublication.updateMany({
       where: { id: row.id, version: input.version },
-      data: { enabled: input.enabled, version: { increment: 1 } },
+      data: {
+        enabled: input.enabled,
+        ...(presentation ? { presentation } : {}),
+        salesStopped: input.salesStopped ?? row.salesStopped,
+        version: { increment: 1 },
+      },
     });
     if (!changed.count)
       throw new ConflictException('وضعیت انتشار تغییر کرده است.');
@@ -131,8 +303,12 @@ export class SiteCommerceService {
     };
   }
 
-  private async flight(offerId: string, branchIds: readonly string[]) {
-    const offer = await this.tickets.websiteOffer(offerId, branchIds);
+  private async flight(
+    offerId: string,
+    branchIds: readonly string[],
+    targetId?: string,
+  ) {
+    const offer = await this.tickets.websiteOffer(offerId, branchIds, targetId);
     const [origin, destination, originAirport, destinationAirport] =
       await Promise.all([
         this.references.detail('cities', offer.originId),
@@ -180,10 +356,42 @@ export class SiteCommerceService {
     };
   }
 
-  async catalog(site: string, actor: AuthenticatedActor) {
+  async nextCatalogCapacityChange(branchId: string) {
+    return this.tickets.websiteNextCapacityChange([branchId]);
+  }
+
+  async cancelledOrders(site: string, actor: AuthenticatedActor) {
+    const scoped = this.scoped(site, actor);
+    const links = await this.db.client.websiteOrder.findMany({
+      where: { siteCode: site, branchId: scoped.branchIds[0]! },
+      select: { externalId: true, contractId: true },
+      orderBy: { id: 'asc' },
+      take: 10001,
+    });
+    if (links.length > 10000) throw new BadRequestException();
+    const cancelled = new Set(
+      (
+        await this.sales.cancelledWebsiteContracts(
+          links.map((link) => link.contractId),
+          scoped,
+        )
+      ).map((row) => row.id),
+    );
+    return links.filter((link) => cancelled.has(link.contractId));
+  }
+
+  async catalog(
+    site: string,
+    actor: AuthenticatedActor,
+    includeFloating = false,
+  ) {
     const scoped = this.scoped(site, actor);
     const rows = await this.db.client.websitePublication.findMany({
-      where: { siteCode: site, branchId: scoped.branchIds[0]! },
+      where: {
+        siteCode: site,
+        branchId: scoped.branchIds[0]!,
+        ...(!includeFloating ? { kind: { in: ['ticket', 'tour'] } } : {}),
+      },
       orderBy: { id: 'asc' },
       take: 501,
     });
@@ -193,11 +401,14 @@ export class SiteCommerceService {
       );
     const data = [];
     for (const row of rows) {
+      // Legacy sites must explicitly opt into the additive floating-tour product contract.
+      if (row.kind === 'floating-tour' && !includeFloating) continue;
       if (!row.enabled) {
         data.push({
           id: row.id,
           kind: row.kind,
           resourceId: row.resourceId,
+          ...(row.kind === 'floating-tour' ? { periodKey: row.periodKey } : {}),
           enabled: false,
           version: row.version,
         });
@@ -206,37 +417,93 @@ export class SiteCommerceService {
       try {
         const product =
           row.kind === 'ticket'
-            ? { flight: await this.flight(row.resourceId, scoped.branchIds) }
-            : {
-                tour: await this.websiteTour(row.resourceId, scoped),
-                rooms: (
-                  await this.packages.saleCatalog(
+            ? {
+                flight: await this.flight(
+                  row.resourceId,
+                  scoped.branchIds,
+                  await this.ticketTarget(site, scoped.branchIds[0]!),
+                ),
+              }
+            : row.kind === 'floating-tour'
+              ? {
+                  floatingTour: await this.floatingProduct(
                     row.resourceId,
-                    scoped,
-                    scoped.branchIds[0],
-                  )
-                ).data,
-              };
+                    scoped.branchIds,
+                    row.periodKey,
+                  ),
+                }
+              : {
+                  tour: await this.websiteTour(row.resourceId, scoped),
+                  rooms: (
+                    await this.packages.saleCatalog(
+                      row.resourceId,
+                      scoped,
+                      scoped.branchIds[0],
+                    )
+                  ).data,
+                };
         if (
           'tour' in product &&
+          product.tour &&
           (product.tour.isActive === false || product.tour.isDeleted === true)
         ) {
           data.push({
             id: row.id,
             kind: row.kind,
             resourceId: row.resourceId,
+            ...(row.kind === 'floating-tour'
+              ? { periodKey: row.periodKey }
+              : {}),
             enabled: false,
             version: row.version,
           });
           continue;
         }
+        const presentation = row.presentation
+          ? websitePresentation(row.presentation)
+          : undefined;
+        if (presentation && 'tour' in product && product.tour) {
+          product.tour.package = {
+            ...product.tour.package,
+            ...(presentation.title ? { name: presentation.title } : {}),
+            details: {
+              ...product.tour.package.details,
+              version: 1,
+              ...(presentation.description
+                ? { description: presentation.description }
+                : {}),
+            },
+          };
+        }
+        if (presentation && 'floatingTour' in product && product.floatingTour) {
+          product.floatingTour.package = {
+            ...product.floatingTour.package,
+            ...(presentation.title ? { name: presentation.title } : {}),
+            details: {
+              ...product.floatingTour.package.details,
+              version: 1,
+              ...(presentation.description
+                ? { description: presentation.description }
+                : {}),
+            },
+          };
+        }
+        const capacityStopped =
+          'flight' in product &&
+          !!product.flight &&
+          product.flight.remainingCapacity <= 0;
         data.push({
           id: row.id,
           kind: row.kind,
           resourceId: row.resourceId,
+          ...(row.kind === 'floating-tour' ? { periodKey: row.periodKey } : {}),
           enabled: true,
+          // Stock exhaustion is a reversible projection, never a manual publication edit.
+          salesStopped: row.salesStopped || capacityStopped,
+          ...(capacityStopped ? { capacityStopped: true } : {}),
           version: row.version,
           ...product,
+          ...(presentation ? { presentation } : {}),
         });
       } catch (error) {
         // Preserve explicit tombstones, but never hide infrastructure failure as deletion.
@@ -249,12 +516,42 @@ export class SiteCommerceService {
           id: row.id,
           kind: row.kind,
           resourceId: row.resourceId,
+          ...(row.kind === 'floating-tour' ? { periodKey: row.periodKey } : {}),
           enabled: false,
           version: row.version,
         });
       }
     }
-    return { version: 1, data };
+    const cancelledOrders = await this.cancelledOrders(site, scoped);
+    if (!this.documents || !isDeliverySite(site))
+      return { version: 1, data, cancelledOrders };
+    const flights: { carrierName: string; carrierLogoUrl?: string }[] = [];
+    for (const product of data) {
+      if ('flight' in product && product.flight) flights.push(product.flight);
+      if ('tour' in product && product.tour) {
+        flights.push(product.tour.outbound);
+        if (product.tour.returning) flights.push(product.tour.returning);
+      }
+    }
+    // Reserve room for base64/URL overhead inside the existing four-MiB signed delivery.
+    const available = Math.floor(
+      Math.max(
+        0,
+        4 * 1024 * 1024 -
+          Buffer.byteLength(
+            JSON.stringify({ version: 1, data, cancelledOrders }),
+          ) -
+          128 * 1024,
+      ) * 0.7,
+    );
+    const airlineLogos = await attachAirlineLogos(
+      flights,
+      (name) =>
+        websiteAirlineLogo(name, scoped, this.references, this.documents!),
+      available,
+      commerceSites[site].origin,
+    );
+    return { version: 1, data, airlineLogos, cancelledOrders };
   }
 
   private async websiteTour(id: string, actor: AuthenticatedActor) {
@@ -266,6 +563,35 @@ export class SiteCommerceService {
         ? { returning: await this.flight(tour.returning.id, actor.branchIds) }
         : {}),
     };
+  }
+
+  private floatingProduct(
+    id: string,
+    branchIds: string[],
+    periodKey: string,
+    requirePrices = true,
+  ) {
+    if (!this.floating) throw new Error('Floating tour pricing is unavailable');
+    return this.floating.websiteProduct(
+      id,
+      branchIds,
+      periodKey,
+      requirePrices,
+    );
+  }
+
+  private publicationPeriod(kind: string, key: string) {
+    if (
+      typeof key !== 'string' ||
+      key.length > 100 ||
+      (kind !== 'floating-tour' && key !== '') ||
+      (kind === 'floating-tour' &&
+        !/^(dated:\d{4}-\d{2}-\d{2}:\d{1,3}|monthly:(PERSIAN|GREGORIAN):\d{1,2}(?:-\d{1,2}){0,11}:\d{1,3})$/.test(
+          key,
+        ))
+    )
+      throw new BadRequestException('انتشار سایت معتبر نیست.');
+    return key;
   }
 
   private async assertPublished(
@@ -291,14 +617,15 @@ export class SiteCommerceService {
     for (const resource of resources) {
       const published = await this.db.client.websitePublication.findUnique({
         where: {
-          siteCode_branchId_kind_resourceId: {
+          siteCode_branchId_kind_resourceId_periodKey: {
+            periodKey: '',
             siteCode: site,
             branchId: actor.branchIds[0]!,
             ...resource,
           },
         },
       });
-      if (!published?.enabled)
+      if (!published?.enabled || published.salesStopped)
         throw new ForbiddenException('این محصول برای سایت منتشر نشده است.');
     }
     if (tourIds.length) {
@@ -332,13 +659,24 @@ export class SiteCommerceService {
         throw new BadRequestException('پرواز رفت را انتخاب کنید.');
       const offers = await Promise.all(
         selections.map((s) =>
-          this.tickets.websiteOffer(s.offerId, actor.branchIds),
+          this.ticketTarget(site, actor.branchIds[0]!).then((target) =>
+            this.tickets.websiteOffer(s.offerId, actor.branchIds, target),
+          ),
         ),
       );
       const seats = input.passengers.filter(
         (p) => passengerAgeCategory(p.birthDate, input.departureDate) !== 'INF',
       ).length;
-      const quotes = websiteFlightQuotes(offers[0]!, offers[1], seats);
+      const quotes = websiteFlightQuotes(
+        offers[0]!,
+        offers[1],
+        seats,
+        ageCounts(
+          input.passengers.map((p) =>
+            passengerAgeCategory(p.birthDate, input.departureDate),
+          ),
+        ),
+      );
       for (const [index, selection] of selections.entries()) {
         const offer = offers[index]!,
           price = quotes[index]!;
@@ -386,21 +724,44 @@ export class SiteCommerceService {
 
   async flightQuote(
     site: string,
-    body: { productIds: string[]; birthDates: string[] },
+    body: {
+      productIds: string[];
+      birthDates?: string[];
+      passengerCounts?: { adults: number; children: number; infants: number };
+    },
     actor: AuthenticatedActor,
   ) {
     const scoped = this.scoped(site, actor);
+    const dates = Array.isArray(body?.birthDates) ? body.birthDates : null;
+    const preview = body?.passengerCounts;
+    const validDates =
+      dates &&
+      dates.length >= 1 &&
+      dates.length <= 30 &&
+      dates.every(
+        (d) => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d),
+      );
+    const validPreview =
+      preview &&
+      typeof preview === 'object' &&
+      !Array.isArray(preview) &&
+      Object.keys(preview).length === 3 &&
+      (['adults', 'children', 'infants'] as const).every(
+        (key) => Number.isSafeInteger(preview[key]) && preview[key] >= 0,
+      ) &&
+      preview.adults + preview.children >= 1 &&
+      preview.adults + preview.children + preview.infants <= 30;
     if (
       !body ||
       !Array.isArray(body.productIds) ||
       body.productIds.length < 1 ||
       body.productIds.length > 2 ||
-      !Array.isArray(body.birthDates) ||
-      !body.birthDates.length ||
-      body.birthDates.length > 30 ||
-      body.birthDates.some(
-        (d) => typeof d !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(d),
-      )
+      body.productIds.some(
+        (id) => typeof id !== 'string' || !id || id.length > 80,
+      ) ||
+      new Set(body.productIds).size !== body.productIds.length ||
+      (body.birthDates !== undefined && body.passengerCounts !== undefined) ||
+      !(validDates || validPreview)
     )
       throw new BadRequestException('استعلام بلیت معتبر نیست.');
     const offers: Awaited<ReturnType<TicketPublicService['websiteOffer']>>[] =
@@ -413,19 +774,35 @@ export class SiteCommerceService {
           branchId: scoped.branchIds[0]!,
           kind: 'ticket',
           enabled: true,
+          salesStopped: false,
         },
       });
       if (!product)
         throw new ForbiddenException('محصول برای سایت منتشر نشده است.');
       offers.push(
-        await this.tickets.websiteOffer(product.resourceId, scoped.branchIds),
+        await this.tickets.websiteOffer(
+          product.resourceId,
+          scoped.branchIds,
+          await this.ticketTarget(site, scoped.branchIds[0]!),
+        ),
       );
     }
-    const seats = body.birthDates.filter(
-      (d) =>
-        passengerAgeCategory(d, offers[0]!.departureAt.slice(0, 10)) !== 'INF',
-    ).length;
-    return { data: websiteFlightQuotes(offers[0]!, offers[1], seats) };
+    const counts = dates
+      ? ageCounts(
+          dates.map((d) =>
+            passengerAgeCategory(d, offers[0]!.departureAt.slice(0, 10)),
+          ),
+        )
+      : preview!;
+    return {
+      data: websiteFlightQuotes(
+        offers[0]!,
+        offers[1],
+        counts.adults + counts.children,
+        counts,
+        true,
+      ),
+    };
   }
 
   async draft(
@@ -453,7 +830,20 @@ export class SiteCommerceService {
       `site:${site}:${externalId}`,
       scoped,
     );
-    if (!recovered) await this.assertPublished(site, input, scoped);
+    const checkout = await this.checkoutHolds?.validateDraft(
+      site,
+      externalId,
+      input,
+      scoped,
+    );
+    if (!recovered && !checkout)
+      await this.assertPublished(site, input, scoped);
+    const ticketTargetId = input.services.some(
+      (s) => s.metadata?.tourDepartureId,
+    )
+      ? undefined
+      : (checkout?.targetId ??
+        (await this.ticketTarget(site, scoped.branchIds[0]!)));
     const created = await this.sales.create(
       {
         ...input,
@@ -461,6 +851,7 @@ export class SiteCommerceService {
           ...s,
           metadata: {
             ...s.metadata,
+            catalogSalePriceTargetId: ticketTargetId ?? null,
             sourceSite: site,
             externalOrderId: externalId,
           },
@@ -469,6 +860,8 @@ export class SiteCommerceService {
       scoped,
       key.branchId,
       `site:${site}:${externalId}`,
+      undefined,
+      checkout?.frozenPackageSales,
     );
     // Native Sales create is durable/idempotent; a timeout before this link is safe to retry.
     await this.db.client.websiteOrder.upsert({
@@ -502,9 +895,19 @@ export class SiteCommerceService {
   async status(site: string, externalId: string, actor: AuthenticatedActor) {
     const { row, scoped } = await this.order(site, externalId, actor);
     const { data: contract } = await this.sales.detail(row.contractId, scoped);
+    const facts = await this.sales.financeCustomerDocumentDeliveryFacts(
+      row.contractId,
+      scoped.branchIds,
+    );
     return {
       version: 1,
       data: {
+        paymentStatus:
+          !facts.cancelled && facts.hasConfirmedPayment && facts.fullySettled
+            ? 'paid'
+            : 'unpaid',
+        hasConfirmedPayment: facts.hasConfirmedPayment,
+        fullySettled: facts.fullySettled,
         externalId,
         contractId: contract.id,
         contractNumber: contract.contractNumber,
@@ -523,8 +926,19 @@ export class SiteCommerceService {
     externalId: string,
     payments: SalesPaymentCreateRequest[],
     actor: AuthenticatedActor,
+    gatewayReceipt?: VerifiedGatewayProof,
   ) {
     const { row, scoped } = await this.order(site, externalId, actor);
+    if (gatewayReceipt && !this.gatewayReceipts)
+      throw new ForbiddenException('اتصال تسویه درگاه تنظیم نشده است.');
+    const gateway = gatewayReceipt
+      ? await this.gatewayReceipts!.resolve(
+          site,
+          externalId,
+          gatewayReceipt,
+          scoped,
+        )
+      : undefined;
     if (
       !Array.isArray(payments) ||
       !payments.length ||
@@ -536,6 +950,19 @@ export class SiteCommerceService {
       )
     )
       throw new BadRequestException('رسید تأییدشده سایت الزامی است.');
+    if (
+      gateway &&
+      (payments.length !== 1 ||
+        payments[0]!.method !== 'ONLINE_GATEWAY' ||
+        payments[0]!.paymentReference !== gateway.reference ||
+        payments[0]!.currencyCode !== gateway.currencyCode ||
+        !new Prisma.Decimal(payments[0]!.amount).eq(gateway.amount) ||
+        (payments[0]!.destinationAccountId &&
+          payments[0]!.destinationAccountId !== gateway.accountId))
+    )
+      throw new ConflictException(
+        'تأیید بانکی با مبلغ و حساب رسید مطابقت ندارد.',
+      );
     const fingerprint = stableFingerprint(payments);
     if (row.paymentFingerprint && row.paymentFingerprint !== fingerprint)
       throw new ConflictException('رسید این سفارش تغییر کرده است.');
@@ -583,7 +1010,46 @@ export class SiteCommerceService {
       );
     }
     const { data: current } = await this.sales.detail(row.contractId, scoped);
-    if (['DRAFT', 'PENDING_CONFIRMATION'].includes(current.status))
+    if (['DRAFT', 'PENDING_CONFIRMATION'].includes(current.status)) {
+      const tourIds = [
+        ...new Set(
+          current.servicesDetail
+            .map((s) => s.metadata?.tourDepartureId)
+            .filter((id): id is string => typeof id === 'string'),
+        ),
+      ];
+      if (!tourIds.length) {
+        const targetId = await this.ticketTarget(site, scoped.branchIds[0]!);
+        if (
+          current.servicesDetail.some(
+            (s) =>
+              s.kind === 'FLIGHT' &&
+              s.metadata?.catalogSalePriceTargetId !== targetId,
+          )
+        )
+          throw new ConflictException('نرخ مرجع پرواز تغییر کرده است.');
+      }
+      const resources = tourIds.length
+        ? tourIds.map((resourceId) => ({ kind: 'tour', resourceId }))
+        : current.ticketSelections.map((s) => ({
+            kind: 'ticket',
+            resourceId: s.offerId,
+          }));
+      for (const resource of resources) {
+        const publication = await this.db.client.websitePublication.findUnique({
+          where: {
+            siteCode_branchId_kind_resourceId_periodKey: {
+              periodKey: '',
+              siteCode: site,
+              branchId: scoped.branchIds[0]!,
+              ...resource,
+            },
+          },
+        });
+        if (!publication?.enabled || publication.salesStopped)
+          throw new ConflictException('این محصول برای سایت منتشر نشده است.');
+      }
+      // Native confirmation locks both offers and re-reads ERP allocations, holds and target fares.
       await this.sales.confirm(
         row.contractId,
         current.version,
@@ -591,6 +1057,30 @@ export class SiteCommerceService {
         scoped,
         `site:${site}:${externalId}:confirm`,
       );
+    }
+    if (gateway) {
+      const { data: receiptContract } = await this.sales.detail(
+        row.contractId,
+        scoped,
+      );
+      const matches = receiptContract.payments.filter(
+        (p) =>
+          p.method === 'ONLINE_GATEWAY' &&
+          p.paymentReference === gateway.reference &&
+          p.currencyCode === gateway.currencyCode &&
+          new Prisma.Decimal(p.amount).eq(gateway.amount),
+      );
+      if (matches.length !== 1)
+        throw new ConflictException('رسید بانکی یکتای قرارداد پیدا نشد.');
+      await this.gatewayReceipts!.confirm(
+        row.contractId,
+        matches[0]!,
+        gateway,
+        scoped,
+        (event) => this.sales.applyFinancePaymentConfirmed(event),
+      );
+      await this.releaseSettledWebsiteDocuments(row, scoped);
+    }
     return this.status(site, externalId, actor);
   }
 
@@ -612,6 +1102,54 @@ export class SiteCommerceService {
     return this.sales.paymentAccounts(row.contractId, scoped);
   }
 
+  private async releaseSettledWebsiteDocuments(
+    row: { contractId: string; paymentFingerprint: string | null },
+    scoped: AuthenticatedActor,
+  ) {
+    const current = await this.delivery.readCustomerContract(row.contractId);
+    // Never override an explicit finance decision (including a revoked approval).
+    if (current.approved || current.version !== 0) return current;
+    const facts = await this.sales.financeCustomerDocumentDeliveryFacts(
+      row.contractId,
+      scoped.branchIds,
+    );
+    if (facts.cancelled || !facts.hasConfirmedPayment || !facts.fullySettled)
+      return current;
+    try {
+      return await this.delivery.updateCustomerContract(
+        {
+          expectedVersion: current.version,
+          approved: true,
+          basis: 'FULL_SETTLEMENT',
+          reason:
+            'تحویل خودکار خرید سایت پس از تأیید پرداخت و تسویه کامل در سامانه مرکزی',
+        },
+        facts,
+        scoped,
+        async (tx) => {
+          const fresh = await this.sales.financeCustomerDocumentDeliveryFacts(
+            row.contractId,
+            scoped.branchIds,
+            tx,
+          );
+          if (
+            fresh.cancelled ||
+            !fresh.hasConfirmedPayment ||
+            !fresh.fullySettled
+          )
+            throw new ConflictException(
+              'تسویه کامل تأییدشده برای تحویل مدارک لازم است.',
+            );
+          return fresh;
+        },
+      );
+    } catch (error) {
+      if (!(error instanceof ConflictException)) throw error;
+      // A simultaneous finance decision wins; do not overwrite or retry it.
+      return this.delivery.readCustomerContract(row.contractId);
+    }
+  }
+
   async travelDocuments(
     site: string,
     externalId: string,
@@ -623,9 +1161,11 @@ export class SiteCommerceService {
       row.contractId,
       scoped.branchIds,
     );
-    const authorization = await this.delivery.readCustomerContract(
-      row.contractId,
-    );
+    const authorization =
+      contract.status !== 'CANCELLED' &&
+      intake.workflow.supplierStatus !== 'CANCELLED'
+        ? await this.releaseSettledWebsiteDocuments(row, scoped)
+        : await this.delivery.readCustomerContract(row.contractId);
     if (
       !authorization.approved ||
       contract.status === 'CANCELLED' ||

@@ -155,6 +155,25 @@ export async function getActiveCityReference(
   const reference = asReference(body.data);
   return reference?.active ? reference : undefined;
 }
+export async function getAirportReference(
+  id: string,
+): Promise<Reference | undefined> {
+  const base = getPublicApiBaseUrl();
+  if (!base || !id) return undefined;
+  const response = await localizedFetch(
+    `${base}/master-data/selections/ticket-catalog/airports/${encodeURIComponent(id)}`,
+    { credentials: 'include', headers: { accept: 'application/json' } },
+  );
+  if (!response.ok)
+    throw new ReferenceApiError(
+      referenceState(response.status),
+      'دریافت مرجع اطلاعات پایه ممکن نشد.',
+    );
+  const body = (await response.json()) as { data?: MasterDataRecord };
+  if (body.data?.id !== id || body.data.resource !== 'airports')
+    return undefined;
+  return asReference(body.data);
+}
 export function asReference(record: MasterDataRecord): Reference | undefined {
   const kinds = {
     airlines: 'airline',

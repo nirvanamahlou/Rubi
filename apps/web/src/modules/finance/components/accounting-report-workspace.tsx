@@ -10,8 +10,7 @@ import { FormField } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import { getPublicApiBaseUrl } from '@/lib/environment';
-import { refreshAuthenticatedSession } from '@/lib/auth-session';
-import { localizedFetch } from '@/i18n/localized-fetch';
+import { authenticatedFetch } from '@/lib/authenticated-fetch';
 import { apiRequest } from '../api/finance-inbox-api';
 import { accountingApi } from '../api/accounting-api';
 import Link from '@/i18n/link';
@@ -90,18 +89,11 @@ export function AccountingReportWorkspace({
     setBusy(true);
     setError('');
     try {
-      let response = await localizedFetch(
+      const response = await authenticatedFetch(
         `${getPublicApiBaseUrl()}/finance/accounting/books/${book.book.id}/reports/trial-balance/export?${new URLSearchParams(query())}`,
+        getPublicApiBaseUrl()!,
         { credentials: 'include', cache: 'no-store' },
       );
-      if (
-        response.status === 401 &&
-        (await refreshAuthenticatedSession(getPublicApiBaseUrl()!))
-      )
-        response = await localizedFetch(
-          `${getPublicApiBaseUrl()}/finance/accounting/books/${book.book.id}/reports/trial-balance/export?${new URLSearchParams(query())}`,
-          { credentials: 'include', cache: 'no-store' },
-        );
       if (!response.ok) throw new Error('دریافت خروجی گزارش ناموفق بود.');
       const url = URL.createObjectURL(await response.blob()),
         a = document.createElement('a');

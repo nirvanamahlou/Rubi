@@ -1,7 +1,67 @@
 import { describe, expect, it } from 'vitest';
 import { contractGuideAnswer, resolveContractGuide } from './contract-guides';
+import { contractAdvice } from './contract-advice';
 
 describe('ERP contract workflow help', () => {
+  it('retains procedural passenger-count editing help', () => {
+    expect(
+      resolveContractGuide(
+        'چطور تعداد مسافر قرارداد را تغییر دهم؟',
+        true,
+        undefined,
+        false,
+        true,
+      ),
+    ).toBeTruthy();
+  });
+  it.each([
+    'این عدد ۳۴ قرارداد فعال را از کجا میاری؟',
+    'من ۳۲ قرارداد فعال می‌بینم ولی تو ۳۴ می‌گویی، علت اختلاف چیست؟',
+    'تعداد قراردادها را پرسیدم چرا عدد ۵۲ گفتی؟',
+    'تعداد قراردادهای لغوشده را هم در محاسبه اختلاف نشان بده',
+  ])(
+    'does not replace count reconciliation with procedural guidance: %s',
+    (question) => {
+      expect(
+        resolveContractGuide(question, true, undefined, false, true),
+      ).toBeUndefined();
+      expect(contractAdvice(question, true, true)).toBeUndefined();
+    },
+  );
+  it('does not let nested multi-part advice intercept a live portfolio question', () => {
+    const question =
+      'تعداد کل قراردادهای قابل مشاهده من در شرکت فعال را بدون محدودیت تاریخ و شامل همه وضعیت‌ها بگو؛ قراردادهای پنهان را حساب نکن. فقط تعداد دقیق و منبع را بده.';
+    expect(contractAdvice(question, true)).toContain('شماره کامل قرارداد');
+    expect(contractAdvice(question, true, true)).toBeUndefined();
+    expect(
+      resolveContractGuide(question, true, undefined, false, true),
+    ).toBeUndefined();
+  });
+  it('preserves multi-part procedural advice with the data Agent enabled', () => {
+    const question = 'چطور هتل را تغییر دهم؟ چطور رسید ثبت کنم؟';
+    const legacy = contractAdvice(question, true);
+    expect(legacy).toBeTruthy();
+    expect(contractAdvice(question, true, true)).toEqual(legacy);
+  });
+  it.each([
+    'تعداد کل قراردادهای قابل مشاهده من در شرکت فعال را بدون محدودیت تاریخ و شامل همه وضعیت‌ها بگو',
+    'چند ردیف در منبع contracts برای شرکت فعال قابل مشاهده است؟ همه وضعیت‌ها و همه تاریخ‌ها را حساب کن.',
+  ])(
+    'lets the data Agent answer aggregate questions without requiring a record: %s',
+    (question) => {
+      expect(resolveContractGuide(question, true)?.topicId).toBe('record');
+      expect(
+        resolveContractGuide(question, true, undefined, false, true),
+      ).toBeUndefined();
+    },
+  );
+  it('keeps canonical procedural help when the data Agent is available', () => {
+    const legacy = resolveContractGuide('چجور قرارداد بزنم؟', true);
+    expect(
+      resolveContractGuide('چجور قرارداد بزنم؟', true, undefined, false, true),
+    ).toEqual(legacy);
+    expect(legacy?.text).toContain('قرارداد جدید');
+  });
   it.each([
     'چجور قرارداد بزنم؟',
     'چجوری قرارداد بزنم',

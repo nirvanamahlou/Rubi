@@ -1,3 +1,7 @@
+import {
+  accountingDetailLevels,
+  type AccountingDetailLevel,
+} from '@nora/contracts';
 import { createHash } from 'node:crypto';
 import type { Prisma } from '@nora/database';
 import type { AccountingStatementBasisV1 } from '@nora/contracts';
@@ -11,8 +15,9 @@ export async function documentStatementBasis(
   currencies: { code: string; name: string }[],
 ): Promise<AccountingStatementBasisV1> {
   const journalId = v.uuid(input.journalId)!;
-  const level = Number(input.level);
-  if (![4, 5, 6].includes(level)) v.invalid('سطح اعلامیه معتبر نیست.');
+  const level = Number(input.level) as AccountingDetailLevel;
+  if (!accountingDetailLevels.includes(level))
+    v.invalid('سطح اعلامیه معتبر نیست.');
   if (typeof input.currencyMode !== 'boolean')
     v.invalid('نوع اعلامیه معتبر نیست.');
   if (
@@ -40,8 +45,7 @@ export async function documentStatementBasis(
   const selected = journal.lines.filter((line) => lineIds.includes(line.id));
   if (selected.length !== lineIds.length)
     v.rule('همه اقلام باید متعلق به همین سند باشند.');
-  const detailKey = `detail${level}Id` as
-    'detail4Id' | 'detail5Id' | 'detail6Id';
+  const detailKey = `detail${level}Id` as const;
   const recipientId = selected[0]![detailKey];
   if (!recipientId || selected.some((line) => line[detailKey] !== recipientId))
     v.rule('تفصیلی سطح انتخاب‌شده باید در همه اقلام یکسان و مشخص باشد.');

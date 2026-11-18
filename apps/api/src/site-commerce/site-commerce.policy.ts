@@ -21,10 +21,7 @@ export function stableFingerprint(value: unknown): string {
     .digest('hex');
 }
 
-export function siteConfiguration(
-  site: string,
-  raw = process.env.SITE_COMMERCE_BINDINGS ?? '{}',
-) {
+function readBindings(raw: string) {
   let bindings: Record<string, { userId: string; branchId: string }>;
   try {
     bindings = JSON.parse(raw);
@@ -33,16 +30,16 @@ export function siteConfiguration(
   }
   if (!bindings || typeof bindings !== 'object' || Array.isArray(bindings))
     throw new ForbiddenException('اتصال سایت تنظیم نشده است.');
-  const binding = Object.hasOwn(bindings, site) ? bindings[site] : undefined;
-  if (
-    !binding ||
-    typeof binding.userId !== 'string' ||
-    !binding.userId ||
-    typeof binding.branchId !== 'string' ||
-    !binding.branchId
-  )
-    throw new ForbiddenException('اتصال سایت تنظیم نشده است.');
-  return binding;
+  return bindings;
+}
+
+export function actorSite(actor: AuthenticatedActor) {
+  const bindings = readBindings(process.env.SITE_COMMERCE_BINDINGS ?? '{}');
+  const matches = Object.keys(bindings).filter(
+    (site) => bindings[site]?.userId === actor.userId,
+  );
+  if (matches.length !== 1) throw new ForbiddenException();
+  return matches[0]!;
 }
 
 export function siteBinding(
@@ -50,9 +47,14 @@ export function siteBinding(
   actor: AuthenticatedActor,
   raw = process.env.SITE_COMMERCE_BINDINGS ?? '{}',
 ) {
-  const binding = siteConfiguration(site, raw);
+  const bindings = readBindings(raw);
+  const binding = Object.hasOwn(bindings, site) ? bindings[site] : undefined;
   if (
+    !binding ||
     binding.userId !== actor.userId ||
+    Object.entries(bindings).some(
+      ([code, other]) => code !== site && other?.userId === binding.userId,
+    ) ||
     !actor.branchIds.includes(binding.branchId)
   )
     throw new ForbiddenException('اتصال سایت مجاز نیست.');

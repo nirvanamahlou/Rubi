@@ -14,7 +14,7 @@ import { AccountingButton as Button } from './accounting-operations';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
 import { SearchCombobox } from '@/components/ui/search-combobox';
-import Link from '@/i18n/link';
+import { FinanceSourceReferenceLinks } from './finance-source-references';
 import { apiRequest, FinanceInboxApiError } from '../api/finance-inbox-api';
 
 export function AccountingSourceWorkspace({
@@ -174,7 +174,16 @@ export function AccountingSourceWorkspace({
               {query.data?.items.map((row) => (
                 <tr key={row.source + row.id} className="border-t">
                   <td className="p-3">{row.occurredAt.slice(0, 10)}</td>
-                  <td className="p-3">{row.title}</td>
+                  <td className="p-3">
+                    {row.title}
+                    <FinanceSourceReferenceLinks
+                      references={
+                        row.references
+                          ? { ...row.references, journals: [] }
+                          : undefined
+                      }
+                    />
+                  </td>
                   <td className="p-3">{row.amount}</td>
                   <td className="p-3">
                     {currencySymbol(row.currencyCode ?? '')}
@@ -189,12 +198,19 @@ export function AccountingSourceWorkspace({
                   </td>
                   <td className="p-3">
                     {row.accounting ? (
-                      <Link
-                        href={`/finance/accounting/general-ledger/documents/list?bookId=${book.book.id}&journalId=${row.accounting.id}`}
-                        className="font-semibold text-primary"
-                      >
-                        مشاهده سند
-                      </Link>
+                      <FinanceSourceReferenceLinks
+                        references={{
+                          contracts: [],
+                          journals: row.references?.journals ?? [
+                            {
+                              ...row.accounting,
+                              bookId: book.book.id,
+                              periodId: null,
+                              documentDate: null,
+                            },
+                          ],
+                        }}
+                      />
                     ) : (
                       <Button
                         size="sm"

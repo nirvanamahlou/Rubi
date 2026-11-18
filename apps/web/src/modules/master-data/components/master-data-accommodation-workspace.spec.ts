@@ -237,7 +237,7 @@ describe('accommodation workspace', () => {
     expect(source).toContain('<MasterDataKpiGrid');
     expect(source).toContain("attribute(record, 'memberHotels', '[]')");
     expect(source).not.toContain('— · Procurement');
-    expect(source).toContain('در انتظار اتصال Documents');
+    expect(source).toContain('<HotelImageStrip');
     expect(source).not.toContain('هتل اسپیناس پالاس');
     expect(source).not.toContain('CTR-881');
   });

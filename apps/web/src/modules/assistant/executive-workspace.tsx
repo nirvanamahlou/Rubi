@@ -1,9 +1,24 @@
 'use client';
-import { usePathname } from 'next/navigation';
+
+import { AssistantResponseContent } from './response-content';
+import { formatAssistantSources } from './response-presentation';
+import { useChatScroll } from './use-chat-scroll';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { resolveWorkbenchGuide, loadWorkbenchGuide } from './workbench-guides';
+import {
+  assistantConversationScopeKey,
+  appendChatExchange,
+} from './chat-session';
 import { isContractReportQuestion, portfolioKind } from './contract-reports';
 import { contractAdvice } from './contract-advice';
-import { readContractFormHelp } from './contract-form-help';
-import { inspectContractQuestion } from './contract-inspection';
+import {
+  readContractFormHelp,
+  formCorrectionTargets,
+} from './contract-form-help';
+import {
+  inspectContractQuestion,
+  type ContractLink,
+} from './contract-inspection';
 import {
   normalizeContractQuestion,
   resolveContractGuide,
@@ -24,6 +39,8 @@ import {
   Activity,
   ArrowUpLeft,
   ArrowUp,
+  ArrowDown,
+  LoaderCircle,
   BarChart3,
   BellRing,
   BookOpen,
@@ -69,6 +86,10 @@ import {
 } from './model';
 import styles from './executive-workspace.module.css';
 import { conversationResponseSchema } from './conversation';
+import { agentResponseSchema, conversationHistory } from './agent-response';
+import { routeAssistantQuestion, type AnswerContext } from './question-routing';
+import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
+import { useAccessActor } from '@/modules/iam/access-context';
 
 type Translate = (text: AssistantText) => string;
 function SourceUpdated({
@@ -224,16 +245,43 @@ function selectedSalesContract() {
     .noraContractId;
 }
 
-export function AssistantComposer({
+type ComposerProps = {
+  t: Translate;
+  denied: boolean;
+  english?: boolean;
+  floating?: boolean;
+};
+export function AssistantComposer(props: ComposerProps) {
+  return (
+    <CompanyScopedAgentComposer
+      {...props}
+      agentMode={process.env.NEXT_PUBLIC_ASSISTANT_AGENT_ENABLED === 'true'}
+    />
+  );
+}
+function CompanyScopedAgentComposer({
+  agentMode,
+  ...props
+}: ComposerProps & { agentMode: boolean }) {
+  const { context } = useLegalEntityContext();
+  const actor = useAccessActor();
+  const key = assistantConversationScopeKey(context, actor);
+  return (
+    <AssistantComposerContent key={key} {...props} agentMode={agentMode} />
+  );
+}
+function AssistantComposerContent({
   t,
   denied,
   english = false,
   floating = false,
+  agentMode = false,
 }: {
   t: Translate;
   denied: boolean;
   english?: boolean;
   floating?: boolean;
+  agentMode?: boolean;
 }) {
   const inputId = useId();
   const input = useRef<HTMLTextAreaElement>(null);
@@ -247,7 +295,16 @@ export function AssistantComposer({
 
   const [filterError, setFilterError] = useState(false);
   const [messages, setMessages] = useState<
-    Array<{ role: 'user' | 'assistant'; content: string; local?: boolean }>
+    Array<{
+      role: 'user' | 'assistant';
+      content: string;
+      local?: boolean;
+      agent?: boolean;
+      links?: ContractLink[];
+      targets?: { id: string; label: string }[];
+      guideLink?: { href: string; label: string };
+      submissionId?: number;
+    }>
   >([]);
   const [chatError, setChatError] = useState<string | null>(null);
   const [actionResult, setActionResult] =
@@ -255,28 +312,51 @@ export function AssistantComposer({
   const [actionState, setActionState] = useState<AssistantLoadState | null>(
     null,
   );
+  const submissionSequence = useRef(0);
+  const submitting = useRef(false);
+  const {
+    viewport: chatViewportRef,
+    content: chatContentRef,
+    showLatest,
+    updatePosition,
+    scrollToLatest,
+  } = useChatScroll(messages, actionState, actionResult, chatError);
   const pending = useRef<AbortController | null>(null);
   const inspecting = useRef<AbortController | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const workbenchTab =
+    pathname === '/workbench'
+      ? (searchParams.get('tab') ?? 'today')
+      : undefined;
+  const workbenchTopic = useRef<string | undefined>(undefined);
+  const lastVersion = useRef<number | undefined>(undefined);
   const contractId = useRef<string | undefined>(undefined);
   const guideTopic = useRef<string | undefined>(undefined);
+  const previousAnswer = useRef<AnswerContext | undefined>(undefined);
+  useEffect(() => {
+    if (denied) previousAnswer.current = undefined;
+  }, [denied]);
   useEffect(() => {
     const resetRecord = () => {
       inspecting.current?.abort();
+      pending.current?.abort();
+      setActionState(null);
+      lastVersion.current = undefined;
       contractId.current = undefined;
-      guideTopic.current = undefined;
-      setMessages((previous) =>
-        previous.some((item) => item.local)
-          ? previous.filter((item) => !item.local)
-          : previous,
-      );
     };
     resetRecord();
     let selection = selectedSalesContract();
     const observer = new MutationObserver(() => {
       const current = selectedSalesContract();
       if (current !== selection) {
+        if (
+          current &&
+          previousAnswer.current?.contractId &&
+          previousAnswer.current.contractId !== current
+        )
+          previousAnswer.current = undefined;
         selection = current;
         resetRecord();
       }
@@ -293,7 +373,7 @@ export function AssistantComposer({
       observer.disconnect();
       inspecting.current?.abort();
     };
-  }, [pathname]);
+  }, [pathname, workbenchTab, agentMode]);
 
   const prompts: readonly [AssistantText, AssistantAction][] = [
     [c.quickDaily, 'daily-summary'],
@@ -336,60 +416,208 @@ export function AssistantComposer({
     }
   };
   const submit = async () => {
-    if (denied || !draft.trim() || actionState === 'loading') return;
+    if (
+      denied ||
+      !draft.trim() ||
+      actionState === 'loading' ||
+      submitting.current
+    )
+      return;
+    submitting.current = true;
+    try {
+      await sendMessage();
+    } finally {
+      submitting.current = false;
+    }
+  };
+  const sendMessage = async () => {
     const message = draft.trim();
-    const replyLocally = (content: string) => {
+    const submissionId = ++submissionSequence.current;
+    scrollToLatest();
+    // Visible immediately; not provider history until a response succeeds.
+    setMessages((previous) =>
+      appendChatExchange(previous, [
+        {
+          role: 'user' as const,
+          content: message,
+          local: true,
+          submissionId,
+        },
+      ]),
+    );
+    setDraft('');
+    setChatError(null);
+    setActionResult(null);
+    const decision = routeAssistantQuestion(
+      message,
+      previousAnswer.current,
+      Boolean(pathname?.startsWith('/sales')),
+    );
+    const guideQuestion = decision.guideQuestion ?? message;
+    const guidanceAllowed = decision.kind === 'guide';
+    const replyLocally = (
+      content: string,
+      links?: ContractLink[],
+      targets?: { id: string; label: string }[],
+      guideLink?: { href: string; label: string },
+      answerContext?: AnswerContext,
+    ) => {
+      if (answerContext)
+        previousAnswer.current = {
+          ...answerContext,
+          question: answerContext.question.slice(0, 1000),
+        };
       setMessages((previous) =>
-        [
-          ...previous,
-          { role: 'user' as const, content: message, local: true },
-          { role: 'assistant' as const, content, local: true },
-        ].slice(-12),
+        appendChatExchange(previous, [
+          {
+            role: 'assistant' as const,
+            content,
+            local: true,
+            ...(links?.length ? { links } : {}),
+            ...(targets?.length ? { targets } : {}),
+            ...(guideLink ? { guideLink } : {}),
+          },
+        ]),
       );
       setChatError(null);
       setActionResult(null);
       setActionState(null);
-      setDraft('');
     };
-    const formHelp = readContractFormHelp(message);
+    if (decision.kind === 'clarify') {
+      replyLocally(decision.clarification!);
+      return;
+    }
+    const workbenchHelp =
+      guidanceAllowed &&
+      decision.domain !== 'sales' &&
+      resolveWorkbenchGuide(
+        guideQuestion,
+        workbenchTab,
+        workbenchTopic.current,
+      );
+    if (workbenchHelp) {
+      if ('clarification' in workbenchHelp) {
+        replyLocally(workbenchHelp.clarification);
+        return;
+      }
+      pending.current?.abort();
+      const controller = new AbortController();
+      pending.current = controller;
+      setActionState('loading');
+      setChatError(null);
+      try {
+        const answer = await loadWorkbenchGuide(
+          workbenchHelp.topic,
+          workbenchHelp.goal,
+          controller.signal,
+        );
+        if (!controller.signal.aborted) {
+          workbenchTopic.current = workbenchHelp.topic.id;
+          replyLocally(
+            answer,
+            undefined,
+            undefined,
+            {
+              label: workbenchHelp.topic.title,
+              href: workbenchHelp.topic.href,
+            },
+            {
+              kind: 'guide',
+              domain: 'workbench',
+              question: guideQuestion,
+              topicId: workbenchHelp.topic.id,
+            },
+          );
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setMessages([]);
+          previousAnswer.current = undefined;
+          setActionState(
+            error instanceof Error && error.message === 'HTTP_403'
+              ? 'forbidden'
+              : 'unauthenticated',
+          );
+        }
+      }
+      return;
+    }
+    if (guidanceAllowed && decision.domain === 'workbench') {
+      replyLocally(
+        'راهنمای کدام بخش میزکار من را می‌خواهید: درخواست‌ها و مرخصی، پیام‌ها، فایل‌ها، یادداشت‌ها، تقویم، عملکرد یا حساب و تنظیمات؟',
+      );
+      return;
+    }
+    const formHelp = guidanceAllowed && readContractFormHelp(guideQuestion);
     if (formHelp) {
-      replyLocally(formHelp);
+      replyLocally(formHelp, undefined, formCorrectionTargets(), undefined, {
+        kind: 'guide',
+        domain: 'sales',
+        question: guideQuestion,
+      });
       return;
     }
     const selectionAtSubmit = selectedSalesContract();
-    const selectedContract = selectionAtSubmit ?? contractId.current;
-    const guide = resolveContractGuide(
-      message,
-      pathname === '/sales' ||
-        Boolean(pathname?.startsWith('/sales/contracts/')),
-      guideTopic.current,
-    );
+    const selectedContract =
+      selectionAtSubmit ??
+      contractId.current ??
+      (decision.kind === 'follow-up'
+        ? previousAnswer.current?.contractId
+        : undefined);
+    const guide =
+      guidanceAllowed || decision.kind === 'data-with-guide'
+        ? resolveContractGuide(
+            guideQuestion,
+            pathname === '/sales' ||
+              Boolean(pathname?.startsWith('/sales/contracts/')),
+            guideTopic.current,
+            guidanceAllowed && Boolean(selectedContract),
+            agentMode,
+          )
+        : undefined;
     const recordFollowup =
+      !guidanceAllowed &&
       selectedContract &&
       /حالا|همین|این قرارداد|اصلاحش|وضعیتش|بعدش/.test(
         normalizeContractQuestion(message),
       );
     const liveReport =
-      /قرارداد\s*(?:شماره\s*)?[a-z0-9]/i.test(
+      !guidanceAllowed &&
+      (/قرارداد\s*(?:شماره\s*)?[a-z0-9]/i.test(
         normalizeContractQuestion(message),
       ) ||
-      portfolioKind(message) ||
-      /قرارداد(?:\s*های)?\s+(?:مشتری|به نام)/.test(
-        normalizeContractQuestion(message),
-      ) ||
-      (selectedContract && isContractReportQuestion(message));
+        portfolioKind(message) ||
+        /قرارداد(?:\s*های)?\s+(?:مشتری|به نام)/.test(
+          normalizeContractQuestion(message),
+        ) ||
+        (selectedContract && isContractReportQuestion(message)));
     const advice =
+      guidanceAllowed &&
       !liveReport &&
       !recordFollowup &&
-      contractAdvice(message, Boolean(pathname?.startsWith('/sales')));
+      contractAdvice(
+        guideQuestion,
+        Boolean(pathname?.startsWith('/sales')),
+        agentMode,
+      );
     if (advice) {
-      replyLocally(advice);
+      replyLocally(advice, undefined, undefined, undefined, {
+        kind: 'guide',
+        domain: 'sales',
+        question: guideQuestion,
+        topicId: guide?.topicId,
+      });
       return;
     }
-    if (guide && !recordFollowup && !liveReport) {
+    if (guidanceAllowed && guide && !recordFollowup && !liveReport) {
       guideTopic.current = guide.topicId;
       if (guide.topicId === 'create') contractId.current = undefined;
-      replyLocally(guide.text);
+      replyLocally(guide.text, undefined, undefined, undefined, {
+        kind: 'guide',
+        domain: 'sales',
+        question: guideQuestion,
+        topicId: guide.topicId,
+      });
       return;
     }
     pending.current?.abort();
@@ -397,7 +625,16 @@ export function AssistantComposer({
     pending.current = inspectionController;
     inspecting.current = inspectionController;
     setActionState('loading');
-    const inspection = await inspectContractQuestion(message, selectedContract);
+    const inspection = agentMode
+      ? undefined
+      : await inspectContractQuestion(
+          decision.dataMessage,
+          selectedContract,
+          contractId.current === selectedContract
+            ? lastVersion.current
+            : undefined,
+          inspectionController.signal,
+        );
     if (inspecting.current === inspectionController) inspecting.current = null;
     if (
       inspectionController.signal.aborted ||
@@ -408,14 +645,36 @@ export function AssistantComposer({
     }
     setActionState(null);
     if (inspection) {
+      lastVersion.current = inspection.version;
       contractId.current = inspection.contractId;
       guideTopic.current = undefined;
-      replyLocally(inspection.text);
+      replyLocally(
+        inspection.text +
+          (decision.kind === 'data-with-guide' && guide && inspection.contractId
+            ? '\n\n' + guide.text
+            : ''),
+        inspection.links,
+        undefined,
+        undefined,
+        inspection.contractId
+          ? {
+              kind: 'data',
+              domain: 'sales',
+              question: message,
+              contractId: inspection.contractId,
+            }
+          : undefined,
+      );
       return;
     }
-    if (guide) {
+    if (guidanceAllowed && guide && !agentMode) {
       guideTopic.current = guide.topicId;
-      replyLocally(guide.text);
+      replyLocally(guide.text, undefined, undefined, undefined, {
+        kind: 'guide',
+        domain: 'sales',
+        question: guideQuestion,
+        topicId: guide.topicId,
+      });
       return;
     }
     pending.current?.abort();
@@ -425,55 +684,124 @@ export function AssistantComposer({
     setActionState('loading');
     setChatError(null);
     try {
-      const response = await fetch('/api/assistant/v2/conversation', {
-        method: 'POST',
-        credentials: 'same-origin',
-        cache: 'no-store',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          version: 1,
-          message,
-          history: messages
-            .filter((item) => !item.local)
-            .slice(-12)
-            .map((item) => ({ ...item, content: item.content.slice(0, 1000) })),
-        }),
-        signal: controller.signal,
-      });
+      const response = await fetch(
+        agentMode
+          ? '/api/assistant/v3/conversation'
+          : '/api/assistant/v2/conversation',
+        {
+          method: 'POST',
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            version: 1,
+            message: decision.dataMessage,
+            ...(agentMode &&
+            selectedContract &&
+            /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(
+              selectedContract,
+            )
+              ? { context: { selectedContractId: selectedContract } }
+              : {}),
+            history: conversationHistory(messages),
+          }),
+          signal: controller.signal,
+        },
+      );
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
           setMessages([]);
+          previousAnswer.current = undefined;
           setActionResult(null);
         }
         const body = (await response.json().catch(() => null)) as {
           error?: { code?: string };
         } | null;
         throw new Error(
-          body?.error?.code === 'CONVERSATION_DISABLED'
+          ['CONVERSATION_DISABLED', 'AGENT_DISABLED'].includes(
+            body?.error?.code ?? '',
+          )
             ? 'disabled'
             : response.status === 429
               ? 'rate'
               : 'unavailable',
         );
       }
-      const result = conversationResponseSchema.parse(await response.json());
+      const body = await response.json();
       if (controller.signal.aborted) return;
+      if (agentMode) {
+        const result = agentResponseSchema.parse(body);
+        const sourceText = formatAssistantSources(result.sources, english);
+        const answer = [
+          result.text,
+          result.status === 'ANSWER' &&
+          decision.kind === 'data-with-guide' &&
+          guide
+            ? guide.text
+            : '',
+          sourceText ? `${t(c.agentSources)}:\n${sourceText}` : '',
+          result.limitations.length
+            ? `${t(c.agentLimitations)}:\n${result.limitations.join('\n')}`
+            : '',
+        ]
+          .filter(Boolean)
+          .join('\n\n');
+        if (result.status === 'ANSWER')
+          previousAnswer.current = {
+            kind: 'data',
+            domain: 'sales',
+            question:
+              decision.kind === 'follow-up'
+                ? (previousAnswer.current?.question ?? message)
+                : message,
+            contractId: selectedContract,
+            resultIds: result.sources.map((source) => source.resultId),
+          };
+        setMessages((previous) =>
+          appendChatExchange(
+            previous.map((item) =>
+              item.submissionId === submissionId
+                ? { ...item, local: false, agent: true }
+                : item,
+            ),
+            [{ role: 'assistant' as const, content: answer, agent: true }],
+          ),
+        );
+        setActionState(null);
+        return;
+      }
+      const result = conversationResponseSchema.parse(body);
       const answer =
-        result.status === 'REPLY'
+        (result.status === 'REPLY'
           ? result.text
           : result.status === 'CLARIFY'
             ? t(c.conversationClarification[result.field])
-            : t(c.conversationEvidence);
+            : t(c.conversationEvidence)) +
+        (result.status === 'ANSWER' &&
+        decision.kind === 'data-with-guide' &&
+        guide
+          ? '\n\n' + guide.text
+          : '');
       // ERP evidence is rendered separately and never enters model history.
       setMessages((previous) =>
-        [
-          ...previous,
-          { role: 'user' as const, content: message },
-          { role: 'assistant' as const, content: answer },
-        ].slice(-12),
+        appendChatExchange(
+          previous.map((item) =>
+            item.submissionId === submissionId
+              ? { ...item, local: false }
+              : item,
+          ),
+          [{ role: 'assistant' as const, content: answer }],
+        ),
       );
-      if (result.status === 'ANSWER') setActionResult(result.evidence);
-      setDraft('');
+      if (result.status === 'ANSWER') {
+        setActionResult(result.evidence);
+        previousAnswer.current = {
+          kind: 'data',
+          domain: 'sales',
+          question: message,
+          contractId: selectedContract,
+        };
+      }
       setActionState(null);
     } catch (error) {
       if (!controller.signal.aborted) {
@@ -507,11 +835,7 @@ export function AssistantComposer({
           value={draft}
           disabled={denied}
           onChange={(event) => {
-            pending.current?.abort();
-            setActionResult(null);
-            setActionState(null);
             setDraft(event.target.value);
-            setChatError(null);
           }}
           onKeyDown={(event) => {
             if (
@@ -557,7 +881,7 @@ export function AssistantComposer({
           <button
             key={prompt[1]}
             type="button"
-            disabled={denied}
+            disabled={denied || actionState === 'loading'}
             onClick={() => {
               setDraft(t(prompt));
               setChatError(null);
@@ -569,512 +893,616 @@ export function AssistantComposer({
           </button>
         ))}
       </div>
-      <div
-        className={styles.composerResponse}
-        role="region"
-        aria-label={t(c.widgetResponse)}
-        tabIndex={0}
-      >
-        {!denied && (
-          <div
-            className={styles.chatMessages}
-            role="log"
-            aria-label={t(c.conversationLabel)}
-          >
-            {messages.map((item, index) => (
-              <p key={index} data-role={item.role} dir="auto">
-                {item.content}
-              </p>
-            ))}
-          </div>
-        )}
-        {!denied && chatError && (
-          <p role="alert">
-            {t(
-              chatError === 'disabled'
-                ? c.chatDisabled
-                : chatError === 'rate'
-                  ? c.states['rate-limited']
-                  : c.conversationUnavailable,
-            )}
-          </p>
-        )}
-        {filterError && <p role="alert">{t(c.filterInvalid)}</p>}
-        {!denied && actionResult && 'filters' in actionResult && (
-          <div className={styles.composerHint}>
-            <p>
-              {t(c.filteredPeriod)}:{' '}
-              {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                timeZone: 'Asia/Tehran',
-                dateStyle: 'medium',
-              }).format(new Date(actionResult.filters.startDate))}{' '}
-              —{' '}
-              {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                timeZone: 'Asia/Tehran',
-                dateStyle: 'medium',
-              }).format(new Date(actionResult.filters.endDate))}
-            </p>
-            {actionResult.action !== 'sales-analysis' && (
-              <p>{t(c.balanceAsOf)}</p>
-            )}
-            {actionResult.action === 'sales-analysis' &&
-              (actionResult.filters.originId ||
-                actionResult.filters.destinationId) && (
-                <p>{t(c.routeConversionUnavailable)}</p>
-              )}
-          </div>
-        )}
-        {!denied && actionState && (
-          <p role="status" className={styles.composerHint}>
-            {t(c.states[actionState])}
-          </p>
-        )}
-        {!denied && actionResult?.status === 'BLOCKED' && (
-          <p role="status" className={styles.composerHint}>
-            {t(
-              actionResult.reason === 'SALES_SOURCE_UNAVAILABLE'
-                ? c.salesDefinitionGate
-                : c.receivablesSourceGate,
-            )}
-          </p>
-        )}
-        {!denied &&
-          actionResult?.status === 'BLOCKED' &&
-          (actionResult.action === 'sales-analysis' ||
-            actionResult.action === 'receivables-follow-up') &&
-          actionResult.failure && (
-            <p role="status" className={styles.composerHint}>
-              {t(c.sourceFailure[actionResult.failure])}
-            </p>
-          )}
-        {!denied && actionResult?.action === 'daily-summary' && (
-          <div className={styles.actionResult}>
-            <h2>{t(c.dailyTitle)}</h2>
-            <p className={styles.composerHint}>
-              <time dateTime={actionResult.snapshot.generatedAt}>
-                {t(c.asOf)}:{' '}
-                {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                  dateStyle: 'short',
-                  timeStyle: 'short',
-                  timeZone: 'Asia/Tehran',
-                }).format(new Date(actionResult.snapshot.generatedAt))}
-              </time>
-            </p>
-            <p className={styles.composerHint}>{t(c.dailyCoverage)}</p>
-            {actionResult.snapshot.sources.some(
-              (source) => source.status === 'READY',
-            ) && (
-              <dl className={styles.actionCounts}>
-                {[
-                  [c.visibleCount, actionResult.counts.visible],
-                  [c.overdueCount, actionResult.counts.overdue],
-                  [c.dueSoonCount, actionResult.counts.dueSoon],
-                  [c.assignedCount, actionResult.counts.assigned],
-                ].map(([label, count]) => (
-                  <div key={(label as AssistantText)[1]}>
-                    <dt>{t(label as AssistantText)}</dt>
-                    <dd>
-                      {new Intl.NumberFormat(
-                        english ? 'en-GB' : 'fa-IR',
-                      ).format(count as number)}
-                    </dd>
+      <div className={styles.composerTranscript}>
+        <div
+          ref={chatViewportRef}
+          onScroll={updatePosition}
+          className={styles.composerResponse}
+          role="region"
+          aria-label={t(c.widgetResponse)}
+          tabIndex={0}
+        >
+          <div ref={chatContentRef}>
+            {!denied && (
+              <div
+                className={styles.chatMessages}
+                role="log"
+                aria-label={t(c.conversationLabel)}
+              >
+                {messages.map((item, index) => (
+                  <div
+                    key={index}
+                    data-role={item.role}
+                    dir="auto"
+                    className="whitespace-pre-wrap"
+                  >
+                    {item.role === 'assistant' ? (
+                      <AssistantResponseContent
+                        text={item.content}
+                        english={english}
+                      />
+                    ) : (
+                      item.content
+                    )}
+                    {item.guideLink && (
+                      <Link
+                        className="block underline"
+                        href={item.guideLink.href}
+                      >
+                        {item.guideLink.label}
+                      </Link>
+                    )}
+                    {item.local &&
+                      item.targets?.map((target) => (
+                        <button
+                          type="button"
+                          className="block underline"
+                          key={target.id}
+                          onClick={() => {
+                            const section = document.getElementById(target.id);
+                            section?.focus();
+                            section?.scrollIntoView({ block: 'center' });
+                          }}
+                        >
+                          {target.label}
+                        </button>
+                      ))}
+                    {item.local &&
+                      item.links?.map((link) => (
+                        <a
+                          className="block underline"
+                          key={link.id}
+                          href={
+                            '/sales?' +
+                            new URLSearchParams({
+                              contract: link.contractNumber,
+                              record: link.id,
+                            })
+                          }
+                        >
+                          {link.contractNumber}
+                        </a>
+                      ))}
                   </div>
                 ))}
-              </dl>
+              </div>
             )}
-            <PersonalFollowUps
-              t={t}
-              snapshot={actionResult.snapshot}
-              english={english}
-            />
-            {actionResult.corporate && (
-              <section>
-                <h3>
-                  {t(
-                    actionResult.version === 2
-                      ? c.salesAnalysis
-                      : c.weeklySales,
+            {!denied && chatError && (
+              <p role="alert">
+                {t(
+                  chatError === 'disabled'
+                    ? c.chatDisabled
+                    : chatError === 'rate'
+                      ? c.states['rate-limited']
+                      : c.conversationUnavailable,
+                )}
+              </p>
+            )}
+            {filterError && <p role="alert">{t(c.filterInvalid)}</p>}
+            {!denied && actionResult && 'filters' in actionResult && (
+              <div className={styles.composerHint}>
+                <p>
+                  {t(c.filteredPeriod)}:{' '}
+                  {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                    timeZone: 'Asia/Tehran',
+                    dateStyle: 'medium',
+                  }).format(new Date(actionResult.filters.startDate))}{' '}
+                  —{' '}
+                  {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                    timeZone: 'Asia/Tehran',
+                    dateStyle: 'medium',
+                  }).format(new Date(actionResult.filters.endDate))}
+                </p>
+                {actionResult.action !== 'sales-analysis' && (
+                  <p>{t(c.balanceAsOf)}</p>
+                )}
+                {actionResult.action === 'sales-analysis' &&
+                  (actionResult.filters.originId ||
+                    actionResult.filters.destinationId) && (
+                    <p>{t(c.routeConversionUnavailable)}</p>
                   )}
-                </h3>
-                <p className={styles.composerHint}>{t(c.salesCoverage)}</p>
-                {actionResult.corporate.sales.status === 'READY' ? (
-                  <>
-                    <p className={styles.composerHint}>
-                      {t(
-                        actionResult.version === 2
-                          ? c.filteredPeriod
-                          : c.currentPeriod,
-                      )}
-                      :{' '}
-                      {
-                        actionResult.corporate.sales.report.current
-                          .contractCount
-                      }{' '}
-                      /{' '}
-                      {t(
-                        actionResult.version === 2
-                          ? c.filteredPrevious
-                          : c.previousPeriod,
-                      )}
-                      :{' '}
-                      {
-                        actionResult.corporate.sales.report.previous
-                          .contractCount
-                      }
-                    </p>
+              </div>
+            )}
+            {!denied && actionState && (
+              <p role="status" className={styles.composerHint}>
+                {actionState === 'loading' && (
+                  <LoaderCircle
+                    className={styles.chatSpinner}
+                    size={18}
+                    aria-hidden="true"
+                  />
+                )}
+                {t(c.states[actionState])}
+              </p>
+            )}
+            {!denied && actionResult?.status === 'BLOCKED' && (
+              <p role="status" className={styles.composerHint}>
+                {t(
+                  actionResult.reason === 'SALES_SOURCE_UNAVAILABLE'
+                    ? c.salesDefinitionGate
+                    : c.receivablesSourceGate,
+                )}
+              </p>
+            )}
+            {!denied &&
+              actionResult?.status === 'BLOCKED' &&
+              (actionResult.action === 'sales-analysis' ||
+                actionResult.action === 'receivables-follow-up') &&
+              actionResult.failure && (
+                <p role="status" className={styles.composerHint}>
+                  {t(c.sourceFailure[actionResult.failure])}
+                </p>
+              )}
+            {!denied && actionResult?.action === 'daily-summary' && (
+              <div className={styles.actionResult}>
+                <h2>{t(c.dailyTitle)}</h2>
+                <p className={styles.composerHint}>
+                  <time dateTime={actionResult.snapshot.generatedAt}>
+                    {t(c.asOf)}:{' '}
+                    {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                      dateStyle: 'short',
+                      timeStyle: 'short',
+                      timeZone: 'Asia/Tehran',
+                    }).format(new Date(actionResult.snapshot.generatedAt))}
+                  </time>
+                </p>
+                <p className={styles.composerHint}>{t(c.dailyCoverage)}</p>
+                {actionResult.snapshot.sources.some(
+                  (source) => source.status === 'READY',
+                ) && (
+                  <dl className={styles.actionCounts}>
                     {[
-                      [
-                        'current',
+                      [c.visibleCount, actionResult.counts.visible],
+                      [c.overdueCount, actionResult.counts.overdue],
+                      [c.dueSoonCount, actionResult.counts.dueSoon],
+                      [c.assignedCount, actionResult.counts.assigned],
+                    ].map(([label, count]) => (
+                      <div key={(label as AssistantText)[1]}>
+                        <dt>{t(label as AssistantText)}</dt>
+                        <dd>
+                          {new Intl.NumberFormat(
+                            english ? 'en-GB' : 'fa-IR',
+                          ).format(count as number)}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+                <PersonalFollowUps
+                  t={t}
+                  snapshot={actionResult.snapshot}
+                  english={english}
+                />
+                {actionResult.corporate && (
+                  <section>
+                    <h3>
+                      {t(
                         actionResult.version === 2
-                          ? c.filteredPeriod
-                          : c.currentPeriod,
-                      ],
-                      [
-                        'previous',
-                        actionResult.version === 2
-                          ? c.filteredPrevious
-                          : c.previousPeriod,
-                      ],
-                    ].map(([key, label]) => {
-                      const sales = actionResult.corporate!.sales;
-                      if (sales.status !== 'READY') return null;
-                      const period =
-                        sales.report[key as 'current' | 'previous'];
-                      const format = new Intl.DateTimeFormat(
-                        english ? 'en-GB' : 'fa-IR',
-                        { timeZone: 'Asia/Tehran', dateStyle: 'short' },
-                      );
-                      return (
-                        <p className={styles.composerHint} key={key as string}>
-                          {t(label as AssistantText)}:{' '}
-                          <time dateTime={period.startUtc}>
-                            {format.format(new Date(period.startUtc))}
-                          </time>{' '}
-                          —{' '}
-                          <time dateTime={period.endUtc}>
-                            {format.format(
-                              new Date(Date.parse(period.endUtc) - 1),
-                            )}
-                          </time>
+                          ? c.salesAnalysis
+                          : c.weeklySales,
+                      )}
+                    </h3>
+                    <p className={styles.composerHint}>{t(c.salesCoverage)}</p>
+                    {actionResult.corporate.sales.status === 'READY' ? (
+                      <>
+                        <p className={styles.composerHint}>
+                          {t(
+                            actionResult.version === 2
+                              ? c.filteredPeriod
+                              : c.currentPeriod,
+                          )}
+                          :{' '}
+                          {
+                            actionResult.corporate.sales.report.current
+                              .contractCount
+                          }{' '}
+                          /{' '}
+                          {t(
+                            actionResult.version === 2
+                              ? c.filteredPrevious
+                              : c.previousPeriod,
+                          )}
+                          :{' '}
+                          {
+                            actionResult.corporate.sales.report.previous
+                              .contractCount
+                          }
                         </p>
-                      );
-                    })}
-                    <SourceUpdated
-                      value={
-                        actionResult.corporate.sales.report.sourceUpdatedAt
-                      }
-                      english={english}
-                      t={t}
-                    />
-                    {[
-                      ...new Set([
-                        ...(
-                          actionResult.corporate.sales.report.current
-                            .contractAmountsBeforeRefunds ?? []
-                        ).map((row) => row.currencyCode),
-                        ...(
-                          actionResult.corporate.sales.report.previous
-                            .contractAmountsBeforeRefunds ?? []
-                        ).map((row) => row.currencyCode),
-                      ]),
-                    ]
-                      .sort()
-                      .map((currency) => {
-                        const report = actionResult.corporate!.sales;
-                        if (report.status !== 'READY') return null;
-                        const current =
-                          report.report.current.contractAmountsBeforeRefunds;
-                        const previous =
-                          report.report.previous.contractAmountsBeforeRefunds;
-                        return (
-                          <p className={styles.composerHint} key={currency}>
-                            {t(c.contractAmount)} —{' '}
-                            {t(
-                              actionResult.version === 2
-                                ? c.filteredPeriod
-                                : c.currentPeriod,
-                            )}
-                            :{' '}
+                        {[
+                          [
+                            'current',
+                            actionResult.version === 2
+                              ? c.filteredPeriod
+                              : c.currentPeriod,
+                          ],
+                          [
+                            'previous',
+                            actionResult.version === 2
+                              ? c.filteredPrevious
+                              : c.previousPeriod,
+                          ],
+                        ].map(([key, label]) => {
+                          const sales = actionResult.corporate!.sales;
+                          if (sales.status !== 'READY') return null;
+                          const period =
+                            sales.report[key as 'current' | 'previous'];
+                          const format = new Intl.DateTimeFormat(
+                            english ? 'en-GB' : 'fa-IR',
+                            { timeZone: 'Asia/Tehran', dateStyle: 'short' },
+                          );
+                          return (
+                            <p
+                              className={styles.composerHint}
+                              key={key as string}
+                            >
+                              {t(label as AssistantText)}:{' '}
+                              <time dateTime={period.startUtc}>
+                                {format.format(new Date(period.startUtc))}
+                              </time>{' '}
+                              —{' '}
+                              <time dateTime={period.endUtc}>
+                                {format.format(
+                                  new Date(Date.parse(period.endUtc) - 1),
+                                )}
+                              </time>
+                            </p>
+                          );
+                        })}
+                        <SourceUpdated
+                          value={
+                            actionResult.corporate.sales.report.sourceUpdatedAt
+                          }
+                          english={english}
+                          t={t}
+                        />
+                        {[
+                          ...new Set([
+                            ...(
+                              actionResult.corporate.sales.report.current
+                                .contractAmountsBeforeRefunds ?? []
+                            ).map((row) => row.currencyCode),
+                            ...(
+                              actionResult.corporate.sales.report.previous
+                                .contractAmountsBeforeRefunds ?? []
+                            ).map((row) => row.currencyCode),
+                          ]),
+                        ]
+                          .sort()
+                          .map((currency) => {
+                            const report = actionResult.corporate!.sales;
+                            if (report.status !== 'READY') return null;
+                            const current =
+                              report.report.current
+                                .contractAmountsBeforeRefunds;
+                            const previous =
+                              report.report.previous
+                                .contractAmountsBeforeRefunds;
+                            return (
+                              <p className={styles.composerHint} key={currency}>
+                                {t(c.contractAmount)} —{' '}
+                                {t(
+                                  actionResult.version === 2
+                                    ? c.filteredPeriod
+                                    : c.currentPeriod,
+                                )}
+                                :{' '}
+                                <bdi>
+                                  {current
+                                    ? (current.find(
+                                        (row) => row.currencyCode === currency,
+                                      )?.amount ?? '0')
+                                    : '—'}{' '}
+                                  {currency}
+                                </bdi>
+                                {' / '}
+                                {t(
+                                  actionResult.version === 2
+                                    ? c.filteredPrevious
+                                    : c.previousPeriod,
+                                )}
+                                :{' '}
+                                <bdi>
+                                  {previous
+                                    ? (previous.find(
+                                        (row) => row.currencyCode === currency,
+                                      )?.amount ?? '0')
+                                    : '—'}{' '}
+                                  {currency}
+                                </bdi>
+                              </p>
+                            );
+                          })}
+                      </>
+                    ) : (
+                      <p className={styles.composerHint}>
+                        {t(
+                          actionResult.corporate.sales.status === 'DENIED'
+                            ? c.states.forbidden
+                            : c.salesDefinitionGate,
+                        )}
+                      </p>
+                    )}
+                    <h3>{t(c.contractBalances)}</h3>
+                    <p className={styles.composerHint}>
+                      {t(c.balanceRecommendationsDeferred)}
+                    </p>
+                    <p className={styles.composerHint}>
+                      {t(c.balanceLimitations)}
+                    </p>
+                    {actionResult.corporate.balances.status === 'READY' && (
+                      <SourceUpdated
+                        value={
+                          actionResult.corporate.balances.report.sourceUpdatedAt
+                        }
+                        english={english}
+                        t={t}
+                      />
+                    )}
+                    {actionResult.corporate.balances.status === 'READY' ? (
+                      actionResult.corporate.balances.report.totals.map(
+                        (balance) => (
+                          <p
+                            className={styles.composerHint}
+                            key={balance.currencyCode}
+                          >
+                            {t(c.outstandingBalance)}:{' '}
                             <bdi>
-                              {current
-                                ? (current.find(
-                                    (row) => row.currencyCode === currency,
-                                  )?.amount ?? '0')
-                                : '—'}{' '}
-                              {currency}
-                            </bdi>
-                            {' / '}
-                            {t(
-                              actionResult.version === 2
-                                ? c.filteredPrevious
-                                : c.previousPeriod,
-                            )}
-                            :{' '}
-                            <bdi>
-                              {previous
-                                ? (previous.find(
-                                    (row) => row.currencyCode === currency,
-                                  )?.amount ?? '0')
-                                : '—'}{' '}
-                              {currency}
+                              {balance.outstanding}{' '}
+                              {currencySymbol(balance.currencyCode ?? '')}
                             </bdi>
                           </p>
-                        );
-                      })}
-                  </>
-                ) : (
-                  <p className={styles.composerHint}>
-                    {t(
-                      actionResult.corporate.sales.status === 'DENIED'
-                        ? c.states.forbidden
-                        : c.salesDefinitionGate,
-                    )}
-                  </p>
-                )}
-                <h3>{t(c.contractBalances)}</h3>
-                <p className={styles.composerHint}>
-                  {t(c.balanceRecommendationsDeferred)}
-                </p>
-                <p className={styles.composerHint}>{t(c.balanceLimitations)}</p>
-                {actionResult.corporate.balances.status === 'READY' && (
-                  <SourceUpdated
-                    value={
-                      actionResult.corporate.balances.report.sourceUpdatedAt
-                    }
-                    english={english}
-                    t={t}
-                  />
-                )}
-                {actionResult.corporate.balances.status === 'READY' ? (
-                  actionResult.corporate.balances.report.totals.map(
-                    (balance) => (
-                      <p
-                        className={styles.composerHint}
-                        key={balance.currencyCode}
-                      >
-                        {t(c.outstandingBalance)}:{' '}
-                        <bdi>
-                          {balance.outstanding}{' '}
-                          {currencySymbol(balance.currencyCode ?? '')}
-                        </bdi>
+                        ),
+                      )
+                    ) : (
+                      <p className={styles.composerHint}>
+                        {t(
+                          actionResult.corporate.balances.status === 'DENIED'
+                            ? c.states.forbidden
+                            : c.receivablesSourceGate,
+                        )}
                       </p>
-                    ),
-                  )
-                ) : (
-                  <p className={styles.composerHint}>
-                    {t(
-                      actionResult.corporate.balances.status === 'DENIED'
-                        ? c.states.forbidden
-                        : c.receivablesSourceGate,
                     )}
-                  </p>
+                  </section>
                 )}
-              </section>
+              </div>
             )}
-          </div>
-        )}
-        {!denied &&
-          actionResult?.action === 'receivables-follow-up' &&
-          actionResult.status === 'PARTIAL' && (
-            <div className={styles.actionResult}>
-              <h2>{t(c.contractBalances)}</h2>
-              <SourceUpdated
-                value={actionResult.report.sourceUpdatedAt}
-                english={english}
-                t={t}
-              />
-              <p className={styles.composerHint}>{t(c.balanceLimitations)}</p>
-              <p className={styles.composerHint}>
-                {t(c.asOf)}:{' '}
-                <time dateTime={actionResult.report.observedAt}>
-                  {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                    dateStyle: 'short',
-                    timeStyle: 'short',
-                    timeZone: 'Asia/Tehran',
-                  }).format(new Date(actionResult.report.observedAt))}
-                </time>
-              </p>
-              {actionResult.report.totals.map((balance) => (
-                <dl className={styles.actionCounts} key={balance.currencyCode}>
-                  {[
-                    [c.contractAmount, balance.amount],
-                    [c.confirmedReceipts, balance.confirmedPaid],
-                    [c.pendingReceipts, balance.pendingFinance],
-                    [c.outstandingBalance, balance.outstanding],
-                  ].map(([label, amount]) => (
-                    <div key={(label as AssistantText)[1]}>
-                      <dt>{t(label as AssistantText)}</dt>
-                      <dd>
-                        <bdi>
-                          {amount as string}{' '}
-                          {currencySymbol(balance.currencyCode ?? '')}
-                        </bdi>
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              ))}
-              {actionResult.report.coverage.itemsTruncated && (
-                <p className={styles.composerHint}>{t(c.partialBalanceList)}</p>
-              )}
-              {actionResult.report.items.map((item) => (
-                <p className={styles.composerHint} key={item.contractId}>
-                  <bdi>{item.contractNumber}</bdi>:{' '}
-                  {item.balances.map((balance) => (
-                    <bdi key={balance.currencyCode}>
-                      {' '}
-                      {balance.outstanding}{' '}
-                      {currencySymbol(balance.currencyCode ?? '')}{' '}
-                    </bdi>
-                  ))}{' '}
-                  <Link href={item.href}>{t(c.reviewContract)}</Link>
-                </p>
-              ))}
-            </div>
-          )}
-        {!denied &&
-          actionResult?.action === 'sales-analysis' &&
-          actionResult.status === 'PARTIAL' && (
-            <div className={styles.actionResult}>
-              <h2>
-                {t(
-                  actionResult.version === 2 ? c.salesAnalysis : c.weeklySales,
-                )}
-              </h2>
-              <p className={styles.composerHint}>{t(c.salesCoverage)}</p>
-              <p className={styles.composerHint}>
-                {t(c.asOf)}:{' '}
-                <time dateTime={actionResult.report.observedAt}>
-                  {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                    dateStyle: 'short',
-                    timeStyle: 'short',
-                    timeZone: 'Asia/Tehran',
-                  }).format(new Date(actionResult.report.observedAt))}
-                </time>
-              </p>
-              <p className={styles.composerHint}>{t(c.salesMissing)}</p>
-              <SourceUpdated
-                value={actionResult.report.sourceUpdatedAt}
-                english={english}
-                t={t}
-              />
-              {actionResult.conversion?.status === 'READY' ? (
-                <section>
-                  <h3>{t(c.callConversion)}</h3>
-                  <p className={styles.composerHint}>{t(c.callCoverage)}</p>
+            {!denied &&
+              actionResult?.action === 'receivables-follow-up' &&
+              actionResult.status === 'PARTIAL' && (
+                <div className={styles.actionResult}>
+                  <h2>{t(c.contractBalances)}</h2>
                   <SourceUpdated
-                    value={actionResult.conversion.report.sourceUpdatedAt}
+                    value={actionResult.report.sourceUpdatedAt}
                     english={english}
                     t={t}
                   />
-                  {[
-                    actionResult.conversion.report.current,
-                    actionResult.conversion.report.previous,
-                  ].map((period, index) => (
-                    <p className={styles.composerHint} key={period.startUtc}>
-                      {t(
-                        index === 0
-                          ? actionResult.version === 2
-                            ? c.filteredPeriod
-                            : c.currentPeriod
-                          : actionResult.version === 2
-                            ? c.filteredPrevious
-                            : c.previousPeriod,
-                      )}
-                      : {t(c.contactedLeads)} {period.contactedLeads} /{' '}
-                      {t(c.convertedLeads)} {period.convertedLeads} —{' '}
-                      <bdi>
-                        {period.conversionBasisPoints === null
-                          ? '—'
-                          : `${period.conversionBasisPoints / 100}%`}
-                      </bdi>
+                  <p className={styles.composerHint}>
+                    {t(c.balanceLimitations)}
+                  </p>
+                  <p className={styles.composerHint}>
+                    {t(c.asOf)}:{' '}
+                    <time dateTime={actionResult.report.observedAt}>
+                      {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                        dateStyle: 'short',
+                        timeStyle: 'short',
+                        timeZone: 'Asia/Tehran',
+                      }).format(new Date(actionResult.report.observedAt))}
+                    </time>
+                  </p>
+                  {actionResult.report.totals.map((balance) => (
+                    <dl
+                      className={styles.actionCounts}
+                      key={balance.currencyCode}
+                    >
+                      {[
+                        [c.contractAmount, balance.amount],
+                        [c.confirmedReceipts, balance.confirmedPaid],
+                        [c.pendingReceipts, balance.pendingFinance],
+                        [c.outstandingBalance, balance.outstanding],
+                      ].map(([label, amount]) => (
+                        <div key={(label as AssistantText)[1]}>
+                          <dt>{t(label as AssistantText)}</dt>
+                          <dd>
+                            <bdi>
+                              {amount as string}{' '}
+                              {currencySymbol(balance.currencyCode ?? '')}
+                            </bdi>
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ))}
+                  {actionResult.report.coverage.itemsTruncated && (
+                    <p className={styles.composerHint}>
+                      {t(c.partialBalanceList)}
+                    </p>
+                  )}
+                  {actionResult.report.items.map((item) => (
+                    <p className={styles.composerHint} key={item.contractId}>
+                      <bdi>{item.contractNumber}</bdi>:{' '}
+                      {item.balances.map((balance) => (
+                        <bdi key={balance.currencyCode}>
+                          {' '}
+                          {balance.outstanding}{' '}
+                          {currencySymbol(balance.currencyCode ?? '')}{' '}
+                        </bdi>
+                      ))}{' '}
+                      <Link href={item.href}>{t(c.reviewContract)}</Link>
                     </p>
                   ))}
-                </section>
-              ) : (
-                <p className={styles.composerHint}>
-                  {t(c.noConversionEvidence)}
-                </p>
+                </div>
               )}
-              {!actionResult.report.routeNamesComplete && (
-                <p className={styles.composerHint}>{t(c.missingCityNames)}</p>
-              )}
-              {[
-                [
-                  actionResult.version === 2
-                    ? c.filteredPeriod
-                    : c.currentPeriod,
-                  actionResult.report.current,
-                ],
-                [
-                  actionResult.version === 2
-                    ? c.filteredPrevious
-                    : c.previousPeriod,
-                  actionResult.report.previous,
-                ],
-              ].map(([label, period]) => {
-                const value = period as typeof actionResult.report.current;
-                return (
-                  <div key={(label as AssistantText)[1]}>
-                    <h3>{t(label as AssistantText)}</h3>
+            {!denied &&
+              actionResult?.action === 'sales-analysis' &&
+              actionResult.status === 'PARTIAL' && (
+                <div className={styles.actionResult}>
+                  <h2>
+                    {t(
+                      actionResult.version === 2
+                        ? c.salesAnalysis
+                        : c.weeklySales,
+                    )}
+                  </h2>
+                  <p className={styles.composerHint}>{t(c.salesCoverage)}</p>
+                  <p className={styles.composerHint}>
+                    {t(c.asOf)}:{' '}
+                    <time dateTime={actionResult.report.observedAt}>
+                      {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                        dateStyle: 'short',
+                        timeStyle: 'short',
+                        timeZone: 'Asia/Tehran',
+                      }).format(new Date(actionResult.report.observedAt))}
+                    </time>
+                  </p>
+                  <p className={styles.composerHint}>{t(c.salesMissing)}</p>
+                  <SourceUpdated
+                    value={actionResult.report.sourceUpdatedAt}
+                    english={english}
+                    t={t}
+                  />
+                  {actionResult.conversion?.status === 'READY' ? (
+                    <section>
+                      <h3>{t(c.callConversion)}</h3>
+                      <p className={styles.composerHint}>{t(c.callCoverage)}</p>
+                      <SourceUpdated
+                        value={actionResult.conversion.report.sourceUpdatedAt}
+                        english={english}
+                        t={t}
+                      />
+                      {[
+                        actionResult.conversion.report.current,
+                        actionResult.conversion.report.previous,
+                      ].map((period, index) => (
+                        <p
+                          className={styles.composerHint}
+                          key={period.startUtc}
+                        >
+                          {t(
+                            index === 0
+                              ? actionResult.version === 2
+                                ? c.filteredPeriod
+                                : c.currentPeriod
+                              : actionResult.version === 2
+                                ? c.filteredPrevious
+                                : c.previousPeriod,
+                          )}
+                          : {t(c.contactedLeads)} {period.contactedLeads} /{' '}
+                          {t(c.convertedLeads)} {period.convertedLeads} —{' '}
+                          <bdi>
+                            {period.conversionBasisPoints === null
+                              ? '—'
+                              : `${period.conversionBasisPoints / 100}%`}
+                          </bdi>
+                        </p>
+                      ))}
+                    </section>
+                  ) : (
                     <p className={styles.composerHint}>
-                      {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                        timeZone: 'Asia/Tehran',
-                      }).format(new Date(value.startUtc))}{' '}
-                      —{' '}
-                      {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                        timeZone: 'Asia/Tehran',
-                      }).format(new Date(new Date(value.endUtc).getTime() - 1))}
+                      {t(c.noConversionEvidence)}
                     </p>
-                    <dl className={styles.actionCounts}>
-                      <div>
-                        <dt>{t(c.contractsCount)}</dt>
-                        <dd>
-                          {new Intl.NumberFormat(
+                  )}
+                  {!actionResult.report.routeNamesComplete && (
+                    <p className={styles.composerHint}>
+                      {t(c.missingCityNames)}
+                    </p>
+                  )}
+                  {[
+                    [
+                      actionResult.version === 2
+                        ? c.filteredPeriod
+                        : c.currentPeriod,
+                      actionResult.report.current,
+                    ],
+                    [
+                      actionResult.version === 2
+                        ? c.filteredPrevious
+                        : c.previousPeriod,
+                      actionResult.report.previous,
+                    ],
+                  ].map(([label, period]) => {
+                    const value = period as typeof actionResult.report.current;
+                    return (
+                      <div key={(label as AssistantText)[1]}>
+                        <h3>{t(label as AssistantText)}</h3>
+                        <p className={styles.composerHint}>
+                          {new Intl.DateTimeFormat(
                             english ? 'en-GB' : 'fa-IR',
-                          ).format(value.contractCount)}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>{t(c.passengersCount)}</dt>
-                        <dd>
-                          {new Intl.NumberFormat(
+                            {
+                              timeZone: 'Asia/Tehran',
+                            },
+                          ).format(new Date(value.startUtc))}{' '}
+                          —{' '}
+                          {new Intl.DateTimeFormat(
                             english ? 'en-GB' : 'fa-IR',
-                          ).format(value.passengerCount)}
-                        </dd>
+                            {
+                              timeZone: 'Asia/Tehran',
+                            },
+                          ).format(
+                            new Date(new Date(value.endUtc).getTime() - 1),
+                          )}
+                        </p>
+                        <dl className={styles.actionCounts}>
+                          <div>
+                            <dt>{t(c.contractsCount)}</dt>
+                            <dd>
+                              {new Intl.NumberFormat(
+                                english ? 'en-GB' : 'fa-IR',
+                              ).format(value.contractCount)}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>{t(c.passengersCount)}</dt>
+                            <dd>
+                              {new Intl.NumberFormat(
+                                english ? 'en-GB' : 'fa-IR',
+                              ).format(value.passengerCount)}
+                            </dd>
+                          </div>
+                        </dl>
+                        {value.contractAmountsBeforeRefunds?.map((amount) => (
+                          <p
+                            className={styles.composerHint}
+                            key={amount.currencyCode}
+                          >
+                            {t(c.contractAmount)}:{' '}
+                            <bdi>
+                              {amount.amount}{' '}
+                              {currencySymbol(amount.currencyCode ?? '')}
+                            </bdi>
+                          </p>
+                        ))}
+                        {value.routes.map((route) => (
+                          <p
+                            className={styles.composerHint}
+                            key={`${route.originId}:${route.destinationId}`}
+                          >
+                            {t(c.primaryRoute)}:{' '}
+                            <bdi>
+                              {route.originName ?? t(c.unknown)} →{' '}
+                              {route.destinationName ?? t(c.unknown)}
+                            </bdi>{' '}
+                            — {t(c.contractsCount)}: {route.contractCount} —{' '}
+                            {t(c.passengersCount)}: {route.passengerCount}
+                          </p>
+                        ))}
                       </div>
-                    </dl>
-                    {value.contractAmountsBeforeRefunds?.map((amount) => (
-                      <p
-                        className={styles.composerHint}
-                        key={amount.currencyCode}
-                      >
-                        {t(c.contractAmount)}:{' '}
-                        <bdi>
-                          {amount.amount}{' '}
-                          {currencySymbol(amount.currencyCode ?? '')}
-                        </bdi>
-                      </p>
-                    ))}
-                    {value.routes.map((route) => (
-                      <p
-                        className={styles.composerHint}
-                        key={`${route.originId}:${route.destinationId}`}
-                      >
-                        {t(c.primaryRoute)}:{' '}
-                        <bdi>
-                          {route.originName ?? t(c.unknown)} →{' '}
-                          {route.destinationName ?? t(c.unknown)}
-                        </bdi>{' '}
-                        — {t(c.contractsCount)}: {route.contractCount} —{' '}
-                        {t(c.passengersCount)}: {route.passengerCount}
-                      </p>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                    );
+                  })}
+                </div>
+              )}
+          </div>
+        </div>
+        {!denied && showLatest && (
+          <button
+            type="button"
+            className={styles.chatLatest}
+            onClick={() => scrollToLatest(true)}
+            aria-label={t(c.chatLatest)}
+            title={t(c.chatLatest)}
+          >
+            <ArrowDown size={20} aria-hidden="true" />
+          </button>
+        )}
       </div>
     </section>
   );

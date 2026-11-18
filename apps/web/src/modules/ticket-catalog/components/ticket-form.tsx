@@ -34,6 +34,7 @@ import { ReferencePicker } from './reference-picker';
 import { TicketDatePicker } from './ticket-date-picker';
 import { ManifestTemplatePicker } from './manifest-template-picker';
 import { TicketBaggageFields } from './ticket-baggage-fields';
+import { requireFlightAirports } from '../model/flight-airports';
 import type { PublishedResource } from '../api/references';
 import {
   expandFlightCabins,
@@ -566,6 +567,7 @@ function RouteFields({
                 onSegment({
                   [`${end}CountryId`]: ref?.id ?? '',
                   [`${end}CityId`]: '',
+                  [`${end}AirportId`]: '',
                   [zoneKey]: 'Asia/Tehran',
                 });
               }}
@@ -590,12 +592,13 @@ function RouteFields({
             />
             {input.transport === 'flight' ? (
               <ReferencePicker
-                key={`${segment[`${end}CityId`]}-airport`}
+                key={`${segment[`${end}CountryId`]}-airport`}
                 id={`${prefix}-${end}-airport`}
                 label={`فرودگاه ${side}${suffix}`}
                 resource="airports"
                 readOnly={readOnly}
-
+                required
+                countryId={segment[`${end}CountryId`]}
                 value={references.find(
                   (r) =>
                     r.kind === 'airport' && r.id === segment[`${end}AirportId`],
@@ -843,6 +846,8 @@ export function TicketForm({
         },
         references,
       );
+      if (definition.transport === 'flight')
+        definition.segments.forEach(requireFlightAirports);
       if (roundTrip) {
         const returnBase: ProductInput = {
           ...returnInput,
@@ -866,6 +871,8 @@ export function TicketForm({
           },
           references,
         );
+        if (returnDefinition.transport === 'flight')
+          returnDefinition.segments.forEach(requireFlightAirports);
         await onSave(
           [...cabinInputs(definition), ...cabinInputs(returnDefinition)],
           reason,

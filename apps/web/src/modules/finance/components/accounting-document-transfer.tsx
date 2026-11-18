@@ -72,11 +72,19 @@ export function AccountingDocumentTransfer({
       period.startDate <= today &&
       period.endDate >= today,
   );
-  const period = currentPeriods.length === 1 ? currentPeriods[0] : undefined;
+  const period =
+    book.periods.length === 1
+      ? book.periods[0]
+      : currentPeriods.length === 1
+        ? currentPeriods[0]
+        : undefined;
   const [head, setHead] = useState({
     filterMode: 'date',
     fromDate: period?.startDate ?? '',
-    toDate: today,
+    toDate:
+      period && (today < period.startDate || today > period.endDate)
+        ? period.endDate
+        : today,
     fromNumber: '',
     toNumber: '',
     aggregate: false,

@@ -1,4 +1,6 @@
 'use client';
+import { MissionFields, emptyMission } from './mission-fields';
+import type { WorkbenchMissionV1 } from '@nora/contracts';
 import type { WorkbenchLeaveInputV1 } from '@nora/contracts';
 import { LeaveFields, type LeaveUser } from '@/modules/hr/leave-fields';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -17,7 +19,10 @@ import {
   Input,
   Textarea,
 } from '@/components/ui';
-import { RequestRecipientFields } from './request-recipient-fields';
+import {
+  RequestRecipientFields,
+  requestRecipientSelection,
+} from './request-recipient-fields';
 import { customerAffairsApi } from '@/modules/customer-affairs/api/customer-affairs-client';
 
 type NewRequestDialogProps = {
@@ -43,6 +48,7 @@ function NewRequestForm({
 }: NewRequestDialogProps) {
   const [selectedBranchId, setSelectedBranchId] = useState<string>();
   const branchId = selectedBranchId ?? initialBranchId;
+  const [mission, setMission] = useState<WorkbenchMissionV1 | null>(null);
   const [leave, setLeave] = useState<WorkbenchLeaveInputV1 | null>(null);
   const [correction, setCorrection] = useState<{
     wrongDate: string;
@@ -50,16 +56,19 @@ function NewRequestForm({
     actualDate: string;
     actualTime: string;
   } | null>(null);
+  const [requestKind, setRequestKind] = useState('');
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [unit, setUnit] = useState('');
-  const [recipient, setRecipient] = useState('');
+  const [manualUnit, setUnit] = useState('');
+  const [manualRecipient, setRecipient] = useState('');
   const [optionsVersion, setOptionsVersion] = useState(0);
   const [options, setOptions] = useState<{
     branchId: string;
     version: number;
     units: WorkbenchRequestOptionsV1['units'];
     substituteUsers?: LeaveUser[] | undefined;
+    missionRoute?: WorkbenchRequestOptionsV1['missionRoute'];
+    leaveRoute?: WorkbenchRequestOptionsV1['leaveRoute'];
     error: string;
   } | null>(null);
   const optionsMatch =
@@ -67,6 +76,12 @@ function NewRequestForm({
   const units = optionsMatch ? options!.units : [];
   const optionsLoading = Boolean(open && branchId && !optionsMatch);
   const optionsError = optionsMatch ? options!.error : '';
+  const { unitId: unit, recipientId: recipient } = requestRecipientSelection(
+    leave !== null || mission !== null,
+    optionsMatch,
+    mission ? options?.missionRoute : options?.leaveRoute,
+    { unitId: manualUnit, recipientId: manualRecipient },
+  );
   const [priority, setPriority] = useState('normal');
   const [uploading, setUploading] = useState(false);
   const [pending, setPending] = useState(false);
@@ -76,7 +91,17 @@ function NewRequestForm({
   const key = useRef<string | null>(null);
   useEffect(() => {
     key.current = null;
-  }, [branchId, title, body, unit, recipient, priority, leave, correction]);
+  }, [
+    branchId,
+    title,
+    body,
+    unit,
+    recipient,
+    priority,
+    leave,
+    mission,
+    correction,
+  ]);
   useEffect(() => {
     if (!open || !branchId) return;
     let active = true;
@@ -88,6 +113,8 @@ function NewRequestForm({
             branchId,
             version: optionsVersion,
             units: data.units,
+            leaveRoute: data.leaveRoute,
+            missionRoute: data.missionRoute,
             substituteUsers: data.substituteUsers,
             error: '',
           });
@@ -164,6 +191,7 @@ function NewRequestForm({
               .createWorkbenchRequest(
                 {
                   ...(leave ? { leave } : {}),
+                  ...(mission ? { mission } : {}),
                   subject: title.trim(),
                   description: correction
                     ? `اصلاح تردد
@@ -255,7 +283,7 @@ ${body.trim()}`
               units={units}
               unitId={unit}
               recipientId={recipient}
-              disabled={pending || optionsLoading}
+              disabled={pending || optionsLoading || !!leave || !!mission}
               onUnitChange={setUnit}
               onRecipientChange={setRecipient}
             />
@@ -292,10 +320,13 @@ ${body.trim()}`
               <span className="ms-auto flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant={requestKind === 'advance' ? 'primary' : 'outline'}
+                  aria-pressed={requestKind === 'advance'}
                   disabled={pending || uploading}
                   onClick={() => {
+                    setRequestKind('advance');
                     setLeave(null);
+                    setMission(null);
                     setCorrection(null);
                     setTitle('درخواست مساعده');
                     setBody(
@@ -307,9 +338,30 @@ ${body.trim()}`
                 </Button>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant={requestKind === 'mission' ? 'primary' : 'outline'}
+                  aria-pressed={requestKind === 'mission'}
                   disabled={pending || uploading}
                   onClick={() => {
+                    setMission(emptyMission());
+                    setLeave(null);
+                    setCorrection(null);
+                    setRequestKind('mission');
+                    setTitle('درخواست مأموریت');
+                    setBody(
+                      'با سلام، درخواست مأموریت مطابق زمان و مقصد درج‌شده را دارم.',
+                    );
+                  }}
+                >
+                  مأموریت
+                </Button>
+                <Button
+                  type="button"
+                  variant={requestKind === 'leave' ? 'primary' : 'outline'}
+                  aria-pressed={requestKind === 'leave'}
+                  disabled={pending || uploading}
+                  onClick={() => {
+                    setRequestKind(leave ? '' : 'leave');
+                    setMission(null);
                     setCorrection(null);
                     setLeave(
                       leave
@@ -334,10 +386,13 @@ ${body.trim()}`
                 </Button>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant={requestKind === 'correction' ? 'primary' : 'outline'}
+                  aria-pressed={requestKind === 'correction'}
                   disabled={pending || uploading}
                   onClick={() => {
+                    setRequestKind('correction');
                     setLeave(null);
+                    setMission(null);
                     setCorrection({
                       wrongDate: initialDate ?? '',
                       wrongTime: '',
@@ -365,6 +420,13 @@ ${body.trim()}`
               onChange={(e) => setBody(e.target.value)}
             />
           </label>
+          {mission && (
+            <MissionFields
+              value={mission}
+              onChange={setMission}
+              disabled={pending || uploading}
+            />
+          )}
           {correction ? (
             <fieldset className="grid gap-4 rounded-xl border p-4 sm:grid-cols-2">
               <legend className="px-2 font-semibold">اصلاح تردد</legend>

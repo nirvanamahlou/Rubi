@@ -1,5 +1,4 @@
 'use client';
-import { WebsitePublicationSwitch } from '@/modules/site-commerce/publication-switch';
 import { useEffect, useRef, useState } from 'react';
 import type { TicketOfferV1 } from '@nora/contracts';
 import {
@@ -14,7 +13,11 @@ import {
   SelectValue,
 } from '@/components/ui';
 import { toursApi } from '../api/tours';
-import { asReference, listReferences } from '../api/references';
+import {
+  asReference,
+  getAirportReference,
+  listReferences,
+} from '../api/references';
 import { wallTimeToUtc, type Reference } from '../model/catalog';
 import {
   arrivalWallTimeAfterDepartureChange,
@@ -32,6 +35,7 @@ import {
 import { scheduleWeekdays } from '../model/weekday-schedule';
 import { TicketBaggageFields } from './ticket-baggage-fields';
 import { ReferencePicker } from './reference-picker';
+import { requireFlightAirports } from '../model/flight-airports';
 export function tehranWallTime(instant: string) {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Tehran',
@@ -87,6 +91,7 @@ export function PublishedOfferForm({
   const [targetWeekday, setTargetWeekday] = useState(
     offerWeekday(offer.departureAt),
   );
+  const [airports, setAirports] = useState<Reference[]>([]);
   const shiftDays = weekdayMoveDays(offer.departureAt, targetWeekday);
 
   async function moveWeekday() {
@@ -147,6 +152,25 @@ export function PublishedOfferForm({
       cancelled = true;
     };
   }, []);
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.all(
+      [offer.originAirportId, offer.destinationAirportId].map((id) =>
+        id ? getAirportReference(id) : Promise.resolve(undefined),
+      ),
+    )
+      .then((rows) => {
+        if (!cancelled)
+          setAirports(rows.filter((row): row is Reference => Boolean(row)));
+      })
+      .catch(() => {
+        if (!cancelled)
+          setProblem('دریافت اطلاعات پایه ناموفق بود؛ دوباره تلاش کنید.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [offer.originAirportId, offer.destinationAirportId]);
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (readOnly || savingRef.current || !draft.carrierName.trim()) return;
@@ -154,6 +178,7 @@ export function PublishedOfferForm({
     setSaving(true);
     setProblem('');
     try {
+      requireFlightAirports(draft);
       const departureAt =
         departure === tehranWallTime(offer.departureAt)
           ? offer.departureAt
@@ -186,11 +211,6 @@ export function PublishedOfferForm({
   }
   return (
     <form onSubmit={(event) => void submit(event)} className="space-y-4">
-      <WebsitePublicationSwitch
-        kind="ticket"
-        resourceId={offer.id}
-        disabled={readOnly || saving}
-      />
       {problem ? <Alert tone="error" title={problem} /> : null}
       {weekdayOffers ? (
         <p>تعداد پروازهای همین روز هفته در این لود: {weekdayOffers.length}</p>
@@ -262,7 +282,19 @@ export function PublishedOfferForm({
               value={draft[field]}
               disabled={readOnly || saving}
               onValueChange={(value) =>
-                setDraft((current) => ({ ...current, [field]: value }))
+                setDraft((current) => ({
+                  ...current,
+                  [field]: value,
+                  ...(cities.find((city) => city.id === current[field])
+                    ?.countryId !==
+                  cities.find((city) => city.id === value)?.countryId
+                    ? {
+                        [field === 'originId'
+                          ? 'originAirportId'
+                          : 'destinationAirportId']: null,
+                      }
+                    : {}),
+                }))
               }
             >
               <SelectTrigger>
@@ -281,6 +313,46 @@ export function PublishedOfferForm({
             </Select>
           </FormField>
         ))}
+        {(['origin', 'destination'] as const).map((side) => {
+          const field = `${side}AirportId` as const;
+          const id = draft[field];
+          return (
+            <ReferencePicker
+              key={side}
+              id={`published-${side}-airport-${offer.id}`}
+              label={side === 'origin' ? 'فرودگاه مبدأ' : 'فرودگاه مقصد'}
+              resource="airports"
+              required
+              countryId={
+                cities.find((city) => city.id === draft[`${side}Id`])
+                  ?.countryId ?? ''
+              }
+              value={
+                airports.find((airport) => airport.id === id) ??
+                (id
+                  ? {
+                      id,
+                      kind: 'airport',
+                      name: 'فرودگاه ثبت‌شده',
+                      active: true,
+                    }
+                  : undefined)
+              }
+              readOnly={readOnly || saving}
+              onSelect={(reference) => {
+                if (reference)
+                  setAirports((current) => [
+                    ...current.filter((airport) => airport.id !== reference.id),
+                    reference,
+                  ]);
+                setDraft((current) => ({
+                  ...current,
+                  [field]: reference?.id ?? null,
+                }));
+              }}
+            />
+          );
+        })}
         <ReferencePicker
           id={`published-airline-${offer.id}`}
           label="ایرلاین"

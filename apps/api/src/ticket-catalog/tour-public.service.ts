@@ -1,3 +1,4 @@
+import { liveCapacityHolds } from './live-capacity-holds';
 import { tourStayPeriods } from '@nora/contracts';
 import { createHash } from 'node:crypto';
 import { canSelectForWorkflow } from '../common/workflow-selection.policy';
@@ -25,18 +26,25 @@ import { validateTourDeparture, validateTourPackage } from './tour-policy';
 import { DocumentsService } from '../documents/documents.service';
 import { ProcurementPublicService } from '../procurement/procurement-public.service';
 
-const included = {
-  package: true,
-  outboundOffer: {
-    include: { capacityAllocations: { where: { status: 'ACTIVE' } } },
-  },
-  returnOffer: {
-    include: { capacityAllocations: { where: { status: 'ACTIVE' } } },
-  },
-} as const;
+const included = () =>
+  ({
+    package: true,
+    outboundOffer: {
+      include: {
+        capacityAllocations: { where: { status: 'ACTIVE' } },
+        capacityHolds: { where: liveCapacityHolds() },
+      },
+    },
+    returnOffer: {
+      include: {
+        capacityAllocations: { where: { status: 'ACTIVE' } },
+        capacityHolds: { where: liveCapacityHolds() },
+      },
+    },
+  }) as const;
 type PackageRow = Prisma.TourPackageGetPayload<object>;
 type DepartureRow = Prisma.TourDepartureGetPayload<{
-  include: typeof included;
+  include: ReturnType<typeof included>;
 }>;
 type OfferRow = DepartureRow['outboundOffer'];
 
@@ -76,6 +84,7 @@ function offerView(row: OfferRow): TicketOfferV1 {
         ? Math.max(
             0,
             row.totalCapacity -
+              (row.capacityHolds ?? []).reduce((n, h) => n + h.quantity, 0) -
               row.capacityAllocations.reduce(
                 (sum, item) => sum + item.quantity,
                 0,
@@ -190,11 +199,13 @@ export class TourPublicService {
       throw new BadRequestException('شناسه نوبت تور معتبر نیست.');
     const row = await this.database.client.tourDeparture.findFirst({
       where: { id: meta.tourDepartureId, branchId },
-      include: included,
+      include: included(),
     });
     if (!row)
       throw new BadRequestException('نوبت تور در شعبه قرارداد یافت نشد.');
     if (row.isActive === false || row.isDeleted === true)
+      throw new ConflictException('فروش این نوبت متوقف شده است.');
+    if (packageView(row.package).publicationStatus === 'DRAFT')
       throw new ConflictException('فروش این نوبت متوقف شده است.');
     const tour = departureView(row);
     if (
@@ -282,11 +293,18 @@ export class TourPublicService {
         ...(management ? {} : { isActive: true }),
         endsOn: { gte: new Date(new Date().toISOString().slice(0, 10)) },
       },
-      include: included,
+      include: included(),
       orderBy: { startsOn: 'asc' },
       take: 200,
     });
-    return { version: 1 as const, data: rows.map(departureView) };
+    return {
+      version: 1 as const,
+      data: rows
+        .map(departureView)
+        .filter(
+          (row) => management || row.package.publicationStatus !== 'DRAFT',
+        ),
+    };
   }
   /** Public pricing boundary; the consumer authorizes its own permission and branches. */
   async pricingDepartures(branchIds: readonly string[]) {
@@ -298,7 +316,7 @@ export class TourPublicService {
         isActive: true,
         endsOn: { gte: new Date(new Date().toISOString().slice(0, 10)) },
       },
-      include: included,
+      include: included(),
       orderBy: [{ startsOn: 'asc' }, { id: 'asc' }],
       take: 200,
     });
@@ -308,7 +326,7 @@ export class TourPublicService {
   async pricingDeparture(id: string, branchIds: readonly string[]) {
     const row = await this.database.client.tourDeparture.findFirst({
       where: { id, branchId: { in: [...branchIds] } },
-      include: included,
+      include: included(),
     });
     if (!row) throw new NotFoundException('نوبت تور در شعبه مجاز پیدا نشد.');
     return departureView(row);
@@ -390,6 +408,7 @@ export class TourPublicService {
           value.originId,
           value.destinationId,
           value.details?.destinations ?? null,
+          Boolean(value.details?.isFloating),
           [...value.hotelIds].sort(),
           value.insuranceId ?? null,
           value.transferOutbound,
@@ -398,6 +417,14 @@ export class TourPublicService {
           Boolean(value.cityTour),
           Boolean(value.tourGuide),
         ]);
+      if (
+        previous.details?.isFloating &&
+        core(previous) !== core(input) &&
+        (await tx.floatingTourSaleCatalog.count({ where: { packageId: id } }))
+      )
+        throw new ConflictException(
+          'این تور قیمت فروش ثبت‌شده دارد؛ برای تغییر مسیر یا خدمات، تور جدید تعریف کنید.',
+        );
       if (
         core(previous) !== core(input) &&
         (await tx.tourDeparture.count({ where: { packageId: id } }))
@@ -586,7 +613,7 @@ export class TourPublicService {
     };
     const previous = await this.database.client.tourDeparture.findUnique({
       where,
-      include: included,
+      include: included(),
     });
     if (previous) {
       if (previous.fingerprint !== hash)
@@ -669,7 +696,7 @@ export class TourPublicService {
             createKey: key!,
             fingerprint: hash,
           },
-          include: included,
+          include: included(),
         });
       })
       .catch(async (error: unknown) => {
@@ -681,7 +708,7 @@ export class TourPublicService {
         ) {
           const replay = await this.database.client.tourDeparture.findUnique({
             where,
-            include: included,
+            include: included(),
           });
           if (replay) return replay;
         }

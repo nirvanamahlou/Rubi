@@ -63,6 +63,7 @@ function draft(): SalesContractCreateRequest {
         referenceId: ids.offer,
         metadata: {
           direction: 'OUTBOUND',
+          catalogSalePriceTargetId: '00000000-0000-4000-8000-000000000010',
           catalogSaleQuoteVersion: 1,
           catalogSaleQuoteAmount: '123.45',
           catalogSaleQuoteCurrency: 'EUR',
@@ -124,6 +125,12 @@ function fixture() {
   let saved = false;
   const db = {
     client: {
+      websiteCatalogDelivery: {
+        findUnique: vi.fn().mockResolvedValue({
+          branchId: ids.branch,
+          salePriceTargetId: '00000000-0000-4000-8000-000000000010',
+        }),
+      },
       websitePublication: {
         create: vi.fn().mockImplementation(async ({ data }) => ({
           ...data,
@@ -134,6 +141,7 @@ function fixture() {
         findUniqueOrThrow: vi
           .fn()
           .mockResolvedValue({ enabled: false, version: 2 }),
+        findFirst: vi.fn().mockResolvedValue({ resourceId: ids.offer }),
         findUnique: vi.fn().mockResolvedValue({ enabled: true }),
         findMany: vi.fn().mockResolvedValue([]),
       },
@@ -154,6 +162,11 @@ function fixture() {
     },
   };
   const sales = {
+    financeCustomerDocumentDeliveryFacts: vi.fn().mockResolvedValue({
+      cancelled: false,
+      hasConfirmedPayment: false,
+      fullySettled: false,
+    }),
     createdByKey: vi.fn().mockResolvedValue(null),
     create: vi.fn().mockResolvedValue({ data: contract }),
     detail: vi.fn().mockImplementation(async () => ({ data: contract })),
@@ -164,7 +177,10 @@ function fixture() {
       contract.status = 'CONFIRMED';
     }),
   };
-  const tickets = { websiteOffer: vi.fn().mockResolvedValue(flight) };
+  const tickets = {
+    documentSupply: vi.fn().mockResolvedValue({}),
+    websiteOffer: vi.fn().mockResolvedValue(flight),
+  };
   const output = { prepare: vi.fn().mockResolvedValue({ data: { contract } }) };
   const travel = {
     forContract: vi.fn().mockResolvedValue({
@@ -192,7 +208,7 @@ function fixture() {
 }
 
 describe('website connection policy', () => {
-  it('rejects publishing a staff-accessible product outside the configured website branch', async () => {
+  it('rejects publishing to another staff-accessible branch outside the configured website binding', async () => {
     const f = fixture();
     f.tickets.websiteOffer.mockResolvedValue({
       ...flight,
@@ -203,14 +219,15 @@ describe('website connection policy', () => {
         'nss',
         'ticket',
         ids.offer,
-        { enabled: true, version: 0 },
-        actor,
+        { enabled: true, version: 0, branchId: 'other-branch' },
+        { ...actor, branchIds: [...actor.branchIds, 'other-branch'] },
       ),
-    ).rejects.toThrow('شعبه اتصال سایت');
+    ).rejects.toThrow('این شعبه به سایت انتخاب‌شده دسترسی ندارد.');
+    expect(f.tickets.documentSupply).not.toHaveBeenCalled();
     expect(f.db.client.websitePublication.create).not.toHaveBeenCalled();
     expect(f.db.client.websitePublication.updateMany).not.toHaveBeenCalled();
   });
-  it('publishes in the configured branch and still permits removing an old out-of-branch flag', async () => {
+  it('publishes in the bound branch and permits disabling it after its sale eligibility changes', async () => {
     const f = fixture();
     f.db.client.websitePublication.findUnique.mockResolvedValueOnce(null);
     const published = await f.service.publish(
@@ -221,13 +238,11 @@ describe('website connection policy', () => {
       actor,
     );
     expect(published.data?.branchId).toBe(ids.branch);
-    f.tickets.websiteOffer.mockResolvedValue({
-      ...flight,
-      branchId: 'old-branch',
-    });
+    f.tickets.websiteOffer.mockRejectedValue(new Error('not sellable'));
     f.db.client.websitePublication.findUnique.mockResolvedValueOnce({
       id: 'old-publication',
       enabled: true,
+      salesStopped: false,
       version: 1,
     });
     await f.service.publish(
@@ -239,8 +254,16 @@ describe('website connection policy', () => {
     );
     expect(f.db.client.websitePublication.updateMany).toHaveBeenCalledWith({
       where: { id: 'old-publication', version: 1 },
-      data: { enabled: false, version: { increment: 1 } },
+      data: {
+        enabled: false,
+        salesStopped: false,
+        version: { increment: 1 },
+      },
     });
+    expect(f.tickets.websiteOffer).toHaveBeenCalledTimes(1);
+    expect(f.tickets.documentSupply).toHaveBeenLastCalledWith(ids.offer, [
+      ids.branch,
+    ]);
   });
   it('is disabled by default and binds site to one real actor and branch', () => {
     expect(() => siteBinding('nss', actor, '{}')).toThrow();
@@ -407,6 +430,17 @@ describe('durable website orders', () => {
     ).rejects.toThrow();
     expect(f.sales.create).not.toHaveBeenCalled();
   });
+  it('blocks new orders when website-only sales are stopped', async () => {
+    const f = fixture();
+    f.db.client.websitePublication.findUnique.mockResolvedValue({
+      enabled: true,
+      salesStopped: true,
+    });
+    await expect(
+      f.service.draft('nss', 'order-1', draft(), actor),
+    ).rejects.toThrow();
+    expect(f.sales.create).not.toHaveBeenCalled();
+  });
   it('does not expose an unrelated order, even with the right site account', async () => {
     const f = fixture();
     await expect(f.service.status('nss', 'missing', actor)).rejects.toThrow();
@@ -444,4 +478,222 @@ describe('durable website orders', () => {
       f.service.travelDocuments('nss', 'order-1', actor),
     ).resolves.toHaveProperty('data.ticketDocuments');
   });
+});
+
+describe('website ticket destination', () => {
+  it('uses the bound destination and overwrites a browser-selected destination', async () => {
+    const f = fixture();
+    const request = draft();
+    request.services[0]!.metadata = {
+      ...request.services[0]!.metadata,
+      catalogSalePriceTargetId: 'other',
+    };
+    await f.service.draft('nss', 'bound-rate', request, actor);
+    expect(f.tickets.websiteOffer).toHaveBeenCalledWith(
+      ids.offer,
+      [ids.branch],
+      '00000000-0000-4000-8000-000000000010',
+    );
+    expect(
+      f.sales.create.mock.calls[0]?.[0].services[0].metadata
+        .catalogSalePriceTargetId,
+    ).toBe('00000000-0000-4000-8000-000000000010');
+  });
+  it('fails closed without a bound destination before creating a contract', async () => {
+    const f = fixture();
+    f.db.client.websiteCatalogDelivery.findUnique.mockResolvedValue(
+      null as never,
+    );
+    await expect(
+      f.service.draft('nss', 'unbound', draft(), actor),
+    ).rejects.toThrow();
+    expect(f.sales.create).not.toHaveBeenCalled();
+  });
+  it('keeps verified payment identity when the final native capacity reservation fails', async () => {
+    const f = fixture();
+    await f.service.draft('nss', 'sold-out', draft(), actor);
+    f.sales.confirm.mockRejectedValueOnce(new Error('capacity changed'));
+    const payment = {
+      method: 'ONLINE_GATEWAY',
+      paymentReference: 'synthetic-receipt',
+      amount: '123.45',
+      currencyCode: 'EUR',
+      version: 1,
+    } as never;
+    await expect(
+      f.service.paid('nss', 'sold-out', [payment], actor),
+    ).rejects.toThrow('capacity changed');
+    expect(f.link.paymentFingerprint).toBeTruthy();
+    expect(f.contract.status).not.toBe('CONFIRMED');
+    await f.service.paid('nss', 'sold-out', [payment], actor);
+    expect(f.sales.confirm).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('website age quote preview and exact birthday checks', () => {
+  const publishedFare = {
+    ...flight,
+    standaloneSalePrice: {
+      revision: 1,
+      amount: '100',
+      childAmount: '40',
+      infantAmount: '10',
+      currencyCode: 'IRR',
+    },
+  };
+  it('previews declared groups without creating people, contracts or payments', async () => {
+    const f = fixture();
+    f.tickets.websiteOffer.mockResolvedValue(publishedFare);
+    const result = await f.service.flightQuote(
+      'nss',
+      {
+        productIds: ['publication'],
+        passengerCounts: { adults: 1, children: 1, infants: 1 },
+      },
+      actor,
+    );
+    expect(result.data[0]).toMatchObject({
+      amount: '150.00',
+      currencyCode: 'IRR',
+      pricingBreakdown: {
+        version: 1,
+        totalAmount: '150.00',
+        passengers: [
+          { category: 'ADT', amount: '100.00' },
+          { category: 'CHD', amount: '40.00' },
+          { category: 'INF', amount: '10.00' },
+        ],
+      },
+    });
+    expect(f.sales.create).not.toHaveBeenCalled();
+    expect(f.sales.addPayment).not.toHaveBeenCalled();
+    expect(f.db.client.websiteOrder.upsert).not.toHaveBeenCalled();
+  });
+  it('uses real birth dates at exact two/twelve-year boundaries', async () => {
+    const f = fixture();
+    f.tickets.websiteOffer.mockResolvedValue(publishedFare);
+    const result = await f.service.flightQuote(
+      'nss',
+      {
+        productIds: ['publication'],
+        birthDates: ['2018-01-01', '2018-01-02', '2028-01-01', '2028-01-02'],
+      },
+      actor,
+    );
+    expect(result.data[0]?.amount).toBe('190.00');
+    expect(
+      result.data[0]?.pricingBreakdown?.passengers.map((p) => p.category),
+    ).toEqual(['ADT', 'CHD', 'CHD', 'INF']);
+  });
+  it.each([
+    { passengerCounts: { adults: 1.5, children: 0, infants: 0 } },
+    { passengerCounts: { adults: 0, children: 0, infants: 1 } },
+    { passengerCounts: { adults: 30, children: 1, infants: 0 } },
+    { passengerCounts: { adults: 1, children: -1, infants: 0 } },
+    {
+      passengerCounts: { adults: 1, children: 0, infants: 0 },
+      birthDates: ['2000-01-01'],
+    },
+  ])('rejects malformed or ambiguous preview %#', async (input) => {
+    const f = fixture();
+    await expect(
+      f.service.flightQuote(
+        'nss',
+        { productIds: ['publication'], ...input },
+        actor,
+      ),
+    ).rejects.toThrow();
+    expect(f.tickets.websiteOffer).not.toHaveBeenCalled();
+  });
+});
+
+it('isolates concurrent quotes, contracts and documents for two sites sharing HQ inventory', async () => {
+  const f = fixture();
+  const sites = ['nss', 'jahan-bastan'] as const;
+  const records = sites.map((site, i) => ({
+    site,
+    actor: { ...actor, userId: 'site-user-' + i },
+    target: 'target-' + i,
+    amount: i ? '213.00' : '105.00',
+    order: 'order-' + i,
+    contract: 'contract-' + i,
+  }));
+  vi.stubEnv(
+    'SITE_COMMERCE_BINDINGS',
+    JSON.stringify(
+      Object.fromEntries(
+        records.map((r) => [
+          r.site,
+          { userId: r.actor.userId, branchId: ids.branch },
+        ]),
+      ),
+    ),
+  );
+  const { client } = f.db;
+  client.websiteCatalogDelivery.findUnique.mockImplementation(
+    async ({ where }) => ({
+      branchId: ids.branch,
+      salePriceTargetId: records.find((r) => r.site === where.siteCode)!.target,
+    }),
+  );
+  client.websitePublication.findFirst.mockImplementation(async ({ where }) =>
+    where.branchId === ids.branch &&
+    where.id === 'publication-' + where.siteCode
+      ? { resourceId: ids.offer }
+      : null,
+  );
+  f.tickets.websiteOffer.mockImplementation(
+    async (offerId, branches, targetId) => {
+      expect([offerId, branches]).toEqual([ids.offer, [ids.branch]]);
+      return {
+        ...flight,
+        standaloneSalePrice: {
+          ...flight.standaloneSalePrice,
+          amount: records.find((r) => r.target === targetId)!.amount,
+        },
+      };
+    },
+  );
+  client.websiteOrder.findUnique.mockImplementation(async ({ where }) => {
+    const { siteCode, branchId, externalId } =
+      where.siteCode_branchId_externalId;
+    const record = records.find(
+      (r) =>
+        r.site === siteCode &&
+        r.order === externalId &&
+        branchId === ids.branch,
+    );
+    return record ? { ...f.link, contractId: record.contract } : null;
+  });
+  f.delivery.readCustomerContract.mockResolvedValue({ approved: true });
+  await Promise.all(
+    records.map(async (r, i) => {
+      const other = records[1 - i]!;
+      const quote = await f.service.flightQuote(
+        r.site,
+        {
+          productIds: ['publication-' + r.site],
+          birthDates: ['2000-01-01'],
+        },
+        r.actor,
+      );
+      expect(quote.data[0]?.amount).toBe(r.amount);
+      await f.service.contractOutput(r.site, r.order, r.actor);
+      await expect(
+        f.service.travelDocuments(r.site, r.order, r.actor),
+      ).resolves.toHaveProperty('data.ticketDocuments');
+      expect(f.delivery.readCustomerContract).toHaveBeenCalledWith(r.contract);
+      expect(f.output.prepare).toHaveBeenCalledWith(r.contract, r.actor);
+      await expect(
+        f.service.contractOutput(r.site, other.order, r.actor),
+      ).rejects.toThrow();
+      await expect(
+        f.service.travelDocuments(r.site, other.order, r.actor),
+      ).rejects.toThrow();
+      await expect(
+        f.service.travelDocuments(other.site, other.order, r.actor),
+      ).rejects.toThrow();
+    }),
+  );
+  expect(f.delivery.readCustomerContract).toHaveBeenCalledTimes(2);
 });

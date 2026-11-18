@@ -1,3 +1,4 @@
+import { allowsAssistantReadRequest } from './request-policy';
 import 'reflect-metadata';
 import { NestFactory, HttpAdapterHost } from '@nestjs/core';
 import type { Request, Response, NextFunction } from 'express';
@@ -28,7 +29,13 @@ export async function startAssistantRead() {
   });
   app.use(requestIdMiddleware);
   app.use((request: Request, response: Response, next: NextFunction) => {
-    if (!['GET', 'HEAD'].includes(request.method)) {
+    if (
+      !allowsAssistantReadRequest(
+        request.method,
+        request.path,
+        process.env.ASSISTANT_AGENT_ENABLED === 'true',
+      )
+    ) {
       response.status(405).json({ error: { code: 'READ_ONLY' } });
       return;
     }

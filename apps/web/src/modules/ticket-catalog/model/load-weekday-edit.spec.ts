@@ -24,6 +24,33 @@ const first: TicketOfferV1 = {
   status: 'ACTIVE',
 };
 
+it('applies airport edits with native versions while preserving each flight date and identity', () => {
+  const second = {
+    ...first,
+    id: 'second',
+    version: 8,
+    departureAt: '2026-10-29T21:00:00Z',
+    arrivalAt: '2026-10-29T23:00:00Z',
+  };
+  const result = loadWeekdayRevisions(first, [first, second], {
+    ...publishedOfferInput(first),
+    originAirportId: 'ika',
+    destinationAirportId: 'ayt',
+  });
+  expect(
+    result.map((row) => [
+      row.id,
+      row.expectedVersion,
+      row.offer.departureAt,
+      row.offer.originAirportId,
+      row.offer.destinationAirportId,
+    ]),
+  ).toEqual([
+    ['first', 3, first.departureAt, 'ika', 'ayt'],
+    ['second', 8, second.departureAt, 'ika', 'ayt'],
+  ]);
+});
+
 it('moves Sunday flights to Monday in Tehran while retaining every per-flight fact and overnight offset', () => {
   const sunday = {
     ...first,

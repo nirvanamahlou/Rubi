@@ -65,6 +65,12 @@ import { UserMenu } from './user-menu';
 import { HeaderToday } from './header-today';
 import { HeaderRoleLabel } from './header-role-label';
 import {
+  FinanceFiscalProvider,
+  useFinanceFiscalContext,
+} from '@/modules/finance/finance-fiscal-context';
+import { FinanceFiscalSelector } from '@/modules/finance/components/finance-fiscal-selector';
+import { FinanceFiscalBoundary } from '@/modules/finance/components/finance-fiscal-boundary';
+import {
   PageBreadcrumbProvider,
   usePageBreadcrumbOverride,
   type PageBreadcrumb,
@@ -95,21 +101,46 @@ import {
 
 function CompanyScopedContent({ children }: { children: ReactNode }) {
   const { context, loading, switching } = useLegalEntityContext();
+  const fiscal = useFinanceFiscalContext();
   const pathname = usePathname();
   // Reset list selections and stale in-flight requests on company changes. Keep
   // the new-contract draft mounted so choosing its company never discards inputs.
   const scoped =
     pathname === '/sales' ||
     pathname === '/reservations' ||
+    pathname === '/finance' ||
     pathname.startsWith('/finance/') ||
     pathname === '/system';
-  if (scoped && (loading || switching))
+  if (scoped && (loading || switching || (fiscal?.active && fiscal.loading)))
     return (
       <div role="status" className="p-6">
         در حال دریافت اطلاعات شرکت…
       </div>
     );
-  return <div key={scoped ? context?.selection : 'draft'}>{children}</div>;
+  if (fiscal?.active && fiscal.error)
+    return (
+      <div role="alert" className="p-6">
+        {fiscal.error}
+        <button
+          type="button"
+          className="ms-3 underline"
+          onClick={fiscal.reload}
+        >
+          تلاش دوباره
+        </button>
+      </div>
+    );
+  return (
+    <div
+      key={
+        scoped
+          ? `${context?.selection}:${fiscal?.active ? fiscal.key : ''}`
+          : 'draft'
+      }
+    >
+      <FinanceFiscalBoundary>{children}</FinanceFiscalBoundary>
+    </div>
+  );
 }
 
 function Brand({ compact = false }: { compact?: boolean }) {
@@ -730,6 +761,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
             <div className="min-w-0 flex-1 lg:max-w-64">
               <SearchDialog />
             </div>
+            <FinanceFiscalSelector />
             <div
               className="ms-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1"
               data-header-utility-group
@@ -769,13 +801,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <AccessProvider>
       <LegalEntityProvider>
-        <PageBreadcrumbProvider>
-          <CallFormProvider>
-            <AppShellContent>{children}</AppShellContent>
-            <FloatingAssistant />
-            <TelephonyAttention outboundOnly bothDirections />
-          </CallFormProvider>
-        </PageBreadcrumbProvider>
+        <FinanceFiscalProvider>
+          <PageBreadcrumbProvider>
+            <CallFormProvider>
+              <AppShellContent>{children}</AppShellContent>
+              <FloatingAssistant />
+              <TelephonyAttention outboundOnly bothDirections />
+            </CallFormProvider>
+          </PageBreadcrumbProvider>
+        </FinanceFiscalProvider>
       </LegalEntityProvider>
     </AccessProvider>
   );

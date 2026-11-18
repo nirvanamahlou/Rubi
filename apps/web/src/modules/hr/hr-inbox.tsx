@@ -1,4 +1,5 @@
 'use client';
+import { MissionDetails } from '@/modules/workbench/mission-fields';
 import { matchesHrRequestType } from './hr-request-type';
 import { leaveDescription } from '@/modules/workbench/leave-description';
 import { LeaveEvidenceList } from './leave-evidence-list';
@@ -142,7 +143,7 @@ export function HrInbox({
           item.description.startsWith('اصلاح تردد\n'))),
   );
   const visibleItems = items.filter((item) => !item.code.startsWith('WB-'));
-  const onReview = async () => {
+  const onReview = async (overrideSubstitute = false): Promise<void> => {
     if (!review) return;
     setBusy(true);
     setError('');
@@ -151,11 +152,25 @@ export function HrInbox({
         review.id,
         review.version,
         decision,
+        overrideSubstitute,
       );
       setReview(null);
       setRevision((n) => n + 1);
       await store.mutated();
     } catch (cause) {
+      if (
+        cause instanceof Error &&
+        cause.message.includes('SUBSTITUTE_CONFIRM_REQUIRED')
+      ) {
+        if (
+          window.confirm(
+            'جانشین تأیید نکرده است. آیا مطمئن هستید مرخصی را تأیید می‌کنید؟',
+          )
+        ) {
+          await onReview(true);
+        }
+        return;
+      }
       setError(cause instanceof Error ? cause.message : 'ثبت نتیجه انجام نشد.');
     } finally {
       setBusy(false);
@@ -425,6 +440,9 @@ export function HrInbox({
           className="max-h-[90dvh] max-w-3xl overflow-y-auto p-0"
           dir="rtl"
         >
+          {review?.mission && (
+            <MissionDetails mission={review.mission} id={review.id} />
+          )}
           <header className="flex items-center gap-3 border-b bg-primary/5 p-5 pl-12">
             <span className="rounded-xl bg-primary p-3 text-primary-foreground">
               <ClipboardCheck className="size-5" aria-hidden="true" />

@@ -1,0 +1,450 @@
+{
+  "schemaVersion": 1,
+  "source": "https://zakeri.rahkaran.ir/?page=Financial%2FCOAManagement%2FCOAPages%2FCOA.aspx",
+  "verifiedOn": "2026-11-15",
+  "groups": 13,
+  "generals": 36,
+  "accounts": [
+    {
+      "code": "11",
+      "title": "داراییهای جاری",
+      "level": "GROUP",
+      "parentCode": null,
+      "nature": "DEBIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "1110",
+      "title": "موجودی نقد وبانک",
+      "level": "GENERAL",
+      "parentCode": "11",
+      "nature": "DEBIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "1112",
+      "title": "حسابها و اسناد دریافتنی تجاری",
+      "level": "GENERAL",
+      "parentCode": "11",
+      "nature": "DEBIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "1113",
+      "title": "سایر حسابها و اسناد دریافتنی",
+      "level": "GENERAL",
+      "parentCode": "11",
+      "nature": "DEBIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "1119",
+      "title": "پیش پرداخت ها",
+      "level": "GENERAL",
+      "parentCode": "11",
+      "nature": "DEBIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "1120",
+      "title": "جاری شرکا",
+      "level": "GENERAL",
+      "parentCode": "11",
+      "nature": "DEBIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "12",
+      "title": "داراییهای غیرجاری",
+      "level": "GROUP",
+      "parentCode": null,
+      "nature": "DEBIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "1210",
+      "title": "سرمایه گذاریهای کو تاه مدت",
+      "level": "GENERAL",
+      "parentCode": "12",
+      "nature": "DEBIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "1211",
+      "title": "سرمایه گذاریهای بلند مدت",
+      "level": "GENERAL",
+      "parentCode": "12",
+      "nature": "DEBIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "1213",
+      "title": "دارائیهای ثابت مشهود",
+      "level": "GENERAL",
+      "parentCode": "12",
+      "nature": "DEBIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "1214",
+      "title": "دارائیهای نامشهود",
+      "level": "GENERAL",
+      "parentCode": "12",
+      "nature": "DEBIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "1215",
+      "title": "سایر دارائیها",
+      "level": "GENERAL",
+      "parentCode": "12",
+      "nature": "DEBIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "1220",
+      "title": "استهلاک انباشته دارائیهای مشهود",
+      "level": "GENERAL",
+      "parentCode": "12",
+      "nature": "DEBIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "21",
+      "title": "بدهیهای جاری",
+      "level": "GROUP",
+      "parentCode": null,
+      "nature": "CREDIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "2110",
+      "title": "حسابها و اسناد پرداختنی تجاری",
+      "level": "GENERAL",
+      "parentCode": "21",
+      "nature": "CREDIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "2113",
+      "title": "سپرده های پرداختنی",
+      "level": "GENERAL",
+      "parentCode": "21",
+      "nature": "CREDIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "2114",
+      "title": "پیش دریافتها",
+      "level": "GENERAL",
+      "parentCode": "21",
+      "nature": "CREDIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "2116",
+      "title": "تسهیلات و اعتبارات مالی دریافتی",
+      "level": "GENERAL",
+      "parentCode": "21",
+      "nature": "CREDIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "2117",
+      "title": "حسابها و اسناد پرداختنی بلند مدت",
+      "level": "GENERAL",
+      "parentCode": "21",
+      "nature": "CREDIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "2118",
+      "title": "تسهیلات مالی دریافتی بلند مدت",
+      "level": "GENERAL",
+      "parentCode": "21",
+      "nature": "CREDIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "22",
+      "title": "بدهیهای غیر جاری",
+      "level": "GROUP",
+      "parentCode": null,
+      "nature": "CREDIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "2210",
+      "title": "ذخیره مالیات بر درآمد",
+      "level": "GENERAL",
+      "parentCode": "22",
+      "nature": "CREDIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "2212",
+      "title": "ذخائر",
+      "level": "GENERAL",
+      "parentCode": "22",
+      "nature": "CREDIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "31",
+      "title": "حقوق صاحبان سهام",
+      "level": "GROUP",
+      "parentCode": null,
+      "nature": "CREDIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "3110",
+      "title": "سرمایه",
+      "level": "GENERAL",
+      "parentCode": "31",
+      "nature": "CREDIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "3111",
+      "title": "اندوخته قانونی",
+      "level": "GENERAL",
+      "parentCode": "31",
+      "nature": "ANY",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "3113",
+      "title": "سود (زیان) انباشته",
+      "level": "GENERAL",
+      "parentCode": "31",
+      "nature": "ANY",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "3114",
+      "title": "سود (زیان) جاری",
+      "level": "GENERAL",
+      "parentCode": "31",
+      "nature": "ANY",
+      "permanent": false,
+      "accountType": "TEMPORARY"
+    },
+    {
+      "code": "3115",
+      "title": "جاری شرکاء",
+      "level": "GENERAL",
+      "parentCode": "31",
+      "nature": "CREDIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "51",
+      "title": "درآمدها",
+      "level": "GROUP",
+      "parentCode": null,
+      "nature": "CREDIT",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "5110",
+      "title": "درآمد فعالیت",
+      "level": "GENERAL",
+      "parentCode": "51",
+      "nature": "ANY",
+      "permanent": false,
+      "accountType": "TEMPORARY"
+    },
+    {
+      "code": "61",
+      "title": "هزینه های فعالیت",
+      "level": "GROUP",
+      "parentCode": null,
+      "nature": "DEBIT",
+      "permanent": false,
+      "accountType": "TEMPORARY"
+    },
+    {
+      "code": "6110",
+      "title": "هزینه های  عمومی و اداری",
+      "level": "GENERAL",
+      "parentCode": "61",
+      "nature": "DEBIT",
+      "permanent": false,
+      "accountType": "TEMPORARY"
+    },
+    {
+      "code": "62",
+      "title": "سایر هزینه های غیر عملیاتی",
+      "level": "GROUP",
+      "parentCode": null,
+      "nature": "DEBIT",
+      "permanent": false,
+      "accountType": "TEMPORARY"
+    },
+    {
+      "code": "6211",
+      "title": "هزینه های توزیع و فروش",
+      "level": "GENERAL",
+      "parentCode": "62",
+      "nature": "DEBIT",
+      "permanent": false,
+      "accountType": "TEMPORARY"
+    },
+    {
+      "code": "6212",
+      "title": "هزینه های مالی",
+      "level": "GENERAL",
+      "parentCode": "62",
+      "nature": "DEBIT",
+      "permanent": false,
+      "accountType": "TEMPORARY"
+    },
+    {
+      "code": "6213",
+      "title": "هزینه های غیر عملیاتی",
+      "level": "GENERAL",
+      "parentCode": "62",
+      "nature": "DEBIT",
+      "permanent": false,
+      "accountType": "TEMPORARY"
+    },
+    {
+      "code": "63",
+      "title": "هزینه های پرسنلی",
+      "level": "GROUP",
+      "parentCode": null,
+      "nature": "DEBIT",
+      "permanent": false,
+      "accountType": "TEMPORARY"
+    },
+    {
+      "code": "6311",
+      "title": "هزینه پرسنلی",
+      "level": "GENERAL",
+      "parentCode": "63",
+      "nature": "DEBIT",
+      "permanent": false,
+      "accountType": "TEMPORARY"
+    },
+    {
+      "code": "81",
+      "title": "عملکرد",
+      "level": "GROUP",
+      "parentCode": null,
+      "nature": "ANY",
+      "permanent": false,
+      "accountType": "TEMPORARY"
+    },
+    {
+      "code": "8101",
+      "title": "خرید / فروش",
+      "level": "GENERAL",
+      "parentCode": "81",
+      "nature": "ANY",
+      "permanent": false,
+      "accountType": "TEMPORARY"
+    },
+    {
+      "code": "91",
+      "title": "حسابهای انتظامی",
+      "level": "GROUP",
+      "parentCode": null,
+      "nature": "ANY",
+      "permanent": true,
+      "accountType": "MEMORANDUM"
+    },
+    {
+      "code": "9110",
+      "title": "حساب انتظامی",
+      "level": "GENERAL",
+      "parentCode": "91",
+      "nature": "ANY",
+      "permanent": true,
+      "accountType": "MEMORANDUM"
+    },
+    {
+      "code": "9120",
+      "title": "اسناد تضمینی ما نزد دیگران",
+      "level": "GENERAL",
+      "parentCode": "91",
+      "nature": "ANY",
+      "permanent": true,
+      "accountType": "MEMORANDUM"
+    },
+    {
+      "code": "92",
+      "title": "طرف حسابهای انتظامی",
+      "level": "GROUP",
+      "parentCode": null,
+      "nature": "ANY",
+      "permanent": true,
+      "accountType": "MEMORANDUM"
+    },
+    {
+      "code": "9210",
+      "title": "طرف حساب انتظامی",
+      "level": "GENERAL",
+      "parentCode": "92",
+      "nature": "ANY",
+      "permanent": true,
+      "accountType": "MEMORANDUM"
+    },
+    {
+      "code": "9220",
+      "title": "طرف اسناد تضمینی ما نزد دیگران",
+      "level": "GENERAL",
+      "parentCode": "92",
+      "nature": "ANY",
+      "permanent": true,
+      "accountType": "MEMORANDUM"
+    },
+    {
+      "code": "93",
+      "title": "افتتاحیه و اختتامیه",
+      "level": "GROUP",
+      "parentCode": null,
+      "nature": "ANY",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    },
+    {
+      "code": "9310",
+      "title": "افتتاحیه و اختتامیه",
+      "level": "GENERAL",
+      "parentCode": "93",
+      "nature": "ANY",
+      "permanent": true,
+      "accountType": "PERMANENT"
+    }
+  ]
+}

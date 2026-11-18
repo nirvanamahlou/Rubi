@@ -10,6 +10,49 @@ export const ACCOUNTING_PERMISSIONS = [
 ] as const;
 
 export type AccountingAttributes = Record<string, string | boolean | string[]>;
+
+export const accountingDetailLevels = [4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
+export type AccountingDetailLevel = (typeof accountingDetailLevels)[number];
+export type AccountingDetailField = `detail${AccountingDetailLevel}Id`;
+export type AccountingSourceDetailField =
+  `sourceDetail${AccountingDetailLevel}Id`;
+export type AccountingDetailIds = {
+  detail4Id: string | null;
+  detail5Id: string | null;
+  detail6Id: string | null;
+} & Partial<Record<AccountingDetailField, string | null>>;
+
+export const defaultAccountingDetailLevel = 8;
+export const maxAccountingDetailLevel = 12;
+
+export function accountingDetailLevelLimit(attributes: AccountingAttributes) {
+  const limit = Number(attributes.detailLevelLimit);
+  return Number.isInteger(limit) &&
+    limit >= defaultAccountingDetailLevel &&
+    limit <= maxAccountingDetailLevel
+    ? limit
+    : defaultAccountingDetailLevel;
+}
+
+export function isAccountingDetailLevelEnabled(
+  attributes: AccountingAttributes,
+  level: AccountingDetailLevel,
+) {
+  if (level > accountingDetailLevelLimit(attributes)) return false;
+  return Array.isArray(attributes.detailLevels)
+    ? attributes.detailLevels.includes(String(level))
+    : level <= 6;
+}
+
+export function accountingDetailTypeIds(
+  attributes: AccountingAttributes,
+  level: AccountingDetailLevel,
+): string[] {
+  const ids = attributes[`detail${level}TypeIds`];
+  if (Array.isArray(ids)) return ids;
+  const legacy = attributes[`detail${level}TypeId`];
+  return typeof legacy === 'string' && legacy ? [legacy] : [];
+}
 export interface AccountingStatementRowV1 {
   id: string;
   journalId: string;
@@ -105,6 +148,7 @@ export interface AccountingPeriodV1 {
   endDate: string;
   status: 'OPEN' | 'CLOSING' | 'CLOSED';
   version: number;
+  isDefault?: boolean;
 }
 export interface AccountingAccountV1 extends AccountingRecord {
   parentId: string | null;
@@ -113,6 +157,8 @@ export interface AccountingAccountV1 extends AccountingRecord {
   permanent: boolean;
 }
 export interface AccountingDetailV1 extends AccountingRecord {
+  sourceConfigurationId?: string | null;
+  sourceAccountId?: string | null;
   customerId?: string | null;
   typeId: string;
   parentId: string | null;
@@ -146,13 +192,10 @@ export interface AccountingDetailGroupV1 {
   version: number;
   members: { detailId: string }[];
 }
-export interface AccountingTemplateLineV1 {
+export interface AccountingTemplateLineV1 extends AccountingDetailIds {
   id: string;
   position: number;
   accountId: string;
-  detail4Id: string | null;
-  detail5Id: string | null;
-  detail6Id: string | null;
   side: 'DEBIT' | 'CREDIT';
   role?: 'SOURCE' | 'TARGET' | 'OFFSET' | 'BASIS' | null;
   parentPosition?: number | null;
@@ -194,12 +237,9 @@ export interface AccountingJournalStateEventV1 {
   reason: string | null;
   occurredAt: string;
 }
-export interface AccountingLineV1 {
+export interface AccountingLineV1 extends AccountingDetailIds {
   id?: string;
   accountId: string | null;
-  detail4Id: string | null;
-  detail5Id: string | null;
-  detail6Id: string | null;
   description: string;
   debit: string;
   credit: string;
@@ -253,18 +293,15 @@ export interface AccountingSnapshotV1 {
   subsidiaryMappings?: AccountingSubsidiaryMappingV1[];
   detailConversions?: AccountingDetailTypeConversionV1[];
 }
-export interface AccountingSubsidiaryMappingV1 {
+export interface AccountingSubsidiaryMappingV1
+  extends
+    AccountingDetailIds,
+    Partial<Record<AccountingSourceDetailField, string | null>> {
   id: string;
   bookId: string;
   sourceAccountId: string;
-  sourceDetail4Id?: string | null;
-  sourceDetail5Id?: string | null;
-  sourceDetail6Id?: string | null;
   sourceKey?: string;
   targetAccountId: string;
-  detail4Id: string | null;
-  detail5Id: string | null;
-  detail6Id: string | null;
   version: number;
 }
 export interface AccountingDetailTypeConversionV1 {

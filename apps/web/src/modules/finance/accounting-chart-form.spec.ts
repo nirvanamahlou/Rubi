@@ -2,10 +2,14 @@ import { describe, expect, it } from 'vitest';
 import type { AccountingAccountV1 } from '@nora/contracts';
 import {
   accountToDraft,
+  addChartDetailLevel,
+  chartDetailLevels,
+  changeChartDetailLevel,
   chartPayload,
   descriptionRows,
   changeDetailType,
   detailTypeIds,
+  chartChildAction,
 } from './accounting-chart-form';
 
 const account: AccountingAccountV1 = {
@@ -31,6 +35,62 @@ const account: AccountingAccountV1 = {
   },
 };
 describe('chart editor persistence', () => {
+  it('creates only the next legal level under the exact selected parent, with no child under a subsidiary', () => {
+    expect(chartChildAction()).toEqual({
+      level: 'GROUP',
+      parentId: '',
+      label: 'گروه حساب جدید',
+    });
+    expect(
+      chartChildAction({
+        ...account,
+        id: 'group',
+        level: 'GROUP',
+        code: '001',
+      }),
+    ).toEqual({ level: 'GENERAL', parentId: 'group', label: 'حساب کل جدید' });
+    expect(
+      chartChildAction({
+        ...account,
+        id: 'general',
+        level: 'GENERAL',
+        code: '00102',
+      }),
+    ).toEqual({
+      level: 'SUBSIDIARY',
+      parentId: 'general',
+      label: 'حساب معین جدید',
+    });
+    expect(chartChildAction(account)).toBeNull();
+    expect(
+      chartChildAction({ ...account, level: 'GROUP', active: false }),
+    ).toBeNull();
+    expect(account.code).toBe('111001');
+  });
+
+  it('adds account-specific dimensions from level eight to twelve and keeps intervening levels optional', () => {
+    const defaults = { detailLevels: ['4', '6'], detail6Required: true };
+    expect(chartDetailLevels(defaults)).toEqual([4, 5, 6, 7, 8]);
+    let next = defaults;
+    for (let i = 0; i < 4; i++)
+      next = addChartDetailLevel(next) as typeof defaults;
+    expect(chartDetailLevels(next).at(-1)).toBe(12);
+    expect(addChartDetailLevel(next)).toBe(next);
+    expect(chartDetailLevels(defaults).at(-1)).toBe(8);
+    const selected = changeDetailType(next, 7, 'person', true);
+    const disabled = changeChartDetailLevel(selected, 6, false);
+    expect(disabled).toMatchObject({
+      detailLevels: ['4', '7'],
+      detail6Required: false,
+      detail7Required: true,
+      detail7TypeIds: ['person'],
+      detailLevelLimit: '12',
+    });
+    expect(
+      chartPayload({ ...accountToDraft(account), attributes: disabled })
+        .attributes,
+    ).toMatchObject({ detail7TypeIds: ['person'], detailLevelLimit: '12' });
+  });
   it('keeps choices independent across all three levels and persists the newly exposed level', () => {
     const original = {
       detailLevels: ['4'],
