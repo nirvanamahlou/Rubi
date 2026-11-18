@@ -72,5 +72,8 @@
   "نمایش رزروهای بیشتر": "Show more holds",
   "وضعیت رزروها به‌روز نیست.": "Hold status is out of date.",
   "نشانگر صفحه رزرو معتبر نیست.": "The hold page cursor is invalid.",
-  "رزرو مرتبط با پرداخت؛ ظرفیت تا تعیین تکلیف خرید محفوظ است": "Payment-linked reservation; capacity remains held until checkout is resolved"
+  "رزرو مرتبط با پرداخت؛ ظرفیت تا تعیین تکلیف خرید محفوظ است": "Payment-linked reservation; capacity remains held until checkout is resolved",
+  "شعبه ثبت بلیت": "Ticket registration branch",
+  "شعبه ثبت بلیت را انتخاب کنید.": "Select the ticket registration branch.",
+  "دریافت شعبه‌های مجاز ناموفق بود.": "Could not load the authorized branches."
 }

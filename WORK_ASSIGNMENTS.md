@@ -13057,3 +13057,7 @@ COMPUTER_ID=PC-A; branch codex/pc-a-checkout-advisory-1117 from develop4d1182948
 CHECKOUT-ADVISORY-1117 bounded CI repair: develop4d1182948 inherits completed WORKBENCH-MISSION-1117 MissionFinanceEditor Date.now purity failure. That owner marks its work completed; no active overlapping writer is recorded. Reserve only the editor clock evaluation to React state and a deadline callback, retaining the same mission-end guard and server authorization. No mission workflow/Finance policy/permission or runtime Web publication changes. Existing mission render tests and full exact-head gates remain required.
 
 CHECKOUT-ADVISORY-1117 bounded catalogue compatibility: full CI found twenty missing English labels inherited from the completed WORKBENCH-MISSION-1117 merge. Reserve only those additive Web translations and the eight API-visible mirrors. Preserve all peer entries and completeness assertions; no HR/Finance source, authorization or workflow changes.
+
+## SITE-COMMERCE-PUBLICATION-BRANCH-1118 — PC-A — SCOPED_RUNTIME
+
+Owner-authorized production synthetic acceptance. This temporary runtime branch starts at the currently deployed aaeb7553e and contains only the explicit ticket branch selection Web change. API, worker, finance gates, schema, dependencies and legacy products/orders remain on the existing deployed version. The develop PR uses the current develop base separately. Activate only after hosted checks and a successful immutable Web build, using the shared host deployment lock and expected current images/compose checksum.
