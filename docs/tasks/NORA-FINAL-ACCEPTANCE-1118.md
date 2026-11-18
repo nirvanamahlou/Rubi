@@ -46,7 +46,7 @@ Only a final-source receipt with all30 unchanged oracles passing can complete th
 
 ## Review and continuation
 
-Source36c7e8f66 is pushed on this task branch and [draft PR1791](https://github.com/nirvanamahlou/Rubi/pull/1791) targets develop.195 service tests and73 SQL/access/PostgreSQL tests pass locally; API typecheck/build/scoped lint pass. Hosted independent assistant, full quality, full build and PostgreSQL migration/seed gates pass on that exact code head; full repository tests are still running at this handoff update.
+Source36c7e8f66 is pushed on this task branch and [draft PR1791](https://github.com/nirvanamahlou/Rubi/pull/1791) targets develop.195 service tests and73 SQL/access/PostgreSQL tests pass locally; API typecheck/build/scoped lint pass. Hosted independent assistant, full quality, full build and PostgreSQL migration/seed gates pass on that exact code head. Full repository tests exposed two stale HR fixtures inherited from merged PC-B PR1789/45d0b8950: a legacy leave mock omitted the required code and reconciliation expected the old four arguments. Bounded test-only repair supplies a non-WB code, verifies approved-WB credit, and asserts both employee-only reconciliation arguments. All10 targeted HR tests and scoped lint pass; HR runtime remains byte-identical to develop. These test/document changes do not change the pinned Nora source hash or its verified passes. Final hosted recheck follows this compatibility commit.
 
 Cleanup verification finds242 uniquely owned fixture names and zero remaining databases/roles. The owned local forward had already exited after the network incident; no shared tunnel was stopped. Production Nora remains running on its original image and the Germany service is active.
 

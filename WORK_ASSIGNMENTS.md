@@ -13068,6 +13068,10 @@ Owner explicitly requests eight system detail types (petty cash, cashbox, bank a
 
 ## NORA-FINAL-ACCEPTANCE-1118 — PC-C — BLOCKED_PROVIDER_QUOTA
 
+Bounded CI fixture follow-up: exact-head full tests fail in two unchanged HR specs inherited from merged PC-B PR1789/45d0b8950. Its completed publication supersedes historical HR leases for this compatibility-only repair. Reserve only hr-penalties.spec.ts (give the legacy leave mock its real required non-WB code and retain/add approved-WB credit coverage) and hr-workbench-leave-identity.spec.ts (assert both new employee-only reconciliation arguments). Preserve HR runtime, approval/penalty policies, branch/security assertions and all peer changes byte-for-byte. No migration/dependency or HR deployment.
+
+CI fixture follow-up implemented:10 targeted HR tests and scoped lint pass. HR runtime diff against develop is empty. Added WB credit coverage and narrowed employee assertions, with no deleted test or weakened oracle; final hosted rerun pending. Nora fingerprint and cases1–2 original receipts reverified unchanged after this test-only repair.
+
 Acceptance-discovered scope extension: reserve description-only catalog.ts corrections for existing Sales FK/currency/payment-status definitions (producer Sales/consumer Nora, unchanged API shape/version and source permissions), plus the internal backward-compatible batched catalog_describe tool. No peer catalog lease is active in the published Nora release receipts. No SQL policy, schema or migration change.
 
 Current validation:195 service tests,73 SQL/access/PostgreSQL tests, API typecheck/build and lint pass. Final-source fingerprint4fc3cc7a01e85158b62f449d81f6217396bf6fd0a71d04622a8ad3a5731692c8; cases1–2 real-Groq pass, remaining gate waits for actual daily TPD capacity. All six credentials have returned TPD; owner confirms no extra key. Preserve same-source SHA256-verified receipts for resume. Do not mark final acceptance complete or activate this candidate merely because earlier-source cases passed.
