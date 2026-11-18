@@ -1001,7 +1001,9 @@ export function MasterDataAccommodationWorkspace() {
             {records.map((record) => (
               <tr className="border-t border-border" key={record.id}>
                 <td className="p-4 font-mono" dir="ltr">
-                  {record.code}
+                  {tab === 'hotels'
+                    ? attribute(record, 'identificationCode', record.code)
+                    : record.code}
                 </td>
                 <MasterDataLogoCell record={record} />
                 {tab === 'hotels' ? (
