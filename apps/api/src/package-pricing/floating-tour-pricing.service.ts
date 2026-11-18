@@ -222,10 +222,7 @@ export class FloatingTourPricingService {
       destinationCount === undefined ? undefined : Number(destinationCount);
     if (
       count !== undefined &&
-      (!Number.isInteger(count) ||
-        count < 2 ||
-        count > 10 ||
-        !definition.details?.isCombined)
+      (!Number.isInteger(count) || count < 2 || count > 10)
     )
       throw new BadRequestException('تعداد مقصد باید بین ۲ تا ۱۰ باشد.');
     return buildFloatingTourTemplate(definition, count);

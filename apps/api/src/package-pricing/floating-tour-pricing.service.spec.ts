@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import type { AuthenticatedActor, FloatingTourSaleSet } from '@nora/contracts';
 import { FloatingTourPricingService } from './floating-tour-pricing.service';
+import { readFloatingWorkbook } from './floating-tour-import';
 vi.mock('../database/database.service', () => ({ DatabaseService: class {} }));
 vi.mock('../master-data/master-travel-directory', () => ({
   MasterTravelDirectory: class {},
@@ -177,6 +178,17 @@ function fixture() {
   };
 }
 beforeEach(() => vi.clearAllMocks());
+it('downloads a bounded combined template when combined mode is enabled in the form', async () => {
+  const f = fixture();
+  const template = readFloatingWorkbook(
+    await f.service.template('tour', actor, '3'),
+  );
+  expect(template[1]?.[5]?.mergedRows).toEqual({ first: 2, last: 4 });
+  await expect(f.service.template('tour', actor, '11')).rejects.toThrow();
+  await expect(
+    f.service.template('tour', { ...actor, permissions: [] }, '3'),
+  ).rejects.toThrow();
+});
 it('previews and commits cities resolved from Excel independently of the saved route', async () => {
   const f = fixture();
   const combined = {
