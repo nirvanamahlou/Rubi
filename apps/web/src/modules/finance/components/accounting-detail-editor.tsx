@@ -1,4 +1,11 @@
 'use client';
+import { AccountingDetailOwnerDialog } from './accounting-detail-owner-dialog';
+import {
+  detailOwnerKind,
+  type AccountingDetailOwnerV1,
+  type AccountingDetailOwnerPageV1,
+} from '@nora/contracts';
+import { accountingApi } from '../api/accounting-api';
 
 import {
   AccountingSetupNotes,
@@ -40,6 +47,9 @@ type RecordRow = AccountingConfigurationV1 | AccountingDetailV1;
 const attr = (row: RecordRow | null, name: string) =>
   String(row?.attributes[name] ?? '');
 const initial = (row: RecordRow | null) => ({
+  sourceConfigurationId:
+    row && 'typeId' in row ? (row.sourceConfigurationId ?? '') : '',
+  sourceAccountId: row && 'typeId' in row ? (row.sourceAccountId ?? '') : '',
   title: row?.title ?? '',
   titleEn: row?.titleEn ?? attr(row, 'titleEn'),
   description: row?.description ?? attr(row, 'description'),
@@ -90,12 +100,16 @@ export function AccountingDetailEditor({
   const [manualCode, setManualCode] = useState(false);
   const [ownerPage, setOwnerPage] = useState(1);
   const [ownerDialog, setOwnerDialog] = useState<string | null>(null);
+  const [sourceDialog, setSourceDialog] = useState<
+    AccountingDetailOwnerV1 | 'new' | null
+  >(null);
   const [newKind, setNewKind] = useState<'person' | 'organization'>('person');
   const focusRef = useRef<HTMLElement>(null);
   const fresh = () => {
     setManualCode(false);
     setOwnerPage(1);
     setOwnerDialog(null);
+    setSourceDialog(null);
     setOwnerSearch('');
     setSelected(null);
     setDraft(initial(null));
@@ -108,6 +122,7 @@ export function AccountingDetailEditor({
   ) => setDraft((old) => ({ ...old, [key]: value }));
   const type = types.find((row) => row.id === draft.typeId);
   const [ownerSearch, setOwnerSearch] = useState('');
+  const sourceKind = !isType ? detailOwnerKind(type?.title ?? '') : undefined;
   const personTitle = !isType && ['شخص', 'شرکت'].includes(type?.title ?? '');
   const detailRows = (book?.details ?? []).filter(
     (row) => row.typeId === draft.typeId,
@@ -179,6 +194,34 @@ export function AccountingDetailEditor({
       }),
     enabled: !!book && personTitle,
   });
+  const sourceOwners = useQuery({
+    queryKey: [
+      'accounting',
+      'detail-owners',
+      book?.book.id,
+      sourceKind,
+      ownerSearch,
+      ownerPage,
+    ],
+    enabled: !!book && !!sourceKind,
+    queryFn: () =>
+      accountingApi.analytical<AccountingDetailOwnerPageV1>(
+        book!.book.id,
+        'detail-owners',
+        { kind: sourceKind!, search: ownerSearch, page: String(ownerPage) },
+      ),
+  });
+  function adoptSource(row: AccountingDetailOwnerV1) {
+    setDraft((old) => ({
+      ...old,
+      title: row.title,
+      sourceConfigurationId: row.configurationId ?? '',
+      sourceAccountId: row.accountId ?? '',
+      ...(row.currency ? { currency: row.currency } : {}),
+    }));
+    setSourceDialog(null);
+    void sourceOwners.refetch();
+  }
   function editDetail(id: string) {
     const row = detailRows.find((item) => item.id === id);
     if (row) {
@@ -210,6 +253,8 @@ export function AccountingDetailEditor({
           : '',
       title: '',
       customerId: '',
+      sourceConfigurationId: '',
+      sourceAccountId: '',
     }));
   }
   function adoptOwner(
@@ -503,27 +548,48 @@ export function AccountingDetailEditor({
                   value={draft.title}
                   disabled={!type}
                   required
-                  columns={['نام کامل', 'شماره', 'نوع']}
-                  rows={
-                    personTitle
-                      ? (people.data?.data ?? []).map((row) => ({
-                          id: row.id,
-                          cells: [
-                            row.displayName,
-                            row.companyCode ??
-                              row.personCode ??
-                              detailRows.find((d) => d.customerId === row.id)
-                                ?.code ??
-                              '—',
-                            type!.title,
-                          ],
-                        }))
-                      : detailRows.map((row) => ({
-                          id: row.id,
-                          cells: [row.title, row.code, type?.title ?? ''],
-                        }))
+                  columns={
+                    sourceKind === 'BRANCH'
+                      ? ['عنوان', 'کد', 'نام بنگاه']
+                      : sourceKind
+                        ? ['عنوان', 'کد', 'وضعیت']
+                        : ['نام کامل', 'شماره', 'نوع']
                   }
-                  {...(personTitle
+                  rows={
+                    sourceKind
+                      ? (sourceOwners.data?.rows ?? [])
+                          .filter((row) => row.active)
+                          .map((row) => ({
+                            id: row.id,
+                            cells: [
+                              row.title,
+                              row.code,
+                              sourceKind === 'BRANCH'
+                                ? (book?.book.title ?? '')
+                                : row.active
+                                  ? 'فعال'
+                                  : 'غیرفعال',
+                            ],
+                          }))
+                      : personTitle
+                        ? (people.data?.data ?? []).map((row) => ({
+                            id: row.id,
+                            cells: [
+                              row.displayName,
+                              row.companyCode ??
+                                row.personCode ??
+                                detailRows.find((d) => d.customerId === row.id)
+                                  ?.code ??
+                                '—',
+                              type!.title,
+                            ],
+                          }))
+                        : detailRows.map((row) => ({
+                            id: row.id,
+                            cells: [row.title, row.code, type?.title ?? ''],
+                          }))
+                  }
+                  {...(personTitle || sourceKind
                     ? {
                         onSearch: (value: string) => {
                           setOwnerSearch(value);
@@ -532,7 +598,12 @@ export function AccountingDetailEditor({
                       }
                     : { onType: (title: string) => update('title', title) })}
                   onSelect={(id) => {
-                    if (personTitle) {
+                    if (sourceKind) {
+                      const row = sourceOwners.data?.rows.find(
+                        (r) => r.id === id,
+                      );
+                      if (row) adoptSource(row);
+                    } else if (personTitle) {
                       const row = people.data?.data.find(
                         (item) => item.id === id,
                       );
@@ -547,37 +618,82 @@ export function AccountingDetailEditor({
                       if (row) update('title', row.title);
                     }
                   }}
-                  onEdit={personTitle ? openOwner : editDetail}
+                  onEdit={
+                    sourceKind
+                      ? (id) => {
+                          const row = sourceOwners.data?.rows.find(
+                            (r) => r.id === id,
+                          );
+                          if (row) setSourceDialog(row);
+                        }
+                      : personTitle
+                        ? openOwner
+                        : editDetail
+                  }
                   message={
-                    personTitle
-                      ? people.isFetching
+                    sourceKind
+                      ? sourceOwners.isFetching
                         ? 'در حال دریافت…'
-                        : people.error?.message
-                      : undefined
+                        : sourceOwners.error?.message
+                      : personTitle
+                        ? people.isFetching
+                          ? 'در حال دریافت…'
+                          : people.error?.message
+                        : undefined
                   }
                   footer={
-                    personTitle && (
+                    sourceKind ? (
                       <>
-                        <button type="button" onClick={() => openOwner('new')}>
+                        <button
+                          type="button"
+                          onClick={() => setSourceDialog('new')}
+                        >
                           ＋ ایجاد {type?.title}
                         </button>
                         {ownerPage > 1 && (
                           <button
                             type="button"
-                            onClick={() => setOwnerPage((page) => page - 1)}
+                            onClick={() => setOwnerPage((p) => p - 1)}
                           >
                             قبلی
                           </button>
                         )}
-                        {people.data?.data.length === 30 && (
+                        {sourceOwners.data?.hasNext && (
                           <button
                             type="button"
-                            onClick={() => setOwnerPage((page) => page + 1)}
+                            onClick={() => setOwnerPage((p) => p + 1)}
                           >
                             بعدی
                           </button>
                         )}
                       </>
+                    ) : (
+                      personTitle && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => openOwner('new')}
+                          >
+                            ＋ ایجاد {type?.title}
+                          </button>
+                          {ownerPage > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => setOwnerPage((page) => page - 1)}
+                            >
+                              قبلی
+                            </button>
+                          )}
+                          {people.data?.data.length === 30 && (
+                            <button
+                              type="button"
+                              onClick={() => setOwnerPage((page) => page + 1)}
+                            >
+                              بعدی
+                            </button>
+                          )}
+                        </>
+                      )
                     )
                   }
                 />
@@ -630,6 +746,20 @@ export function AccountingDetailEditor({
         )}
         <AccountingSaveButtons busy={busy || !book} />
       </form>
+      {sourceDialog && sourceKind && book && (
+        <AccountingDetailOwnerDialog
+          key={sourceDialog === 'new' ? 'new' : sourceDialog.id}
+          kind={sourceKind}
+          book={book}
+          initial={sourceDialog === 'new' ? undefined : sourceDialog}
+          run={run}
+          onSelected={adoptSource}
+          onClose={() => {
+            setSourceDialog(null);
+            void sourceOwners.refetch();
+          }}
+        />
+      )}
       {ownerDialog === 'choose' ? (
         <Dialog
           open

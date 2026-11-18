@@ -426,6 +426,20 @@ export class BankAccountService {
                 tx,
               );
           }
+          if (
+            current &&
+            treasury &&
+            current.treasuryBookId !== treasury.treasuryBookId &&
+            (await tx.accountingDetail.count({
+              where: {
+                sourceAccountId: current.id,
+                bookId: { not: treasury.treasuryBookId },
+              },
+            }))
+          )
+            throw new ConflictException(
+              'حساب بانکی به تفصیلی دفتر دیگری متصل است.',
+            );
           if (current && id) {
             if (current.version !== expectedVersion)
               throw new ConflictException(
