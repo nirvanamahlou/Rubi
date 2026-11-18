@@ -10348,6 +10348,10 @@ Hotel create/edit forms now support one main image and a six-image gallery. Uplo
 ## CHECKOUT-ADVISORY-1117 — PC-A — ACTIVE
 
 COMPUTER_ID=PC-A; branch codex/pc-a-checkout-advisory-1117 from develop4d1182948. User reports ERP checkout connection failure and requests real flight/passenger confirmation before Saman payment, with ten-minute inventory acquisition only on the explicit payment action. Reserve only WebsiteCheckoutHoldsService prepare advisory command, one isolated PostgreSQL regression and own append-only task/status notes. Production read-only diagnostic proved P2010: pg_advisory_xact_lock returns PostgreSQL void, which Prisma queryRaw cannot deserialize. Use executeRaw for this command, preserving the identical transaction-scoped lock key and all ownership/replay/capacity/quote/expiry rules. No schema, migration, dependency, permission or financial mutation. Site consumer/UI changes are separate files; no active overlapping writer found. Merge/release use existing user publication authorization and exact-head quality/test/build/DB gates, latest-runtime source/image CAS and shared deployment lock. No live synthetic orders/holds/payments.
+# 2026-11-18 — FLOATING-PACKAGE-RESTORE-1118 — PC-A
+
+Reproduced missing floating-package card on current production code as a manual-v3 access inheritance defect, not missing source/controller/migration. Owner approves only sales.pricing.management -> sales.pricing.floating inheritance with explicit denial and native write permissions preserved. Five focused access cases,40 API import/service/manual-policy tests and3 Web floating/hub tests pass. Separate feature-only main backport and guarded Web-only publication are pending their own validation; no business-data or live-grant changes. See [task](tasks/FLOATING-PACKAGE-RESTORE-1118.md).
+
 
 
 ## HOTEL-IDENTIFICATION-1118 — PC-B
@@ -10355,3 +10359,12 @@ COMPUTER_ID=PC-A; branch codex/pc-a-checkout-advisory-1117 from develop4d1182948
 Optional identificationCode (up to160 characters) is editable directly below English name in both hotel create/edit forms and shown in the profile basic-information card. Leading zeroes and mixed text are preserved; blank clears to null. Existing internal hotel code and UUID remain unchanged. Additive migration20261118110000_hotel_identification_code required before API rollout.22 focused Web/API tests and scoped lint passed; Web production build (including TypeScript) and API typecheck passed. Prisma validation/generation and contracts/database builds passed. API required a larger Node heap after the default2GB run exhausted memory. No production changes. PR1792.
 
 SITE-COMMERCE-PUBLICATION-BRANCH-1118: production HQ synthetic publication/unpaid checkout verified; owner-approved private payment simulator completed native ticket/tour contracts120123/120124, exact2,345,000/17,380,000IRR settlement, seller/issuer, replay/ownership checks and four original ERP PDFs (five pages visually reviewed). Added selected-cabin baggage alias and five public-catalogue regressions; no production financial writes or real PSP/provider request. Final develop integration and exact-head CI/PR1795 merge pending; details in docs/tasks/SITE-COMMERCE-1114.md.
+## FLOATING-DESTINATION-NIGHTS-1118 — PC-A
+
+Combined floating-price imports accept destination count (2–10) and ordered nights per destination. Web computes the total; API validates the sum and resolves destination cities from active saleable hotel references in Excel, independently of the saved tour itinerary. Flat and merged multi-hotel groups use one shared per-person price; template merge height follows the selected count. Legacy imports remain supported. Preview digest/CAS, permissions, currencies and passenger-age price rules remain intact. No migration/dependency or operational-data changes; scoped develop merge requested by owner.
+
+Validation: 46 focused API tests and 6 Web/i18n tests passed, including configured three/four-stop imports, monthly dates, invalid sums, merged group height, master-data filters and preview/commit. Scoped Web/API lint and API build passed. Generated English mirrors retain all existing translations.
+
+## FORM-SAVE-SHORTCUT — PC-B
+
+Alt+S activates the save or register control of the focused form or active dialog using its existing submission path. Disabled and ambiguous actions are skipped.

@@ -6,6 +6,7 @@ import {
   Header,
   Inject,
   Param,
+  Query,
   ParseUUIDPipe,
   Post,
   Req,
@@ -59,11 +60,15 @@ export class FloatingTourPricingController {
   async template(
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
+    @Query('destinationCount') destinationCount?: string,
   ) {
-    return new StreamableFile(await this.pricing.template(id, req.actor), {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      disposition: 'attachment; filename="floating-tour-price.xlsx"',
-    });
+    return new StreamableFile(
+      await this.pricing.template(id, req.actor, destinationCount),
+      {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        disposition: 'attachment; filename="floating-tour-price.xlsx"',
+      },
+    );
   }
   private options(body: { options?: string }, file?: { buffer: Buffer }) {
     if (!file?.buffer)

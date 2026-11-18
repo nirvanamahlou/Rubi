@@ -443,7 +443,13 @@ export function parseFloatingRows(
   if (!rows.length) return fail('فایل قیمت خالی است.');
   if (!options.combined) return rows;
   const combined: FloatingTourSaleRow[] = [];
-  for (let i = 0; i < rows.length; i += 2) {
+  const destinationNights = options.destinationNights;
+  const count = destinationNights?.length ?? 2;
+  for (let i = 0; i < rows.length; i += count) {
+    if (destinationNights) {
+      combined.push(combineConfiguredRows(rows.slice(i, i + count), options));
+      continue;
+    }
     const a = rows[i]!,
       b = rows[i + 1];
     const definitions = tour.details?.destinations;
@@ -471,6 +477,41 @@ export function parseFloatingRows(
   return combined;
 }
 
+/** Hotel references, rather than the saved tour route, own the imported cities. */
+function combineConfiguredRows(
+  rows: FloatingTourSaleRow[],
+  options: FloatingTourImportOptions,
+): FloatingTourSaleRow {
+  const nights = options.destinationNights!;
+  const first = rows[0];
+  if (
+    !first ||
+    nights.length < 2 ||
+    nights.length > 10 ||
+    nights.some((n) => !Number.isInteger(n) || n < 1) ||
+    nights.reduce((sum, n) => sum + n, 0) !== options.nights ||
+    rows.length !== nights.length ||
+    rows.some(
+      (row) =>
+        row.startsOn !== first.startsOn ||
+        JSON.stringify(row.prices) !== JSON.stringify(first.prices) ||
+        JSON.stringify(row.commission) !== JSON.stringify(first.commission),
+    ) ||
+    new Set(rows.map((row) => row.stays[0]!.cityId)).size !== nights.length
+  )
+    return fail(
+      'تعداد مقصدها، شب‌ها، شهر هتل‌ها و قیمت مشترک تور ترکیبی را بررسی کنید.',
+    );
+  return {
+    ...first,
+    sourceRows: rows.flatMap((row) => row.sourceRows),
+    stays: rows.map((row, index) => ({
+      ...row.stays[0]!,
+      nights: nights[index]!,
+    })),
+  };
+}
+
 /** Excel's actual price merge defines the package, independently of row count. */
 function parseMergedFloatingRows(
   workbook: FloatingCell[][],
@@ -482,9 +523,11 @@ function parseMergedFloatingRows(
 ): FloatingTourSaleRow[] {
   const definitions = tour.details?.destinations ?? [];
   if (
-    !tour.details?.isCombined ||
-    definitions.length < 2 ||
-    definitions.reduce((sum, stop) => sum + stop.nights, 0) !== options.nights
+    !options.destinationNights &&
+    (!tour.details?.isCombined ||
+      definitions.length < 2 ||
+      definitions.reduce((sum, stop) => sum + stop.nights, 0) !==
+        options.nights)
   )
     return fail('مقصدها و مجموع شب‌های تور ترکیبی را بررسی کنید.');
   const result: FloatingTourSaleRow[] = [];
@@ -509,7 +552,8 @@ function parseMergedFloatingRows(
     if (
       !range ||
       range.first !== index + 1 ||
-      range.last - range.first + 1 !== definitions.length ||
+      range.last - range.first + 1 !==
+        (options.destinationNights?.length ?? definitions.length) ||
       ranges.some(
         (other) => other.first !== range.first || other.last !== range.last,
       )
@@ -525,6 +569,22 @@ function parseMergedFloatingRows(
       previous,
     );
     const first = members[0]!;
+    if (options.destinationNights) {
+      const combined = combineConfiguredRows(members, options);
+      const key = JSON.stringify([
+        combined.startsOn,
+        combined.stays.map((s) => [s.hotelId, floatingHotelKey(s.room)]),
+      ]);
+      if (identities.has(key))
+        return fail(`Row ${index + 1}: ترکیب هتل و اتاق تکراری است.`);
+      identities.add(key);
+      result.push({
+        ...combined,
+        sourceRows: members.map((_, stop) => index + stop + 1),
+      });
+      index = range.last - 1;
+      continue;
+    }
     if (
       members.length !== definitions.length ||
       members.some(
@@ -596,6 +656,11 @@ function parseDedicatedFloatingRows(
       headers.map((h, j) => [h, workbook[i]![j]]),
     );
     const nights = [1, 2].map((n) => Number(fields[`nights_${n}`]?.value));
+    if (
+      options.destinationNights &&
+      JSON.stringify(nights) !== JSON.stringify(options.destinationNights)
+    )
+      return fail('شب‌های فایل باید با شب‌های مقصدهای فرم برابر باشد.');
     if (
       nights.some((n) => !Number.isSafeInteger(n) || n < 1) ||
       nights[0]! + nights[1]! !== options.nights

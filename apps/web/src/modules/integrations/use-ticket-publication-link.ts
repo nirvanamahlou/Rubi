@@ -2,7 +2,9 @@
 import { useMemo, useSyncExternalStore } from 'react';
 export function ticketPublicationLink(search: string) {
   const query = new URLSearchParams(search);
-  return query.get('view') === 'tickets' ? query : undefined;
+  return ['tickets', 'hotels'].includes(query.get('view') ?? '')
+    ? query
+    : undefined;
 }
 const serverSearch = () => '';
 const browserSearch = () => window.location.search;
