@@ -1,4 +1,29 @@
-import type { TicketOfferV1 } from '@nora/contracts';
+import type { TicketOfferV1, TourPackageV1 } from '@nora/contracts';
+
+/** Fetch only explicitly selected travel days; the native search requires a date. */
+export async function loadTourDepartureTickets(
+  pack: Pick<TourPackageV1, 'originId' | 'destinationId' | 'branchId'>,
+  dates: { start: string; end: string },
+  roundtrip: boolean,
+  search: (
+    originId: string,
+    destinationId: string,
+    day: string,
+  ) => Promise<readonly TicketOfferV1[]>,
+) {
+  const [out, back] = await Promise.all([
+    dates.start
+      ? search(pack.originId, pack.destinationId, dates.start)
+      : Promise.resolve([]),
+    roundtrip && dates.end
+      ? search(pack.destinationId, pack.originId, dates.end)
+      : Promise.resolve([]),
+  ]);
+  return {
+    out: activeTourTickets(out, pack.branchId),
+    back: activeTourTickets(back, pack.branchId),
+  };
+}
 export const tourTicketDay = (value: string) =>
   new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tehran' }).format(
     new Date(value),

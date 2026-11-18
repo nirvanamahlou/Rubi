@@ -39,7 +39,7 @@ import { createTourBranches } from './tour-branches';
 import { TourOverview } from './tour-overview';
 import { useAccessPermissions } from '@/modules/iam/access-context';
 import {
-  activeTourTickets,
+  loadTourDepartureTickets,
   changeTourTicketDate,
   tourDatesAfterOutbound,
   tourTicketDay,
@@ -259,18 +259,9 @@ export function TourWorkspace({
   useEffect(() => {
     let cancelled = false;
     if (!pack || !pack.originId || !pack.destinationId) return;
-    void Promise.all([
-      toursApi.offers(pack.originId, pack.destinationId),
-      roundtrip
-        ? toursApi.offers(pack.destinationId, pack.originId)
-        : Promise.resolve([]),
-    ])
-      .then(([out, back]) => {
-        if (!cancelled)
-          setOffers({
-            out: activeTourTickets(out, pack.branchId),
-            back: activeTourTickets(back, pack.branchId),
-          });
+    void loadTourDepartureTickets(pack, dates, roundtrip, toursApi.offers)
+      .then((result) => {
+        if (!cancelled) setOffers(result);
       })
       .catch((error: unknown) => {
         if (!cancelled)
@@ -281,7 +272,7 @@ export function TourWorkspace({
     return () => {
       cancelled = true;
     };
-  }, [pack, roundtrip, reload]);
+  }, [pack, roundtrip, reload, dates]);
   const run = async (action: () => Promise<void>) => {
     setBusy(true);
     setProblem('');

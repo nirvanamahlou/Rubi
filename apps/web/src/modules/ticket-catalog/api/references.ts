@@ -103,7 +103,19 @@ export async function listReferences(
   }
   return {
     ...body,
-    data: body.data.filter((item) => item.status === 'active'),
+    data: body.data
+      .filter((item) => item.status === 'active')
+      .map((item) =>
+        // Airport selections expose cityId; the native query enforces countryId.
+        resource === 'airports' &&
+        filters.countryId &&
+        item.attributes.countryId === undefined
+          ? {
+              ...item,
+              attributes: { ...item.attributes, countryId: filters.countryId },
+            }
+          : item,
+      ),
   };
 }
 

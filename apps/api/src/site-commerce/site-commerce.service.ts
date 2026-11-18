@@ -411,6 +411,10 @@ export class SiteCommerceService {
       );
     return {
       ...offer,
+      baggageAllowanceKg:
+        (offer.cabinClassCode === 'BUSINESS'
+          ? offer.businessBaggageKg
+          : offer.economyBaggageKg) ?? null,
       international: countryCodes.some(
         (code) => code !== '' && !['IR', 'IRN', 'IRAN'].includes(code),
       ),

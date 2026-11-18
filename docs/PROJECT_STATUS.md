@@ -10226,6 +10226,9 @@ HISTORY-ACTION-LABELS-1114: history shows Persian action labels instead of HTTP 
 
 DEPLOY-FORMAT-1114: repair Prisma alignment only for section contract visibility fields. Prisma format/validate and diff checks pass. Hosted quality, tests, build and migrations gate final publication; owner requests deployment without a fresh backup.
 
+## SITE-COMMERCE-PUBLICATION-BRANCH-1118 — PC-A — IN_PROGRESS
+
+Found new-flight creation implicitly selected the first authorized branch, causing a Niyayesh website flag to be invisible when its source belonged to HQ. Local correction adds explicit branch selection, current-session validation and server-side publication binding checks. API/Web scoped tests, lint and types pass; refreshed Prisma client resolves the local generated-client mismatch. Production synthetic tour/ticket flow and exact-head hosted checks remain pending. No payment moved or privileged account created. See docs/tasks/SITE-COMMERCE-1114.md.
 PR1700 CI integration on2026-11-14: preserve PR1693 legacy evidence and v3 together, fix second-turn history to send role/content only, and retain abort/version/permission guards.185 focused Web/English checks pass; four earlier HR translation failures are resolved by consuming develop. User authorizes green develop merge; no Agent activation or operational migration. Live Germany/model/browser gates remain open.
 
 
@@ -10355,6 +10358,7 @@ Reproduced missing floating-package card on current production code as a manual-
 
 Optional identificationCode (up to160 characters) is editable directly below English name in both hotel create/edit forms and shown in the profile basic-information card. Leading zeroes and mixed text are preserved; blank clears to null. Existing internal hotel code and UUID remain unchanged. Additive migration20261118110000_hotel_identification_code required before API rollout.22 focused Web/API tests and scoped lint passed; Web production build (including TypeScript) and API typecheck passed. Prisma validation/generation and contracts/database builds passed. API required a larger Node heap after the default2GB run exhausted memory. No production changes. PR1792.
 
+SITE-COMMERCE-PUBLICATION-BRANCH-1118: production HQ synthetic publication/unpaid checkout verified; owner-approved private payment simulator completed native ticket/tour contracts120123/120124, exact2,345,000/17,380,000IRR settlement, seller/issuer, replay/ownership checks and four original ERP PDFs (five pages visually reviewed). Added selected-cabin baggage alias and five public-catalogue regressions; no production financial writes or real PSP/provider request. Final develop integration and exact-head CI/PR1795 merge pending; details in docs/tasks/SITE-COMMERCE-1114.md.
 ## FLOATING-DESTINATION-NIGHTS-1118 — PC-A
 
 Combined floating-price imports accept destination count (2–10) and ordered nights per destination. Web computes the total; API validates the sum and resolves destination cities from active saleable hotel references in Excel, independently of the saved tour itinerary. Flat and merged multi-hotel groups use one shared per-person price; template merge height follows the selected count. Legacy imports remain supported. Preview digest/CAS, permissions, currencies and passenger-age price rules remain intact. No migration/dependency or operational-data changes; scoped develop merge requested by owner.
