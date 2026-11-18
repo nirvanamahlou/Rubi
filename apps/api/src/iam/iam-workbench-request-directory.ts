@@ -197,6 +197,16 @@ export class IamWorkbenchRequestDirectory {
     };
   }
 
+  async missionRecipient(actor: AuthenticatedActor, branchId: string) {
+    const nima = await this.database.client.user.findFirst({
+      where: { id: actor.userId, status: 'ACTIVE', username: 'nima' },
+      select: { id: true },
+    });
+    return nima
+      ? this.leaveRoute(actor, branchId)
+      : this.hrLeaveRecipient(actor, branchId);
+  }
+
   async hrLeaveRecipient(actor: AuthenticatedActor, branchId: string) {
     const options = await this.options(actor, branchId);
     const matches = options.units.flatMap((unit) =>
