@@ -4,18 +4,16 @@ import type { MasterDataService } from './master-data.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 it('resolves floating hotel cities using active saleable master references without a selected city', async () => {
-  const list = vi
-    .fn()
-    .mockResolvedValue({
-      data: [
-        {
-          id: 'hotel',
-          name: 'Hotel',
-          attributes: { englishName: 'Hotel EN', cityId: 'excel-city' },
-        },
-      ],
-      meta: { total: 1 },
-    });
+  const list = vi.fn().mockResolvedValue({
+    data: [
+      {
+        id: 'hotel',
+        name: 'Hotel',
+        attributes: { englishName: 'Hotel EN', cityId: 'excel-city' },
+      },
+    ],
+    meta: { total: 1 },
+  });
   const directory = new MasterTravelDirectory({ list } as never);
   expect((await directory.floatingHotelReferences(2)).data).toEqual([
     {
