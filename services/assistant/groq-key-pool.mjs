@@ -26,7 +26,7 @@ function duration(v) {
         Number(match[4] ?? 0)
     : NaN;
 }
-export function groqRetryDelay(headers, now) {
+export function groqRetryDelay(headers, now, unit) {
   const header = headers.get('retry-after');
   const retry =
     header && /^\d+(?:\.\d+)?$/.test(header)
@@ -35,7 +35,11 @@ export function groqRetryDelay(headers, now) {
         ? Date.parse(header) - now
         : NaN;
   const resets = ['requests', 'tokens']
-    .filter((k) => headers.get('x-ratelimit-remaining-' + k) === '0')
+    .filter(
+      (k) =>
+        headers.get('x-ratelimit-remaining-' + k) === '0' ||
+        (k === 'tokens' && ['TPM', 'ITPM', 'OTPM'].includes(unit)),
+    )
     .map((k) => duration(headers.get('x-ratelimit-reset-' + k)));
   const valid = [retry, ...resets].filter(
     (v) => Number.isFinite(v) && v > 0 && Number.isSafeInteger(Math.ceil(v)),
@@ -124,10 +128,17 @@ const quotaUnit = (error) =>
 /** Credentials and cooldown metadata only; never retain prompts, users or evidence. */
 export function createGroqKeyPool({
   entries,
+  provider = 'groq',
   fetcher = fetch,
   now = Date.now,
   audit = () => {},
 }) {
+  if (!['groq', 'openai'].includes(provider))
+    throw new Error('INVALID_POOL_PROVIDER');
+  const openai = provider === 'openai';
+  const endpoint = openai
+    ? 'https://api.openai.com/v1/chat/completions'
+    : ENDPOINT;
   const keys = validateGroqCredentials({ version: 1, keys: entries }).map(
     (entry) => ({ ...entry, ...state(), disabled: entry.enabled === false }),
   );
@@ -149,7 +160,7 @@ export function createGroqKeyPool({
     try {
       audit(
         Object.freeze({
-          event: 'assistant.groq.pool',
+          event: `assistant.${provider}.pool`,
           keyId: key.id,
           category,
           attempt,
@@ -245,7 +256,7 @@ export function createGroqKeyPool({
       } = {},
     ) {
       if (
-        url !== ENDPOINT ||
+        url !== endpoint ||
         init?.method !== 'POST' ||
         init.redirect !== 'error' ||
         typeof init.body !== 'string'
@@ -279,6 +290,9 @@ export function createGroqKeyPool({
           budget.attempts++;
           const headers = new Headers(init.headers);
           headers.set('authorization', 'Bearer ' + key.apiKey);
+          // The Germany CONNECT relay bounds each tunnel's absolute lifetime.
+          // Do not reuse a TLS connection across that boundary on a later turn.
+          headers.set('connection', 'close');
           let response;
           try {
             response = await fetcher(url, {
@@ -335,10 +349,26 @@ export function createGroqKeyPool({
             emit(key, 'group-access-denied', attempt);
             return new Response(null, { status: 403 });
           } else {
-            const until = now() + groqRetryDelay(response.headers, now());
+            const at = now();
+            const expires =
+              openai &&
+              [
+                'insufficient_quota',
+                'billing_hard_limit_reached',
+                'credit_balance_exhausted',
+              ].includes(error.code);
+            const until =
+              at +
+              (expires
+                ? 15 * 60_000
+                : groqRetryDelay(
+                    response.headers,
+                    at,
+                    openai ? 'TPM' : quotaUnit(error),
+                  ));
             block(key, until);
             const org = group('org:' + key.organization);
-            if (scope === 'organization') {
+            if (openai || scope === 'organization') {
               block(org, until);
               const observed = providerOrganization(error);
               if (observed) {

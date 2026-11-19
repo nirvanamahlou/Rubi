@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { createServer } from 'node:http';
 import { createGroqKeyPool, groqRetryDelay } from './groq-key-pool.mjs';
 import {
   readGroqCredentials,
@@ -26,6 +27,46 @@ const error = (status, scope, code = 'rate_limit_exceeded') =>
     { error: { scope, code, message: 'Synthetic TPM limit' } },
     { status, headers: { 'retry-after': '2' } },
   );
+
+test('TPM cooldown honors actual token refill even when remaining tokens are nonzero but insufficient', async () => {
+  const headers = new Headers({
+    'retry-after': '2',
+    'x-ratelimit-remaining-tokens': '1200',
+    'x-ratelimit-reset-tokens': '48s',
+    'x-ratelimit-remaining-requests': '999',
+    'x-ratelimit-reset-requests': '4h',
+  });
+  assert.equal(groqRetryDelay(headers, 0, 'TPM'), 48000);
+  assert.equal(groqRetryDelay(headers, 0, 'TPD'), 2000);
+  assert.equal(groqRetryDelay(headers, 0), 2000);
+  let now = 0,
+    calls = 0;
+  const pool = createGroqKeyPool({
+    entries: [entries[0]],
+    now: () => now,
+    fetcher: async () => {
+      calls++;
+      return calls === 1
+        ? Response.json(
+            {
+              error: { scope: 'organization', message: 'Synthetic TPM limit' },
+            },
+            { status: 429, headers },
+          )
+        : Response.json({ ok: true });
+    },
+  });
+  assert.equal(
+    (await pool.fetch(endpoint, init())).headers.get('retry-after'),
+    '48',
+  );
+  now = 2001;
+  assert.equal((await pool.fetch(endpoint, init())).status, 429);
+  assert.equal(calls, 1);
+  now = 48001;
+  assert.equal((await pool.fetch(endpoint, init())).status, 200);
+  assert.equal(calls, 2);
+});
 function harness(responses, options = {}) {
   const sent = [],
     audit = [];
@@ -46,6 +87,26 @@ function harness(responses, options = {}) {
     run: (context) => pool.fetch(endpoint, init(), context),
   };
 }
+
+test('relay-bound calls use fresh HTTP connections rather than a reusable tunnel', async (t) => {
+  const sockets = new Set();
+  const server = createServer((request, response) => {
+    assert.equal(request.headers.connection, 'close');
+    sockets.add(request.socket.remotePort);
+    response.writeHead(200, { 'content-type': 'application/json' });
+    response.end('{}');
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const pool = createGroqKeyPool({
+    entries,
+    fetcher: (_url, options) =>
+      fetch('http://127.0.0.1:' + server.address().port, options),
+  });
+  await (await pool.fetch(endpoint, init())).text();
+  await (await pool.fetch(endpoint, init())).text();
+  assert.equal(sockets.size, 2);
+});
 
 test('private credential file wins, deduplicates and rejects invalid configuration without leaking', () => {
   const directory = mkdtempSync(join(tmpdir(), 'nora-pool-'));

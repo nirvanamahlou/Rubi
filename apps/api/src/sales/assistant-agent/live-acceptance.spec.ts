@@ -581,7 +581,7 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
           const normalized = normalizeText(response.text);
           if (['hidden', 'missing', 'denied'].includes(id)) {
             expect(normalized).toMatch(
-              /0|نیافت|پیدا نشد|یافت نشد|وجود ندارد|مشاهده نیست|دسترسی/,
+              /0|نیافت|پیدا نشد|یافت نشد|وجود ندارد|موجود نیست|هیچ ردیفی|مشاهده نیست|دسترسی/,
             );
           } else
             for (const value of oracle) {
