@@ -1,6 +1,42 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createAgentProvider } from './agent-provider.mjs';
+
+test('OpenAI accepts a single offered function call with stop and no text', async () => {
+  const adapter = (provider) =>
+    createAgentProvider({
+      provider,
+      apiKey: 'synthetic',
+      fetcher: async () =>
+        Response.json({
+          choices: [
+            {
+              finish_reason: 'stop',
+              message: {
+                content: null,
+                tool_calls: [
+                  {
+                    id: 'call_plan',
+                    type: 'function',
+                    function: {
+                      name: 'set_plan',
+                      arguments: '{"steps":["Inspect allowed data"]}',
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+          usage: { total_tokens: 12 },
+        }),
+    });
+  const options = {
+    signal: AbortSignal.timeout(2000),
+    allowedTools: ['set_plan'],
+  };
+  assert.equal((await adapter('openai').step([], options)).name, 'set_plan');
+  await assert.rejects(adapter('groq').step([], options), /INVALID_AGENT_PLAN/);
+});
 const args = {
   status: 'CLARIFY',
   text: 'Which matching contract should be inspected?',

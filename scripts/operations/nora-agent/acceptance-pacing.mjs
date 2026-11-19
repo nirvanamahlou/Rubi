@@ -55,9 +55,10 @@ export async function runAcceptanceCases({
   now = Date.now,
   continueOnFailure = false,
   completed = new Set(),
+  firstCase = 1,
 }) {
   const failed = [];
-  for (let index = 1; index <= 30; index++) {
+  for (let index = firstCase; index <= 30; index++) {
     if (completed.has(index)) continue;
     for (let attempt = 1; attempt <= 6; attempt++) {
       onProgress({ status: 'RUNNING', nextAttemptAt: null });

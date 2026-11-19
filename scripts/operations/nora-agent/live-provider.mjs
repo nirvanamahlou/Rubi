@@ -7,6 +7,11 @@ import { sshPoolProvider } from './ssh-pool-provider.mjs';
 
 // Synthetic acceptance payloads only; no files or environment changes on ERP.
 export function liveProvider() {
+  if (process.env.NORA_ACCEPTANCE_PROVIDER === 'openai')
+    return createAgentProvider({
+      provider: 'openai',
+      apiKey: process.env.OPENAI_API_KEY,
+    });
   if (process.env.NORA_ACCEPTANCE_GROQ_MODE === 'ssh-pool')
     return sshPoolProvider();
   // Local acceptance can reuse an owned SSH CONNECT forward and the exact

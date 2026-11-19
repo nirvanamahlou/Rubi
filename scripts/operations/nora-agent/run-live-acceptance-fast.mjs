@@ -23,6 +23,12 @@ import { startSshPoolBroker } from './ssh-pool-provider.mjs';
 if (!process.argv.includes('--run-synthetic'))
   throw Error('EXPLICIT_SYNTHETIC_RUN_REQUIRED');
 const privateEnv = process.env.NORA_ACCEPTANCE_ENV_FILE;
+const provider = process.env.NORA_ACCEPTANCE_PROVIDER ?? 'groq';
+if (!['groq', 'openai'].includes(provider))
+  throw Error('INVALID_ACCEPTANCE_PROVIDER');
+if (provider === 'openai' && !process.env.OPENAI_API_KEY?.trim())
+  throw Error('OPENAI_PROJECT_KEY_REQUIRED');
+const firstCase = provider === 'openai' ? 3 : 1;
 const directory = process.env.NORA_AGENT_ACCEPTANCE_RECEIPT_DIR;
 if (!privateEnv || !directory)
   throw Error('PRIVATE_ENV_AND_RECEIPT_DIRECTORY_REQUIRED');
@@ -78,6 +84,13 @@ const state = process.argv.includes('--resume')
 const completed = verifiedCompletedCases(state, sourceHash, (name) =>
   readFileSync(resolve(directory, name), 'utf8'),
 );
+if (
+  (state.provider ?? 'groq') !== provider &&
+  process.argv.includes('--resume')
+)
+  throw Error('ACCEPTANCE_PROVIDER_CHANGED');
+state.provider = provider;
+state.firstCase = firstCase;
 delete state.reason;
 const lock = openSync(lockPath, 'wx');
 writeFileSync(lock, String(process.pid));
@@ -162,13 +175,17 @@ async function runCase(index) {
   };
 }
 try {
-  if (process.env.NORA_ACCEPTANCE_GROQ_MODE === 'ssh-pool') {
+  if (
+    provider === 'groq' &&
+    process.env.NORA_ACCEPTANCE_GROQ_MODE === 'ssh-pool'
+  ) {
     poolBroker = await startSshPoolBroker();
     process.env.NORA_ACCEPTANCE_POOL_PIPE = poolBroker.pipe;
   }
   await runAcceptanceCases({
     continueOnFailure: process.argv.includes('--diagnose-all'),
     completed,
+    firstCase,
     runCase,
     wait,
     onProgress(event) {
@@ -184,7 +201,10 @@ try {
       save();
     },
   });
-  state.status = 'MODEL_MATRIX_PASSED_REQUIRES_BROWSER_AND_REVIEW';
+  state.status =
+    firstCase === 1
+      ? 'MODEL_MATRIX_PASSED_REQUIRES_BROWSER_AND_REVIEW'
+      : 'OPENAI_CASES_3_30_PASSED';
 } catch (error) {
   state.status = stopping ? 'STOPPED' : 'REVIEW_REQUIRED';
   state.reason = error.message;

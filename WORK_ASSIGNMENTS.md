@@ -13068,6 +13068,8 @@ Owner explicitly requests eight system detail types (petty cash, cashbox, bank a
 
 ## NORA-FINAL-ACCEPTANCE-1118 — PC-C — BLOCKED_PROVIDER_QUOTA
 
+PC-C follow-up `codex/pc-c-nora-openai-acceptance-1118` reserves the provider adapter and synthetic runner changes for OpenAI cases 3–30. Preserve Groq receipts and production settings. Live execution requires a private OpenAI project credential.
+
 Bounded CI fixture follow-up: exact-head full tests fail in two unchanged HR specs inherited from merged PC-B PR1789/45d0b8950. Its completed publication supersedes historical HR leases for this compatibility-only repair. Reserve only hr-penalties.spec.ts (give the legacy leave mock its real required non-WB code and retain/add approved-WB credit coverage) and hr-workbench-leave-identity.spec.ts (assert both new employee-only reconciliation arguments). Preserve HR runtime, approval/penalty policies, branch/security assertions and all peer changes byte-for-byte. No migration/dependency or HR deployment.
 
 CI fixture follow-up implemented:10 targeted HR tests and scoped lint pass. HR runtime diff against develop is empty. Added WB credit coverage and narrowed employee assertions, with no deleted test or weakened oracle; final hosted rerun pending. Nora fingerprint and cases1–2 original receipts reverified unchanged after this test-only repair.

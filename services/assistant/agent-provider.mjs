@@ -109,10 +109,17 @@ export async function boundedAgentJson(response, limit = 256 * 1024) {
 
 export function createAgentProvider({
   apiKey,
+  provider = 'groq',
   transport,
   fetcher = fetch,
   now = Date.now,
 } = {}) {
+  if (
+    !['groq', 'openai'].includes(provider) ||
+    (provider === 'openai' && transport)
+  )
+    throw new Error('INVALID_AGENT_PROVIDER');
+  const openai = provider === 'openai';
   if (transport && typeof transport.fetch !== 'function')
     throw new Error('GROQ_SHARED_POOL_REQUIRED');
   if (
@@ -300,9 +307,9 @@ export function createAgentProvider({
               },
         );
       const body = JSON.stringify({
-        model: 'openai/gpt-oss-120b',
+        model: openai ? 'gpt-4.1' : 'openai/gpt-oss-120b',
         temperature: 0,
-        reasoning_effort: 'low',
+        ...(!openai ? { reasoning_effort: 'low' } : {}),
         max_completion_tokens: 2048,
         stream: false,
         messages: [
@@ -346,7 +353,9 @@ export function createAgentProvider({
         throw new ServiceError(429, 'AGENT_TOKEN_BUDGET_EXCEEDED');
       try {
         const response = await (transport?.fetch ?? fetcher)(
-          'https://api.groq.com/openai/v1/chat/completions',
+          openai
+            ? 'https://api.openai.com/v1/chat/completions'
+            : 'https://api.groq.com/openai/v1/chat/completions',
           {
             method: 'POST',
             headers: {
@@ -419,6 +428,7 @@ export function createAgentProvider({
           throw new ServiceError(502, 'INVALID_AGENT_PLAN');
         if (
           choice?.finish_reason === 'stop' &&
+          !calls?.length &&
           typeof choice.message?.content === 'string'
         ) {
           if (!allowFinalResponse || calls?.length)
@@ -446,7 +456,12 @@ export function createAgentProvider({
         }
         if (
           result.choices?.length !== 1 ||
-          choice.finish_reason !== 'tool_calls' ||
+          (choice.finish_reason !== 'tool_calls' &&
+            !(
+              openai &&
+              choice.finish_reason === 'stop' &&
+              !choice.message?.content
+            )) ||
           !Array.isArray(calls) ||
           calls.length !== 1
         )

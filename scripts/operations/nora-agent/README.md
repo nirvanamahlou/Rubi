@@ -1,5 +1,13 @@
 # Nora isolated acceptance runners
 
+For a separate OpenAI evaluation of scenarios 3–30, set
+`NORA_ACCEPTANCE_PROVIDER=openai` in the private acceptance environment and
+load `OPENAI_API_KEY` from a separate private env file. Use a dedicated receipt
+directory and a synthetic loopback PostgreSQL configuration. The OpenAI adapter
+uses GPT-4.1 via Chat Completions. Leave Groq relay settings in the Groq test
+environment. The OpenAI receipts track their own provider and cannot resume a
+Groq run. No production configuration is needed for this evaluation.
+
 Use the immediate runner for new synthetic model acceptance runs:
 
 ```text
