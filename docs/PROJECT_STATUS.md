@@ -10381,3 +10381,5 @@ Alt+S activates the save or register control of the focused form or active dialo
 ## 2026-11-19 — Nora operational guides (PC-C)
 
 The shared assistant guide catalog now includes Call Center and updated Workbench workflows, including unit-manager and HR leave approval and post-mission expense referral. See [operator guide](tasks/NORA-OPERATION-GUIDES-1119.md). Assistant-only routing and documentation; pending review.
+
+راهنمای قرارداد، تاریخ میلادی فهرست و مبنای روز ثبت/سفر را توضیح می‌دهد. راهنمای میزکار من، ثبت مأموریت و ارسال هزینه پس از پایان و اثر مرخصی مصوب بر تردد را پوشش می‌دهد. راهنمای کال‌سنتر، مسیر سوابق تماس، مجوز و شرایط دریافت فایل صوتی را توضیح می‌دهد.

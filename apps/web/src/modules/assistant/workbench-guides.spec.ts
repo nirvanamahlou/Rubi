@@ -306,3 +306,14 @@ describe('vetted Workbench guidance', () => {
     );
   });
 });
+
+it('finds the audio download guide outside the Call Center and explains missing recordings', () => {
+  const result = resolveWorkbenchGuide('چرا فایل صوتی تماس دانلود نمیشه؟');
+  expect(result).toMatchObject({
+    goal: 'troubleshoot',
+    topic: { id: 'call-center-recording' },
+  });
+  expect(renderWorkbenchGuide(result!.topic!, 'troubleshoot')).toContain(
+    'مدت نگهداری',
+  );
+});

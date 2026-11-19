@@ -13128,3 +13128,5 @@ Follow-up reserves assistant-only request-status resolution, the optional abort 
 Reserve Nora procedural catalog and assistant-only routing for Call Center and updated Workbench. Base origin/develop 1d4d83f5b. Preserve Call Center UI under CALL-CENTER-UI-PRESERVATION; no migration or deployment.
 
 NORA-OPERATION-GUIDES-1119 follow-up: 47 guide topics, authenticated Workbench request status and Call Center MINE queue status, local rendering, ambiguity handling and focused regression coverage. PR1803 continues to develop review.
+
+بازبینی کاتالوگ روی develop@1fc98c03f انجام شد. در ادامهٔ همین PR، محدوده شامل راهنما و آزمون‌های قرارداد (تاریخ فهرست)، میزکار من (مأموریت و تردد)، کال‌سنتر (دریافت صوت) و یادداشت وضعیت است. مالکیت و پیاده‌سازی ماژول‌های اصلی و دسترسی داده تغییر نمی‌کنند.

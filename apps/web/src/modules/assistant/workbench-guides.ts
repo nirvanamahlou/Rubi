@@ -23,7 +23,7 @@ export function resolveWorkbenchGuide(
   const text = normalize(message);
   const callCenter =
     tab === 'call-center' ||
-    /کال سنتر|صف رسیدگی|تماس بدون نتیجه|تماس های بدون نتیجه|تماس مجدد|پرونده مخاطب/.test(
+    /کال سنتر|صف رسیدگی|تماس بدون نتیجه|تماس های بدون نتیجه|تماس مجدد|پرونده مخاطب|ضبط مکالمه|فایل صوتی تماس|ضبط تماس|تماس ضبط شده/.test(
       text,
     );
   const explicit = /میز\s*کار|مرخص|جانشین|مساعده|تردد|پیام رسان|یادداشت/.test(
