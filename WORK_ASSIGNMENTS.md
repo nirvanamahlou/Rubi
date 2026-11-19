@@ -13134,3 +13134,9 @@ NORA-OPERATION-GUIDES-1119 follow-up: 47 guide topics, authenticated Workbench r
 ## NORA-DOCUMENTS-GUIDE — PC-C
 
 Reserve Assistant Composer integration, new Documents guidance and tests only, based on the operator-guide head 3b46a8e9a. Consume existing read-only Documents APIs and preserve all peer changes and module ownership.
+
+## NORA-CALL-CENTER-GUIDE — PC-C
+
+Reserve Nora catalog, Composer routing and Call Center read-only guide tests. Base fba84b4b1 preserves PR1803 and PR1807. Reuse existing Customer Affairs APIs. No panel, schema, grant or deployment changes in this work item.
+
+CI coverage reserves additive English overrides for new Call Center and inherited Documents assistant text on this branch.
