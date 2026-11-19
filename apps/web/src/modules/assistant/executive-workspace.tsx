@@ -1,5 +1,11 @@
 'use client';
 
+import {
+  resolveDocumentQuestion,
+  renderDocumentGuide,
+  readDocumentGuide,
+} from './document-guides';
+
 import { AssistantResponseContent } from './response-content';
 import { formatAssistantSources } from './response-presentation';
 import { useChatScroll } from './use-chat-scroll';
@@ -343,6 +349,7 @@ function AssistantComposerContent({
       : pathname === '/customer-affairs/call-center'
         ? 'call-center'
         : undefined;
+  const documentTopic = useRef<string | undefined>(undefined);
   const workbenchTopic = useRef<string | undefined>(undefined);
   const lastVersion = useRef<number | undefined>(undefined);
   const contractId = useRef<string | undefined>(undefined);
@@ -497,6 +504,60 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    const documentQuestion = resolveDocumentQuestion(
+      message,
+      pathname === '/documents',
+      documentTopic.current,
+      pathname === '/documents' ? searchParams.get('document') : undefined,
+    );
+    documentTopic.current = undefined;
+    if (documentQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      workbenchTopic.current = undefined;
+      guideTopic.current = undefined;
+      if (documentQuestion.kind === 'guide') {
+        documentTopic.current = documentQuestion.topic.title;
+        replyLocally(
+          renderDocumentGuide(
+            documentQuestion.topic,
+            documentQuestion.continuation,
+          ),
+          undefined,
+          undefined,
+          {
+            href: '/documents',
+            label: 'اسناد و فایل‌ها',
+          },
+        );
+      } else if (documentQuestion.kind === 'clarify') {
+        replyLocally(documentQuestion.text);
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readDocumentGuide(documentQuestion);
+          if (!controller.signal.aborted)
+            replyLocally(answer.text, undefined, undefined, {
+              href: answer.href,
+              label: 'اسناد و فایل‌ها',
+            });
+        } catch {
+          if (!controller.signal.aborted)
+            replyLocally(
+              'وضعیت سند در دسترس نیست. نشست و دسترسی خود را در پنل اسناد بررسی کنید یا دوباره تلاش کنید.',
+              undefined,
+              undefined,
+              {
+                href: '/documents',
+                label: 'اسناد و فایل‌ها',
+              },
+            );
+        }
+      }
+      return;
+    }
     const callCenterStatus =
       workbenchTab === 'call-center' &&
       asksWorkbenchRequestStatus(message.replace(/کال[‌ ]*سنتر/g, ''), true);
