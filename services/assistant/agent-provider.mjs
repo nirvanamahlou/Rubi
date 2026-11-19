@@ -306,6 +306,12 @@ export function createAgentProvider({
                 },
               },
         );
+      if (openai)
+        wireMessages.push({
+          role: 'system',
+          content:
+            'SQL identifiers and output aliases must use lowercase ASCII letters, digits and underscores, e.g. contract_count. Keep the displayed answer in the user language. If the user asks about this month without specifying a calendar, ask whether they mean the Persian or Gregorian month before any query. If confirmed payments are requested but payments is absent from the authorized source list, explain that payment data is unavailable in this scope. Contract status and contractual amounts never establish whether a payment happened. Do not query substitute sources for unavailable payment data.',
+        });
       const body = JSON.stringify({
         model: openai ? 'gpt-4.1' : 'openai/gpt-oss-120b',
         temperature: 0,
