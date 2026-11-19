@@ -13124,3 +13124,17 @@ Reserve the Web root layout and shared keyboard handler for Alt+S on the active 
 ## HOTEL-EXPORT-TEMPLATE-1119 — PC-A — ACTIVE
 
 Owner requests city-filtered hotel XLSX matching the native hotel import template, tested develop merge and guarded production update. Reserve master-data.xlsx.ts plus focused parser roundtrip tests and bounded accommodation export city validation. Preserve native list filters/pagination, permissions, audit, other exports and all hotel data. No schema/dependency changes. COMPUTER_ID=PC-A; branch codex/pc-a-hotel-export-template-1119 from4e6ab972f.
+
+## NORA-OPERATION-GUIDES-1119 — PC-C
+
+Follow-up reserves assistant-only request-status resolution, the optional abort signal on the existing Workbench client read, and workflow catalog/test updates. Reuse native Workbench permissions. Preserve both operator panels and the existing API contract.
+
+Reserve Nora procedural catalog and assistant-only routing for Call Center and updated Workbench. Base origin/develop 1d4d83f5b. Preserve Call Center UI under CALL-CENTER-UI-PRESERVATION; no migration or deployment.
+
+NORA-OPERATION-GUIDES-1119 follow-up: 47 guide topics, authenticated Workbench request status and Call Center MINE queue status, local rendering, ambiguity handling and focused regression coverage. PR1803 continues to develop review.
+
+بازبینی کاتالوگ روی develop@1fc98c03f انجام شد. در ادامهٔ همین PR، محدوده شامل راهنما و آزمون‌های قرارداد (تاریخ فهرست)، میزکار من (مأموریت و تردد)، کال‌سنتر (دریافت صوت) و یادداشت وضعیت است. مالکیت و پیاده‌سازی ماژول‌های اصلی و دسترسی داده تغییر نمی‌کنند.
+
+## NORA-DOCUMENTS-GUIDE — PC-C
+
+Reserve Assistant Composer integration, new Documents guidance and tests only, based on the operator-guide head 3b46a8e9a. Consume existing read-only Documents APIs and preserve all peer changes and module ownership.

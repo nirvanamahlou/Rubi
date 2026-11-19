@@ -38,13 +38,38 @@ export function routeAssistantQuestion(
   message: string,
   previous?: AnswerContext,
   onSalesPage = false,
+  onCallCenterPage = false,
 ): QuestionDecision {
   const q = normalizeQuestion(message);
   const has = (pattern: RegExp) => matchesQuestion(q, pattern);
   const sales = has(/قرارداد|بیمه مسافر|رزرواسیون|رزرو/);
-  const workbench = has(
-    /میز\s*کار|مرخصی|جانشین|مساعده|تردد|پیام|پیام رسان|یادداشت|تقویم|فایل|تنظیمات حساب|حقوق|اضافه کاری|پورسانت|عملکرد من/,
+  const callCenter = has(
+    /کال سنتر|صف رسیدگی|تماس بدون نتیجه|تماس های بدون نتیجه|تماس مجدد|پرونده مخاطب/,
   );
+  const workbench = has(
+    /میز\s*کار|مرخصی|جانشین|مساعده|تردد|پیام|پیام رسان|یادداشت|تقویم|فایل|تنظیمات حساب|حقوق|اضافه کاری|پورسانت|عملکرد من|ماموریت|مأموریت/,
+  );
+  if (
+    callCenter ||
+    (onCallCenterPage &&
+      !sales &&
+      !workbench &&
+      (has(procedure) || has(action) || has(metric)))
+  ) {
+    if (
+      has(metric) &&
+      !has(procedure) &&
+      !has(action) &&
+      !/یعنی|منظور|تعریف/.test(q)
+    )
+      return {
+        kind: 'clarify',
+        dataMessage: message,
+        clarification:
+          'برای عدد به‌روز کال سنتر، کارت یا گزارش همان صفحه را باز کنید. برای راهنمای استفاده، نام بخش را بگویید.',
+      };
+    return { kind: 'guide', domain: 'workbench', dataMessage: message };
+  }
   const domain =
     workbench && !sales
       ? 'workbench'

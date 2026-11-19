@@ -10,6 +10,21 @@ import {
 import { proxyAssistantConversation } from './proxy';
 
 describe('vetted Workbench guidance', () => {
+  it.each(
+    workbenchGuideCatalog.topics.map((topic) => [topic.id, topic] as const),
+  )(
+    'supports a named question, a next-step question and troubleshooting for %s',
+    (id, topic) => {
+      expect(resolveWorkbenchGuide(topic.title, topic.tab)?.topic?.id).toBe(id);
+      const followUp = resolveWorkbenchGuide('بعدش چی؟', topic.tab, id);
+      expect(followUp).toMatchObject({ goal: 'follow-up', topic: { id } });
+      const rendered = renderWorkbenchGuide(topic, 'troubleshoot');
+      expect(rendered).toContain(topic.path.join(' ← '));
+      for (const step of topic.steps) expect(rendered).toContain(step);
+      for (const instruction of topic.troubleshooting)
+        expect(rendered).toContain(instruction);
+    },
+  );
   it('clarifies an unknown Workbench procedure instead of sending it to the Sales SQL agent', () => {
     expect(
       resolveWorkbenchGuide('این گزینه کجاست؟', 'requests')?.clarification,
@@ -64,13 +79,34 @@ describe('vetted Workbench guidance', () => {
       'request-status',
     );
   });
+  it('finds Call Center procedures from the panel and preserves the leave approval sequence', () => {
+    expect(
+      resolveWorkbenchGuide(
+        'چطور نتیجه تماس بدون نتیجه را ثبت کنم؟',
+        'call-center',
+      )?.topic?.id,
+    ).toBe('call-center-outcome');
+    expect(
+      resolveWorkbenchGuide('اینجا چطور کار می‌کند؟', 'call-center')?.topic?.id,
+    ).toBe('call-center-overview');
+    const leave = workbenchGuideCatalog.topics.find(
+      (topic) => topic.id === 'leave-hourly',
+    )!;
+    expect(renderWorkbenchGuide(leave, 'steps')).toMatch(
+      /مدیر واحد.*تأیید نهایی.*منابع انسانی/,
+    );
+  });
   it('covers all actual tabs with versioned sources, restrictions and no executable actions', () => {
     expect(workbenchGuideCatalog.version).toBe(1);
     expect(new Set(workbenchGuideCatalog.topics.map((t) => t.tab)).size).toBe(
-      11,
+      12,
     );
     for (const t of workbenchGuideCatalog.topics) {
-      expect(t.href).toBe(`/workbench?tab=${t.tab}`);
+      expect(t.href).toBe(
+        t.tab === 'call-center'
+          ? '/customer-affairs/call-center'
+          : `/workbench?tab=${t.tab}`,
+      );
       expect(t.steps.length).toBeGreaterThan(1);
       expect(t.conditions.length).toBeGreaterThan(0);
       for (const source of t.sources)
@@ -269,4 +305,15 @@ describe('vetted Workbench guidance', () => {
       'http://127.0.0.1:4300/v1/assistant/workbench-guide',
     );
   });
+});
+
+it('finds the audio download guide outside the Call Center and explains missing recordings', () => {
+  const result = resolveWorkbenchGuide('چرا فایل صوتی تماس دانلود نمیشه؟');
+  expect(result).toMatchObject({
+    goal: 'troubleshoot',
+    topic: { id: 'call-center-recording' },
+  });
+  expect(renderWorkbenchGuide(result!.topic!, 'troubleshoot')).toContain(
+    'مدت نگهداری',
+  );
 });

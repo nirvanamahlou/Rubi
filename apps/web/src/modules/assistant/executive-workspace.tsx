@@ -1,10 +1,26 @@
 'use client';
 
+import {
+  resolveDocumentQuestion,
+  renderDocumentGuide,
+  readDocumentGuide,
+} from './document-guides';
+
 import { AssistantResponseContent } from './response-content';
 import { formatAssistantSources } from './response-presentation';
 import { useChatScroll } from './use-chat-scroll';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { resolveWorkbenchGuide, loadWorkbenchGuide } from './workbench-guides';
+import {
+  asksWorkbenchRequestStatus,
+  describeWorkbenchRequest,
+} from './workbench-request-guide';
+import { readCallCenterRequestStatus } from './call-center-request-guide';
+import { CallCenterHttpError } from '@/modules/call-center/client';
+import {
+  customerAffairsApi,
+  CustomerAffairsApiError,
+} from '@/modules/customer-affairs/api/customer-affairs-client';
 import {
   assistantConversationScopeKey,
   appendChatExchange,
@@ -283,6 +299,7 @@ function AssistantComposerContent({
   floating?: boolean;
   agentMode?: boolean;
 }) {
+  const actor = useAccessActor();
   const inputId = useId();
   const input = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState('');
@@ -329,7 +346,10 @@ function AssistantComposerContent({
   const workbenchTab =
     pathname === '/workbench'
       ? (searchParams.get('tab') ?? 'today')
-      : undefined;
+      : pathname === '/customer-affairs/call-center'
+        ? 'call-center'
+        : undefined;
+  const documentTopic = useRef<string | undefined>(undefined);
   const workbenchTopic = useRef<string | undefined>(undefined);
   const lastVersion = useRef<number | undefined>(undefined);
   const contractId = useRef<string | undefined>(undefined);
@@ -452,6 +472,7 @@ function AssistantComposerContent({
       message,
       previousAnswer.current,
       Boolean(pathname?.startsWith('/sales')),
+      workbenchTab === 'call-center',
     );
     const guideQuestion = decision.guideQuestion ?? message;
     const guidanceAllowed = decision.kind === 'guide';
@@ -483,6 +504,128 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    const documentQuestion = resolveDocumentQuestion(
+      message,
+      pathname === '/documents',
+      documentTopic.current,
+      pathname === '/documents' ? searchParams.get('document') : undefined,
+    );
+    documentTopic.current = undefined;
+    if (documentQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      workbenchTopic.current = undefined;
+      guideTopic.current = undefined;
+      if (documentQuestion.kind === 'guide') {
+        documentTopic.current = documentQuestion.topic.title;
+        replyLocally(
+          renderDocumentGuide(
+            documentQuestion.topic,
+            documentQuestion.continuation,
+          ),
+          undefined,
+          undefined,
+          {
+            href: '/documents',
+            label: 'اسناد و فایل‌ها',
+          },
+        );
+      } else if (documentQuestion.kind === 'clarify') {
+        replyLocally(documentQuestion.text);
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readDocumentGuide(documentQuestion);
+          if (!controller.signal.aborted)
+            replyLocally(answer.text, undefined, undefined, {
+              href: answer.href,
+              label: 'اسناد و فایل‌ها',
+            });
+        } catch {
+          if (!controller.signal.aborted)
+            replyLocally(
+              'وضعیت سند در دسترس نیست. نشست و دسترسی خود را در پنل اسناد بررسی کنید یا دوباره تلاش کنید.',
+              undefined,
+              undefined,
+              {
+                href: '/documents',
+                label: 'اسناد و فایل‌ها',
+              },
+            );
+        }
+      }
+      return;
+    }
+    const callCenterStatus =
+      workbenchTab === 'call-center' &&
+      asksWorkbenchRequestStatus(message.replace(/کال[‌ ]*سنتر/g, ''), true);
+    if (
+      callCenterStatus ||
+      (workbenchTab !== 'call-center' &&
+        asksWorkbenchRequestStatus(message, pathname === '/workbench'))
+    ) {
+      pending.current?.abort();
+      const controller = new AbortController();
+      pending.current = controller;
+      setActionState('loading');
+      try {
+        if (callCenterStatus) {
+          const answer = actor
+            ? await readCallCenterRequestStatus(
+                message,
+                actor,
+                controller.signal,
+              )
+            : 'اطلاعات دسترسی حساب برای خواندن صف آماده نیست.';
+          if (!controller.signal.aborted) {
+            previousAnswer.current = undefined;
+            workbenchTopic.current = undefined;
+            replyLocally(answer, undefined, undefined, {
+              href: '/customer-affairs/call-center',
+              label: 'صف کال‌سنتر',
+            });
+          }
+          return;
+        }
+        const { data } = await customerAffairsApi.workbenchRequests(
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
+        const answer = describeWorkbenchRequest(
+          message,
+          data,
+          pathname === '/workbench' ? searchParams.get('request') : undefined,
+        );
+        previousAnswer.current = undefined;
+        workbenchTopic.current = undefined;
+        replyLocally(answer.text, undefined, undefined, {
+          href: answer.href,
+          label: 'کارتابل درخواست‌ها',
+        });
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        if (
+          (error instanceof CustomerAffairsApiError ||
+            error instanceof CallCenterHttpError) &&
+          [401, 403].includes(error.status)
+        ) {
+          setMessages([]);
+          previousAnswer.current = undefined;
+          setActionState(
+            error.status === 403 ? 'forbidden' : 'unauthenticated',
+          );
+        } else {
+          replyLocally(
+            callCenterStatus
+              ? 'دریافت وضعیت صف کال‌سنتر انجام نشد. دوباره تلاش کنید یا صف را باز کنید.'
+              : 'دریافت وضعیت از کارتابل انجام نشد. دوباره تلاش کنید یا کارتابل درخواست‌ها را باز کنید.',
+          );
+        }
+      }
+      return;
+    }
     if (decision.kind === 'clarify') {
       replyLocally(decision.clarification!);
       return;

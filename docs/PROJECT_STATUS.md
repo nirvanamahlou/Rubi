@@ -10380,3 +10380,12 @@ Validation: 46 focused API tests and 6 Web/i18n tests passed, including configur
 Alt+S activates the save or register control of the focused form or active dialog using its existing submission path. Disabled and ambiguous actions are skipped.
 
 HOTEL-EXPORT-TEMPLATE-1119 — PC-A: hotel XLSX now uses canonical HOTEL_IMPORT_HEADERS and Hotels/راهنما sheets independently of generic UI columns/language. Preserves city-filtered pagination, original hotel codes, English/Persian names and imported profile fields; other resource exports unchanged. Native parser roundtrip and101-row city/audit pagination acceptance pass;86 focused tests. Owner authorizes tested develop merge and guarded API-only publication. No migration/dependency/data mutation.
+## 2026-11-19 — Nora operational guides (PC-C)
+
+The shared assistant guide catalog now includes Call Center and updated Workbench workflows, including unit-manager and HR leave approval and post-mission expense referral. See [operator guide](tasks/NORA-OPERATION-GUIDES-1119.md). Assistant-only routing and documentation; pending review.
+
+راهنمای قرارداد، تاریخ میلادی فهرست و مبنای روز ثبت/سفر را توضیح می‌دهد. راهنمای میزکار من، ثبت مأموریت و ارسال هزینه پس از پایان و اثر مرخصی مصوب بر تردد را پوشش می‌دهد. راهنمای کال‌سنتر، مسیر سوابق تماس، مجوز و شرایط دریافت فایل صوتی را توضیح می‌دهد.
+
+## راهنمای اسناد و فایل‌ها در نورا
+
+شاخهٔ PC-C راهنمای تب‌های آرشیو، چهار ابزار مدیریت، نماهای شخصی و عملیات فایل را اضافه می‌کند. برای پرسش دربارهٔ سند مشخص، مرورگر کد آرشیو، لینک داخلی یا عنوان داخل گیومه را از طریق API خواندنی موجود و با نشست جاری بررسی می‌کند. پاسخ تنها فرادادهٔ لازم را نمایش می‌دهد. اسناد محرمانه یا محدود از پاسخ وضعیت کنار گذاشته می‌شوند و پیش‌نمایش، دانلود و تأیید دومرحله‌ای در پنل انجام می‌شوند. پذیرش مرورگری روی نسخهٔ کاندید و CI دروازهٔ انتشار هستند.
