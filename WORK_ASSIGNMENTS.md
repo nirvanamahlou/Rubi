@@ -13150,3 +13150,5 @@ HOTEL-EXPORT-TEMPLATE-1119 bounded CI scope: reserve additive English labels for
 ## NORA-TEHRAN-DAYS-1119 — PC-C
 
 Reserve assistant runtime day context, SQL placeholder binding and focused midnight regression. User authorizes production activation after tests. No schema or dependency changes.
+
+HOTEL-IMPORT-PRESERVE-1119 — PC-B. Scope: hotel import service and tests only, preserve hotel-catalog associations and omitted profile values on UPDATE, apply verified workbook hours and enforce same-city update. No schema or dependency changes.
