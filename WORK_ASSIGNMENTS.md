@@ -13130,3 +13130,7 @@ Reserve Nora procedural catalog and assistant-only routing for Call Center and u
 NORA-OPERATION-GUIDES-1119 follow-up: 47 guide topics, authenticated Workbench request status and Call Center MINE queue status, local rendering, ambiguity handling and focused regression coverage. PR1803 continues to develop review.
 
 بازبینی کاتالوگ روی develop@1fc98c03f انجام شد. در ادامهٔ همین PR، محدوده شامل راهنما و آزمون‌های قرارداد (تاریخ فهرست)، میزکار من (مأموریت و تردد)، کال‌سنتر (دریافت صوت) و یادداشت وضعیت است. مالکیت و پیاده‌سازی ماژول‌های اصلی و دسترسی داده تغییر نمی‌کنند.
+
+## NORA-DOCUMENTS-GUIDE — PC-C
+
+Reserve Assistant Composer integration, new Documents guidance and tests only, based on the operator-guide head 3b46a8e9a. Consume existing read-only Documents APIs and preserve all peer changes and module ownership.

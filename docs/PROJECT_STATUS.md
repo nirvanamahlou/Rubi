@@ -10383,3 +10383,7 @@ Alt+S activates the save or register control of the focused form or active dialo
 The shared assistant guide catalog now includes Call Center and updated Workbench workflows, including unit-manager and HR leave approval and post-mission expense referral. See [operator guide](tasks/NORA-OPERATION-GUIDES-1119.md). Assistant-only routing and documentation; pending review.
 
 راهنمای قرارداد، تاریخ میلادی فهرست و مبنای روز ثبت/سفر را توضیح می‌دهد. راهنمای میزکار من، ثبت مأموریت و ارسال هزینه پس از پایان و اثر مرخصی مصوب بر تردد را پوشش می‌دهد. راهنمای کال‌سنتر، مسیر سوابق تماس، مجوز و شرایط دریافت فایل صوتی را توضیح می‌دهد.
+
+## راهنمای اسناد و فایل‌ها در نورا
+
+شاخهٔ PC-C راهنمای تب‌های آرشیو، چهار ابزار مدیریت، نماهای شخصی و عملیات فایل را اضافه می‌کند. برای پرسش دربارهٔ سند مشخص، مرورگر کد آرشیو، لینک داخلی یا عنوان داخل گیومه را از طریق API خواندنی موجود و با نشست جاری بررسی می‌کند. پاسخ تنها فرادادهٔ لازم را نمایش می‌دهد. اسناد محرمانه یا محدود از پاسخ وضعیت کنار گذاشته می‌شوند و پیش‌نمایش، دانلود و تأیید دومرحله‌ای در پنل انجام می‌شوند. پذیرش مرورگری روی نسخهٔ کاندید و CI دروازهٔ انتشار هستند.
