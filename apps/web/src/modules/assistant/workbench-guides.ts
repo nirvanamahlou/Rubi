@@ -21,10 +21,16 @@ export function resolveWorkbenchGuide(
   previous?: string,
 ) {
   const text = normalize(message);
+  const callCenter =
+    tab === 'call-center' ||
+    /کال سنتر|صف رسیدگی|تماس بدون نتیجه|تماس های بدون نتیجه|تماس مجدد|پرونده مخاطب|ضبط مکالمه|فایل صوتی تماس|ضبط تماس|تماس ضبط شده/.test(
+      text,
+    );
   const explicit = /میز\s*کار|مرخص|جانشین|مساعده|تردد|پیام رسان|یادداشت/.test(
     text,
   );
-  if (/قرارداد|بیمه مسافر|رزرو/.test(text) && !explicit) return undefined;
+  if (/قرارداد|بیمه مسافر|رزرو/.test(text) && !explicit && !callCenter)
+    return undefined;
   const goal: WorkbenchGuideGoal = followup.test(text)
     ? 'follow-up'
     : /چرا|خطا|نمی|نمیشه|نمیاد|گیر|رد شده|متوقف/.test(text)
@@ -51,6 +57,12 @@ export function resolveWorkbenchGuide(
                 : undefined
     : undefined;
   const matches = catalog.topics
+    .filter(
+      (topic) =>
+        topic.tab !== 'call-center' ||
+        callCenter ||
+        text === normalize(topic.title),
+    )
     .map((topic) => ({
       topic,
       score: Math.max(
@@ -111,7 +123,9 @@ export function resolveWorkbenchGuide(
     return {
       goal,
       clarification:
-        'راهنمای کدام بخش میزکار من را می‌خواهید: درخواست‌ها و مرخصی، پیام‌ها، فایل‌ها، یادداشت‌ها، تقویم، عملکرد یا حساب و تنظیمات؟',
+        tab === 'call-center'
+          ? 'راهنمای کدام بخش کال سنتر را می‌خواهید؟ کارت‌های تماس، صف رسیدگی، جست‌وجوی مخاطب، پرونده یا گزارش؟'
+          : 'راهنمای کدام بخش میزکار من را می‌خواهید: درخواست‌ها و مرخصی، پیام‌ها، فایل‌ها، یادداشت‌ها، تقویم، عملکرد یا حساب و تنظیمات؟',
     };
   }
   return undefined;
@@ -124,6 +138,7 @@ export function renderWorkbenchGuide(
   return [
     topic.title,
     `مسیر: ${topic.path.join(' ← ')}`,
+    `پیش‌نیاز:\n${topic.conditions.join('\n')}`,
     `مراحل:\n${topic.steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}`,
     ...(goal === 'troubleshoot'
       ? [`اگر متوقف شدید:\n${topic.troubleshooting.join('\n')}`]

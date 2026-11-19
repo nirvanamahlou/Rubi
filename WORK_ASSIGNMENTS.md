@@ -13120,3 +13120,13 @@ SITE-COMMERCE-PUBLICATION-BRANCH-1118 final acceptance: private native contracts
 ## FORM-SAVE-SHORTCUT — PC-B — IMPLEMENTED
 
 Reserve the Web root layout and shared keyboard handler for Alt+S on the active form. Preserve local shortcuts and existing submit callbacks. No API, schema or dependency changes.
+
+## NORA-OPERATION-GUIDES-1119 — PC-C
+
+Follow-up reserves assistant-only request-status resolution, the optional abort signal on the existing Workbench client read, and workflow catalog/test updates. Reuse native Workbench permissions. Preserve both operator panels and the existing API contract.
+
+Reserve Nora procedural catalog and assistant-only routing for Call Center and updated Workbench. Base origin/develop 1d4d83f5b. Preserve Call Center UI under CALL-CENTER-UI-PRESERVATION; no migration or deployment.
+
+NORA-OPERATION-GUIDES-1119 follow-up: 47 guide topics, authenticated Workbench request status and Call Center MINE queue status, local rendering, ambiguity handling and focused regression coverage. PR1803 continues to develop review.
+
+بازبینی کاتالوگ روی develop@1fc98c03f انجام شد. در ادامهٔ همین PR، محدوده شامل راهنما و آزمون‌های قرارداد (تاریخ فهرست)، میزکار من (مأموریت و تردد)، کال‌سنتر (دریافت صوت) و یادداشت وضعیت است. مالکیت و پیاده‌سازی ماژول‌های اصلی و دسترسی داده تغییر نمی‌کنند.

@@ -171,8 +171,11 @@ export const customerAffairsApi = {
       `/workbench/requests/${encodeURIComponent(id)}`,
       { method: 'DELETE' },
     ),
-  workbenchRequests: () =>
-    request<{ data: WorkbenchRequestItemV1[] }>('/workbench/requests'),
+  workbenchRequests: (signal?: AbortSignal) =>
+    request<{ data: WorkbenchRequestItemV1[] }>(
+      '/workbench/requests',
+      signal ? { signal, cache: 'no-store' } : undefined,
+    ),
   reviewLeaveSubstitute: (id: string, version: number, status: string) =>
     request(`/workbench/requests/${encodeURIComponent(id)}/substitute`, {
       method: 'PATCH',
