@@ -13121,6 +13121,10 @@ SITE-COMMERCE-PUBLICATION-BRANCH-1118 final acceptance: private native contracts
 
 Reserve the Web root layout and shared keyboard handler for Alt+S on the active form. Preserve local shortcuts and existing submit callbacks. No API, schema or dependency changes.
 
+## HOTEL-EXPORT-TEMPLATE-1119 — PC-A — ACTIVE
+
+Owner requests city-filtered hotel XLSX matching the native hotel import template, tested develop merge and guarded production update. Reserve master-data.xlsx.ts plus focused parser roundtrip tests and bounded accommodation export city validation. Preserve native list filters/pagination, permissions, audit, other exports and all hotel data. No schema/dependency changes. COMPUTER_ID=PC-A; branch codex/pc-a-hotel-export-template-1119 from4e6ab972f.
+
 ## NORA-OPERATION-GUIDES-1119 — PC-C
 
 Follow-up reserves assistant-only request-status resolution, the optional abort signal on the existing Workbench client read, and workflow catalog/test updates. Reuse native Workbench permissions. Preserve both operator panels and the existing API contract.
@@ -13140,3 +13144,5 @@ Reserve Assistant Composer integration, new Documents guidance and tests only, b
 Reserve Nora catalog, Composer routing and Call Center read-only guide tests. Base fba84b4b1 preserves PR1803 and PR1807. Reuse existing Customer Affairs APIs. No panel, schema, grant or deployment changes in this work item.
 
 CI coverage reserves additive English overrides for new Call Center and inherited Documents assistant text on this branch.
+
+HOTEL-EXPORT-TEMPLATE-1119 bounded CI scope: reserve additive English labels for the new native worksheet guidance and API mirrors of its canonical status values. Preserve all peer catalogue entries and completeness assertions; no translation-policy or workflow changes.
