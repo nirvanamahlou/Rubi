@@ -1,3 +1,4 @@
+import { journalDetailSql } from './accounting.detail-levels';
 import { createHash } from 'node:crypto';
 import { Prisma } from '@nora/database';
 import * as v from './accounting.validation';
@@ -83,7 +84,7 @@ export async function documentPostingPreview(
       AND ${documentFigureStatuses}
       AND (CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'REVERSE:%' OR j."sourceKey" LIKE 'WORKFLOW:%'
         THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END)<>${book.baseCurrency}
-    GROUP BY 1,2,l."detail4Id",l."detail5Id",l."detail6Id"
+    GROUP BY 1,2,${journalDetailSql}
     ORDER BY 1,2`);
   const warnings = [
     ...new Set(

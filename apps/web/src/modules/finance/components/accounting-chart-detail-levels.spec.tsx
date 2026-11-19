@@ -84,7 +84,7 @@ describe('chart detail-level grid', () => {
     const html = renderToStaticMarkup(
       <AccountingChartDetailLevels {...props} level={null} />,
     );
-    for (const title of ['سطح چهار', 'سطح پنج', 'سطح شش'])
+    for (const title of ['سطح چهار', 'سطح پنج', 'سطح شش', 'سطح هفت', 'سطح هشت'])
       expect(html).toContain(`>${title}</button>`);
     expect(html).not.toContain('coa-detail-type-cash');
     expect(html).not.toContain('اضافه کردن سطح جدید');

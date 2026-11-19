@@ -132,6 +132,15 @@ function fixture() {
         }),
       },
       websitePublication: {
+        create: vi.fn().mockImplementation(async ({ data }) => ({
+          ...data,
+          id: 'publication-1',
+          version: 1,
+        })),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        findUniqueOrThrow: vi
+          .fn()
+          .mockResolvedValue({ enabled: false, version: 2 }),
         findFirst: vi.fn().mockResolvedValue({ resourceId: ids.offer }),
         findUnique: vi.fn().mockResolvedValue({ enabled: true }),
         findMany: vi.fn().mockResolvedValue([]),
@@ -168,7 +177,10 @@ function fixture() {
       contract.status = 'CONFIRMED';
     }),
   };
-  const tickets = { websiteOffer: vi.fn().mockResolvedValue(flight) };
+  const tickets = {
+    documentSupply: vi.fn().mockResolvedValue({}),
+    websiteOffer: vi.fn().mockResolvedValue(flight),
+  };
   const output = { prepare: vi.fn().mockResolvedValue({ data: { contract } }) };
   const travel = {
     forContract: vi.fn().mockResolvedValue({
@@ -196,6 +208,63 @@ function fixture() {
 }
 
 describe('website connection policy', () => {
+  it('rejects publishing to another staff-accessible branch outside the configured website binding', async () => {
+    const f = fixture();
+    f.tickets.websiteOffer.mockResolvedValue({
+      ...flight,
+      branchId: 'other-branch',
+    });
+    await expect(
+      f.service.publish(
+        'nss',
+        'ticket',
+        ids.offer,
+        { enabled: true, version: 0, branchId: 'other-branch' },
+        { ...actor, branchIds: [...actor.branchIds, 'other-branch'] },
+      ),
+    ).rejects.toThrow('این شعبه به سایت انتخاب‌شده دسترسی ندارد.');
+    expect(f.tickets.documentSupply).not.toHaveBeenCalled();
+    expect(f.db.client.websitePublication.create).not.toHaveBeenCalled();
+    expect(f.db.client.websitePublication.updateMany).not.toHaveBeenCalled();
+  });
+  it('publishes in the bound branch and permits disabling it after its sale eligibility changes', async () => {
+    const f = fixture();
+    f.db.client.websitePublication.findUnique.mockResolvedValueOnce(null);
+    const published = await f.service.publish(
+      'nss',
+      'ticket',
+      ids.offer,
+      { enabled: true, version: 0 },
+      actor,
+    );
+    expect(published.data?.branchId).toBe(ids.branch);
+    f.tickets.websiteOffer.mockRejectedValue(new Error('not sellable'));
+    f.db.client.websitePublication.findUnique.mockResolvedValueOnce({
+      id: 'old-publication',
+      enabled: true,
+      salesStopped: false,
+      version: 1,
+    });
+    await f.service.publish(
+      'nss',
+      'ticket',
+      ids.offer,
+      { enabled: false, version: 1 },
+      actor,
+    );
+    expect(f.db.client.websitePublication.updateMany).toHaveBeenCalledWith({
+      where: { id: 'old-publication', version: 1 },
+      data: {
+        enabled: false,
+        salesStopped: false,
+        version: { increment: 1 },
+      },
+    });
+    expect(f.tickets.websiteOffer).toHaveBeenCalledTimes(1);
+    expect(f.tickets.documentSupply).toHaveBeenLastCalledWith(ids.offer, [
+      ids.branch,
+    ]);
+  });
   it('is disabled by default and binds site to one real actor and branch', () => {
     expect(() => siteBinding('nss', actor, '{}')).toThrow();
     expect(siteBinding('nss', actor, binding).branchId).toBe(ids.branch);

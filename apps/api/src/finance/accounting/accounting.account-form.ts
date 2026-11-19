@@ -1,4 +1,11 @@
-import type { AccountingAttributes } from '@nora/contracts';
+import {
+  accountingDetailLevelLimit,
+  accountingDetailLevels,
+  defaultAccountingDetailLevel,
+  maxAccountingDetailLevel,
+  type AccountingAttributes,
+  type AccountingDetailIds,
+} from '@nora/contracts';
 import * as v from './accounting.validation';
 
 const choices: Record<string, string[]> = {
@@ -34,14 +41,51 @@ export function validateAccountForm(
       (!attrs.natureControl || attrs.natureControl === 'NONE')
   )
     v.invalid('محدوده کنترل ماهیت با سیاست کنترل سازگار نیست.');
+  const limit = accountingDetailLevelLimit(attrs);
+  const levelKeys = /^detail(\d+)(?:TypeId|TypeIds|NatureTypeIds|Required)$/;
+  for (const key of Object.keys(attrs)) {
+    const match = levelKeys.exec(key);
+    if (
+      match &&
+      !accountingDetailLevels.some(
+        (level) => String(level) === match[1] && level <= limit,
+      )
+    )
+      v.invalid('سطح تفصیلی خارج از محدوده حساب است.');
+  }
   if (
-    attrs.detailLevels &&
+    attrs.detailLevelLimit !== undefined &&
+    (typeof attrs.detailLevelLimit !== 'string' ||
+      !/^\d+$/.test(attrs.detailLevelLimit) ||
+      Number(attrs.detailLevelLimit) < defaultAccountingDetailLevel ||
+      Number(attrs.detailLevelLimit) > maxAccountingDetailLevel)
+  )
+    v.invalid('حداکثر سطح تفصیلی معتبر نیست.');
+  if (
+    attrs.detailLevels !== undefined &&
     (!Array.isArray(attrs.detailLevels) ||
-      attrs.detailLevels.some((n) => !['4', '5', '6'].includes(n)) ||
+      attrs.detailLevels.some(
+        (n) =>
+          !accountingDetailLevels.some(
+            (level) => String(level) === n && level <= limit,
+          ),
+      ) ||
       new Set(attrs.detailLevels).size !== attrs.detailLevels.length)
   )
     v.invalid('سطوح تفصیلی معتبر نیست.');
-  for (const n of [4, 5, 6]) {
+  for (const n of accountingDetailLevels) {
+    const required = attrs[`detail${n}Required`];
+    if (required !== undefined && typeof required !== 'boolean')
+      v.invalid('وضعیت سطح تفصیلی معتبر نیست.');
+    if (
+      n > 6 &&
+      required &&
+      !(
+        Array.isArray(attrs.detailLevels) &&
+        attrs.detailLevels.includes(String(n))
+      )
+    )
+      v.invalid('سطح تفصیلی اجباری باید فعال باشد.');
     for (const suffix of ['TypeIds', 'NatureTypeIds']) {
       const ids = attrs[`detail${n}${suffix}`];
       if (ids !== undefined) {
@@ -76,16 +120,12 @@ export function validateAccountForm(
 /** Account balance always participates; detail scopes add cumulative level balances. */
 export function accountControlFilters(
   attrs: AccountingAttributes,
-  row: {
-    detail4Id: string | null;
-    detail5Id: string | null;
-    detail6Id: string | null;
-  },
+  row: AccountingDetailIds,
   typeIds: Record<string, string>,
 ): Record<string, string>[] {
   const filters: Record<string, string>[] = [{}];
   const prefix: Record<string, string> = {};
-  for (const n of [4, 5, 6] as const) {
+  for (const n of accountingDetailLevels) {
     const id = row[`detail${n}Id`];
     if (!id) continue;
     prefix[`detail${n}Id`] = id;

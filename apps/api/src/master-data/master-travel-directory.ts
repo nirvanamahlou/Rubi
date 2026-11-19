@@ -153,6 +153,28 @@ export class MasterTravelDirectory {
   }
 
   /** Active city / saleable hotel choices for a Reservations-owned rate pack. */
+  /** Active saleable references for floating imports, including their owning city. */
+  async floatingHotelReferences(page: number) {
+    const result = await this.master.list('hotels', {
+      search: '',
+      page,
+      pageSize: 100,
+      sortBy: 'name',
+      sortDirection: 'asc',
+      status: 'active',
+      saleableOnly: true,
+    });
+    return {
+      data: result.data.map((row) => ({
+        id: row.id,
+        name: row.name,
+        englishName: String(row.attributes.englishName ?? ''),
+        cityId: String(row.attributes.cityId ?? ''),
+      })),
+      meta: result.meta,
+    };
+  }
+
   async hotelRatePackChoices(
     kind: 'countries' | 'cities' | 'hotels',
     search: string,

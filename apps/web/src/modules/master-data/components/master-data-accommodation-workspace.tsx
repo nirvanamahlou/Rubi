@@ -1,5 +1,6 @@
 'use client';
 import { HotelImageStrip } from './hotel-images';
+import { HotelPublication } from '../../integrations/components/hotel-publication';
 import { HotelProfileInformation } from './hotel-profile-information';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import {
@@ -749,6 +750,18 @@ export function MasterDataAccommodationWorkspace() {
   function actions(record: MasterDataRecord) {
     return (
       <div className="flex flex-wrap justify-center gap-2">
+        {record.resource === 'hotels' && (
+          <details>
+            <summary
+              className="cursor-pointer rounded-lg border p-2"
+              aria-label={`انتشار ${record.name} در سایت`}
+              title="انتشار در سایت"
+            >
+              ↗
+            </summary>
+            <HotelPublication id={record.id} />
+          </details>
+        )}
         <Button
           aria-label={`مشاهده ${record.name}`}
           onClick={() => {
@@ -1001,7 +1014,9 @@ export function MasterDataAccommodationWorkspace() {
             {records.map((record) => (
               <tr className="border-t border-border" key={record.id}>
                 <td className="p-4 font-mono" dir="ltr">
-                  {record.code}
+                  {tab === 'hotels'
+                    ? attribute(record, 'identificationCode', record.code)
+                    : record.code}
                 </td>
                 <MasterDataLogoCell record={record} />
                 {tab === 'hotels' ? (
@@ -1202,6 +1217,17 @@ export function MasterDataAccommodationWorkspace() {
               <Detail
                 label="نام انگلیسی"
                 value={attribute(selected, 'englishName')}
+              />
+              <MasterDataDetailItem
+                label="کد شناسایی"
+                value={
+                  <span
+                    dir="auto"
+                    className="inline-block max-w-full break-all rounded-lg bg-primary/5 px-3 py-2 font-mono text-sm text-primary"
+                  >
+                    {attribute(selected, 'identificationCode')}
+                  </span>
+                }
               />
               <Detail
                 label="زنجیره"

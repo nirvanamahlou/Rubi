@@ -1,3 +1,5 @@
+import { accountingDetailLevels } from '@nora/contracts';
+import { lineDetails } from './accounting.detail-levels';
 import { createHash } from 'node:crypto';
 import { Prisma } from '@nora/database';
 import type { AccountingLineV1, AuthenticatedActor } from '@nora/contracts';
@@ -109,19 +111,18 @@ export async function documentTransferPreview(
         .filter(
           (mapping) =>
             mapping.sourceAccountId === line.accountId &&
-            [4, 5, 6].every(
+            accountingDetailLevels.every(
               (n) =>
-                !mapping[`sourceDetail${n}Id` as 'sourceDetail4Id'] ||
-                mapping[`sourceDetail${n}Id` as 'sourceDetail4Id'] ===
-                  line[`detail${n}Id` as 'detail4Id'],
+                !mapping[`sourceDetail${n}Id`] ||
+                mapping[`sourceDetail${n}Id`] === line[`detail${n}Id`],
             ),
         )
         .sort((a, b) =>
           [a, b]
             .map(
               (mapping) =>
-                [4, 5, 6].filter(
-                  (n) => mapping[`sourceDetail${n}Id` as 'sourceDetail4Id'],
+                accountingDetailLevels.filter(
+                  (n) => mapping[`sourceDetail${n}Id`],
                 ).length,
             )
             .reduce((left, right) => right - left),
@@ -200,9 +201,7 @@ export async function documentTransferPreview(
         v.rule('نرخ معتبر برابر نرخ قلم مبدا در دفتر مقصد لازم است.');
       lines.push({
         accountId: mapping.targetAccountId,
-        detail4Id: mapping.detail4Id,
-        detail5Id: mapping.detail5Id,
-        detail6Id: mapping.detail6Id,
+        ...lineDetails(mapping),
         description: line.description,
         debit: line.debit.toString(),
         credit: line.credit.toString(),

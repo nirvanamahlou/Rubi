@@ -4,6 +4,10 @@ Handoff: [draft PR1791](https://github.com/nirvanamahlou/Rubi/pull/1791), code36
 
 Latest fetched develop48d72de41 and the other computer's published Nora work are preserved. The final release receipt at74dec8a71 supersedes the older pending PR1787 statements below: Sales evidence correction is merged, activated and authenticated-browser accepted; PR1785 quota-group hardening is also merged. Independent30-case acceptance has uncovered and corrected citation transcription, schema/FK discovery, calculation formatting, relay connection reuse and quota/resume defects.195 current service regressions,73 SQL/access/PostgreSQL tests, API typecheck/build and scoped lint pass. Full final-source acceptance remains incomplete: cases1–2 pass; subsequent execution waits for provider-confirmed daily TPD capacity on the existing six-key pool. Owner has no additional key. No migration, merge or production activation in this unit. Current source fingerprint, evidence and remaining gate: [NORA-FINAL-ACCEPTANCE-1118](tasks/NORA-FINAL-ACCEPTANCE-1118.md).
 
+## 2026-11-18 — ACCOUNT-DETAIL-LEVELS-1118 — PC-D
+
+Subsidiary account forms expose levels 4–8 by default and add one account-local level at a time up to 12. Independent type selections persist on the account. Additional detail references flow through journal entry, posting, reports, templates and subsidiary mappings. A real PostgreSQL regression posts and reports a level-7 detail with level 6 empty. The full scoped results are in [ACCOUNT-DETAIL-LEVELS-1118](tasks/ACCOUNT-DETAIL-LEVELS-1118.md).
+
 ## DETAIL-OWNER-FORMS-1117 — PC-D — IMPLEMENTED
 
 Eight predefined typed detail title lookups and create/edit dialogs, seven-digit defaults for newly introduced types, native fiscal year/bank/cash references, and additive restrictive links. Existing definitions, contract numbers and party codes are preserved. Validation and rollout: [detail owner forms](tasks/DETAIL-OWNER-FORMS-1117.md). Not deployed.
@@ -10228,6 +10232,9 @@ HISTORY-ACTION-LABELS-1114: history shows Persian action labels instead of HTTP 
 
 DEPLOY-FORMAT-1114: repair Prisma alignment only for section contract visibility fields. Prisma format/validate and diff checks pass. Hosted quality, tests, build and migrations gate final publication; owner requests deployment without a fresh backup.
 
+## SITE-COMMERCE-PUBLICATION-BRANCH-1118 — PC-A — IN_PROGRESS
+
+Found new-flight creation implicitly selected the first authorized branch, causing a Niyayesh website flag to be invisible when its source belonged to HQ. Local correction adds explicit branch selection, current-session validation and server-side publication binding checks. API/Web scoped tests, lint and types pass; refreshed Prisma client resolves the local generated-client mismatch. Production synthetic tour/ticket flow and exact-head hosted checks remain pending. No payment moved or privileged account created. See docs/tasks/SITE-COMMERCE-1114.md.
 PR1700 CI integration on2026-11-14: preserve PR1693 legacy evidence and v3 together, fix second-turn history to send role/content only, and retain abort/version/permission guards.185 focused Web/English checks pass; four earlier HR translation failures are resolved by consuming develop. User authorizes green develop merge; no Agent activation or operational migration. Live Germany/model/browser gates remain open.
 
 
@@ -10350,3 +10357,24 @@ COMPUTER_ID=PC-A; branch codex/pc-a-checkout-advisory-1117 from develop4d1182948
 ## 2026-11-19 — Nora hybrid provider (PC-C)
 
 Implemented opt-in Groq/OpenAI routing and organization-aware OpenAI key failover. CI and operational activation remain separate. The current production relay does not establish an OpenAI HTTP connection. See [release prerequisites](tasks/NORA-HYBRID-PRODUCTION-1119.md).
+
+# 2026-11-18 — FLOATING-PACKAGE-RESTORE-1118 — PC-A
+
+Reproduced missing floating-package card on current production code as a manual-v3 access inheritance defect, not missing source/controller/migration. Owner approves only sales.pricing.management -> sales.pricing.floating inheritance with explicit denial and native write permissions preserved. Five focused access cases,40 API import/service/manual-policy tests and3 Web floating/hub tests pass. Separate feature-only main backport and guarded Web-only publication are pending their own validation; no business-data or live-grant changes. See [task](tasks/FLOATING-PACKAGE-RESTORE-1118.md).
+
+
+
+## HOTEL-IDENTIFICATION-1118 — PC-B
+
+Optional identificationCode (up to160 characters) is editable directly below English name in both hotel create/edit forms and shown in the profile basic-information card. Leading zeroes and mixed text are preserved; blank clears to null. Existing internal hotel code and UUID remain unchanged. Additive migration20261118110000_hotel_identification_code required before API rollout.22 focused Web/API tests and scoped lint passed; Web production build (including TypeScript) and API typecheck passed. Prisma validation/generation and contracts/database builds passed. API required a larger Node heap after the default2GB run exhausted memory. No production changes. PR1792.
+
+SITE-COMMERCE-PUBLICATION-BRANCH-1118: production HQ synthetic publication/unpaid checkout verified; owner-approved private payment simulator completed native ticket/tour contracts120123/120124, exact2,345,000/17,380,000IRR settlement, seller/issuer, replay/ownership checks and four original ERP PDFs (five pages visually reviewed). Added selected-cabin baggage alias and five public-catalogue regressions; no production financial writes or real PSP/provider request. Final develop integration and exact-head CI/PR1795 merge pending; details in docs/tasks/SITE-COMMERCE-1114.md.
+## FLOATING-DESTINATION-NIGHTS-1118 — PC-A
+
+Combined floating-price imports accept destination count (2–10) and ordered nights per destination. Web computes the total; API validates the sum and resolves destination cities from active saleable hotel references in Excel, independently of the saved tour itinerary. Flat and merged multi-hotel groups use one shared per-person price; template merge height follows the selected count. Legacy imports remain supported. Preview digest/CAS, permissions, currencies and passenger-age price rules remain intact. No migration/dependency or operational-data changes; scoped develop merge requested by owner.
+
+Validation: 46 focused API tests and 6 Web/i18n tests passed, including configured three/four-stop imports, monthly dates, invalid sums, merged group height, master-data filters and preview/commit. Scoped Web/API lint and API build passed. Generated English mirrors retain all existing translations.
+
+## FORM-SAVE-SHORTCUT — PC-B
+
+Alt+S activates the save or register control of the focused form or active dialog using its existing submission path. Disabled and ambiguous actions are skipped.

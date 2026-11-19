@@ -1,4 +1,11 @@
 'use client';
+import {
+  accountingDetailLevels,
+  isAccountingDetailLevelEnabled,
+  accountingDetailTypeIds,
+  type AccountingDetailField,
+  type AccountingSourceDetailField,
+} from '@nora/contracts';
 import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
 import { useState } from 'react';
 import { useQuery, useQueries } from '@tanstack/react-query';
@@ -16,13 +23,9 @@ import { Trash2, Plus, ListChecks, ChevronLeft } from 'lucide-react';
 type Mapping = Pick<
   AccountingSubsidiaryMappingV1,
   | 'sourceAccountId'
-  | 'sourceDetail4Id'
-  | 'sourceDetail5Id'
-  | 'sourceDetail6Id'
   | 'targetAccountId'
-  | 'detail4Id'
-  | 'detail5Id'
-  | 'detail6Id'
+  | AccountingDetailField
+  | AccountingSourceDetailField
 >;
 import { mappingKey, mappingChildren } from '../accounting-accounts-model';
 export function AccountingSubsidiaryMapping({
@@ -60,8 +63,16 @@ export function AccountingSubsidiaryMapping({
   const [adding, setAdding] = useState(false);
   const [bulk, setBulk] = useState(false);
   const [bulkIds, setBulkIds] = useState<string[]>([]);
-  const level = 4 + path.length;
   const pathAccount = book.accounts.find((row) => row.id === levelAccount);
+  const pathLevels = accountingDetailLevels.filter(
+    (level) =>
+      isAccountingDetailLevelEnabled(pathAccount?.attributes ?? {}, level) ||
+      rows.some(
+        (row) =>
+          row.sourceAccountId === levelAccount && row[`sourceDetail${level}Id`],
+      ),
+  );
+  const level = pathLevels[path.length] ?? 4;
   const sourceAllowed = pathAccount?.attributes[`detail${level}TypeIds`];
   const sourceSingle = pathAccount?.attributes[`detail${level}TypeId`];
   const detailCandidates = book.details.filter(
@@ -70,13 +81,22 @@ export function AccountingSubsidiaryMapping({
       (!Array.isArray(sourceAllowed) ||
         !sourceAllowed.length ||
         sourceAllowed.includes(row.typeId)) &&
+      (level <= 6 ||
+        (pathAccount &&
+          accountingDetailTypeIds(pathAccount.attributes, level).includes(
+            row.typeId,
+          ))) &&
       (!sourceSingle || sourceSingle === row.typeId),
   );
   const pathRow = (detailId: string): Mapping => ({
     sourceAccountId: levelAccount,
-    sourceDetail4Id: path[0] ?? (level === 4 ? detailId : null),
-    sourceDetail5Id: path[1] ?? (level === 5 ? detailId : null),
-    sourceDetail6Id: level === 6 ? detailId : null,
+    ...Object.fromEntries(
+      [...path, detailId].map((id, index) => [
+        `sourceDetail${pathLevels[index]}Id`,
+        id,
+      ]),
+    ),
+
     targetAccountId: '',
     detail4Id: null,
     detail5Id: null,
@@ -99,7 +119,8 @@ export function AccountingSubsidiaryMapping({
     if (!levelAccount) {
       setLevelAccount(selected);
       setPath([]);
-    } else if (selectedPath && level < 6) setPath([...path, selectedPath]);
+    } else if (selectedPath && path.length + 1 < pathLevels.length)
+      setPath([...path, selectedPath]);
     setSelectedPath('');
     setAdding(false);
     setBulk(false);
@@ -134,7 +155,7 @@ export function AccountingSubsidiaryMapping({
         } as Mapping,
         label: `${row.code} — ${row.title}`,
       }))
-    : mappingChildren(rows, levelAccount, path)
+    : mappingChildren(rows, levelAccount, path, pathLevels)
         .map((row) => ({
           account: pathAccount!,
           source: {
@@ -145,10 +166,7 @@ export function AccountingSubsidiaryMapping({
             detail6Id: null,
           } as Mapping,
           label: book.details
-            .filter(
-              (d) =>
-                d.id === row[`sourceDetail${level}Id` as 'sourceDetail4Id'],
-            )
+            .filter((d) => d.id === row[`sourceDetail${level}Id`])
             .map((d) => `${d.code} — ${d.title}`)
             .join(''),
         }))
@@ -238,9 +256,9 @@ export function AccountingSubsidiaryMapping({
                     ? `تفصیلی سطح ${level} دفتر کل اصلی`
                     : 'عنوان-کد معین اصلی',
                   'عنوان-کد معین فرعی',
-                  'تفصیلی سطح 4 دفتر کل فرعی',
-                  'تفصیلی سطح 5 دفتر کل فرعی',
-                  'تفصیلی سطح 6 دفتر کل فرعی',
+                  ...accountingDetailLevels.map(
+                    (level) => `تفصیلی سطح ${level} دفتر کل فرعی`,
+                  ),
                   '',
                 ].map((label, index) => (
                   <th key={index} className="border p-2 text-start">
@@ -265,23 +283,16 @@ export function AccountingSubsidiaryMapping({
                     key={mappingKey(source)}
                     onFocus={() => {
                       setSelected(account.id);
-                      setSelectedPath(
-                        source[`sourceDetail${level}Id` as 'sourceDetail4Id'] ??
-                          '',
-                      );
+                      setSelectedPath(source[`sourceDetail${level}Id`] ?? '');
                     }}
                     onClick={() => {
                       setSelected(account.id);
-                      setSelectedPath(
-                        source[`sourceDetail${level}Id` as 'sourceDetail4Id'] ??
-                          '',
-                      );
+                      setSelectedPath(source[`sourceDetail${level}Id`] ?? '');
                     }}
                     className={
                       selected === account.id &&
                       (!levelAccount ||
-                        selectedPath ===
-                          source[`sourceDetail${level}Id` as 'sourceDetail4Id'])
+                        selectedPath === source[`sourceDetail${level}Id`])
                         ? 'bg-primary/5'
                         : ''
                     }
@@ -294,9 +305,12 @@ export function AccountingSubsidiaryMapping({
                         onValueChange={(value) =>
                           change(source, {
                             targetAccountId: value,
-                            detail4Id: null,
-                            detail5Id: null,
-                            detail6Id: null,
+                            ...Object.fromEntries(
+                              accountingDetailLevels.map((level) => [
+                                `detail${level}Id`,
+                                null,
+                              ]),
+                            ),
                           })
                         }
                         options={targetAccounts.map((item) => ({
@@ -305,7 +319,7 @@ export function AccountingSubsidiaryMapping({
                         }))}
                       />
                     </td>
-                    {([4, 5, 6] as const).map((level) => {
+                    {accountingDetailLevels.map((level) => {
                       const key = `detail${level}Id` as const;
                       const allowed =
                         target?.attributes[`detail${level}TypeIds`];
@@ -314,7 +328,13 @@ export function AccountingSubsidiaryMapping({
                         <td key={level} className="min-w-44 border p-1">
                           <SearchCombobox
                             label={`تفصیلی سطح ${level} برای ${label}`}
-                            disabled={!target}
+                            disabled={
+                              !target ||
+                              !isAccountingDetailLevelEnabled(
+                                target.attributes,
+                                level,
+                              )
+                            }
                             value={row?.[key] ?? ''}
                             onValueChange={(value) =>
                               change(source, { [key]: value || null })
@@ -323,6 +343,12 @@ export function AccountingSubsidiaryMapping({
                               .filter(
                                 (item) =>
                                   item.active &&
+                                  (level <= 6 ||
+                                    (target &&
+                                      accountingDetailTypeIds(
+                                        target.attributes,
+                                        level,
+                                      ).includes(item.typeId))) &&
                                   (!Array.isArray(allowed) ||
                                     !allowed.length ||
                                     allowed.includes(item.typeId)) &&
@@ -383,7 +409,7 @@ export function AccountingSubsidiaryMapping({
               </Button>
             </>
           ) : null}
-          {!levelAccount || level < 6 ? (
+          {!levelAccount || path.length + 1 < pathLevels.length ? (
             <Button
               type="button"
               variant="outline"

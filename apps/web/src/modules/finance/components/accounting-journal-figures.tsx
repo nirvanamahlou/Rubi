@@ -1,4 +1,5 @@
 'use client';
+import { accountingDetailLevels } from '@nora/contracts';
 import { Fragment, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ListTree, Coins, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -50,9 +51,7 @@ export function AccountingJournalFigures({
       book.book.id,
       kind,
       row?.accountId,
-      row?.detail4Id,
-      row?.detail5Id,
-      row?.detail6Id,
+      ...accountingDetailLevels.map((n) => row?.[`detail${n}Id`]),
       periodId,
       level,
       page,
@@ -66,12 +65,9 @@ export function AccountingJournalFigures({
         page: String(page),
         ...(periodId ? { periodId } : {}),
         ...Object.fromEntries(
-          [4, 5, 6]
+          accountingDetailLevels
             .filter((n) => n <= level)
-            .map((n) => [
-              `detail${n}Id`,
-              String(row?.[`detail${n}Id` as 'detail4Id'] ?? ''),
-            ]),
+            .map((n) => [`detail${n}Id`, String(row?.[`detail${n}Id`] ?? '')]),
         ),
       }),
   });
@@ -107,17 +103,12 @@ export function AccountingJournalFigures({
             aria-label="سطح گردش حساب"
             className="absolute bottom-full z-30 mb-1 min-w-32 rounded border bg-surface p-1 shadow-lg"
           >
-            {[3, 4, 5, 6].map((n) => (
+            {([3, ...accountingDetailLevels] as const).map((n) => (
               <button
                 key={n}
                 type="button"
                 role="menuitem"
-                disabled={
-                  n > 3 &&
-                  [4, 5, 6].some(
-                    (d) => d <= n && !row?.[`detail${d}Id` as 'detail4Id'],
-                  )
-                }
+                disabled={n !== 3 && !row?.[`detail${n}Id`]}
                 className="block w-full rounded px-3 py-2 text-right text-sm hover:bg-muted disabled:opacity-40"
                 onClick={() => open('document-turnover', n)}
               >
@@ -134,13 +125,7 @@ export function AccountingJournalFigures({
         onClick={() =>
           open(
             'document-fx-balance',
-            [4, 5, 6].reduce(
-              (current, n) =>
-                current === n - 1 && row?.[`detail${n}Id` as 'detail4Id']
-                  ? n
-                  : current,
-              3,
-            ),
+            accountingDetailLevels.findLast((n) => row?.[`detail${n}Id`]) ?? 3,
           )
         }
       >

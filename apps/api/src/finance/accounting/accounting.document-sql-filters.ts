@@ -1,3 +1,4 @@
+import { detailFields } from './accounting.detail-levels';
 import { Prisma } from '@nora/database';
 import * as v from './accounting.validation';
 
@@ -74,9 +75,12 @@ const lineFields: Record<string, Field> = {
   descriptionEn: attribute('l', 'descriptionEn'),
   trackingNumber: attribute('l', 'trackingNumber'),
   trackingDate: attribute('l', 'trackingDate', 'date'),
-  detail4Id: { sql: 'l."detail4Id"::text', kind: 'uuid' },
-  detail5Id: { sql: 'l."detail5Id"::text', kind: 'uuid' },
-  detail6Id: { sql: 'l."detail6Id"::text', kind: 'uuid' },
+  ...Object.fromEntries(
+    detailFields.map((field) => [
+      field,
+      { sql: `l."${field}"::text`, kind: 'uuid' as const },
+    ]),
+  ),
   accountId: { sql: 'l."accountId"::text', kind: 'uuid' },
   currency: { sql: 'l.currency', kind: 'text' },
   taxAccountType: attribute('l', 'taxAccountType'),
