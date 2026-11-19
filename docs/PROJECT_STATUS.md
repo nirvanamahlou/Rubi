@@ -10393,3 +10393,6 @@ The shared assistant guide catalog now includes Call Center and updated Workbenc
 ## تکمیل راهنمای کال‌سنتر نورا
 
 کاتالوگ با فیلترهای تماس امروز و واحد مسئول مخاطب، دریافت صوت از ایزابل، و گردش جداگانهٔ مسئول اجرا و بررسی مدیر هماهنگ شد. نورا شمارش کارت‌های کال‌سنتر را در محدودهٔ مجاز همان حساب می‌خواند. برای عنوان یا شناسهٔ درخواست، جست‌وجو حداکثر سه صفحه است و برای مورد مشخص، جزئیات مجاز درخواست پیش از پاسخ دوباره خوانده می‌شود. برای موارد مبهم، صف مجاز و درخواست شناسه راهنمای کاربر است. پذیرش حساب واقعی به نسخهٔ کاندید همان کامیت نیاز دارد.
+Tehran relative-day boundaries are computed once per request and exposed as runtime constants, with SQL placeholders bound before authorized query execution. Midnight regression and data-agent suite pass 26 tests.
+
+Runtime enforcement now accepts only the anchored reviewed contract-count SQL grammar for today/yesterday requests. Comments, joins, OR, UNION, arbitrary dates and mixed day tokens are rejected before querying. All-time count tool is refused for relative-day questions. Today is capped at the request observation instant. Other relative-day metrics/filters require clarification until a reviewed query contract exists. 39 regression tests and authenticated production comparison pass; both day counts match 3 and 2 in the selected company. Main health is 200.
