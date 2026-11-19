@@ -10,6 +10,21 @@ import {
 import { proxyAssistantConversation } from './proxy';
 
 describe('vetted Workbench guidance', () => {
+  it.each(
+    workbenchGuideCatalog.topics.map((topic) => [topic.id, topic] as const),
+  )(
+    'supports a named question, a next-step question and troubleshooting for %s',
+    (id, topic) => {
+      expect(resolveWorkbenchGuide(topic.title, topic.tab)?.topic?.id).toBe(id);
+      const followUp = resolveWorkbenchGuide('بعدش چی؟', topic.tab, id);
+      expect(followUp).toMatchObject({ goal: 'follow-up', topic: { id } });
+      const rendered = renderWorkbenchGuide(topic, 'troubleshoot');
+      expect(rendered).toContain(topic.path.join(' ← '));
+      for (const step of topic.steps) expect(rendered).toContain(step);
+      for (const instruction of topic.troubleshooting)
+        expect(rendered).toContain(instruction);
+    },
+  );
   it('clarifies an unknown Workbench procedure instead of sending it to the Sales SQL agent', () => {
     expect(
       resolveWorkbenchGuide('این گزینه کجاست؟', 'requests')?.clarification,

@@ -138,6 +138,7 @@ export function renderWorkbenchGuide(
   return [
     topic.title,
     `مسیر: ${topic.path.join(' ← ')}`,
+    `پیش‌نیاز:\n${topic.conditions.join('\n')}`,
     `مراحل:\n${topic.steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}`,
     ...(goal === 'troubleshoot'
       ? [`اگر متوقف شدید:\n${topic.troubleshooting.join('\n')}`]
