@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { MasterDataService } from './master-data.service';
+import { strFromU8, unzipSync } from 'fflate';
 import type { MasterDataRepository } from './master-data.repository';
 import type { MasterDataRecord } from '@nora/contracts';
 import { buildMasterDataXlsx } from './master-data.xlsx';
@@ -116,6 +117,11 @@ describe('hotel export native import compatibility', () => {
         expectedCityName: 'کیش',
       });
       expect(parsed.issues).toEqual([]);
+      const sheet = strFromU8(unzipSync(buffer)['xl/worksheets/sheet1.xml']!);
+      expect(sheet.indexOf('<dimension')).toBeLessThan(
+        sheet.indexOf('<sheetViews'),
+      );
+      expect(sheet).toContain('rightToLeft="1"');
       expect(parsed.rows).toHaveLength(1);
       expect(parsed.rows[0]).toMatchObject({
         code: 'HOTEL_TEST',

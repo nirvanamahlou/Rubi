@@ -9289,5 +9289,7 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "هر هتل یک ردیف؛ شناسه هتل ثابت و یکتا باشد. ستون‌های چندمقداری را با | جدا کنید.": "Use one row per hotel and keep each hotel identifier unique and stable. Separate multiple values with |.",
+  "منتشرشده": "Published"
 }
