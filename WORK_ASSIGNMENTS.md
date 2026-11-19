@@ -13146,3 +13146,5 @@ Reserve Nora catalog, Composer routing and Call Center read-only guide tests. Ba
 CI coverage reserves additive English overrides for new Call Center and inherited Documents assistant text on this branch.
 
 HOTEL-EXPORT-TEMPLATE-1119 bounded CI scope: reserve additive English labels for the new native worksheet guidance and API mirrors of its canonical status values. Preserve all peer catalogue entries and completeness assertions; no translation-policy or workflow changes.
+## NORA-TEHRAN-DAYS-1119 — PC-C
+Reserve assistant runtime day context, SQL placeholder binding and focused midnight regression. User authorizes production activation after tests. No schema or dependency changes.
