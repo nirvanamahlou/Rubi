@@ -84,6 +84,20 @@ function safeSnapshot(row: HotelImportSourceRow) {
   };
 }
 
+function hotelHours(rules: string | null) {
+  const time = '(?:[01][0-9]|2[0-3]):[0-5][0-9]';
+  const checkInTime = rules?.match(
+    new RegExp(`ورود از\\s+(${time})(?![0-9])`),
+  )?.[1];
+  const checkOutTime = rules?.match(
+    new RegExp(`خروج تا\\s+(${time})(?![0-9])`),
+  )?.[1];
+  return {
+    ...(checkInTime ? { checkInTime } : {}),
+    ...(checkOutTime ? { checkOutTime } : {}),
+  };
+}
+
 function branchOf(actor: AuthenticatedActor, requested?: string) {
   const branchId = requested ?? actor.branchIds[0];
   if (!branchId || !actor.branchIds.includes(branchId))
@@ -414,6 +428,8 @@ export class HotelImportService implements OnModuleDestroy {
             skippedCount += 1;
             continue;
           }
+          if (existing && existing.cityId !== session.cityId)
+            throw new ConflictException('کد هتل به شهر دیگری تعلق دارد.');
           const referenceKey = JSON.stringify([
             row.mealServiceCode,
             row.defaultRoomType,
@@ -432,30 +448,40 @@ export class HotelImportService implements OnModuleDestroy {
             const updated = await tx.masterHotel.updateMany({
               where: { id: existing.id, version: existing.version },
               data: {
-                ...(parsed.mapping['نام فارسی']
-                  ? { name: row.persianName || row.englishName }
-                  : {}),
+                name: row.persianName ?? existing.name,
                 englishName: row.englishName,
-                ...(parsed.mapping['وب‌سایت'] ? { website: row.website } : {}),
-                ...(parsed.mapping['فروش آزاد']
-                  ? { freeSale: row.freeSale }
-                  : {}),
-                cityId: session.cityId,
-                address: row.address,
-                description: row.description,
-                hotelRules: row.hotelRules,
-                serviceLevel: row.serviceLevel,
-                internalNote: row.internalNote,
-                sourceDestination: row.destination || null,
-                sourceRefundRules: row.refundRules,
-                sourceMainImage: row.mainImageSource,
-                sourceGalleryImages: row.galleryImageSources.join('|') || null,
-                sourceFeatured: row.featuredSource,
-                starRating: row.starRating,
-                mealServiceId: references.mealServiceId,
-                defaultRoomTypeId: references.roomTypeId,
-                isSaleableReference: row.isActive,
-                isActive: row.isActive,
+                website: row.website ?? existing.website,
+                freeSale: row.freeSale ?? existing.freeSale,
+                address: row.address ?? existing.address,
+                description: row.description ?? existing.description,
+                hotelRules: row.hotelRules ?? existing.hotelRules,
+                ...hotelHours(row.hotelRules),
+                serviceLevel: row.serviceLevel ?? existing.serviceLevel,
+                internalNote: row.internalNote ?? existing.internalNote,
+                sourceDestination:
+                  row.destination || existing.sourceDestination,
+                sourceRefundRules:
+                  row.refundRules ?? existing.sourceRefundRules,
+                sourceMainImage:
+                  row.mainImageSource ?? existing.sourceMainImage,
+                sourceGalleryImages:
+                  row.galleryImageSources.join('|') ||
+                  existing.sourceGalleryImages,
+                sourceFeatured: parsed.mapping['پرفروش']
+                  ? row.featuredSource
+                  : existing.sourceFeatured,
+                starRating: row.starRating ?? existing.starRating,
+                mealServiceId:
+                  references.mealServiceId ?? existing.mealServiceId,
+                defaultRoomTypeId:
+                  references.roomTypeId ?? existing.defaultRoomTypeId,
+                isSaleableReference:
+                  parsed.mapping['وضعیت'] && !row.isActive
+                    ? false
+                    : existing.isSaleableReference,
+                isActive: parsed.mapping['وضعیت']
+                  ? row.isActive
+                  : existing.isActive,
                 updatedByUserId: actor.userId,
                 version: { increment: 1 },
               },
@@ -465,15 +491,6 @@ export class HotelImportService implements OnModuleDestroy {
                 code: 'CONCURRENT_MODIFICATION',
                 message: `هتل ${row.code} هم‌زمان تغییر کرده است.`,
               });
-            await tx.masterHotelFacility.deleteMany({
-              where: { hotelId: existing.id },
-            });
-            await tx.masterHotelMealService.deleteMany({
-              where: { hotelId: existing.id },
-            });
-            await tx.masterHotelRoomType.deleteMany({
-              where: { hotelId: existing.id },
-            });
             await this.assignHotelCatalogs(
               tx,
               existing.id,
@@ -495,6 +512,7 @@ export class HotelImportService implements OnModuleDestroy {
                 address: row.address,
                 description: row.description,
                 hotelRules: row.hotelRules,
+                ...hotelHours(row.hotelRules),
                 serviceLevel: row.serviceLevel,
                 internalNote: row.internalNote,
                 sourceDestination: row.destination || null,

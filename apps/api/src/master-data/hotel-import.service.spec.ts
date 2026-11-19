@@ -84,13 +84,15 @@ describe('HotelImportService commit persistence', () => {
     '14-column template',
     'required fields only',
     'extended columns',
+    'existing hotel update',
   ])(
     'persists every valid parsed row from %s and writes audit records',
     async (source) => {
       const reduced = source === '14-column template';
       const extended = source === 'extended columns';
+      const updating = source === 'existing hotel update';
       const supplied = source === 'downloadable template' || reduced;
-      const requiredOnly = source === 'required fields only';
+      const requiredOnly = source === 'required fields only' || updating;
       const buffer = supplied
         ? readFileSync(
             resolve(
@@ -167,7 +169,14 @@ describe('HotelImportService commit persistence', () => {
           }),
         },
         masterHotel: {
-          findUnique: vi.fn().mockResolvedValue(null),
+          findUnique: vi
+            .fn()
+            .mockResolvedValue(
+              updating
+                ? { id: 'existing-hotel', cityId: session.cityId, version: 4 }
+                : null,
+            ),
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
           create: vi.fn().mockResolvedValue({
             id: '66666666-6666-4666-8666-666666666666',
           }),
@@ -237,12 +246,31 @@ describe('HotelImportService commit persistence', () => {
           {
             previewToken,
             idempotencyKey: '77777777-7777-4777-8777-777777777777',
-            duplicateBehavior: 'SKIP',
+            duplicateBehavior: updating ? 'UPDATE' : 'SKIP',
             createMissingReferences: true,
           },
           actor,
         );
 
+        if (updating) {
+          expect(tx.masterHotel.updateMany).toHaveBeenCalledWith({
+            where: { id: 'existing-hotel', version: 4 },
+            data: expect.objectContaining({
+              englishName: 'Bodrum Marina Hotel',
+              starRating: undefined,
+              sourceMainImage: undefined,
+              defaultRoomTypeId: undefined,
+              isActive: true,
+            }),
+          });
+          expect(tx.masterHotel.create).not.toHaveBeenCalled();
+          expect(tx.masterDataAuditEvent.create).toHaveBeenCalledWith({
+            data: expect.objectContaining({
+              action: 'master_data.hotel_import.update',
+            }),
+          });
+          return;
+        }
         expect(response.data).toMatchObject({
           status: MasterHotelImportStatus.COMPLETED,
           counts: { created: expectedHotels.length, updated: 0, skipped: 0 },
