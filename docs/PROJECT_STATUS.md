@@ -10378,3 +10378,5 @@ Validation: 46 focused API tests and 6 Web/i18n tests passed, including configur
 ## FORM-SAVE-SHORTCUT — PC-B
 
 Alt+S activates the save or register control of the focused form or active dialog using its existing submission path. Disabled and ambiguous actions are skipped.
+
+HOTEL-EXPORT-TEMPLATE-1119 — PC-A: hotel XLSX now uses canonical HOTEL_IMPORT_HEADERS and Hotels/راهنما sheets independently of generic UI columns/language. Preserves city-filtered pagination, original hotel codes, English/Persian names and imported profile fields; other resource exports unchanged. Native parser roundtrip and101-row city/audit pagination acceptance pass;86 focused tests. Owner authorizes tested develop merge and guarded API-only publication. No migration/dependency/data mutation.

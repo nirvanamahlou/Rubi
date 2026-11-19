@@ -13120,3 +13120,7 @@ SITE-COMMERCE-PUBLICATION-BRANCH-1118 final acceptance: private native contracts
 ## FORM-SAVE-SHORTCUT — PC-B — IMPLEMENTED
 
 Reserve the Web root layout and shared keyboard handler for Alt+S on the active form. Preserve local shortcuts and existing submit callbacks. No API, schema or dependency changes.
+
+## HOTEL-EXPORT-TEMPLATE-1119 — PC-A — ACTIVE
+
+Owner requests city-filtered hotel XLSX matching the native hotel import template, tested develop merge and guarded production update. Reserve master-data.xlsx.ts plus focused parser roundtrip tests and bounded accommodation export city validation. Preserve native list filters/pagination, permissions, audit, other exports and all hotel data. No schema/dependency changes. COMPUTER_ID=PC-A; branch codex/pc-a-hotel-export-template-1119 from4e6ab972f.
