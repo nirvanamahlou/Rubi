@@ -6,6 +6,7 @@ import {
   readDocumentGuide,
 } from './document-guides';
 
+import { normalizeQuestion } from './question-text';
 import { AssistantResponseContent } from './response-content';
 import { formatAssistantSources } from './response-presentation';
 import { useChatScroll } from './use-chat-scroll';
@@ -15,7 +16,12 @@ import {
   asksWorkbenchRequestStatus,
   describeWorkbenchRequest,
 } from './workbench-request-guide';
-import { readCallCenterRequestStatus } from './call-center-request-guide';
+import {
+  callCenterIntent,
+  callCenterQueueHref,
+  readCallCenterMetric,
+  readCallCenterRequestStatus,
+} from './call-center-request-guide';
 import { CallCenterHttpError } from '@/modules/call-center/client';
 import {
   customerAffairsApi,
@@ -558,14 +564,38 @@ function AssistantComposerContent({
       }
       return;
     }
-    const callCenterStatus =
-      workbenchTab === 'call-center' &&
-      asksWorkbenchRequestStatus(message.replace(/کال[‌ ]*سنتر/g, ''), true);
+    const callCenterStatus = callCenterIntent(
+      message,
+      workbenchTab === 'call-center',
+    );
+    if (callCenterStatus === 'report') {
+      replyLocally(
+        'این شمارش به بازه، کارشناس یا فیلتر تماس بستگی دارد. فیلترهای تماس امروز یا گزارش عملکرد کارشناسان را در کال‌سنتر بررسی کنید.',
+        undefined,
+        undefined,
+        {
+          href: '/customer-affairs/call-center',
+          label: 'کال‌سنتر',
+        },
+      );
+      return;
+    }
+    const workbenchStatus = asksWorkbenchRequestStatus(
+      message,
+      pathname === '/workbench',
+    );
     if (
-      callCenterStatus ||
-      (workbenchTab !== 'call-center' &&
-        asksWorkbenchRequestStatus(message, pathname === '/workbench'))
+      !callCenterStatus &&
+      workbenchStatus &&
+      pathname !== '/workbench' &&
+      /^(?:درخواستم|درخواست من)\s+(?:الان )?(?:دست|کجا|به کجا)/.test(
+        normalizeQuestion(message),
+      )
     ) {
+      replyLocally('درخواست مربوط به «میزکار من» است یا «کال‌سنتر»؟');
+      return;
+    }
+    if (callCenterStatus || workbenchStatus) {
       pending.current?.abort();
       const controller = new AbortController();
       pending.current = controller;
@@ -573,18 +603,27 @@ function AssistantComposerContent({
       try {
         if (callCenterStatus) {
           const answer = actor
-            ? await readCallCenterRequestStatus(
-                message,
-                actor,
-                controller.signal,
-              )
-            : 'اطلاعات دسترسی حساب برای خواندن صف آماده نیست.';
+            ? callCenterStatus === 'request'
+              ? await readCallCenterRequestStatus(
+                  message,
+                  actor,
+                  controller.signal,
+                )
+              : await readCallCenterMetric(
+                  callCenterStatus,
+                  actor,
+                  controller.signal,
+                )
+            : 'اطلاعات دسترسی حساب برای خواندن کال‌سنتر آماده نیست.';
           if (!controller.signal.aborted) {
             previousAnswer.current = undefined;
             workbenchTopic.current = undefined;
             replyLocally(answer, undefined, undefined, {
-              href: '/customer-affairs/call-center',
-              label: 'صف کال‌سنتر',
+              href:
+                callCenterStatus === 'request'
+                  ? callCenterQueueHref
+                  : '/customer-affairs/call-center',
+              label: 'کال‌سنتر',
             });
           }
           return;
