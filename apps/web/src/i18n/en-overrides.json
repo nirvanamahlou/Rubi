@@ -6151,6 +6151,7 @@
   "بارگذاری و پیگیری رسید پرداخت": "Upload and track a payment receipt",
   "بازبینی و ثبت نهایی قرارداد": "Review and submit a contract",
   "برای اصلاح، «قبلی» را بزنید و بخش مربوط را تکمیل کنید. پیش‌نمایش این مرحله هنوز شماره قرارداد ثبت‌شده ندارد.": "To make corrections, click \"Previous\" and complete the relevant section. The preview in this step does not yet have a saved contract number.",
+  "در فهرست، تاریخ بستن قرارداد و به‌روزرسانی بر اساس تهران و تاریخ رفت و برگشت بر اساس روز سفر، همگی به میلادی نمایش داده می‌شوند.": "The list uses Gregorian dates, with contract creation and update dates based on Tehran time and outbound and return dates based on the day of travel.",
   "برای بازگرداندن فهرست، «پاک‌کردن فیلترها» را بزنید. «خروجی Excel» نتایج فیلترشده را دریافت می‌کند.": "To reset the list, click \"Clear filters\". \"Excel export\" downloads the filtered results.",
   "برای بلیت، «دریافت بلیط مسافران» را بزنید. اگر پیام «سربرگ باید در رزرواسیون ثبت شود» دیده می‌شود، تنظیم سربرگ را از رزرواسیون پیگیری کنید.": "For tickets, click \"Download passenger tickets\". If \"The letterhead must be registered in Reservations\" appears, ask Reservations to set up the letterhead.",
   "برای پرداخت در چند موعد، ردیف‌های لازم را اضافه و مبلغ و سررسید هر ردیف را کنترل کنید.": "For payments on multiple dates, add the required rows and check each row's amount and due date.",
