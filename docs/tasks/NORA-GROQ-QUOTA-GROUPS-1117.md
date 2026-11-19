@@ -1,5 +1,9 @@
 # Correct false cross-organization Groq cooldowns — 2026-11-17
 
+## Superseding published status — reconciled2026-11-18
+
+PR1785 is merged at51551fd5e. Its final live receipt confirms provider-observed TPM sharing between primary/groq-2 and successful groq-3 failover without SQL replay. The subsequent PR1787 release preserves this pool; the Nov18 normalized comparison found all34 deployed runtime/guide files matching fetched develop. Older pending rollout statements below are historical. The new independent final matrix and candidate transport repairs are tracked in [NORA-FINAL-ACCEPTANCE-1118](NORA-FINAL-ACCEPTANCE-1118.md); that matrix is a separate gate.
+
 PC-C; branch `codex/pc-c-nora-quota-groups-1117`, base develop4d1182948;
 follows PR1778/1779.
 

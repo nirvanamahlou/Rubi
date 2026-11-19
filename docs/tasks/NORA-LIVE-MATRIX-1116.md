@@ -1,5 +1,7 @@
 # Nora actual model matrix — 2026-11-16 — PC-C
 
+Current acceptance restarted2026-11-18 from the latest merged source and existing remote Groq pool: [NORA-FINAL-ACCEPTANCE-1118](NORA-FINAL-ACCEPTANCE-1118.md). The historical results below are retained and are not carried forward as final-source passes.
+
 Owner requests the actual30-case matrix, root-cause repairs and a result report. Isolated branch codex/pc-c-nora-live-matrix-1116 from6204acc28; no production mutation or deployment. Actual Groq calls use the existing authenticated Germany-proxy transport; fixtures use unique disposable local PostgreSQL databases and restricted per-case reader logins. No real customer records are sent to the model.
 
 ## Evidence-led repairs

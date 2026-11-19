@@ -1,5 +1,9 @@
 # NORA-SALES-EVIDENCE-1117
 
+## Superseding release status — reconciled2026-11-18
+
+The final receipt at74dec8a71 on `codex/pc-c-nora-sales-evidence-release-1117` records PR1787 merged (428c5f86c; exact head5336b53e1f37bd021dd7dfe24c6aaa56998b919f), all10 CI gates passed, Nora-only activation and authenticated browser HTTP200/ANSWER acceptance of the original financial question.180 repository tests and158 mounted-source tests pass. Independent native count/currency/date/discount oracles match;3 model turns and2 reads. Source/runtime lease released. This supersedes the pending release statements retained below. It does not certify the separate30-case matrix; see [current acceptance](NORA-FINAL-ACCEPTANCE-1118.md).
+
 ## Reproduced defects
 
 A financial answer mentally converted a Persian date range one day early and used UTC civil boundaries instead of Tehran days. A contract with two currencies appeared twice in a detail result; the model then described currency-row count as contract count. The existing calculation explanation gate verified presence, not arithmetic or calendar truth. The source already subtracts discounts, contrary to the model explanation.

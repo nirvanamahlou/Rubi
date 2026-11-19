@@ -1015,7 +1015,7 @@ export function MasterDataAccommodationWorkspace() {
               <tr className="border-t border-border" key={record.id}>
                 <td className="p-4 font-mono" dir="ltr">
                   {tab === 'hotels'
-                    ? attribute(record, 'identificationCode', record.code)
+                    ? attribute(record, 'identificationCode')
                     : record.code}
                 </td>
                 <MasterDataLogoCell record={record} />
@@ -1200,18 +1200,12 @@ export function MasterDataAccommodationWorkspace() {
           />
           <MasterDataDetailItem label="Documents" value="—" />
         </MasterDataDetailSection>
-        <Alert
-          title="منابع فروش در ماژول‌های مالک مدیریت می‌شوند"
-          description="رزرو، موجودی، Voucher و تخصیص مسافر در Reservations و قرارداد و نرخ خرید در Procurement هستند."
-          tone="warning"
-        />
         <div className="grid gap-4 lg:grid-cols-2">
           <Card className="p-5">
             <h3 className="mb-4 flex items-center gap-2 font-black">
               <Hotel className="size-5" /> مشخصات پایه
             </h3>
             <dl className="grid gap-4 sm:grid-cols-2">
-              <Detail label="کد" value={selected.code} />
               <Detail label="درجه" value={stars || '—'} />
               <Detail label="نام فارسی" value={selected.name} />
               <Detail

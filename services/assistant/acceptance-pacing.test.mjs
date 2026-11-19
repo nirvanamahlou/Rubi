@@ -1,11 +1,62 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   acceptanceWaitMs,
   runAcceptanceCases,
+  verifiedCompletedCases,
 } from '../../scripts/operations/nora-agent/acceptance-pacing.mjs';
+
+test('resume accepts intact current-source receipts only and skips their passed scenarios', async () => {
+  const row = { id: 1, scenario: 'all', error: null, tokens: 10 };
+  const raw = JSON.stringify([row]);
+  const state = {
+    sourceHash: 'same',
+    cases: [
+      {
+        exitCode: 0,
+        receiptFile: 'nora-live-matrix-' + 'a'.repeat(32) + '.json',
+        receiptSha256: createHash('sha256').update(raw).digest('hex'),
+        ...row,
+        attempt: 1,
+        finishedAt: 'now',
+      },
+    ],
+  };
+  const completed = verifiedCompletedCases(state, 'same', () => raw);
+  const seen = [];
+  await runAcceptanceCases({
+    completed,
+    runCase: async (index) => {
+      seen.push(index);
+      return { exitCode: 0 };
+    },
+    wait: async () => assert.fail('healthy'),
+  });
+  assert.deepEqual(
+    seen,
+    Array.from({ length: 29 }, (_, index) => index + 2),
+  );
+  assert.throws(
+    () => verifiedCompletedCases(state, 'different', () => raw),
+    /SOURCE_CHANGED/,
+  );
+  assert.throws(
+    () => verifiedCompletedCases(state, 'same', () => raw + ' '),
+    /RECEIPT_CHANGED/,
+  );
+  assert.throws(
+    () =>
+      verifiedCompletedCases(
+        { ...state, cases: [{ ...state.cases[0], tokens: 999 }] },
+        'same',
+        () => raw,
+      ),
+    /RECEIPT_CHANGED/,
+  );
+});
 
 test('all30 healthy scenarios run immediately in order without initial/success sleeps', async () => {
   const seen = [];
@@ -96,6 +147,25 @@ test('real scenario failures never get retried or marked passed', async () => {
     /SCENARIO_1_FAILED_REVIEW_REQUIRED/,
   );
   assert.deepEqual(seen, [1]);
+});
+
+test('explicit diagnostic collection runs independent cases but never certifies failed oracles', async () => {
+  const seen = [];
+  await assert.rejects(
+    runAcceptanceCases({
+      continueOnFailure: true,
+      runCase: async (index) => {
+        seen.push(index);
+        return { exitCode: [9, 13].includes(index) ? 1 : 0 };
+      },
+      wait: async () => assert.fail('no quota delay'),
+    }),
+    /SCENARIOS_9_13_FAILED_REVIEW_REQUIRED/,
+  );
+  assert.deepEqual(
+    seen,
+    Array.from({ length: 30 }, (_, i) => i + 1),
+  );
 });
 
 test('exhausted quota retry budget does not perform a final useless sleep', async () => {

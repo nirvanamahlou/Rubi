@@ -1,3 +1,9 @@
+## 2026-11-18 — Nora final acceptance (PC-C)
+
+Handoff: [draft PR1791](https://github.com/nirvanamahlou/Rubi/pull/1791), code36c7e8f66. Live matrix BLOCKED_PROVIDER_QUOTA; idle runner/helper stopped, cases1–2 receipts verified intact.242 owned fixture databases/roles cleaned; no operational mutation or candidate activation.
+
+Latest fetched develop48d72de41 and the other computer's published Nora work are preserved. The final release receipt at74dec8a71 supersedes the older pending PR1787 statements below: Sales evidence correction is merged, activated and authenticated-browser accepted; PR1785 quota-group hardening is also merged. Independent30-case acceptance has uncovered and corrected citation transcription, schema/FK discovery, calculation formatting, relay connection reuse and quota/resume defects.195 current service regressions,73 SQL/access/PostgreSQL tests, API typecheck/build and scoped lint pass. Full final-source acceptance remains incomplete: cases1–2 pass; subsequent execution waits for provider-confirmed daily TPD capacity on the existing six-key pool. Owner has no additional key. No migration, merge or production activation in this unit. Current source fingerprint, evidence and remaining gate: [NORA-FINAL-ACCEPTANCE-1118](tasks/NORA-FINAL-ACCEPTANCE-1118.md).
+
 ## 2026-11-18 — ACCOUNT-DETAIL-LEVELS-1118 — PC-D
 
 Subsidiary account forms expose levels 4–8 by default and add one account-local level at a time up to 12. Independent type selections persist on the account. Additional detail references flow through journal entry, posting, reports, templates and subsidiary mappings. A real PostgreSQL regression posts and reports a level-7 detail with level 6 empty. The full scoped results are in [ACCOUNT-DETAIL-LEVELS-1118](tasks/ACCOUNT-DETAIL-LEVELS-1118.md).
@@ -10348,6 +10354,10 @@ Hotel create/edit forms now support one main image and a six-image gallery. Uplo
 ## CHECKOUT-ADVISORY-1117 — PC-A — ACTIVE
 
 COMPUTER_ID=PC-A; branch codex/pc-a-checkout-advisory-1117 from develop4d1182948. User reports ERP checkout connection failure and requests real flight/passenger confirmation before Saman payment, with ten-minute inventory acquisition only on the explicit payment action. Reserve only WebsiteCheckoutHoldsService prepare advisory command, one isolated PostgreSQL regression and own append-only task/status notes. Production read-only diagnostic proved P2010: pg_advisory_xact_lock returns PostgreSQL void, which Prisma queryRaw cannot deserialize. Use executeRaw for this command, preserving the identical transaction-scoped lock key and all ownership/replay/capacity/quote/expiry rules. No schema, migration, dependency, permission or financial mutation. Site consumer/UI changes are separate files; no active overlapping writer found. Merge/release use existing user publication authorization and exact-head quality/test/build/DB gates, latest-runtime source/image CAS and shared deployment lock. No live synthetic orders/holds/payments.
+## 2026-11-19 — Nora hybrid provider (PC-C)
+
+Implemented opt-in Groq/OpenAI routing and organization-aware OpenAI key failover. CI and operational activation remain separate. The current production relay does not establish an OpenAI HTTP connection. See [release prerequisites](tasks/NORA-HYBRID-PRODUCTION-1119.md).
+
 # 2026-11-18 — FLOATING-PACKAGE-RESTORE-1118 — PC-A
 
 Reproduced missing floating-package card on current production code as a manual-v3 access inheritance defect, not missing source/controller/migration. Owner approves only sales.pricing.management -> sales.pricing.floating inheritance with explicit denial and native write permissions preserved. Five focused access cases,40 API import/service/manual-policy tests and3 Web floating/hub tests pass. Separate feature-only main backport and guarded Web-only publication are pending their own validation; no business-data or live-grant changes. See [task](tasks/FLOATING-PACKAGE-RESTORE-1118.md).

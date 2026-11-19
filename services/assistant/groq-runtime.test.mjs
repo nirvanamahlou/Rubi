@@ -18,6 +18,74 @@ const env = {
 };
 const signal = () => new AbortController().signal;
 const guide = { version: 1, topicId: 'leave', goal: 'steps' };
+
+test('hybrid runtime keeps simple prompts on Groq and sends analysis to OpenAI', () => {
+  const hybrid = { ...env, ASSISTANT_MODEL_PROVIDER: 'hybrid' };
+  assert.throws(() => groqConfigurations(hybrid), /CONFIGURATION_INVALID/);
+  const { agent } = groqConfigurations({
+    ...hybrid,
+    OPENAI_API_KEY: 'synthetic-openai',
+  });
+  for (const message of ['سلام', 'تعداد قراردادهای خودم چقدر است؟'])
+    assert.equal(
+      agent.selectProvider({ message, history: [] }).model,
+      'openai/gpt-oss-120b',
+    );
+  for (const message of [
+    'فروش امروز؟',
+    'مبلغ فروش به تفکیک ارز را برای دو هفته مقایسه کن',
+  ])
+    assert.equal(
+      agent.selectProvider({ message, history: [] }).model,
+      'gpt-4.1',
+    );
+  assert.equal(
+    agent.selectProvider({
+      message: 'سلام',
+      history: [{ role: 'user', content: 'داده' }],
+    }).model,
+    'gpt-4.1',
+  );
+});
+
+test('OpenAI rotation skips shared exhausted quota and revalidates before another credential', async () => {
+  const calls = [];
+  const pool = createGroqKeyPool({
+    provider: 'openai',
+    entries: [
+      { id: 'one', organization: 'group-a', apiKey: 'synthetic-one' },
+      { id: 'peer', organization: 'group-a', apiKey: 'synthetic-peer' },
+      { id: 'other', organization: 'group-b', apiKey: 'synthetic-other' },
+    ],
+    fetcher: async (_url, init) => {
+      calls.push(init.headers.get('authorization'));
+      return calls.length === 1
+        ? Response.json(
+            { error: { code: 'insufficient_quota' } },
+            { status: 429 },
+          )
+        : Response.json({ ok: true });
+    },
+  });
+  const budget = { attempts: 0, retryTokens: 0 };
+  const result = await pool.fetch(
+    'https://api.openai.com/v1/chat/completions',
+    { method: 'POST', redirect: 'error', body: '{}' },
+    {
+      attemptBudget: budget,
+      beforeRetry: async () => {
+        calls.push('auth-rechecked');
+      },
+    },
+  );
+  assert.equal(result.status, 200);
+  assert.deepEqual(calls, [
+    'Bearer synthetic-one',
+    'auth-rechecked',
+    'Bearer synthetic-other',
+  ]);
+  assert.equal(budget.attempts, 2);
+});
 test('one runtime shares organization cooldown between guide and data Agent', async () => {
   let calls = 0;
   const configs = groqConfigurations(env, {
