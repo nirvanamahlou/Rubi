@@ -64,6 +64,7 @@ export function validateDataAgentMessage(input) {
 export function createDataAgent({
   enabled = false,
   provider,
+  selectProvider,
   erpBaseUrl,
   fetcher = fetch,
   now = () => new Date(),
@@ -73,6 +74,7 @@ export function createDataAgent({
   return async (input, { cookie, signal }) => {
     if (!enabled) throw new ServiceError(503, 'AGENT_DISABLED');
     const request = validateDataAgentMessage(input);
+    const activeProvider = selectProvider?.(request) ?? provider;
     const nativeStep = nativeCountRoute(request);
     let financialRequest;
     try {
@@ -225,7 +227,7 @@ export function createDataAgent({
       try {
         step = nativeStep
           ? nativeStep(messages)
-          : await provider.step(messages, {
+          : await activeProvider.step(messages, {
               signal,
               remainingTokens: 40000 - tokens - attemptBudget.retryTokens,
               attemptBudget,
@@ -290,7 +292,9 @@ export function createDataAgent({
           event: 'assistant.agent.usage',
           requestId,
           turn: turn + 1,
-          model: step.native ? 'native-count' : 'openai/gpt-oss-120b',
+          model: step.native
+            ? 'native-count'
+            : (activeProvider.model ?? 'openai/gpt-oss-120b'),
           ...usageCounters({
             total_tokens: step.tokens,
             prompt_tokens: usage?.promptTokens,
@@ -432,7 +436,9 @@ export function createDataAgent({
             audit({
               requestId,
               version: 1,
-              model: step.native ? 'native-count' : 'openai/gpt-oss-120b',
+              model: step.native
+                ? 'native-count'
+                : (activeProvider.model ?? 'openai/gpt-oss-120b'),
               queryHash: output.queryHash,
               sources: output.sources,
               rowCount: output.rows.length,

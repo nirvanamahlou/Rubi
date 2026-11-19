@@ -121,10 +121,10 @@ export function createWorkbenchGuideSelector({
 
 export function workbenchGuideConfiguration(
   env = process.env,
-  { transport } = {},
+  { transport, openaiTransport } = {},
 ) {
   // Reuse the existing Germany-only startup admission; never add a direct fallback.
   if (env.ASSISTANT_AGENT_ENABLED !== 'true') return {};
-  dataAgentConfiguration(env, { transport });
+  dataAgentConfiguration(env, { transport, openaiTransport });
   return transport ? { transport } : { apiKey: env.GROQ_API_KEY };
 }

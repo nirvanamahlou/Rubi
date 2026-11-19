@@ -128,10 +128,17 @@ const quotaUnit = (error) =>
 /** Credentials and cooldown metadata only; never retain prompts, users or evidence. */
 export function createGroqKeyPool({
   entries,
+  provider = 'groq',
   fetcher = fetch,
   now = Date.now,
   audit = () => {},
 }) {
+  if (!['groq', 'openai'].includes(provider))
+    throw new Error('INVALID_POOL_PROVIDER');
+  const openai = provider === 'openai';
+  const endpoint = openai
+    ? 'https://api.openai.com/v1/chat/completions'
+    : ENDPOINT;
   const keys = validateGroqCredentials({ version: 1, keys: entries }).map(
     (entry) => ({ ...entry, ...state(), disabled: entry.enabled === false }),
   );
@@ -153,7 +160,7 @@ export function createGroqKeyPool({
     try {
       audit(
         Object.freeze({
-          event: 'assistant.groq.pool',
+          event: `assistant.${provider}.pool`,
           keyId: key.id,
           category,
           attempt,
@@ -249,7 +256,7 @@ export function createGroqKeyPool({
       } = {},
     ) {
       if (
-        url !== ENDPOINT ||
+        url !== endpoint ||
         init?.method !== 'POST' ||
         init.redirect !== 'error' ||
         typeof init.body !== 'string'
@@ -342,11 +349,26 @@ export function createGroqKeyPool({
             emit(key, 'group-access-denied', attempt);
             return new Response(null, { status: 403 });
           } else {
+            const at = now();
+            const expires =
+              openai &&
+              [
+                'insufficient_quota',
+                'billing_hard_limit_reached',
+                'credit_balance_exhausted',
+              ].includes(error.code);
             const until =
-              now() + groqRetryDelay(response.headers, now(), quotaUnit(error));
+              at +
+              (expires
+                ? 15 * 60_000
+                : groqRetryDelay(
+                    response.headers,
+                    at,
+                    openai ? 'TPM' : quotaUnit(error),
+                  ));
             block(key, until);
             const org = group('org:' + key.organization);
-            if (scope === 'organization') {
+            if (openai || scope === 'organization') {
               block(org, until);
               const observed = providerOrganization(error);
               if (observed) {

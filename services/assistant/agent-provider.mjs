@@ -114,12 +114,10 @@ export function createAgentProvider({
   fetcher = fetch,
   now = Date.now,
 } = {}) {
-  if (
-    !['groq', 'openai'].includes(provider) ||
-    (provider === 'openai' && transport)
-  )
+  if (!['groq', 'openai'].includes(provider))
     throw new Error('INVALID_AGENT_PROVIDER');
   const openai = provider === 'openai';
+  const model = openai ? 'gpt-4.1' : 'openai/gpt-oss-120b';
   if (transport && typeof transport.fetch !== 'function')
     throw new Error('GROQ_SHARED_POOL_REQUIRED');
   if (
@@ -129,6 +127,7 @@ export function createAgentProvider({
     throw new Error('AGENT_PROVIDER_KEY_REQUIRED');
   let unavailableUntil = 0;
   return {
+    model,
     async step(
       messages,
       {
@@ -313,7 +312,7 @@ export function createAgentProvider({
             'SQL identifiers and output aliases must use lowercase ASCII letters, digits and underscores, e.g. contract_count. Keep the displayed answer in the user language. If the user asks about this month without specifying a calendar, ask whether they mean the Persian or Gregorian month before any query. If confirmed payments are requested but payments is absent from the authorized source list, explain that payment data is unavailable in this scope. Contract status and contractual amounts never establish whether a payment happened. Do not query substitute sources for unavailable payment data.',
         });
       const body = JSON.stringify({
-        model: openai ? 'gpt-4.1' : 'openai/gpt-oss-120b',
+        model,
         temperature: 0,
         ...(!openai ? { reasoning_effort: 'low' } : {}),
         max_completion_tokens: 2048,
