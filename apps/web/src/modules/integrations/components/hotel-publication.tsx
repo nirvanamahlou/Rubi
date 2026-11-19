@@ -1,11 +1,76 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import {
+  ArrowUpRight,
+  Check,
+  Globe2,
+  LoaderCircle,
+  Settings2,
+  X,
+} from 'lucide-react';
 import type { MasterDataRecord } from '@nora/contracts';
 import { masterDataApi } from '../../master-data/api/client';
 import Link from '@/i18n/link';
 import { localizedFetch } from '@/i18n/localized-fetch';
 import { getPublicApiBaseUrl } from '@/lib/environment';
+
+export function HotelPublicationAction({
+  id,
+  name,
+}: {
+  id: string;
+  name: string;
+}) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+  const label = `انتشار ${name} در سایت`;
+
+  return (
+    <>
+      <button
+        type="button"
+        aria-label={label}
+        aria-haspopup="dialog"
+        title={label}
+        onClick={() => dialog.current?.showModal()}
+        className="inline-flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/5 text-primary transition hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-primary"
+      >
+        <Globe2 aria-hidden="true" className="size-[18px]" />
+      </button>
+      <dialog
+        ref={dialog}
+        aria-labelledby={titleId}
+        className="m-auto w-[calc(100%-2rem)] max-w-md overflow-auto rounded-2xl border border-border bg-background p-0 text-foreground shadow-xl backdrop:bg-slate-950/45"
+      >
+        <header className="flex items-center justify-between gap-3 border-b border-border bg-primary/5 px-5 py-4 text-start">
+          <div className="min-w-0">
+            <h2 id={titleId} className="font-bold text-primary">
+              مدیریت انتشار در سایت
+            </h2>
+            <p
+              dir="auto"
+              className="mt-1 break-words text-sm text-muted-foreground"
+            >
+              {name}
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label="بستن"
+            onClick={() => dialog.current?.close()}
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted"
+          >
+            <X aria-hidden="true" className="size-4" />
+          </button>
+        </header>
+        <div className="p-5">
+          <HotelPublication id={id} />
+        </div>
+      </dialog>
+    </>
+  );
+}
 
 export function HotelPublication({
   id,
@@ -52,29 +117,53 @@ export function HotelPublication({
     }
   }
   return (
-    <div className="grid gap-2 rounded-lg border bg-background p-3 text-start text-sm">
+    <div className="grid gap-3 rounded-xl border border-border bg-background p-3 text-start text-sm">
       <div className="flex items-center justify-between gap-3">
-        <strong>جهان باستان</strong>
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+            <Globe2 aria-hidden="true" className="size-[18px]" />
+          </span>
+          <strong>جهان باستان</strong>
+        </div>
         <button
           type="button"
           onClick={publish}
           disabled={busy}
           aria-label="ثبت هتل در جهان باستان"
+          className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg bg-primary px-3 font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
         >
-          {busy ? 'در حال ثبت…' : '✓ ثبت'}
+          {busy ? (
+            <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
+          ) : (
+            <Check aria-hidden="true" className="size-4" />
+          )}
+          {busy ? 'در حال ثبت…' : 'ثبت'}
         </button>
       </div>
-      {message && <span role="status">{message}</span>}
+      {message && (
+        <span
+          role="status"
+          className={`rounded-lg px-3 py-2 ${url ? 'bg-emerald-500/10 text-emerald-700' : 'bg-amber-500/10 text-amber-700'}`}
+        >
+          {message}
+        </span>
+      )}
       {url && (
-        <a className="underline" href={url}>
+        <a
+          className="inline-flex items-center gap-2 font-medium text-primary hover:underline"
+          href={url}
+        >
           مشاهده صفحه هتل
+          <ArrowUpRight aria-hidden="true" className="size-4" />
         </a>
       )}
       {!manage && (
         <Link
+          className="flex items-center gap-2 border-t border-border pt-3 font-medium text-primary hover:underline"
           href={'/integrations?view=hotels&hotelId=' + encodeURIComponent(id)}
         >
-          مدیریت انتشار در سایت
+          <Settings2 aria-hidden="true" className="size-4" /> مدیریت انتشار در
+          سایت
         </Link>
       )}
     </div>
