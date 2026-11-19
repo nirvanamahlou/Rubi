@@ -329,7 +329,9 @@ function AssistantComposerContent({
   const workbenchTab =
     pathname === '/workbench'
       ? (searchParams.get('tab') ?? 'today')
-      : undefined;
+      : pathname === '/customer-affairs/call-center'
+        ? 'call-center'
+        : undefined;
   const workbenchTopic = useRef<string | undefined>(undefined);
   const lastVersion = useRef<number | undefined>(undefined);
   const contractId = useRef<string | undefined>(undefined);
@@ -452,6 +454,7 @@ function AssistantComposerContent({
       message,
       previousAnswer.current,
       Boolean(pathname?.startsWith('/sales')),
+      workbenchTab === 'call-center',
     );
     const guideQuestion = decision.guideQuestion ?? message;
     const guidanceAllowed = decision.kind === 'guide';

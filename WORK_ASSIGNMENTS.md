@@ -13098,3 +13098,7 @@ SITE-COMMERCE-PUBLICATION-BRANCH-1118 final acceptance: private native contracts
 ## FORM-SAVE-SHORTCUT — PC-B — IMPLEMENTED
 
 Reserve the Web root layout and shared keyboard handler for Alt+S on the active form. Preserve local shortcuts and existing submit callbacks. No API, schema or dependency changes.
+
+## NORA-OPERATION-GUIDES-1119 — PC-C
+
+Reserve Nora procedural catalog and assistant-only routing for Call Center and updated Workbench. Base origin/develop 1d4d83f5b. Preserve Call Center UI under CALL-CENTER-UI-PRESERVATION; no migration or deployment.
