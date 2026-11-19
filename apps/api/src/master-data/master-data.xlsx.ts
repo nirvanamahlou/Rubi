@@ -335,8 +335,8 @@ export function buildMasterDataXlsx(input: {
   const range = `A1:${lastColumn}${lastRow}`;
   const worksheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <sheetViews><sheetView workbookViewId="0" rightToLeft="${!hotelTemplate && input.locale === 'en-US' ? '0' : '1'}"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
   <dimension ref="${range}"/>
+  <sheetViews><sheetView workbookViewId="0" rightToLeft="${!hotelTemplate && input.locale === 'en-US' ? '0' : '1'}"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
   <sheetData><row r="1">${header}</row>${dataRows}</sheetData>
   <autoFilter ref="${range}"/>
 </worksheet>`;
