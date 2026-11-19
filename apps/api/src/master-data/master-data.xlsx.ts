@@ -11,6 +11,12 @@ function hotelImportValues(record: MasterDataRecord): readonly unknown[] {
       .map((x) => x.trim())
       .filter(Boolean)
       .join('|');
+  const primary = (ids: unknown, values: unknown, selected: unknown) => {
+    const keys = String(ids ?? '').split(',');
+    const labels = String(values ?? '').split(',');
+    const index = keys.indexOf(String(selected ?? ''));
+    return labels[index >= 0 ? index : 0]?.trim() ?? '';
+  };
   return [
     record.code,
     a.englishName || record.name,
@@ -19,8 +25,8 @@ function hotelImportValues(record: MasterDataRecord): readonly unknown[] {
     a.address,
     a.starRating,
     a.serviceLevel,
-    pipes(a.mealServiceCodes),
-    pipes(a.roomTypeNames),
+    primary(a.mealServiceIds, a.mealServiceCodes, a.mealServiceId),
+    primary(a.roomTypeIds, a.roomTypeNames, a.defaultRoomTypeId),
     pipes(a.facilityNames),
     a.description,
     a.sourceRefundRules,
