@@ -293,6 +293,7 @@ function AssistantComposerContent({
   floating?: boolean;
   agentMode?: boolean;
 }) {
+  const actor = useAccessActor();
   const inputId = useId();
   const input = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState('');
