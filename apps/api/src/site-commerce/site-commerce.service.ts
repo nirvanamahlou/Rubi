@@ -6,7 +6,11 @@ import {
   type VerifiedGatewayProof,
 } from '../finance/payments/verified-gateway-receipt.public';
 import { ageCounts } from '../ticket-catalog/ticket-age-fares';
-import { websitePresentation } from './publication-presentation';
+import { passengerRate } from '../package-pricing/passenger-rates';
+import {
+  previewRateKinds,
+  websitePresentation,
+} from './publication-presentation';
 import { DocumentsService } from '../documents/documents.service';
 import {
   attachAirlineLogos,
@@ -542,18 +546,22 @@ export class SiteCommerceService {
                     row.periodKey,
                   ),
                 }
-              : {
-                  tour: await this.websiteTour(row.resourceId, scoped),
-                  rooms: previewOnly
-                    ? []
-                    : (
-                        await this.packages.saleCatalog(
-                          row.resourceId,
-                          scoped,
-                          scoped.branchIds[0],
-                        )
-                      ).data,
-                };
+              : await (async () => {
+                  const tour = await this.websiteTour(row.resourceId, scoped);
+                  const pricing = previewOnly
+                    ? { data: [], passengerRates: [] }
+                    : await this.packages.saleCatalog(
+                        row.resourceId,
+                        scoped,
+                        scoped.branchIds[0],
+                      );
+                  return {
+                    tour,
+                    rooms: pricing.data,
+                    passengerRates: pricing.passengerRates ?? [],
+                  };
+                })();
+
         if (
           'tour' in product &&
           product.tour &&
@@ -582,6 +590,41 @@ export class SiteCommerceService {
               ])
             : undefined;
         if (presentation && 'tour' in product && product.tour) {
+          const previewRate = presentation.previewHotelRate;
+          if (previewOnly && previewRate?.breakdown) {
+            const tour = product.tour;
+            const breakdown = previewRate.breakdown;
+            if (
+              previewRate.checkIn >= tour.startsOn &&
+              previewRate.checkOut <= tour.endsOn
+            ) {
+              product.passengerRates = tour.package.hotelIds.flatMap(
+                (hotelId) =>
+                  previewRateKinds.flatMap((kind) => {
+                    const rate = passengerRate(
+                      {
+                        kind,
+                        hotelId,
+                        roomTypeName: '',
+                        checkIn: previewRate.checkIn,
+                        checkOut: previewRate.checkOut,
+                      },
+                      [{ currencyCode: 'IRR', amount: breakdown.hotel[kind] }],
+                      [
+                        {
+                          currencyCode: 'IRR',
+                          amount:
+                            kind === 'childWithBed'
+                              ? breakdown.childFlightIrr
+                              : breakdown.adultFlightIrr,
+                        },
+                      ],
+                    );
+                    return rate ? [rate] : [];
+                  }),
+              );
+            }
+          }
           product.tour.package = {
             ...product.tour.package,
             ...(presentation.title ? { name: presentation.title } : {}),

@@ -47,6 +47,7 @@ import {
   type TourRoomCurrencyAmount,
 } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
+import { passengerRate, type PassengerRate } from './passenger-rates';
 import { PackagePricingService } from './package-pricing.service';
 
 const roomCodes = [
@@ -316,14 +317,17 @@ export class PackageTourPricingService {
     tourId: string,
     actor: AuthenticatedActor,
     branchId?: string,
-  ): Promise<{ data: PackagePublishedSaleV1[] }> {
+  ): Promise<{
+    data: PackagePublishedSaleV1[];
+    passengerRates: PassengerRate[];
+  }> {
     if (!actor.permissions.includes('sales.contracts.create'))
       throw new ForbiddenException('مجوز ایجاد قرارداد وجود ندارد.');
     const grid = await this.pricing.tourCostGrid(tourId, actor);
     if (branchId && grid.tour.branchId !== branchId)
       throw new ForbiddenException('مجوز ایجاد قرارداد وجود ندارد.');
     if (grid.tour.isActive === false || grid.tour.isDeleted === true)
-      return { data: [] };
+      return { data: [], passengerRates: [] };
     const drafts = await this.database.client.packagePricingTourDraft.findMany({
       where: { tourDepartureId: tourId, branchId: grid.tour.branchId },
       include: {
@@ -336,6 +340,7 @@ export class PackageTourPricingService {
       },
     });
     const data: PackagePublishedSaleV1[] = [];
+    const passengerRates: PassengerRate[] = [];
     for (const draft of drafts) {
       const batch = packageTourSelectionBatch(grid, draft.batchId);
       const publication = draft.publications[0];
@@ -353,6 +358,17 @@ export class PackageTourPricingService {
           priceBasis: 'HOTEL_ONLY',
         })),
       }));
+      const pricedRooms: {
+        group: string;
+        identity: NonNullable<ReturnType<typeof packageRoomIdentity>>;
+        childWithBed: boolean;
+        info: Pick<
+          PassengerRate,
+          'hotelId' | 'roomTypeName' | 'checkIn' | 'checkOut'
+        >;
+        hotel: PassengerRate['hotel'];
+        flight: PassengerRate['flight'];
+      }[] = [];
       for (const price of [...publication.roomPrices, ...combinedPrices]) {
         const combination = combinedQuotes.find(
           (q) => q.roomCode === price.roomCode,
@@ -425,14 +441,41 @@ export class PackageTourPricingService {
               grid.tour.returning?.cabinClassCode === 'BUSINESS',
             commissionPercent: '0',
           }).currencyAmounts;
-          prices = publishedSaleTotals([
-            { prices },
-            {
-              prices: airfare
-                .filter((p) => !/^0(?:\.0+)?$/.test(p.sale))
-                .map((p) => ({ currencyCode: p.currencyCode, amount: p.sale })),
-            },
-          ]);
+          const flight = airfare
+            .filter((p) => !/^0(?:\.0+)?$/.test(p.sale))
+            .map((p) => ({ currencyCode: p.currencyCode, amount: p.sale }));
+          if (!combination) {
+            const age = identity.childAges[0];
+            const hotel = batch.rows.find((r) => r.id === price.hotelRateId);
+            const childWithBed = !!hotel?.roomRates
+              .find((room) => room.roomTypeId === identity.roomTypeId)
+              ?.occupancyRates?.some(
+                (rate) =>
+                  rate.board === identity.board &&
+                  rate.childAges.length === 1 &&
+                  rate.childAges[0]?.min === age?.min &&
+                  rate.childAges[0]?.maxExclusive === age?.maxExclusive &&
+                  /CWB|CHD\s*WB|with\s*bed|با\s*تخت/i.test(rate.composition),
+              );
+            pricedRooms.push({
+              group: JSON.stringify([
+                price.hotelRateId,
+                identity.roomTypeId,
+                identity.board,
+              ]),
+              identity,
+              childWithBed,
+              info: {
+                hotelId: row.hotelId,
+                roomTypeName: price.roomTypeName ?? '',
+                checkIn: grid.tour.startsOn,
+                checkOut: grid.tour.endsOn,
+              },
+              hotel: prices,
+              flight,
+            });
+          }
+          prices = publishedSaleTotals([{ prices }, { prices: flight }]);
         }
         data.push({
           publicationId: publication.id,
@@ -446,8 +489,55 @@ export class PackageTourPricingService {
           prices,
         });
       }
+      const doubles = new Map(
+        pricedRooms
+          .filter(
+            (row) =>
+              row.identity.adults === 2 && !row.identity.childAges.length,
+          )
+          .map((row) => [row.group, row]),
+      );
+      for (const row of pricedRooms) {
+        const { adults, childAges } = row.identity;
+        const base = doubles.get(row.group);
+        let rate: PassengerRate | null = null;
+        if (!childAges.length && adults === 1)
+          rate = passengerRate(
+            { ...row.info, kind: 'single' },
+            row.hotel,
+            row.flight,
+          );
+        if (!childAges.length && adults === 2)
+          rate = passengerRate(
+            { ...row.info, kind: 'double' },
+            row.hotel,
+            row.flight,
+            undefined,
+            2,
+          );
+        if (!childAges.length && adults === 3 && base)
+          rate = passengerRate(
+            { ...row.info, kind: 'extra' },
+            row.hotel,
+            row.flight,
+            base,
+          );
+        if (adults === 2 && childAges.length === 1 && row.childWithBed && base)
+          rate = passengerRate(
+            {
+              ...row.info,
+              kind: 'childWithBed',
+              childAgeMin: childAges[0]!.min,
+              childAgeMaxExclusive: childAges[0]!.maxExclusive,
+            },
+            row.hotel,
+            row.flight,
+            base,
+          );
+        if (rate) passengerRates.push(rate);
+      }
     }
-    return { data };
+    return { data, passengerRates };
   }
 
   async get(

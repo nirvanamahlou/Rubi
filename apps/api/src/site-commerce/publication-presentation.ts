@@ -1,8 +1,22 @@
 import { BadRequestException } from '@nestjs/common';
+export const previewRateKinds = [
+  'double',
+  'single',
+  'childWithBed',
+  'extra',
+] as const;
+type PreviewRates = Record<(typeof previewRateKinds)[number], string>;
+const isAmount = (value: unknown): value is string =>
+  typeof value === 'string' && /^[1-9]\d{0,14}$/.test(value);
 export type PreviewHotelRate = {
   checkIn: string;
   checkOut: string;
   amountIrr: string;
+  breakdown?: {
+    hotel: PreviewRates;
+    adultFlightIrr: string;
+    childFlightIrr: string;
+  };
 };
 
 function previewHotelRate(value: unknown): PreviewHotelRate | null {
@@ -25,10 +39,30 @@ function previewHotelRate(value: unknown): PreviewHotelRate | null {
     !/^[1-9]\d{0,14}$/.test(rate.amountIrr)
   )
     throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
+  const breakdown = rate.breakdown;
+  if (
+    breakdown !== undefined &&
+    (!breakdown?.hotel ||
+      !isAmount(breakdown.adultFlightIrr) ||
+      !isAmount(breakdown.childFlightIrr) ||
+      previewRateKinds.some((kind) => !isAmount(breakdown.hotel[kind])))
+  )
+    throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
   return {
     checkIn: rate.checkIn,
     checkOut: rate.checkOut,
     amountIrr: rate.amountIrr,
+    ...(breakdown
+      ? {
+          breakdown: {
+            adultFlightIrr: breakdown.adultFlightIrr,
+            childFlightIrr: breakdown.childFlightIrr,
+            hotel: Object.fromEntries(
+              previewRateKinds.map((kind) => [kind, breakdown.hotel[kind]]),
+            ) as PreviewRates,
+          },
+        }
+      : {}),
   };
 }
 

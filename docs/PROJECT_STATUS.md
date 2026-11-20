@@ -10406,3 +10406,7 @@ Scheduled tours can be previewed on the destination site before prices are publi
 ### Dated website preview hotel rates
 
 The existing preview publication accepts an optional dated, display-only room rate with a positive rial amount. Checkout continues to use actual room publications.
+
+### Website passenger rates
+
+Fixed package projections expose single and double per-person amounts, child-with-bed rates from marked bands, and third-person supplements when a double and a triple share the same room and board. Preview amounts remain display-only.
