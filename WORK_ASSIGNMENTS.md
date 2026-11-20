@@ -13164,3 +13164,7 @@ Reserve website publication presentation validation and the NSS preview pricing 
 ## NSS-PASSENGER-RATES-1120 — PC-A
 
 Reserve package pricing website projection and preview rate presentation. Publish passenger rates with hotel and airfare components from comparable room compositions. Contract sale rows and pricing authorizations retain their existing behavior.
+
+## NSS-SALE-CATALOG-COMPAT — PC-A
+
+Scope is package sale response compatibility and the website catalogue consumer. Passenger display rates are requested explicitly by the website publisher. Checkout reads retain the existing response contract.

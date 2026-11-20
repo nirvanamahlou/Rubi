@@ -554,6 +554,7 @@ export class SiteCommerceService {
                         row.resourceId,
                         scoped,
                         scoped.branchIds[0],
+                        true,
                       );
                   return {
                     tour,
