@@ -13156,3 +13156,7 @@ HOTEL-IMPORT-PRESERVE-1119 — PC-B. Scope: hotel import service and tests only,
 ## NSS-TOUR-PREVIEW-1120 — PC-A
 
 Branch codex/pc-a-nss-tour-parity from develop 5cb83b395. Scope: additive website catalogue preview for scheduled tours, with sale disabled and no pricing publication required. Site consumer keeps previews out of listings and checkout. Reserve the site-commerce publication and catalogue projection. Existing sale, payment, and document flows are outside this change.
+
+## NSS-PREVIEW-RATES-1120 — PC-A
+
+Reserve website publication presentation validation and the NSS preview pricing contract. A display-only rate is separate from a published sale, keeps checkout disabled, and must fit the scheduled tour dates.
