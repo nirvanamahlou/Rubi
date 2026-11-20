@@ -317,9 +317,10 @@ export class PackageTourPricingService {
     tourId: string,
     actor: AuthenticatedActor,
     branchId?: string,
+    includePassengerRates = false,
   ): Promise<{
     data: PackagePublishedSaleV1[];
-    passengerRates: PassengerRate[];
+    passengerRates?: PassengerRate[];
   }> {
     if (!actor.permissions.includes('sales.contracts.create'))
       throw new ForbiddenException('مجوز ایجاد قرارداد وجود ندارد.');
@@ -327,7 +328,7 @@ export class PackageTourPricingService {
     if (branchId && grid.tour.branchId !== branchId)
       throw new ForbiddenException('مجوز ایجاد قرارداد وجود ندارد.');
     if (grid.tour.isActive === false || grid.tour.isDeleted === true)
-      return { data: [], passengerRates: [] };
+      return { data: [] };
     const drafts = await this.database.client.packagePricingTourDraft.findMany({
       where: { tourDepartureId: tourId, branchId: grid.tour.branchId },
       include: {
@@ -444,19 +445,21 @@ export class PackageTourPricingService {
           const flight = airfare
             .filter((p) => !/^0(?:\.0+)?$/.test(p.sale))
             .map((p) => ({ currencyCode: p.currencyCode, amount: p.sale }));
-          if (!combination) {
+          if (includePassengerRates && !combination) {
             const age = identity.childAges[0];
             const hotel = batch.rows.find((r) => r.id === price.hotelRateId);
-            const childWithBed = !!hotel?.roomRates
-              .find((room) => room.roomTypeId === identity.roomTypeId)
-              ?.occupancyRates?.some(
-                (rate) =>
-                  rate.board === identity.board &&
-                  rate.childAges.length === 1 &&
-                  rate.childAges[0]?.min === age?.min &&
-                  rate.childAges[0]?.maxExclusive === age?.maxExclusive &&
-                  /CWB|CHD\s*WB|with\s*bed|با\s*تخت/i.test(rate.composition),
-              );
+            const childWithBed =
+              !!age &&
+              !!hotel?.roomRates
+                ?.find((room) => room.roomTypeId === identity.roomTypeId)
+                ?.occupancyRates?.some(
+                  (rate) =>
+                    rate.board === identity.board &&
+                    rate.childAges.length === 1 &&
+                    rate.childAges[0]?.min === age?.min &&
+                    rate.childAges[0]?.maxExclusive === age?.maxExclusive &&
+                    /CWB|CHD\s*WB|with\s*bed|با\s*تخت/i.test(rate.composition),
+                );
             pricedRooms.push({
               group: JSON.stringify([
                 price.hotelRateId,
@@ -537,7 +540,7 @@ export class PackageTourPricingService {
         if (rate) passengerRates.push(rate);
       }
     }
-    return { data, passengerRates };
+    return includePassengerRates ? { data, passengerRates } : { data };
   }
 
   async get(
