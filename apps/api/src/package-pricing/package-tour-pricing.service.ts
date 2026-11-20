@@ -448,16 +448,18 @@ export class PackageTourPricingService {
           if (includePassengerRates && !combination) {
             const age = identity.childAges[0];
             const hotel = batch.rows.find((r) => r.id === price.hotelRateId);
-            const childWithBed = !!age && !!hotel?.roomRates?
-              .find((room) => room.roomTypeId === identity.roomTypeId)
-              ?.occupancyRates?.some(
-                (rate) =>
-                  rate.board === identity.board &&
-                  rate.childAges.length === 1 &&
-                  rate.childAges[0]?.min === age?.min &&
-                  rate.childAges[0]?.maxExclusive === age?.maxExclusive &&
-                  /CWB|CHD\s*WB|with\s*bed|با\s*تخت/i.test(rate.composition),
-              );
+            const childWithBed =
+              !!age &&
+              !!hotel?.roomRates
+                ?.find((room) => room.roomTypeId === identity.roomTypeId)
+                ?.occupancyRates?.some(
+                  (rate) =>
+                    rate.board === identity.board &&
+                    rate.childAges.length === 1 &&
+                    rate.childAges[0]?.min === age?.min &&
+                    rate.childAges[0]?.maxExclusive === age?.maxExclusive &&
+                    /CWB|CHD\s*WB|with\s*bed|با\s*تخت/i.test(rate.composition),
+                );
             pricedRooms.push({
               group: JSON.stringify([
                 price.hotelRateId,
