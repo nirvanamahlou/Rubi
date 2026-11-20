@@ -538,6 +538,16 @@ export class SiteCommerceService {
           });
           continue;
         }
+        const hotels =
+          'tour' in product && product.tour && product.rooms
+            ? await this.publishedHotelProfiles([
+                ...product.tour.package.hotelIds,
+                ...product.rooms.flatMap((room) => [
+                  room.hotelId,
+                  ...(room.stays ?? []).map((stay) => stay.hotelId),
+                ]),
+              ])
+            : undefined;
         const presentation = row.presentation
           ? websitePresentation(row.presentation)
           : undefined;
@@ -582,6 +592,7 @@ export class SiteCommerceService {
           ...(capacityStopped ? { capacityStopped: true } : {}),
           version: row.version,
           ...product,
+          ...(hotels ? { hotels } : {}),
           ...(presentation ? { presentation } : {}),
         });
       } catch (error) {
@@ -631,6 +642,34 @@ export class SiteCommerceService {
       commerceSites[site].origin,
     );
     return { version: 1, data, airlineLogos, cancelledOrders };
+  }
+
+  private publishedHotelProfiles(ids: string[]) {
+    return this.db.client.masterHotel.findMany({
+      where: { id: { in: [...new Set(ids)] }, isActive: true },
+      select: {
+        id: true,
+        name: true,
+        englishName: true,
+        description: true,
+        address: true,
+        starRating: true,
+        hotelRules: true,
+        sourceRefundRules: true,
+        sourceMainImage: true,
+        sourceGalleryImages: true,
+        serviceLevel: true,
+        latitude: true,
+        longitude: true,
+        city: {
+          select: {
+            name: true,
+            country: { select: { code: true, name: true } },
+          },
+        },
+        facilities: { select: { facility: { select: { name: true } } } },
+      },
+    });
   }
 
   private async websiteTour(id: string, actor: AuthenticatedActor) {
