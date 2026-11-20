@@ -13160,3 +13160,7 @@ Branch codex/pc-a-nss-tour-parity from develop 5cb83b395. Scope: additive websit
 ## NSS-PREVIEW-RATES-1120 — PC-A
 
 Reserve website publication presentation validation and the NSS preview pricing contract. A display-only rate is separate from a published sale, keeps checkout disabled, and must fit the scheduled tour dates.
+
+## NSS-PASSENGER-RATES-1120 — PC-A
+
+Reserve package pricing website projection and preview rate presentation. Publish passenger rates with hotel and airfare components from comparable room compositions. Contract sale rows and pricing authorizations retain their existing behavior.
