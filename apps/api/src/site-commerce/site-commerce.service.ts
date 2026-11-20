@@ -317,15 +317,22 @@ export class SiteCommerceService {
       input.presentation === undefined
         ? undefined
         : websitePresentation(input.presentation);
+    const currentPresentation = row?.presentation
+      ? websitePresentation(row.presentation)
+      : undefined;
     const previewOnly =
-      incoming?.previewOnly ??
-      (row?.presentation
-        ? websitePresentation(row.presentation).previewOnly
-        : false);
+      incoming?.previewOnly ?? currentPresentation?.previewOnly ?? false;
+    const previewHotelRate =
+      incoming?.previewHotelRate !== undefined
+        ? incoming.previewHotelRate
+        : currentPresentation?.previewHotelRate;
     const presentation = incoming && {
       ...incoming,
       ...(previewOnly ? { previewOnly: true } : {}),
+      ...(previewOnly && previewHotelRate ? { previewHotelRate } : {}),
     };
+    if (!previewOnly && incoming?.previewHotelRate)
+      throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
     if ((presentation && kind === 'ticket') || (previewOnly && kind !== 'tour'))
       throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
     if (kind === 'ticket') {
@@ -346,7 +353,16 @@ export class SiteCommerceService {
         input.enabled,
       );
     } else {
-      await this.tours.pricingDeparture(resourceId, [branchId]);
+      const departure = await this.tours.pricingDeparture(resourceId, [
+        branchId,
+      ]);
+      if (
+        previewOnly &&
+        previewHotelRate &&
+        (previewHotelRate.checkIn < departure.startsOn ||
+          previewHotelRate.checkOut > departure.endsOn)
+      )
+        throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
       if (
         input.enabled &&
         !previewOnly &&

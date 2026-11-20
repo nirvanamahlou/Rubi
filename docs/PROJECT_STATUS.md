@@ -10402,3 +10402,7 @@ HOTEL-IMPORT-PRESERVE-1119: Excel UPDATE preserves existing room, service and fa
 ## NSS tour previews
 
 Scheduled tours can be previewed on the destination site before prices are published. The publication projects the existing itinerary, flights, and hotel profiles while keeping website sales disabled.
+
+### Dated website preview hotel rates
+
+The existing preview publication accepts an optional dated, display-only room rate with a positive rial amount. Checkout continues to use actual room publications.
