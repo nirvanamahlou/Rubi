@@ -1173,8 +1173,14 @@ export class MasterDataService {
         : value;
     return profiles.map((profile) => ({
       ...profile,
-      sourceMainImage: profile.sourceMainImage ? publicImage(profile.sourceMainImage.trim()) : null,
-      sourceGalleryImages: profile.sourceGalleryImages?.split('|').map((url) => publicImage(url.trim())).join('|') ?? null,
+      sourceMainImage: profile.sourceMainImage
+        ? publicImage(profile.sourceMainImage.trim())
+        : null,
+      sourceGalleryImages:
+        profile.sourceGalleryImages
+          ?.split('|')
+          .map((url) => publicImage(url.trim()))
+          .join('|') ?? null,
     }));
   }
 
