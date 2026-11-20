@@ -1042,6 +1042,34 @@ export class MasterDataRepository {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
+  publishedHotelProfiles(ids: string[]) {
+    return this.database.client.masterHotel.findMany({
+      where: { id: { in: [...new Set(ids)] }, isActive: true },
+      select: {
+        id: true,
+        name: true,
+        englishName: true,
+        description: true,
+        address: true,
+        starRating: true,
+        hotelRules: true,
+        sourceRefundRules: true,
+        sourceMainImage: true,
+        sourceGalleryImages: true,
+        serviceLevel: true,
+        latitude: true,
+        longitude: true,
+        city: {
+          select: {
+            name: true,
+            country: { select: { code: true, name: true } },
+          },
+        },
+        facilities: { select: { facility: { select: { name: true } } } },
+      },
+    });
+  }
+
   async list(
     resource: MasterDataResource,
     query: MasterDataListQuery,

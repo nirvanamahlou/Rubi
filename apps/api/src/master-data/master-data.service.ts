@@ -1164,6 +1164,26 @@ export class MasterDataService {
     private readonly contactCrypto: MasterDataContactCrypto = undefined as never,
   ) {}
 
+  async publishedHotelProfiles(ids: string[]) {
+    const profiles = await this.repository.publishedHotelProfiles(ids);
+    // Hotel uploads already have a public, content-addressed image route.
+    const publicImage = (value: string) =>
+      /^\/api\/v1\/master-data\/hotel-images\/[a-f0-9]{64}\.webp$/.test(value)
+        ? new URL(value, 'https://avinaofficial.ir').href
+        : value;
+    return profiles.map((profile) => ({
+      ...profile,
+      sourceMainImage: profile.sourceMainImage
+        ? publicImage(profile.sourceMainImage.trim())
+        : null,
+      sourceGalleryImages:
+        profile.sourceGalleryImages
+          ?.split('|')
+          .map((url) => publicImage(url.trim()))
+          .join('|') ?? null,
+    }));
+  }
+
   resource(value: string) {
     return resourceOf(value);
   }

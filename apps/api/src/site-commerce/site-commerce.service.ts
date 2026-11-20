@@ -538,6 +538,16 @@ export class SiteCommerceService {
           });
           continue;
         }
+        const hotels =
+          'tour' in product && product.tour && product.rooms
+            ? await this.references.publishedHotelProfiles([
+                ...product.tour.package.hotelIds,
+                ...product.rooms.flatMap((room) => [
+                  room.hotelId,
+                  ...(room.stays ?? []).map((stay) => stay.hotelId),
+                ]),
+              ])
+            : undefined;
         const presentation = row.presentation
           ? websitePresentation(row.presentation)
           : undefined;
@@ -582,6 +592,7 @@ export class SiteCommerceService {
           ...(capacityStopped ? { capacityStopped: true } : {}),
           version: row.version,
           ...product,
+          ...(hotels ? { hotels } : {}),
           ...(presentation ? { presentation } : {}),
         });
       } catch (error) {
