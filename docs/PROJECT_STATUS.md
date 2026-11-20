@@ -10398,3 +10398,7 @@ Tehran relative-day boundaries are computed once per request and exposed as runt
 Runtime enforcement now accepts only the anchored reviewed contract-count SQL grammar for today/yesterday requests. Comments, joins, OR, UNION, arbitrary dates and mixed day tokens are rejected before querying. All-time count tool is refused for relative-day questions. Today is capped at the request observation instant. Other relative-day metrics/filters require clarification until a reviewed query contract exists. 39 regression tests and authenticated production comparison pass; both day counts match 3 and 2 in the selected company. Main health is 200.
 
 HOTEL-IMPORT-PRESERVE-1119: Excel UPDATE preserves existing room, service and facility assignments and keeps blank profile values. Same-city guard and explicit check-in/out extraction are applied in the existing audited transaction. 86 focused tests, scoped lint and API TypeScript passed. No schema or dependency changes.
+
+## NSS tour previews
+
+Scheduled tours can be previewed on the destination site before prices are published. The publication projects the existing itinerary, flights, and hotel profiles while keeping website sales disabled.

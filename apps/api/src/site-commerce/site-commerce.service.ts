@@ -301,6 +301,33 @@ export class SiteCommerceService {
       throw new ForbiddenException();
     const branchId = this.publicationBranch(site, actor, input.branchId);
     const periodKey = this.publicationPeriod(kind, input.periodKey ?? '');
+    const key = {
+      siteCode: site,
+      kind,
+      resourceId,
+      branchId,
+      periodKey,
+    };
+    const row = await this.db.client.websitePublication.findUnique({
+      where: { siteCode_branchId_kind_resourceId_periodKey: key },
+    });
+    if ((row?.version ?? 0) !== input.version)
+      throw new ConflictException('وضعیت انتشار تغییر کرده است.');
+    const incoming =
+      input.presentation === undefined
+        ? undefined
+        : websitePresentation(input.presentation);
+    const previewOnly =
+      incoming?.previewOnly ??
+      (row?.presentation
+        ? websitePresentation(row.presentation).previewOnly
+        : false);
+    const presentation = incoming && {
+      ...incoming,
+      ...(previewOnly ? { previewOnly: true } : {}),
+    };
+    if ((presentation && kind === 'ticket') || (previewOnly && kind !== 'tour'))
+      throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
     if (kind === 'ticket') {
       await this.tickets.documentSupply(resourceId, [branchId]);
       if (input.enabled)
@@ -322,6 +349,7 @@ export class SiteCommerceService {
       await this.tours.pricingDeparture(resourceId, [branchId]);
       if (
         input.enabled &&
+        !previewOnly &&
         !(
           await this.packages.websitePublicationCandidates({
             ...actor,
@@ -331,24 +359,6 @@ export class SiteCommerceService {
       )
         throw new BadRequestException('قیمت منتشرشده پکیج الزامی است.');
     }
-    const presentation =
-      input.presentation === undefined
-        ? undefined
-        : websitePresentation(input.presentation);
-    if (presentation && kind === 'ticket')
-      throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
-    const key = {
-      siteCode: site,
-      kind,
-      resourceId,
-      branchId,
-      periodKey,
-    };
-    const row = await this.db.client.websitePublication.findUnique({
-      where: { siteCode_branchId_kind_resourceId_periodKey: key },
-    });
-    if ((row?.version ?? 0) !== input.version)
-      throw new ConflictException('وضعیت انتشار تغییر کرده است.');
     if (!row)
       return {
         data: await this.db.client.websitePublication.create({
@@ -356,7 +366,7 @@ export class SiteCommerceService {
             ...key,
             ...(presentation ? { presentation } : {}),
             enabled: input.enabled,
-            salesStopped: input.salesStopped ?? false,
+            salesStopped: previewOnly || (input.salesStopped ?? false),
           },
         }),
       };
@@ -365,7 +375,7 @@ export class SiteCommerceService {
       data: {
         enabled: input.enabled,
         ...(presentation ? { presentation } : {}),
-        salesStopped: input.salesStopped ?? row.salesStopped,
+        salesStopped: previewOnly || (input.salesStopped ?? row.salesStopped),
         version: { increment: 1 },
       },
     });
@@ -494,6 +504,11 @@ export class SiteCommerceService {
         continue;
       }
       try {
+        const presentation = row.presentation
+          ? websitePresentation(row.presentation)
+          : undefined;
+        const previewOnly =
+          row.kind === 'tour' && presentation?.previewOnly === true;
         const product =
           row.kind === 'ticket'
             ? {
@@ -513,13 +528,15 @@ export class SiteCommerceService {
                 }
               : {
                   tour: await this.websiteTour(row.resourceId, scoped),
-                  rooms: (
-                    await this.packages.saleCatalog(
-                      row.resourceId,
-                      scoped,
-                      scoped.branchIds[0],
-                    )
-                  ).data,
+                  rooms: previewOnly
+                    ? []
+                    : (
+                        await this.packages.saleCatalog(
+                          row.resourceId,
+                          scoped,
+                          scoped.branchIds[0],
+                        )
+                      ).data,
                 };
         if (
           'tour' in product &&
@@ -548,9 +565,6 @@ export class SiteCommerceService {
                 ]),
               ])
             : undefined;
-        const presentation = row.presentation
-          ? websitePresentation(row.presentation)
-          : undefined;
         if (presentation && 'tour' in product && product.tour) {
           product.tour.package = {
             ...product.tour.package,
@@ -588,7 +602,8 @@ export class SiteCommerceService {
           ...(row.kind === 'floating-tour' ? { periodKey: row.periodKey } : {}),
           enabled: true,
           // Stock exhaustion is a reversible projection, never a manual publication edit.
-          salesStopped: row.salesStopped || capacityStopped,
+          salesStopped: previewOnly || row.salesStopped || capacityStopped,
+          ...(previewOnly ? { previewOnly: true } : {}),
           ...(capacityStopped ? { capacityStopped: true } : {}),
           version: row.version,
           ...product,
