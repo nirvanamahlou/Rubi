@@ -30,6 +30,7 @@ import {
 } from './site-commerce.policy';
 import { SiteCommerceService } from './site-commerce.service';
 import { SiteCommerceWriteGuard } from './site-commerce-write.guard';
+import type { FloatingWebsiteBooking } from './floating-tour-booking';
 
 @Controller('sales/site-commerce/v1/:site')
 @UseGuards(AuthGuard, SiteCommerceWriteGuard)
@@ -92,7 +93,9 @@ export class SiteCommerceController {
     @Req() req: AuthenticatedRequest,
     @Query('floatingTours') floatingTours?: string,
   ) {
-    return this.service.catalog(site, req.actor, floatingTours === 'true');
+    return floatingTours === 'only'
+      ? this.service.catalog(site, req.actor, true, true)
+      : this.service.catalog(site, req.actor, floatingTours === 'true');
   }
   @Post('hotel-profiles/:id')
   @Header('Cache-Control', 'private, no-store')
@@ -173,6 +176,35 @@ export class SiteCommerceController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.status(site, id, req.actor);
+  }
+  @Post('floating-orders/:externalId')
+  @Header('Cache-Control', 'private, no-store')
+  floatingDraft(
+    @Param('site') site: string,
+    @Param('externalId') id: string,
+    @Body() body: FloatingWebsiteBooking,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.draftFloating(site, id, body, req.actor);
+  }
+  @Post('floating-preview')
+  @Header('Cache-Control', 'private, no-store')
+  floatingPreview(
+    @Param('site') site: string,
+    @Body() body: FloatingWebsiteBooking,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.previewFloating(site, body, req.actor);
+  }
+  @Post('floating-holds/:externalId')
+  @Header('Cache-Control', 'private, no-store')
+  floatingHold(
+    @Param('site') site: string,
+    @Param('externalId') id: string,
+    @Body() body: Parameters<SiteCommerceService['holdFloating']>[2],
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.holdFloating(site, id, body, req.actor);
   }
   @Post('orders/:externalId/paid')
   paid(

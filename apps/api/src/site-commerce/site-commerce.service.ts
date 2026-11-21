@@ -44,8 +44,19 @@ import { TravelWorkflowService } from '../reservations/travel-workflow.service';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import { ReservationTicketDocumentsService } from '../reservations/reservation-ticket-documents';
 import { salesContractFlights, isFloatingSalesContract } from '@nora/contracts';
-import { passengerAgeCategory } from '../sales/sales.domain';
+import {
+  passengerAgeCategory,
+  validateSalesContract,
+} from '../sales/sales.domain';
+import { assertFloatingFlightAirports } from '../sales/floating-flight-airports';
 import { websiteFlightQuotes } from './ticket-quote';
+import {
+  floatingBookingIdentity,
+  floatingNativeDraft,
+  floatingWebsiteRooms,
+  validateFloatingBooking,
+  type FloatingWebsiteBooking,
+} from './floating-tour-booking';
 import {
   actorSite,
   assertWebsiteDraft,
@@ -493,13 +504,18 @@ export class SiteCommerceService {
     site: string,
     actor: AuthenticatedActor,
     includeFloating = false,
+    floatingOnly = false,
   ) {
     const scoped = this.scoped(site, actor);
     const rows = await this.db.client.websitePublication.findMany({
       where: {
         siteCode: site,
         branchId: scoped.branchIds[0]!,
-        ...(!includeFloating ? { kind: { in: ['ticket', 'tour'] } } : {}),
+        ...(floatingOnly
+          ? { kind: 'floating-tour' }
+          : !includeFloating
+            ? { kind: { in: ['ticket', 'tour'] } }
+            : {}),
       },
       orderBy: { id: 'asc' },
       take: 501,
@@ -580,16 +596,33 @@ export class SiteCommerceService {
           });
           continue;
         }
+        const floatingTour =
+          'floatingTour' in product ? product.floatingTour : undefined;
+        const floatingRooms = floatingTour?.dated.some(
+          (price) => price.flightSchedule,
+        )
+          ? await floatingWebsiteRooms(
+              floatingTour,
+              await this.packages.buyRates(),
+              this.references,
+            )
+          : [];
         const hotels =
-          'tour' in product && product.tour && product.rooms
-            ? await this.references.publishedHotelProfiles([
-                ...product.tour.package.hotelIds,
-                ...product.rooms.flatMap((room) => [
-                  room.hotelId,
-                  ...(room.stays ?? []).map((stay) => stay.hotelId),
-                ]),
-              ])
-            : undefined;
+          floatingTour && floatingRooms.length
+            ? await this.references.publishedHotelProfiles(
+                floatingRooms.flatMap((room) =>
+                  room.stays.map((stay) => stay.hotelId),
+                ),
+              )
+            : 'tour' in product && product.tour && product.rooms
+              ? await this.references.publishedHotelProfiles([
+                  ...product.tour.package.hotelIds,
+                  ...product.rooms.flatMap((room) => [
+                    room.hotelId,
+                    ...(room.stays ?? []).map((stay) => stay.hotelId),
+                  ]),
+                ])
+              : undefined;
         if (presentation && 'tour' in product && product.tour) {
           const previewRate = presentation.previewHotelRate;
           if (previewOnly && previewRate?.breakdown) {
@@ -667,6 +700,7 @@ export class SiteCommerceService {
           ...(capacityStopped ? { capacityStopped: true } : {}),
           version: row.version,
           ...product,
+          ...(floatingTour ? { floatingRooms } : {}),
           ...(hotels ? { hotels } : {}),
           ...(presentation ? { presentation } : {}),
         });
@@ -1037,6 +1071,160 @@ export class SiteCommerceService {
     return this.status(site, externalId, actor);
   }
 
+  private async quoteFloating(
+    site: string,
+    scoped: AuthenticatedActor,
+    input: FloatingWebsiteBooking,
+  ) {
+    const publication = await this.db.client.websitePublication.findFirst({
+      where: {
+        id: input.publicationId,
+        siteCode: site,
+        branchId: scoped.branchIds[0]!,
+        kind: 'floating-tour',
+        enabled: true,
+        salesStopped: false,
+      },
+    });
+    if (!publication)
+      throw new ConflictException('این محصول برای سایت منتشر نشده است.');
+    const product = await this.floatingProduct(
+      publication.resourceId,
+      scoped.branchIds,
+      publication.periodKey,
+    );
+    const choices = await floatingWebsiteRooms(
+      product,
+      await this.packages.buyRates(),
+      this.references,
+    );
+    const draft = floatingNativeDraft(input, product.package, choices);
+    try {
+      validateSalesContract(draft, true);
+    } catch (error) {
+      if (error instanceof Error) throw new BadRequestException(error.message);
+      throw error;
+    }
+    await assertFloatingFlightAirports(draft.services, this.references);
+    return draft;
+  }
+
+  async previewFloating(
+    site: string,
+    input: FloatingWebsiteBooking,
+    actor: AuthenticatedActor,
+  ) {
+    const scoped = this.scoped(site, actor);
+    validateFloatingBooking(input);
+    return { data: await this.quoteFloating(site, scoped, input) };
+  }
+
+  async holdFloating(
+    site: string,
+    externalId: string,
+    body: {
+      booking: FloatingWebsiteBooking;
+      customerExternalId: string;
+      expiresNotAfter: string;
+    },
+    actor: AuthenticatedActor,
+  ) {
+    const scoped = this.scoped(site, actor);
+    validateFloatingBooking(body?.booking);
+    if (!this.checkoutHolds)
+      throw new ConflictException('درخواست رزرو خرید معتبر نیست.');
+    return this.checkoutHolds.prepareFloating(
+      site,
+      externalId,
+      floatingBookingIdentity(body.booking),
+      body.customerExternalId,
+      body.expiresNotAfter,
+      () => this.quoteFloating(site, scoped, body.booking),
+      actor,
+    );
+  }
+
+  async draftFloating(
+    site: string,
+    externalId: string,
+    input: FloatingWebsiteBooking,
+    actor: AuthenticatedActor,
+  ) {
+    const scoped = this.scoped(site, actor);
+    externalOrderId(externalId);
+    validateFloatingBooking(input);
+    const fingerprint = stableFingerprint({ floating: input });
+    const key = { siteCode: site, branchId: scoped.branchIds[0]!, externalId };
+    const where = { siteCode_branchId_externalId: key };
+    const clash = () =>
+      new ConflictException('شناسه سفارش با اطلاعات متفاوت استفاده شده است.');
+    const previous = await this.db.client.websiteOrder.findUnique({ where });
+    if (previous) {
+      if (previous.fingerprint !== fingerprint) throw clash();
+      return this.status(site, externalId, actor);
+    }
+    const createKey = `site:${site}:${externalId}`;
+    const recovered = await this.sales.createdByKey(createKey, scoped);
+    let contractId: string;
+    if (recovered) {
+      if (
+        !recovered.data.servicesDetail?.some(
+          (service) =>
+            service.metadata?.websiteFloatingFingerprint === fingerprint,
+        )
+      )
+        throw clash();
+      contractId = recovered.data.id;
+    } else {
+      const hold = await this.db.client.websiteCheckoutSession.findUnique({
+        where,
+      });
+      const quote = hold?.quoteSnapshot as
+        { floatingDraft?: SalesContractCreateRequest } | undefined;
+      const draft = quote?.floatingDraft;
+      if (
+        !hold ||
+        hold.status !== 'VERIFIED' ||
+        !hold.resolutionFingerprint ||
+        hold.fingerprint !== floatingBookingIdentity(input) ||
+        !draft
+      )
+        throw new ConflictException('ابتدا تأیید بانک لازم است.');
+      const metadata = {
+        ...draft.services[0]!.metadata,
+        sourceSite: site,
+        externalOrderId: externalId,
+        websiteFloatingFingerprint: fingerprint,
+      };
+      const created = await this.sales.create(
+        {
+          ...draft,
+          customerId: input.customerId,
+          passengers: draft.passengers.map((person, index) => ({
+            ...person,
+            customerId: input.passengers[index]!.customerId,
+            displayNameSnapshot: input.passengers[index]!.displayNameSnapshot,
+          })),
+          services: [
+            { ...draft.services[0]!, metadata },
+            ...draft.services.slice(1),
+          ],
+        },
+        scoped,
+        key.branchId,
+        createKey,
+      );
+      contractId = created.data.id;
+    }
+    const saved = await this.db.client.websiteOrder.upsert({
+      where,
+      create: { ...key, fingerprint, contractId },
+      update: {},
+    });
+    if (saved.fingerprint !== fingerprint) throw clash();
+    return this.status(site, externalId, actor);
+  }
+
   private async order(
     site: string,
     externalId: string,
@@ -1080,6 +1268,11 @@ export class SiteCommerceService {
         contractVersion: contract.version,
         balances: contract.balances,
         ticketSelections: contract.ticketSelections,
+        ...(contract.servicesDetail?.some(
+          (service) => service.metadata?.websiteFloatingFingerprint,
+        )
+          ? { floatingFlights: salesContractFlights(contract.servicesDetail) }
+          : {}),
         hotelSelection: contract.hotelSelection,
         services: contract.servicesDetail,
       },
@@ -1132,6 +1325,28 @@ export class SiteCommerceService {
     if (row.paymentFingerprint && row.paymentFingerprint !== fingerprint)
       throw new ConflictException('رسید این سفارش تغییر کرده است.');
     const { data: before } = await this.sales.detail(row.contractId, scoped);
+    const floating = before.servicesDetail?.some(
+      (service) =>
+        typeof service.metadata?.websiteFloatingFingerprint === 'string',
+    );
+    if (floating) {
+      const hold = await this.db.client.websiteCheckoutSession.findUnique({
+        where: {
+          siteCode_branchId_externalId: {
+            siteCode: site,
+            branchId: scoped.branchIds[0]!,
+            externalId,
+          },
+        },
+      });
+      if (
+        !gateway ||
+        hold?.status !== 'BOUND' ||
+        hold.contractId !== row.contractId ||
+        hold.resolutionFingerprint !== stableFingerprint(gatewayReceipt)
+      )
+        throw new ConflictException('ابتدا تأیید بانک لازم است.');
+    }
     const paid = new Map<string, Prisma.Decimal>();
     for (const p of payments)
       paid.set(
@@ -1183,7 +1398,7 @@ export class SiteCommerceService {
             .filter((id): id is string => typeof id === 'string'),
         ),
       ];
-      if (!tourIds.length) {
+      if (!floating && !tourIds.length) {
         const targetId = await this.ticketTarget(site, scoped.branchIds[0]!);
         if (
           current.servicesDetail.some(
