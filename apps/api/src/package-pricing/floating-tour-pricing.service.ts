@@ -12,6 +12,7 @@ import { Prisma } from '@nora/database';
 import {
   type AuthenticatedActor,
   type FloatingTourImportOptions,
+  type FloatingTourFlightInput,
   type FloatingTourImportPreview,
   type FloatingTourSaleRow,
   type FloatingTourSaleSet,
@@ -29,6 +30,25 @@ import {
 } from './floating-tour-import';
 import { floatingWebsitePeriods } from './floating-tour-publication';
 
+const flightClock = Joi.string().pattern(/^(?:[01]\d|2[0-3]):[0-5]\d$/);
+const airport = Joi.object({
+  id: Joi.string().guid().required(),
+  cityId: Joi.string().guid().required(),
+  countryId: Joi.string().guid().required(),
+  code: Joi.string()
+    .pattern(/^[A-Z]{3}$/)
+    .required(),
+  name: Joi.string().trim().max(200).required(),
+});
+const flightLeg = Joi.object({
+  departureClock: flightClock.required(),
+  arrivalClock: flightClock.required(),
+  carrierName: Joi.string().trim().max(160).required(),
+  serviceNumber: Joi.string().trim().max(80).required(),
+  cabinClassCode: Joi.string().valid('ECONOMY', 'BUSINESS', 'FIRST').required(),
+  originAirport: airport.required(),
+  destinationAirport: airport.required(),
+});
 const optionsSchema = Joi.object({
   nights: Joi.number().integer().min(1).max(365).required(),
   mode: Joi.string().valid('DATED', 'MONTHLY').required(),
@@ -41,12 +61,71 @@ const optionsSchema = Joi.object({
     .max(12)
     .when('mode', { is: 'MONTHLY', then: Joi.array().min(1).required() }),
   combined: Joi.boolean(),
+  flightPattern: Joi.object({
+    outbound: flightLeg.required(),
+    inbound: flightLeg.required(),
+  }).when('mode', { is: 'MONTHLY', then: Joi.forbidden() }),
   destinationNights: Joi.array()
     .items(Joi.number().integer().min(1).max(365))
     .min(2)
     .max(10)
     .when('combined', { is: true, otherwise: Joi.forbidden() }),
 });
+
+function applyFlightSchedule(
+  rows: FloatingTourSaleRow[],
+  options: FloatingTourImportOptions,
+  current: FloatingTourSaleSet,
+) {
+  const pattern = options.flightPattern;
+  const toLeg = (day: string, flight: FloatingTourFlightInput) => {
+    const { departureClock, arrivalClock, ...details } = flight;
+    const arrivalDay =
+      arrivalClock <= departureClock
+        ? new Date(Date.parse(day) + 86400000).toISOString().slice(0, 10)
+        : day;
+    return {
+      ...details,
+      departureAt: new Date(
+        day + 'T' + departureClock + ':00+03:30',
+      ).toISOString(),
+      arrivalAt: new Date(
+        arrivalDay + 'T' + arrivalClock + ':00+03:30',
+      ).toISOString(),
+    };
+  };
+  const errors: string[] = [];
+  for (const row of rows) {
+    if (pattern && row.startsOn && row.endsOn) {
+      const outbound = toLeg(row.startsOn, pattern.outbound);
+      const inbound = toLeg(row.endsOn, pattern.inbound);
+      if (
+        outbound.arrivalAt >= inbound.departureAt ||
+        outbound.originAirport.id === outbound.destinationAirport.id ||
+        inbound.originAirport.id === inbound.destinationAirport.id
+      ) {
+        errors.push(
+          `Row ${row.sourceRows.join(', ')}: مسیر و ساعت پروازها را بررسی کنید؛ حرکت برگشت باید بعد از رسیدن پرواز رفت باشد.`,
+        );
+        continue;
+      }
+      row.flightSchedule = {
+        startsOn: row.startsOn,
+        endsOn: row.endsOn,
+        outbound,
+        inbound,
+      };
+    } else {
+      const saved = current.dated.find(
+        (previous) =>
+          previous.startsOn === row.startsOn && previous.nights === row.nights,
+      )?.flightSchedule;
+      if (saved) row.flightSchedule = saved;
+    }
+  }
+  if (errors.length) throw new BadRequestException(errors.join('\n'));
+}
+
 @Injectable()
 export class FloatingTourPricingService {
   constructor(
@@ -142,6 +221,7 @@ export class FloatingTourPricingService {
       nights: price.nights,
       stays: price.stays,
       prices: price.prices,
+      ...(price.flightSchedule ? { flightSchedule: price.flightSchedule } : {}),
     });
     return {
       package: {
@@ -297,6 +377,7 @@ export class FloatingTourPricingService {
       hotels,
       options.mode === 'DATED' ? current.dated : (current.monthly?.rows ?? []),
     );
+    if (options.mode === 'DATED') applyFlightSchedule(rows, options, current);
     const fx = await this.pricing.buyRates();
     const Decimal = Prisma.Decimal.clone({ precision: 50 });
     const equivalent = (r: FloatingTourSaleRow): Prisma.Decimal | null => {

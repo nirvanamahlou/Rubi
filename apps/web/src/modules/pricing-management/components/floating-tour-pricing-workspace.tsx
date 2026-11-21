@@ -14,6 +14,12 @@ import { Button, Card, Input } from '@/components/ui';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { useAccessPermissions } from '@/modules/iam/access-context';
 import { packagePricingApi } from '../api/client';
+import { floatingFlightClock } from '@/modules/sales/model/floating-flight-times';
+import {
+  FloatingPackageFlights,
+  packageFlightInput,
+  type FloatingPackageFlightDrafts,
+} from './floating-package-flights';
 const monthNames = {
   PERSIAN: [
     'فروردین',
@@ -109,6 +115,26 @@ function Rows({
                     {s.hotelName} · {s.room} · {s.service} · {s.nights}
                   </div>
                 ))}
+                {row.flightSchedule && (
+                  <div className="mt-2 space-y-1 text-xs">
+                    {(
+                      [
+                        ['پرواز رفت', row.flightSchedule.outbound],
+                        ['پرواز برگشت', row.flightSchedule.inbound],
+                      ] as const
+                    ).map(([label, leg]) => (
+                      <div key={label}>
+                        {label} · {leg.carrierName} · {leg.serviceNumber} ·{' '}
+                        <bdi>
+                          {leg.originAirport.code} →{' '}
+                          {leg.destinationAirport.code}{' '}
+                          {floatingFlightClock(leg.departureAt)}–
+                          {floatingFlightClock(leg.arrivalAt)}
+                        </bdi>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </td>
               {groups.map(([g]) => (
                 <td className="p-3" dir="ltr" key={g}>
@@ -144,6 +170,14 @@ export function FloatingTourPricingWorkspace() {
     combined: false,
   });
   const [period, setPeriod] = useState('');
+  const [flightDrafts, setFlightDrafts] = useState<FloatingPackageFlightDrafts>(
+    {},
+  );
+  const activeTour = tours.find((tour) => tour.id === id);
+  const outbound = packageFlightInput(flightDrafts.outbound);
+  const inbound = packageFlightInput(flightDrafts.inbound);
+  const flightPattern = outbound && inbound ? { outbound, inbound } : undefined;
+  const validFlights = options.mode === 'MONTHLY' || Boolean(flightPattern);
   useEffect(() => {
     let active = true;
     packagePricingApi
@@ -213,7 +247,8 @@ export function FloatingTourPricingWorkspace() {
         options.destinationNights.length >= 2 &&
         options.destinationNights.every((n) => Number.isInteger(n) && n >= 1)));
   async function run(commit = false) {
-    if (!session || !file || !id || busy || !validNights) return;
+    if (!session || !file || !id || busy || !validNights || !validFlights)
+      return;
     setBusy(true);
     setError('');
     setMessage('');
@@ -221,7 +256,12 @@ export function FloatingTourPricingWorkspace() {
       const result = await packagePricingApi.floatingImport(
         id,
         file,
-        options,
+        {
+          ...options,
+          ...(options.mode === 'DATED' && flightPattern
+            ? { flightPattern }
+            : {}),
+        },
         session,
         commit ? (preview ?? undefined) : undefined,
       );
@@ -251,6 +291,7 @@ export function FloatingTourPricingWorkspace() {
           onChange={(e) => {
             const selected = tours.find((t) => t.id === e.target.value);
             setId(e.target.value);
+            setFlightDrafts({});
             setFile(null);
             setError('');
             setCatalog(null);
@@ -314,6 +355,28 @@ export function FloatingTourPricingWorkspace() {
                 تور ترکیبی با قیمت مشترک اقامت‌ها
               </label>
             </div>
+            {options.mode === 'DATED' && activeTour && (
+              <FloatingPackageFlights
+                tour={activeTour}
+                drafts={flightDrafts}
+                disabled={busy || !canManage}
+                onChange={(direction, value) => {
+                  setFlightDrafts((current) => {
+                    const next = { ...current };
+                    if (value) next[direction] = value;
+                    else delete next[direction];
+                    return next;
+                  });
+                  setPreview(null);
+                  setMessage('');
+                }}
+              />
+            )}
+            {options.mode === 'DATED' && !validFlights && (
+              <p className="text-sm text-muted-foreground">
+                برای پیش‌نمایش، اطلاعات هر دو پرواز و فرودگاه‌ها را تکمیل کنید.
+              </p>
+            )}
             {options.combined && (
               <div className="space-y-4 rounded-2xl border border-blue-100 bg-blue-50/40 p-4">
                 <label className="block max-w-xs">
@@ -433,7 +496,9 @@ export function FloatingTourPricingWorkspace() {
               }}
             />
             <Button
-              disabled={busy || !canManage || !file || !validNights}
+              disabled={
+                busy || !canManage || !file || !validNights || !validFlights
+              }
               onClick={() => void run()}
             >
               پیش‌نمایش قیمت فروش
