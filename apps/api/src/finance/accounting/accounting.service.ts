@@ -4186,7 +4186,8 @@ export class AccountingService {
       }
       let title = v.text(p.title, 160, true);
       let customerId: string | null = null;
-      if (['شخص', 'شرکت'].includes(detailType.title)) {
+      const individualCustomer = codingProfile?.prefix === '4';
+      if (individualCustomer || ['شخص', 'شرکت'].includes(detailType.title)) {
         customerId = v.uuid(p.customerId ?? existing?.customerId, true);
         if (customerId) {
           const owner = await accountingOwner(
@@ -4194,6 +4195,7 @@ export class AccountingService {
             customerId,
             book.branchId,
             detailType.title === 'شرکت',
+            individualCustomer,
           );
           if (!owner)
             v.rule('شخص یا شرکت انتخاب‌شده برای این دفتر معتبر نیست.');

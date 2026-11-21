@@ -8,6 +8,7 @@ import {
   type AccountingSnapshotV1,
 } from '@nora/contracts';
 import { AccountingDetailOwnerDialog } from './accounting-detail-owner-dialog';
+import { LedgerPersonDialog } from './ledger-person-dialog';
 import {
   BankAccountTypeDialog,
   BankRialDialog,
@@ -205,6 +206,39 @@ describe('dedicated detail owner forms', () => {
     expect(html).toMatch(/id="bank-rial-code"[^>]*value="IRR"/);
     expect(html).toMatch(/id="bank-rial-digits"[^>]*value="0"/);
     expect(html).not.toContain('ثبت و انتخاب ریال');
+  });
+  it('shows the seven compact B2C fields and keeps the traditional person form available', () => {
+    const renderPerson = (compact: boolean) =>
+      renderToStaticMarkup(
+        <QueryClientProvider client={new QueryClient()}>
+          <LedgerPersonDialog
+            compact={compact}
+            book={book}
+            onSelected={vi.fn()}
+            onClose={vi.fn()}
+          />
+        </QueryClientProvider>,
+      );
+    const html = renderPerson(true);
+    for (const field of [
+      'code',
+      'gender',
+      'firstName',
+      'lastName',
+      'nationalId',
+      'birthDate',
+      'mobile',
+    ])
+      expect(html).toContain('ledger-person-' + field);
+    expect(html).toContain('افزودن مشتری حقیقی');
+    expect(html).toContain('شماره تلفن');
+    expect(html).toContain('<option value="M">آقا</option>');
+    expect(html).toContain('<option value="F">خانم</option>');
+    expect(html).not.toContain('ledger-person-salutation');
+    expect(html).not.toContain('اطلاعات گردش کار');
+    const original = renderPerson(false);
+    expect(original).toContain('ledger-person-salutation');
+    expect(original).toContain('اطلاعات گردش کار');
   });
   it('recognizes normalized legacy spellings without reclassifying person/company or arbitrary types', () => {
     expect(detailOwnerKind('حساب بانكي')).toBe('BANK');

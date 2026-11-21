@@ -1,3 +1,7 @@
+## CUSTOMER-DETAIL-TITLE-1121 — PC-D — COMPLETED
+
+Reserve the individual customer detail editor, compact existing person form, public Customers owner projection and Accounting person-reference validation, with focused tests and task/status notes. Use the existing Customer endpoint and Finance detail numbering across ledgers without a schema change. Keep other detail types and historical records compatible.
+
 ## COUNTRY-FLAG-TRANSLATION-1121 — PC-D — COMPLETED
 
 Add the missing English label for the country flag field introduced in PR #1833. Scope is the translation catalogue and task/status notes.
