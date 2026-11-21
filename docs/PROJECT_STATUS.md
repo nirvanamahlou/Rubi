@@ -10425,3 +10425,5 @@ Niyayesh floating checkout consumes dated periods with matching room references 
 
 
 The Nora purchase guide covers the reservation purchase dashboard, filters, registration, finance and seat pricing. Exact contract status uses the authorized purchase inbox with the current session.
+
+Nora B2C guidance documents customer panel workflows and reads scoped metrics and record status through the existing authenticated customer API.

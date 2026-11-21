@@ -13200,3 +13200,7 @@ Reserve Site Commerce's opt-in floating projection and dedicated order intake, w
 ## NORA-PURCHASE-GUIDE — PC-C
 
 Reserve assistant purchase guide, its composer integration and focused tests. Reuse the authorized reservation purchase inbox and existing form links.
+
+## NORA-B2C-GUIDE — PC-C
+
+Owned scope includes the B2C assistant catalog, authenticated read guidance and its tests. Existing customer endpoints and permissions remain in force.

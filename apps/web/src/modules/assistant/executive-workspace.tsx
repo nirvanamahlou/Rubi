@@ -7,6 +7,12 @@ import {
   resolvePurchaseQuestion,
 } from './purchase-guides';
 import {
+  customerGuideLink,
+  readCustomerGuide,
+  renderCustomerGuide,
+  resolveCustomerQuestion,
+} from './customer-guides';
+import {
   resolveDocumentQuestion,
   renderDocumentGuide,
   readDocumentGuide,
@@ -371,6 +377,9 @@ function AssistantComposerContent({
       : pathname === '/customer-affairs/call-center'
         ? 'call-center'
         : undefined;
+  const tourTopic = useRef<{ topic: TourGuideTopic; href: string } | undefined>(
+    undefined,
+  );
   const purchaseTopic = useRef<
     | Extract<
         ReturnType<typeof resolvePurchaseQuestion>,
@@ -379,9 +388,10 @@ function AssistantComposerContent({
     | 'status'
     | undefined
   >(undefined);
-  const tourTopic = useRef<{ topic: TourGuideTopic; href: string } | undefined>(
-    undefined,
-  );
+  const customerTopic = useRef<string | undefined>(undefined);
+  const customerLookup = useRef<AbortController | null>(null);
+  const customerLocation = pathname + '?' + searchParams.toString();
+  useEffect(() => () => customerLookup.current?.abort(), [customerLocation]);
   const documentTopic = useRef<string | undefined>(undefined);
   const workbenchTopic = useRef<string | undefined>(undefined);
   const lastVersion = useRef<number | undefined>(undefined);
@@ -537,50 +547,6 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
-    const purchaseQuestion = resolvePurchaseQuestion(
-      message,
-      pathname === '/ticket-purchases',
-      purchaseTopic.current,
-    );
-    purchaseTopic.current = undefined;
-    if (purchaseQuestion) {
-      pending.current?.abort();
-      previousAnswer.current = undefined;
-      documentTopic.current = undefined;
-      workbenchTopic.current = undefined;
-      guideTopic.current = undefined;
-      if (purchaseQuestion.kind === 'guide') {
-        purchaseTopic.current = purchaseQuestion.topic.id;
-        replyLocally(
-          renderPurchaseGuide(purchaseQuestion.topic),
-          undefined,
-          undefined,
-          purchaseGuideLink,
-        );
-      } else {
-        if (!purchaseQuestion.code) purchaseTopic.current = 'status';
-        const controller = new AbortController();
-        pending.current = controller;
-        setActionState('loading');
-        try {
-          const answer = await readPurchaseGuide(
-            purchaseQuestion.code,
-            controller.signal,
-          );
-          if (!controller.signal.aborted)
-            replyLocally(answer.text, undefined, undefined, answer.link);
-        } catch {
-          if (!controller.signal.aborted)
-            replyLocally(
-              'دریافت خریدهای رزرواسیون ناموفق بود.',
-              undefined,
-              undefined,
-              purchaseGuideLink,
-            );
-        }
-      }
-      return;
-    }
     const previousTour = tourTopic.current;
     const tourQuestion = resolveTourGuideQuestion(
       message,
@@ -643,6 +609,108 @@ function AssistantComposerContent({
             });
         } catch (error) {
           if (!controller.signal.aborted) throw error;
+        }
+      }
+      return;
+    }
+    const purchaseQuestion = resolvePurchaseQuestion(
+      message,
+      pathname === '/ticket-purchases',
+      purchaseTopic.current,
+    );
+    purchaseTopic.current = undefined;
+    if (purchaseQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      documentTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      guideTopic.current = undefined;
+      if (purchaseQuestion.kind === 'guide') {
+        purchaseTopic.current = purchaseQuestion.topic.id;
+        replyLocally(
+          renderPurchaseGuide(purchaseQuestion.topic),
+          undefined,
+          undefined,
+          purchaseGuideLink,
+        );
+      } else {
+        if (!purchaseQuestion.code) purchaseTopic.current = 'status';
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readPurchaseGuide(
+            purchaseQuestion.code,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer.text, undefined, undefined, answer.link);
+        } catch {
+          if (!controller.signal.aborted)
+            replyLocally(
+              'دریافت خریدهای رزرواسیون ناموفق بود.',
+              undefined,
+              undefined,
+              purchaseGuideLink,
+            );
+        }
+      }
+      return;
+    }
+    customerLookup.current?.abort();
+    const customerQuestion = resolveCustomerQuestion(
+      message,
+      pathname === '/customers',
+      customerTopic.current,
+    );
+    customerTopic.current = undefined;
+    if (customerQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      documentTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      guideTopic.current = undefined;
+      if (customerQuestion.kind === 'guide') {
+        customerTopic.current = customerQuestion.topic.id;
+        replyLocally(
+          renderCustomerGuide(customerQuestion.topic),
+          undefined,
+          undefined,
+          customerGuideLink,
+        );
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        customerLookup.current = controller;
+        setActionState('loading');
+        const filters = new URLSearchParams(
+          pathname === '/customers' ? searchParams.toString() : '',
+        );
+        const currentSearch = () =>
+          pathname === '/customers'
+            ? ((
+                document.getElementById(
+                  'customer-search-live',
+                ) as HTMLInputElement | null
+              )?.value ?? '')
+            : '';
+        const selectedSearch = currentSearch();
+        filters.set('search', selectedSearch);
+        try {
+          const answer = await readCustomerGuide(
+            customerQuestion,
+            filters,
+            controller.signal,
+          );
+          if (!controller.signal.aborted && currentSearch() === selectedSearch)
+            replyLocally(answer.text, undefined, undefined, {
+              ...customerGuideLink,
+              href: answer.href,
+            });
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
+        } finally {
+          if (pending.current === controller) setActionState(null);
         }
       }
       return;
