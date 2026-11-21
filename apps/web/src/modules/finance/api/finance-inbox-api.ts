@@ -170,12 +170,16 @@ export const financeInboxApi = {
         { method: 'POST', body: JSON.stringify(input) },
       )
     ).data,
-  customerDocumentDeliveries: async (contractNumber = '') =>
+  customerDocumentDeliveries: async (
+    contractNumber = '',
+    signal?: AbortSignal,
+  ) =>
     (
       await apiRequest<{
         data: readonly FinanceCustomerDocumentDeliveryCandidateV1[];
       }>(
         `/finance/customer-document-delivery?contractNumber=${encodeURIComponent(contractNumber)}`,
+        { signal },
       )
     ).data,
   reservationDocumentDelivery: (contractId: string) =>

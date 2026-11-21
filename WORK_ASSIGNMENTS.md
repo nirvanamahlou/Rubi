@@ -1,3 +1,7 @@
+## NORA-FINANCE-DELIVERY — PC-C
+
+Reserve Nora-only delivery guidance and tests; reuse the Finance read API. No Finance policy, grants or migrations.
+
 ## NORA-GUIDE-LIVE-FIXES — PC-C
 
 Reserve Documents intent matching and shared Workbench approval labels, with focused regressions. No data contract or schema changes.

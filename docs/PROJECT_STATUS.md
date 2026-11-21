@@ -10414,3 +10414,7 @@ The defined-tour list displays the existing floating-tour flag next to the tour 
 The floating package pricing picker and URL preselection require an explicitly floating tour definition.
 
 Floating package price imports report Excel row numbers for validation errors and preview warnings.
+
+## راهنمای تحویل مدارک نورا
+
+کاتالوگ راهنمای جست‌وجو، مبانی صدور و لغو و خواندن وضعیت از API مجاز پنل مالی به نورا اضافه شد. این مسیر تنها خواندنی است. پذیرش با قرارداد واقعی در نسخهٔ کاندید باقی است.
