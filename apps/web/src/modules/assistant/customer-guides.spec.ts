@@ -122,7 +122,7 @@ it('reads only the selected authorized record status and passes cancellation to 
     data: { id, status: 'inactive', passportNumber: 'private' },
   } as Awaited<ReturnType<typeof customersApi.detail>>);
   const answer = await readCustomerGuide(
-    { kind: 'status' },
+    { kind: 'status', name: undefined },
     new URLSearchParams({ customerId: id }),
     signal,
   );

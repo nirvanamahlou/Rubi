@@ -4,7 +4,7 @@ import catalog from './customer-guide-catalog.json';
 import { normalizeQuestion } from './question-text';
 
 export const customerGuideLink = { href: '/customers', label: 'مشتریان B2C' };
-const topics = catalog.map(([id, title, pattern, text]) => ({
+const topics = catalog.map(({ id, title, pattern, text }) => ({
   id,
   title,
   pattern: new RegExp(pattern, 'i'),

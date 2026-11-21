@@ -220,7 +220,7 @@ export const customersApi = {
       sensitiveReadReason
         ? {
             headers: { 'x-sensitive-read-reason': sensitiveReadReason },
-            signal,
+            ...(signal ? { signal } : {}),
           }
         : signal
           ? { signal }
