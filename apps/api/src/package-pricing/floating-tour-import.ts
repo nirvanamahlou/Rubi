@@ -228,9 +228,17 @@ const add = (a: FloatingTourMoney[], b: FloatingTourMoney[]) => {
 export function floatingPrices(
   cells: Record<string, FloatingCell | undefined>,
 ) {
-  const adult = floatingMoney(cells['flight per person']);
+  const moneyAt = (column: string) => {
+    try {
+      return floatingMoney(cells[column]);
+    } catch (error) {
+      if (!(error instanceof BadRequestException)) throw error;
+      return fail(`${column.toUpperCase()}: ${error.message}`);
+    }
+  };
+  const adult = moneyAt('flight per person');
   const child = cells['flight child w bed']?.value
-    ? floatingMoney(cells['flight child w bed'])
+    ? moneyAt('flight child w bed')
     : adult;
   const groups: [FloatingTourGroup, string][] = [
     ['double', 'dbl'],
@@ -243,7 +251,7 @@ export function floatingPrices(
   const prices: FloatingTourSaleRow['prices'] = {};
   const foreign = new Set<string>();
   for (const [group, column] of groups) {
-    const base = floatingMoney(cells[column]);
+    const base = moneyAt(column);
     if (!base.length) continue;
     const flight =
       cells[`add_flight_${column}`]?.value.toLowerCase() === 'no' ||
@@ -260,7 +268,7 @@ export function floatingPrices(
   if (foreign.size > 1)
     return fail('استفاده هم‌زمان از چند ارز خارجی در یک ردیف مجاز نیست.');
   if (!Object.keys(prices).length) return fail('حداقل یک قیمت فروش لازم است.');
-  return { prices, commission: floatingMoney(cells.commission) };
+  return { prices, commission: moneyAt('commission') };
 }
 const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 export function floatingDate(cell: FloatingCell): string {
@@ -314,6 +322,7 @@ export function parseFloatingRows(
   tour: TourPackageInputV1,
   hotels: FloatingHotelReference[],
   previous: FloatingTourSaleRow[] = [],
+  sourceRowNumbers?: number[],
 ): FloatingTourSaleRow[] {
   const headers =
     workbook[0]?.map((c) =>
@@ -369,8 +378,10 @@ export function parseFloatingRows(
     );
   const rows: FloatingTourSaleRow[] = [];
   const duplicate = new Set<string>();
+  const errors: string[] = [];
   for (let index = 1; index < workbook.length; index++) {
     const source = workbook[index]!;
+    const rowNumber = sourceRowNumbers?.[index - 1] ?? index + 1;
     if (!source.some((c) => c?.value)) continue;
     try {
       const fields = Object.fromEntries(headers.map((h, i) => [h, source[i]]));
@@ -414,6 +425,7 @@ export function parseFloatingRows(
       const key = JSON.stringify([date, hotel.id, floatingHotelKey(room)]);
       if (duplicate.has(key))
         return fail('هتل و نوع اتاق در این تاریخ تکراری است.');
+      const prices = floatingPrices(fields);
       duplicate.add(key);
       const stay: FloatingTourStay = {
         hotelId: hotel.id,
@@ -427,19 +439,19 @@ export function parseFloatingRows(
         nights: options.nights,
       };
       rows.push({
-        sourceRows: [index + 1],
+        sourceRows: [rowNumber],
         startsOn: date,
         endsOn: date ? iso(Date.parse(date) + options.nights * 86400000) : null,
         nights: options.nights,
         stays: [stay],
-        ...floatingPrices(fields),
+        ...prices,
       });
     } catch (e) {
-      return fail(
-        `Row ${index + 1}: ${e instanceof Error ? e.message : 'Invalid row'}`,
-      );
+      if (!(e instanceof BadRequestException)) throw e;
+      errors.push(`Row ${rowNumber}: ${e.message}`);
     }
   }
+  if (errors.length) return fail(errors.join('\n'));
   if (!rows.length) return fail('فایل قیمت خالی است.');
   if (!options.combined) return rows;
   const combined: FloatingTourSaleRow[] = [];
@@ -464,7 +476,9 @@ export function parseFloatingRows(
       definitions[0]!.cityId !== a.stays[0]!.cityId ||
       definitions[1]!.cityId !== b.stays[0]!.cityId
     )
-      return fail('ترتیب دو هتل، شب‌ها و قیمت مشترک تور ترکیبی را بررسی کنید.');
+      return fail(
+        `Row ${a.sourceRows.join(', ')}${b ? ', ' + b.sourceRows.join(', ') : ''}: ترتیب دو هتل، شب‌ها و قیمت مشترک تور ترکیبی را بررسی کنید.`,
+      );
     combined.push({
       ...a,
       sourceRows: [...a.sourceRows, ...b.sourceRows],
@@ -500,7 +514,7 @@ function combineConfiguredRows(
     new Set(rows.map((row) => row.stays[0]!.cityId)).size !== nights.length
   )
     return fail(
-      'تعداد مقصدها، شب‌ها، شهر هتل‌ها و قیمت مشترک تور ترکیبی را بررسی کنید.',
+      `Row ${[...new Set(rows.flatMap((row) => row.sourceRows))].join(', ')}: تعداد مقصدها، شب‌ها، شهر هتل‌ها و قیمت مشترک تور ترکیبی را بررسی کنید.`,
     );
   return {
     ...first,
@@ -531,6 +545,7 @@ function parseMergedFloatingRows(
   )
     return fail('مقصدها و مجموع شب‌های تور ترکیبی را بررسی کنید.');
   const result: FloatingTourSaleRow[] = [];
+  const errors: string[] = [];
   const identities = new Set<string>();
   const priceColumns = [
     'dbl',
@@ -543,79 +558,92 @@ function parseMergedFloatingRows(
   for (let index = 1; index < workbook.length; index++) {
     const source = workbook[index]!;
     if (!source.some((cell) => cell?.value)) continue;
-    const ranges = priceColumns
-      .map((column) =>
-        source[column]?.value ? source[column]?.mergedRows : undefined,
+    let lastIndex = index;
+    try {
+      const ranges = priceColumns
+        .map((column) =>
+          source[column]?.value ? source[column]?.mergedRows : undefined,
+        )
+        .filter((range) => range !== undefined);
+      const range = ranges[0];
+      if (
+        !range ||
+        range.first !== index + 1 ||
+        range.last - range.first + 1 !==
+          (options.destinationNights?.length ?? definitions.length) ||
+        ranges.some(
+          (other) => other.first !== range.first || other.last !== range.last,
+        )
       )
-      .filter((range) => range !== undefined);
-    const range = ranges[0];
-    if (
-      !range ||
-      range.first !== index + 1 ||
-      range.last - range.first + 1 !==
-        (options.destinationNights?.length ?? definitions.length) ||
-      ranges.some(
-        (other) => other.first !== range.first || other.last !== range.last,
-      )
-    )
-      return fail(
-        `Row ${index + 1}: ادغام قیمت‌ها باید تمام اقامت‌های همین ترکیب را پوشش دهد.`,
+        return fail(
+          `Row ${index + 1}: ادغام قیمت‌ها باید تمام اقامت‌های همین ترکیب را پوشش دهد.`,
+        );
+      lastIndex = range.last - 1;
+      const members = parseFloatingRows(
+        [workbook[0]!, ...workbook.slice(index, range.last)],
+        { ...options, combined: false },
+        tour,
+        hotels,
+        previous,
+        Array.from(
+          { length: range.last - index },
+          (_, offset) => index + offset + 1,
+        ),
       );
-    const members = parseFloatingRows(
-      [workbook[0]!, ...workbook.slice(index, range.last)],
-      { ...options, combined: false },
-      tour,
-      hotels,
-      previous,
-    );
-    const first = members[0]!;
-    if (options.destinationNights) {
-      const combined = combineConfiguredRows(members, options);
+      const first = members[0]!;
+      if (options.destinationNights) {
+        const combined = combineConfiguredRows(members, options);
+        const key = JSON.stringify([
+          combined.startsOn,
+          combined.stays.map((s) => [s.hotelId, floatingHotelKey(s.room)]),
+        ]);
+        if (identities.has(key))
+          return fail(`Row ${index + 1}: ترکیب هتل و اتاق تکراری است.`);
+        identities.add(key);
+        result.push({
+          ...combined,
+          sourceRows: members.flatMap((member) => member.sourceRows),
+        });
+        index = range.last - 1;
+        continue;
+      }
+      if (
+        members.length !== definitions.length ||
+        members.some(
+          (row, stop) =>
+            row.startsOn !== first.startsOn ||
+            row.stays[0]!.cityId !== definitions[stop]!.cityId ||
+            JSON.stringify(row.prices) !== JSON.stringify(first.prices) ||
+            JSON.stringify(row.commission) !== JSON.stringify(first.commission),
+        )
+      )
+        return fail(
+          `Row ${index + 1}: ترتیب مقصدها و قیمت مشترک تور ترکیبی را بررسی کنید.`,
+        );
+      const stays = members.map((row, stop) => ({
+        ...row.stays[0]!,
+        nights: definitions[stop]!.nights,
+      }));
       const key = JSON.stringify([
-        combined.startsOn,
-        combined.stays.map((s) => [s.hotelId, floatingHotelKey(s.room)]),
+        first.startsOn,
+        stays.map((stay) => [stay.hotelId, floatingHotelKey(stay.room)]),
       ]);
       if (identities.has(key))
         return fail(`Row ${index + 1}: ترکیب هتل و اتاق تکراری است.`);
       identities.add(key);
       result.push({
-        ...combined,
-        sourceRows: members.map((_, stop) => index + stop + 1),
+        ...first,
+        stays,
+        sourceRows: members.flatMap((member) => member.sourceRows),
       });
       index = range.last - 1;
-      continue;
+    } catch (error) {
+      if (!(error instanceof BadRequestException)) throw error;
+      errors.push(error.message);
+      index = lastIndex;
     }
-    if (
-      members.length !== definitions.length ||
-      members.some(
-        (row, stop) =>
-          row.startsOn !== first.startsOn ||
-          row.stays[0]!.cityId !== definitions[stop]!.cityId ||
-          JSON.stringify(row.prices) !== JSON.stringify(first.prices) ||
-          JSON.stringify(row.commission) !== JSON.stringify(first.commission),
-      )
-    )
-      return fail(
-        `Row ${index + 1}: ترتیب مقصدها و قیمت مشترک تور ترکیبی را بررسی کنید.`,
-      );
-    const stays = members.map((row, stop) => ({
-      ...row.stays[0]!,
-      nights: definitions[stop]!.nights,
-    }));
-    const key = JSON.stringify([
-      first.startsOn,
-      stays.map((stay) => [stay.hotelId, floatingHotelKey(stay.room)]),
-    ]);
-    if (identities.has(key))
-      return fail(`Row ${index + 1}: ترکیب هتل و اتاق تکراری است.`);
-    identities.add(key);
-    result.push({
-      ...first,
-      stays,
-      sourceRows: members.map((_, stop) => index + stop + 1),
-    });
-    index = range.last - 1;
   }
+  if (errors.length) return fail(errors.join('\n'));
   if (!result.length) return fail('فایل قیمت خالی است.');
   return result;
 }
@@ -634,6 +662,7 @@ function parseDedicatedFloatingRows(
   if (new Set(headers).size !== headers.length)
     return fail('ستون تکراری در فایل مجاز نیست.');
   const result: FloatingTourSaleRow[] = [];
+  const errors: string[] = [];
   const identities = new Set<string>();
   const baseHeaders = [
     'departure_date',
@@ -652,94 +681,103 @@ function parseDedicatedFloatingRows(
   ];
   for (let i = 1; i < workbook.length; i++) {
     if (!workbook[i]!.some((cell) => cell?.value)) continue;
-    const fields = Object.fromEntries(
-      headers.map((h, j) => [h, workbook[i]![j]]),
-    );
-    const nights = [1, 2].map((n) => Number(fields[`nights_${n}`]?.value));
-    if (
-      options.destinationNights &&
-      JSON.stringify(nights) !== JSON.stringify(options.destinationNights)
-    )
-      return fail('شب‌های فایل باید با شب‌های مقصدهای فرم برابر باشد.');
-    if (
-      nights.some((n) => !Number.isSafeInteger(n) || n < 1) ||
-      nights[0]! + nights[1]! !== options.nights
-    )
-      return fail(
-        `Row ${i + 1}: مجموع شب‌های دو هتل باید با تعداد شب بازه برابر باشد.`,
+    try {
+      const fields = Object.fromEntries(
+        headers.map((h, j) => [h, workbook[i]![j]]),
       );
-    const selected = [1, 2].map((n) => {
-      const name = floatingHotelKey(fields[`hotel_name_${n}`]?.value ?? '');
-      const found = hotels.filter((h) =>
-        [h.name, h.englishName ?? ''].some(
-          (value) => floatingHotelKey(value) === name,
-        ),
-      );
-      if (!name || found.length !== 1)
-        return fail(`Row ${i + 1}: نام هتل یافت نشد یا مبهم است.`);
-      return found[0]!;
-    });
-    const combinedDefinition = {
-      ...tour,
-      details: {
-        ...tour.details,
-        version: 1 as const,
-        destinations: selected.map((h, n) => ({
-          cityId: h.cityId,
-          nights: nights[n]!,
-        })),
-      },
-    };
-    const controls = [
-      'dbl',
-      'sgl',
-      'extra',
-      'chd w bed',
-      'child no bed',
-      'infant',
-    ].map((g) => `add_flight_${g}`);
-    for (const key of controls)
+      const nights = [1, 2].map((n) => Number(fields[`nights_${n}`]?.value));
       if (
-        fields[key]?.value &&
-        !['yes', 'no'].includes(fields[key]!.value.toLowerCase())
+        options.destinationNights &&
+        JSON.stringify(nights) !== JSON.stringify(options.destinationNights)
       )
-        return fail(`Row ${i + 1}: ${key}: YES / NO`);
-    const columns = [...baseHeaders, 'commission', ...controls];
-    const blank: FloatingCell = { value: '', format: '', numeric: false };
-    const paired = [
-      columns.map((value) => ({ ...blank, value })),
-      ...[1, 2].map((n) =>
-        columns.map(
-          (key) =>
-            fields[
-              (
-                {
-                  hotel_name: `hotel_name_${n}`,
-                  loc: `loc_${n}`,
-                  room: `room_${n}`,
-                  service: `service_${n}`,
-                } as Record<string, string>
-              )[key] ?? key
-            ] ?? blank,
+        return fail(
+          `Row ${i + 1}: شب‌های فایل باید با شب‌های مقصدهای فرم برابر باشد.`,
+        );
+      if (
+        nights.some((n) => !Number.isSafeInteger(n) || n < 1) ||
+        nights[0]! + nights[1]! !== options.nights
+      )
+        return fail(
+          `Row ${i + 1}: مجموع شب‌های دو هتل باید با تعداد شب بازه برابر باشد.`,
+        );
+      const selected = [1, 2].map((n) => {
+        const name = floatingHotelKey(fields[`hotel_name_${n}`]?.value ?? '');
+        const found = hotels.filter((h) =>
+          [h.name, h.englishName ?? ''].some(
+            (value) => floatingHotelKey(value) === name,
+          ),
+        );
+        if (!name || found.length !== 1)
+          return fail(`Row ${i + 1}: نام هتل یافت نشد یا مبهم است.`);
+        return found[0]!;
+      });
+      const combinedDefinition = {
+        ...tour,
+        details: {
+          ...tour.details,
+          version: 1 as const,
+          destinations: selected.map((h, n) => ({
+            cityId: h.cityId,
+            nights: nights[n]!,
+          })),
+        },
+      };
+      const controls = [
+        'dbl',
+        'sgl',
+        'extra',
+        'chd w bed',
+        'child no bed',
+        'infant',
+      ].map((g) => `add_flight_${g}`);
+      for (const key of controls)
+        if (
+          fields[key]?.value &&
+          !['yes', 'no'].includes(fields[key]!.value.toLowerCase())
+        )
+          return fail(`Row ${i + 1}: ${key}: YES / NO`);
+      const columns = [...baseHeaders, 'commission', ...controls];
+      const blank: FloatingCell = { value: '', format: '', numeric: false };
+      const paired = [
+        columns.map((value) => ({ ...blank, value })),
+        ...[1, 2].map((n) =>
+          columns.map(
+            (key) =>
+              fields[
+                (
+                  {
+                    hotel_name: `hotel_name_${n}`,
+                    loc: `loc_${n}`,
+                    room: `room_${n}`,
+                    service: `service_${n}`,
+                  } as Record<string, string>
+                )[key] ?? key
+              ] ?? blank,
+          ),
         ),
-      ),
-    ];
-    const row = parseFloatingRows(
-      paired,
-      options,
-      combinedDefinition,
-      hotels,
-      previous,
-    )[0]!;
-    const key = JSON.stringify([
-      row.startsOn,
-      row.stays.map((s) => [s.hotelId, floatingHotelKey(s.room)]),
-    ]);
-    if (identities.has(key))
-      return fail(`Row ${i + 1}: ترکیب هتل و اتاق تکراری است.`);
-    identities.add(key);
-    result.push({ ...row, sourceRows: [i + 1] });
+      ];
+      const row = parseFloatingRows(
+        paired,
+        options,
+        combinedDefinition,
+        hotels,
+        previous,
+        [i + 1, i + 1],
+      )[0]!;
+      const key = JSON.stringify([
+        row.startsOn,
+        row.stays.map((s) => [s.hotelId, floatingHotelKey(s.room)]),
+      ]);
+      if (identities.has(key))
+        return fail(`Row ${i + 1}: ترکیب هتل و اتاق تکراری است.`);
+      identities.add(key);
+      result.push({ ...row, sourceRows: [i + 1] });
+    } catch (error) {
+      if (!(error instanceof BadRequestException)) throw error;
+      errors.push(error.message);
+    }
   }
+  if (errors.length) return fail(errors.join('\n'));
   if (!result.length) return fail('فایل قیمت خالی است.');
   return result;
 }
