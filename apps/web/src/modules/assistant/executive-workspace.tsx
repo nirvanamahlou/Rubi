@@ -28,6 +28,13 @@ import {
   tourGuideUnavailable,
   type TourGuideTopic,
 } from './tour-guide';
+import {
+  financeDeliveryCopy,
+  financeDeliveryHref,
+  readFinanceDeliveryStatus,
+  renderFinanceDeliveryGuide,
+  resolveFinanceDeliveryQuestion,
+} from './finance-delivery-guide';
 import { normalizeQuestion } from './question-text';
 import { AssistantResponseContent } from './response-content';
 import { formatAssistantSources } from './response-presentation';
@@ -392,6 +399,13 @@ function AssistantComposerContent({
   const customerLookup = useRef<AbortController | null>(null);
   const customerLocation = pathname + '?' + searchParams.toString();
   useEffect(() => () => customerLookup.current?.abort(), [customerLocation]);
+  const financeDeliveryTopic = useRef<
+    | Extract<
+        ReturnType<typeof resolveFinanceDeliveryQuestion>,
+        { kind: 'guide' }
+      >['topic']
+    | undefined
+  >(undefined);
   const documentTopic = useRef<string | undefined>(undefined);
   const workbenchTopic = useRef<string | undefined>(undefined);
   const lastVersion = useRef<number | undefined>(undefined);
@@ -711,6 +725,49 @@ function AssistantComposerContent({
           if (!controller.signal.aborted) throw error;
         } finally {
           if (pending.current === controller) setActionState(null);
+        }
+      }
+      return;
+    }
+    const deliveryQuestion = resolveFinanceDeliveryQuestion(
+      message,
+      pathname === financeDeliveryHref,
+      financeDeliveryTopic.current,
+    );
+    financeDeliveryTopic.current = undefined;
+    if (deliveryQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      workbenchTopic.current = undefined;
+      documentTopic.current = undefined;
+      guideTopic.current = undefined;
+      const link = { href: financeDeliveryHref, label: 'تحویل مدارک' };
+      if (deliveryQuestion.kind === 'guide') {
+        financeDeliveryTopic.current = deliveryQuestion.topic;
+        replyLocally(
+          renderFinanceDeliveryGuide(
+            deliveryQuestion.topic,
+            deliveryQuestion.followUp,
+          ),
+          undefined,
+          undefined,
+          link,
+        );
+      } else if (deliveryQuestion.kind === 'clarify') {
+        replyLocally(financeDeliveryCopy.identify, undefined, undefined, link);
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readFinanceDeliveryStatus(
+            deliveryQuestion.number,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer, undefined, undefined, link);
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
         }
       }
       return;

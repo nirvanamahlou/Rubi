@@ -18,6 +18,10 @@ Reserve Accounting bank title lookup and the specialized Finance form. Reserve t
 
 Reserve the four Accounting detail type definitions, their native editor and save path, their year-independent setup action in the fiscal scope registry, a System Management internal numbering port and narrow guards for its reserved schemes, a shared additive Contracts catalogue, focused tests and task notes. Producer is System Numbering in the same transaction as its Accounting consumer. Reuse existing schemas and preserve all operational records. Dedicated title and native HR, Customer and bank record forms are outside this Accounting definition stage.
 
+## NORA-FINANCE-DELIVERY — PC-C
+
+Reserve Nora-only delivery guidance and tests; reuse the Finance read API. No Finance policy, grants or migrations.
+
 ## NORA-GUIDE-LIVE-FIXES — PC-C
 
 Reserve Documents intent matching and shared Workbench approval labels, with focused regressions. No data contract or schema changes.
@@ -13222,6 +13226,7 @@ Reserve assistant purchase guide, its composer integration and focused tests. Re
 Owned scope includes the B2C assistant catalog, authenticated read guidance and its tests. Existing customer endpoints and permissions remain in force.
 
 ### COUNTRY-FLAGS-1121 (PC-B)
+
 Country flag upload and existing logo display. Reserve country logo field in the Master Data catalog, editable contract, logo service and additive migration 20261121120000_country_flag.
 
 ## GHESTIROO-FLIGHT-PRODUCER-1121 — PC-D

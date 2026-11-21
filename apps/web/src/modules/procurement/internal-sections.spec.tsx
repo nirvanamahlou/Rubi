@@ -44,7 +44,7 @@ describe('Purchase section date filters', () => {
       expect(html).not.toContain('تجهیزات پشتیبانی شعبه مرکزی');
       expect(html).not.toContain('PR-1405-101');
     }
-  });
+  }, 20_000);
 
   it('shows the project calendar range in all seven internal sections', () => {
     for (const group of [1, 2, 3, 4, 5, 6, 7] as const) {

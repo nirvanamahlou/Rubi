@@ -10451,3 +10451,7 @@ Nora B2C guidance documents customer panel workflows and reads scoped metrics an
 
 ### Country flags (2026-11-21)
 Country create/edit now uses the existing logo uploader and geography logo column. The additive migration stores an optional logo document reference.
+
+## راهنمای تحویل مدارک نورا
+
+کاتالوگ راهنمای جست‌وجو، مبانی صدور و لغو و خواندن وضعیت از API مجاز پنل مالی به نورا اضافه شد. این مسیر تنها خواندنی است. پذیرش با قرارداد واقعی در نسخهٔ کاندید باقی است.
