@@ -1,3 +1,11 @@
+## NORA-TOUR-GUIDE — PC-C
+
+Reserve Nora tour catalogue, routing and read-only reuse of Ticket Catalog clients, with focused tests. No tour policy, grants or migrations.
+
+## NORA-FINANCE-DELIVERY — PC-C
+
+Reserve Nora-only delivery guidance and tests; reuse the Finance read API. No Finance policy, grants or migrations.
+
 ## NORA-RESERVATION-REPORT — PC-C
 
 Reserve Nora report guide, read-only panel snapshot bridge and focused tests. Reuse Reservations report and permission checks. No policy or schema changes.
@@ -13196,3 +13204,23 @@ Reserve Floating Pricing Web and API, an additive flight schedule in the public 
 ## NSS-FLOATING-TOUR-CHECKOUT-1121 — PC-A
 
 Reserve Site Commerce's opt-in floating projection and dedicated order intake, with the matching Niyayesh site catalog and checkout consumer. No schema or dependency changes. Legacy products retain their existing endpoints. Floating drafts use native Sales and payment confirmation without ticket inventory.
+
+## NORA-PURCHASE-GUIDE — PC-C
+
+Reserve assistant purchase guide, its composer integration and focused tests. Reuse the authorized reservation purchase inbox and existing form links.
+
+## NORA-B2C-GUIDE — PC-C
+
+Owned scope includes the B2C assistant catalog, authenticated read guidance and its tests. Existing customer endpoints and permissions remain in force.
+
+## NORA-FLIGHT-PRICING-GUIDE — PC-C
+
+Reserve the assistant flight pricing guide and its composer integration. Reuse existing authenticated ticket catalog reads and pricing projections.
+
+## NORA-MASTER-DATA-GUIDE — PC-C
+
+Reserve operational master data guidance, the composer integration and authorized read tests. Reuse the master data catalog, navigation and scoped API.
+
+## NORA-B2B-GUIDE — PC-C
+
+Reserve B2B guidance, composer routing and scoped directory reads using existing interfaces.

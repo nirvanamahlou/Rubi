@@ -10422,3 +10422,22 @@ Floating package price imports report Excel row numbers for validation errors an
 Dated floating price imports attach outbound and inbound flight details to Excel-derived periods and include the schedule in the opt-in website catalog. Monthly and older catalog rows remain compatible.
 
 Niyayesh floating checkout consumes dated periods with matching room references and an approved rial rate. ERP freezes the selected itinerary and price before bank payment, then creates the native contract from the bank-verified quote without allocating charter seats. Monthly periods remain available to existing catalog clients.
+
+## راهنمای تعریف تور و خدمات در نورا
+
+راهنمای تعریف، مسیر ترکیبی، ویرایش، نوبت، ظرفیت، نرخ و انتشار در نورا اضافه شد. پرسش درباره تور مشخص با APIهای خواندنی پنل و در شعب مجاز پاسخ می‌گیرد. وضعیت تعریف و ظرفیت نوبت از قیمت و انتشار مستقل گزارش می‌شوند. پذیرش حساب واقعی به نسخهٔ کاندید نیاز دارد.
+
+
+The Nora purchase guide covers the reservation purchase dashboard, filters, registration, finance and seat pricing. Exact contract status uses the authorized purchase inbox with the current session.
+
+Nora B2C guidance documents customer panel workflows and reads scoped metrics and record status through the existing authenticated customer API.
+
+## راهنمای تحویل مدارک نورا
+
+کاتالوگ راهنمای جست‌وجو، مبانی صدور و لغو و خواندن وضعیت از API مجاز پنل مالی به نورا اضافه شد. این مسیر تنها خواندنی است. پذیرش با قرارداد واقعی در نسخهٔ کاندید باقی است.
+
+Nora flight pricing guidance covers list filters, base and age fares, return pairs, tier pricing, destination commissions, Excel and site publication. Live lookups use the authenticated managed-offer projection.
+
+Nora now guides the eight Master Data sections and reads exact authorized reference codes with a restricted result projection.
+
+Nora guides B2B workflows and reads authorized status and filtered directory metrics using existing organization reads.
