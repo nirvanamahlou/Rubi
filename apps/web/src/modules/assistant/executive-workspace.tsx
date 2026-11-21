@@ -1,11 +1,33 @@
 'use client';
 
 import {
+  purchaseGuideLink,
+  readPurchaseGuide,
+  renderPurchaseGuide,
+  resolvePurchaseQuestion,
+} from './purchase-guides';
+import {
+  customerGuideLink,
+  readCustomerGuide,
+  renderCustomerGuide,
+  resolveCustomerQuestion,
+} from './customer-guides';
+import {
   resolveDocumentQuestion,
   renderDocumentGuide,
   readDocumentGuide,
 } from './document-guides';
 
+import { canViewScreen } from '@nora/contracts';
+import {
+  readTourGuideStatus,
+  renderTourGuide,
+  resolveTourGuideQuestion,
+  tourGuideDestination,
+  tourGuideHref,
+  tourGuideUnavailable,
+  type TourGuideTopic,
+} from './tour-guide';
 import {
   financeDeliveryCopy,
   financeDeliveryHref,
@@ -362,6 +384,21 @@ function AssistantComposerContent({
       : pathname === '/customer-affairs/call-center'
         ? 'call-center'
         : undefined;
+  const tourTopic = useRef<{ topic: TourGuideTopic; href: string } | undefined>(
+    undefined,
+  );
+  const purchaseTopic = useRef<
+    | Extract<
+        ReturnType<typeof resolvePurchaseQuestion>,
+        { kind: 'guide' }
+      >['topic']['id']
+    | 'status'
+    | undefined
+  >(undefined);
+  const customerTopic = useRef<string | undefined>(undefined);
+  const customerLookup = useRef<AbortController | null>(null);
+  const customerLocation = pathname + '?' + searchParams.toString();
+  useEffect(() => () => customerLookup.current?.abort(), [customerLocation]);
   const financeDeliveryTopic = useRef<
     | Extract<
         ReturnType<typeof resolveFinanceDeliveryQuestion>,
@@ -524,6 +561,174 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    const previousTour = tourTopic.current;
+    const tourQuestion = resolveTourGuideQuestion(
+      message,
+      pathname === tourGuideHref,
+      previousTour?.topic,
+    );
+    tourTopic.current = undefined;
+    if (tourQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      workbenchTopic.current = undefined;
+      documentTopic.current = undefined;
+      guideTopic.current = undefined;
+      const label = 'تعریف تور و خدمات';
+      if (tourQuestion.kind === 'guide') {
+        const href =
+          tourQuestion.followUp && previousTour
+            ? previousTour.href
+            : tourGuideDestination(
+                tourQuestion.topic,
+                tourQuestion.floatingPrice,
+              );
+        tourTopic.current = { topic: tourQuestion.topic, href };
+        replyLocally(
+          renderTourGuide(tourQuestion.topic, tourQuestion.followUp),
+          undefined,
+          undefined,
+          {
+            href,
+            label,
+          },
+        );
+      } else if (tourQuestion.kind === 'clarify') {
+        replyLocally(tourQuestion.text, undefined, undefined, {
+          href: tourGuideHref,
+          label,
+        });
+      } else if (
+        !actor ||
+        !canViewScreen(actor.permissions, 'ticket-catalog.tab.tours')
+      ) {
+        replyLocally(tourGuideUnavailable, undefined, undefined, {
+          href: tourGuideHref,
+          label,
+        });
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readTourGuideStatus(
+            tourQuestion,
+            actor,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer.text, undefined, undefined, {
+              href: answer.href,
+              label,
+            });
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
+        }
+      }
+      return;
+    }
+    const purchaseQuestion = resolvePurchaseQuestion(
+      message,
+      pathname === '/ticket-purchases',
+      purchaseTopic.current,
+    );
+    purchaseTopic.current = undefined;
+    if (purchaseQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      documentTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      guideTopic.current = undefined;
+      if (purchaseQuestion.kind === 'guide') {
+        purchaseTopic.current = purchaseQuestion.topic.id;
+        replyLocally(
+          renderPurchaseGuide(purchaseQuestion.topic),
+          undefined,
+          undefined,
+          purchaseGuideLink,
+        );
+      } else {
+        if (!purchaseQuestion.code) purchaseTopic.current = 'status';
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readPurchaseGuide(
+            purchaseQuestion.code,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer.text, undefined, undefined, answer.link);
+        } catch {
+          if (!controller.signal.aborted)
+            replyLocally(
+              'دریافت خریدهای رزرواسیون ناموفق بود.',
+              undefined,
+              undefined,
+              purchaseGuideLink,
+            );
+        }
+      }
+      return;
+    }
+    customerLookup.current?.abort();
+    const customerQuestion = resolveCustomerQuestion(
+      message,
+      pathname === '/customers',
+      customerTopic.current,
+    );
+    customerTopic.current = undefined;
+    if (customerQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      documentTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      guideTopic.current = undefined;
+      if (customerQuestion.kind === 'guide') {
+        customerTopic.current = customerQuestion.topic.id;
+        replyLocally(
+          renderCustomerGuide(customerQuestion.topic),
+          undefined,
+          undefined,
+          customerGuideLink,
+        );
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        customerLookup.current = controller;
+        setActionState('loading');
+        const filters = new URLSearchParams(
+          pathname === '/customers' ? searchParams.toString() : '',
+        );
+        const currentSearch = () =>
+          pathname === '/customers'
+            ? ((
+                document.getElementById(
+                  'customer-search-live',
+                ) as HTMLInputElement | null
+              )?.value ?? '')
+            : '';
+        const selectedSearch = currentSearch();
+        filters.set('search', selectedSearch);
+        try {
+          const answer = await readCustomerGuide(
+            customerQuestion,
+            filters,
+            controller.signal,
+          );
+          if (!controller.signal.aborted && currentSearch() === selectedSearch)
+            replyLocally(answer.text, undefined, undefined, {
+              ...customerGuideLink,
+              href: answer.href,
+            });
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
+        } finally {
+          if (pending.current === controller) setActionState(null);
+        }
+      }
+      return;
+    }
     const deliveryQuestion = resolveFinanceDeliveryQuestion(
       message,
       pathname === financeDeliveryHref,
