@@ -1,3 +1,7 @@
+## COUNTRY-FLAG-TRANSLATION-1121 — PC-D — COMPLETED
+
+Add the missing English label for the country flag field introduced in PR #1833. Scope is the translation catalogue and task/status notes.
+
 ## NORA-TOUR-GUIDE — PC-C
 
 Reserve Nora tour catalogue, routing and read-only reuse of Ticket Catalog clients, with focused tests. No tour policy, grants or migrations.

@@ -1,3 +1,7 @@
+## 2026-11-21 — COUNTRY-FLAG-TRANSLATION-1121 — PC-D
+
+Added the missing English label for the country flag in Master Data.
+
 ## 2026-11-21 — BANK-REFERENCE-PICKERS-1121 — PC-D
 
 Completed the bank branch, bank account type and Rial pickers in the Accounting bank account form. The new native branch fields use an additive migration. See [BANK-REFERENCE-PICKERS-1121](tasks/BANK-REFERENCE-PICKERS-1121.md).
