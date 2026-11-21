@@ -1,3 +1,7 @@
+## NORA-TOUR-GUIDE — PC-C
+
+Reserve Nora tour catalogue, routing and read-only reuse of Ticket Catalog clients, with focused tests. No tour policy, grants or migrations.
+
 ## NORA-GUIDE-LIVE-FIXES — PC-C
 
 Reserve Documents intent matching and shared Workbench approval labels, with focused regressions. No data contract or schema changes.
