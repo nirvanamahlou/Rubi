@@ -6,6 +6,16 @@ import {
   readDocumentGuide,
 } from './document-guides';
 
+import { canViewScreen } from '@nora/contracts';
+import {
+  readTourGuideStatus,
+  renderTourGuide,
+  resolveTourGuideQuestion,
+  tourGuideDestination,
+  tourGuideHref,
+  tourGuideUnavailable,
+  type TourGuideTopic,
+} from './tour-guide';
 import { normalizeQuestion } from './question-text';
 import { AssistantResponseContent } from './response-content';
 import { formatAssistantSources } from './response-presentation';
@@ -355,6 +365,9 @@ function AssistantComposerContent({
       : pathname === '/customer-affairs/call-center'
         ? 'call-center'
         : undefined;
+  const tourTopic = useRef<{ topic: TourGuideTopic; href: string } | undefined>(
+    undefined,
+  );
   const documentTopic = useRef<string | undefined>(undefined);
   const workbenchTopic = useRef<string | undefined>(undefined);
   const lastVersion = useRef<number | undefined>(undefined);
@@ -510,6 +523,72 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    const previousTour = tourTopic.current;
+    const tourQuestion = resolveTourGuideQuestion(
+      message,
+      pathname === tourGuideHref,
+      previousTour?.topic,
+    );
+    tourTopic.current = undefined;
+    if (tourQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      workbenchTopic.current = undefined;
+      documentTopic.current = undefined;
+      guideTopic.current = undefined;
+      const label = 'تعریف تور و خدمات';
+      if (tourQuestion.kind === 'guide') {
+        const href =
+          tourQuestion.followUp && previousTour
+            ? previousTour.href
+            : tourGuideDestination(
+                tourQuestion.topic,
+                tourQuestion.floatingPrice,
+              );
+        tourTopic.current = { topic: tourQuestion.topic, href };
+        replyLocally(
+          renderTourGuide(tourQuestion.topic, tourQuestion.followUp),
+          undefined,
+          undefined,
+          {
+            href,
+            label,
+          },
+        );
+      } else if (tourQuestion.kind === 'clarify') {
+        replyLocally(tourQuestion.text, undefined, undefined, {
+          href: tourGuideHref,
+          label,
+        });
+      } else if (
+        !actor ||
+        !canViewScreen(actor.permissions, 'ticket-catalog.tab.tours')
+      ) {
+        replyLocally(tourGuideUnavailable, undefined, undefined, {
+          href: tourGuideHref,
+          label,
+        });
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readTourGuideStatus(
+            tourQuestion,
+            actor,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer.text, undefined, undefined, {
+              href: answer.href,
+              label,
+            });
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
+        }
+      }
+      return;
+    }
     const documentQuestion = resolveDocumentQuestion(
       message,
       pathname === '/documents',

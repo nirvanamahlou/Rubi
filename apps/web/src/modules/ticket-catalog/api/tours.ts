@@ -80,10 +80,15 @@ export const toursApi = {
       `/sale-price-targets/${encodeURIComponent(id)}`,
       { method: 'DELETE', body: JSON.stringify({ expectedVersion }) },
     ),
-  packages: () => request<{ data: TourPackageV1[] }>('/tours/packages'),
-  departures: (management = false) =>
+  packages: (signal?: AbortSignal) =>
+    request<{ data: TourPackageV1[] }>(
+      '/tours/packages',
+      signal ? { signal } : undefined,
+    ),
+  departures: (management = false, signal?: AbortSignal) =>
     request<{ data: TourDepartureV1[] }>(
       '/tours/departures' + (management ? '?management=true' : ''),
+      signal ? { signal } : undefined,
     ),
   createPackage: (input: TourPackageInputV1, branch: string, key: string) =>
     request<{ data: TourPackageV1 }>(
