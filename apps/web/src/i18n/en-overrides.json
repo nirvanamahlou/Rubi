@@ -6984,5 +6984,12 @@
   "انتخاب ریال": "Select Rial",
   "ثبت و انتخاب ریال": "Save and select Rial",
   "ذخیره ارز ناموفق بود.": "Could not save the currency.",
-  "پرچم کشور": "Country flag"
+  "پرچم کشور": "Country flag",
+  "اطلاعات ثبت شد.": "Information was published.",
+  "مشاهده در جهان باستان": "View on Jahan Bastan",
+  "ثبت در جهان باستان انجام نشد.": "Publication to Jahan Bastan failed.",
+  "سرویس تصویر پرچم در دسترس نیست.": "The flag image service is unavailable.",
+  "ثبت در جهان باستان تأیید نشد.": "Jahan Bastan did not confirm publication.",
+  "ثبت در جهان باستان": "Publish to Jahan Bastan",
+  "حجم پرچم بیش از حد مجاز است.": "The flag image exceeds the size limit."
 }

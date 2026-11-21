@@ -106,6 +106,15 @@ export class SiteCommerceController {
   ) {
     return this.service.publishHotelProfile(site, id, req.actor);
   }
+  @Post('geography-profiles/:kind/:id')
+  publishGeography(
+    @Param('site') site: string,
+    @Param('kind') kind: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.publishGeography(site, kind, id, req.actor);
+  }
   @Post('flight-quote')
   @Header('Cache-Control', 'private, no-store')
   flightQuote(
