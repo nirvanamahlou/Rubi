@@ -13184,3 +13184,7 @@ Reserve the floating pricing picker and its focused test. Use the existing float
 ## FLOATING-IMPORT-DIAGNOSTICS-1121 — PC-A
 
 Reserve Floating Pricing API parsing, preview diagnostics, the Web preview and focused tests. The producer and consumer retain the existing response and warning fields.
+
+## NORA-B2B-GUIDE — PC-C
+
+Reserve B2B guidance, composer routing and scoped directory reads using existing interfaces.

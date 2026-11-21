@@ -415,7 +415,15 @@ export function OrganizationsWorkspace() {
   }
 
   return (
-    <div className="b2b-design min-w-0" dir="rtl">
+    <div
+      className="b2b-design min-w-0"
+      dir="rtl"
+      data-b2b-directory=""
+      data-status={status}
+      data-role={role}
+      data-branch={commercialBranch}
+      data-selected={profileOpen ? selected?.id : undefined}
+    >
       <div hidden={profileOpen}>
         <div className="page-head">
           <div className="title">
@@ -542,6 +550,7 @@ export function OrganizationsWorkspace() {
                   }}
                   placeholder="نام یا کد سازمان"
                   maxLength={100}
+                  data-b2b-search=""
                   value={search}
                 />
               </span>
