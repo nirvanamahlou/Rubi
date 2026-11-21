@@ -13243,3 +13243,7 @@ and routes. No shared contract, schema, migration or lockfile change.
 ## NORA-FLIGHT-PRICING-GUIDE — PC-C
 
 Reserve the assistant flight pricing guide and its composer integration. Reuse existing authenticated ticket catalog reads and pricing projections.
+
+## NORA-MASTER-DATA-GUIDE — PC-C
+
+Reserve operational master data guidance, the composer integration and authorized read tests. Reuse the master data catalog, navigation and scoped API.
