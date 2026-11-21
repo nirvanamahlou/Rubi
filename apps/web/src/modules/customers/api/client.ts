@@ -208,17 +208,23 @@ export const customersApi = {
     }
     return session.user.branches;
   },
-  list(query: CustomerListQuery) {
+  list(query: CustomerListQuery, signal?: AbortSignal) {
     return request<CustomerListResponse>(
       `?${serializeCustomerListQuery(query)}`,
+      signal ? { signal } : undefined,
     );
   },
-  detail(id: string, sensitiveReadReason?: string) {
+  detail(id: string, sensitiveReadReason?: string, signal?: AbortSignal) {
     return request<{ data: CustomerDetail }>(
       `/${encodeURIComponent(id)}`,
       sensitiveReadReason
-        ? { headers: { 'x-sensitive-read-reason': sensitiveReadReason } }
-        : undefined,
+        ? {
+            headers: { 'x-sensitive-read-reason': sensitiveReadReason },
+            ...(signal ? { signal } : {}),
+          }
+        : signal
+          ? { signal }
+          : undefined,
     );
   },
   statusHistory(id: string) {

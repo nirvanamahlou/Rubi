@@ -20,6 +20,15 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { browserRandomUuid } from '@/lib/browser-random-uuid';
 
+export class TicketCatalogRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+  }
+}
+
 async function request<T>(
   path: string,
   init?: RequestInit,
@@ -44,10 +53,11 @@ async function request<T>(
       message?: string;
       error?: { message?: string };
     } | null;
-    throw new Error(
+    throw new TicketCatalogRequestError(
       body?.error?.message ??
         body?.message ??
         'دریافت یا ثبت تور ناموفق بود؛ نشست و دسترسی را بررسی کنید.',
+      response.status,
     );
   }
   return response.json() as Promise<T>;
@@ -63,9 +73,10 @@ export const toursApi = {
       '/offers/manifest-templates?' +
         new URLSearchParams({ search, page: String(page) }),
     ),
-  salePriceTargets: () =>
+  salePriceTargets: (signal?: AbortSignal) =>
     request<{ version: 1; data: TicketSalePriceTargetV1[] }>(
       '/sale-price-targets',
+      signal ? { signal } : undefined,
     ),
   createSalePriceTarget: (
     input: TicketSalePriceTargetCreateV1,
@@ -80,10 +91,15 @@ export const toursApi = {
       `/sale-price-targets/${encodeURIComponent(id)}`,
       { method: 'DELETE', body: JSON.stringify({ expectedVersion }) },
     ),
-  packages: () => request<{ data: TourPackageV1[] }>('/tours/packages'),
-  departures: (management = false) =>
+  packages: (signal?: AbortSignal) =>
+    request<{ data: TourPackageV1[] }>(
+      '/tours/packages',
+      signal ? { signal } : undefined,
+    ),
+  departures: (management = false, signal?: AbortSignal) =>
     request<{ data: TourDepartureV1[] }>(
       '/tours/departures' + (management ? '?management=true' : ''),
+      signal ? { signal } : undefined,
     ),
   createPackage: (input: TourPackageInputV1, branch: string, key: string) =>
     request<{ data: TourPackageV1 }>(
@@ -179,7 +195,7 @@ export const toursApi = {
     request<{ version: 1; data: TicketSaleRouteV1[] }>(
       '/offers/charter-routes',
     ),
-  managedOffers: async (includePast = false) => {
+  managedOffers: async (includePast = false, signal?: AbortSignal) => {
     const offers = new Map<string, TicketOfferV1>();
     for (let page = 1; page <= 10000; page++) {
       const result = await request<{
@@ -192,6 +208,7 @@ export const toursApi = {
           : page === 1
             ? '/offers/management'
             : `/offers/management?page=${page}`,
+        signal ? { signal } : undefined,
       );
       for (const offer of result.data) offers.set(offer.id, offer);
       if (!result.hasMore)
