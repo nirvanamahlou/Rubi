@@ -13200,3 +13200,6 @@ Reserve Site Commerce's opt-in floating projection and dedicated order intake, w
 ## NORA-PURCHASE-GUIDE — PC-C
 
 Reserve assistant purchase guide, its composer integration and focused tests. Reuse the authorized reservation purchase inbox and existing form links.
+
+### COUNTRY-FLAGS-1121 (PC-B)
+Country flag upload and existing logo display. Reserve country logo field in the Master Data catalog, editable contract, logo service and additive migration 20261121120000_country_flag. User authorizes push and develop merge.

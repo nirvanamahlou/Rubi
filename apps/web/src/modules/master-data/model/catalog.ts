@@ -119,6 +119,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: '+03:30',
       },
       {
+        key: 'logoFileReference',
+        label: 'پرچم کشور',
+        type: 'text',
+        placeholder: '',
+      },
+      {
         key: 'displayOrder',
         label: 'ترتیب نمایش',
         type: 'number',

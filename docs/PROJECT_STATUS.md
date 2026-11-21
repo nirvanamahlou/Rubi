@@ -10425,3 +10425,6 @@ Niyayesh floating checkout consumes dated periods with matching room references 
 
 
 The Nora purchase guide covers the reservation purchase dashboard, filters, registration, finance and seat pricing. Exact contract status uses the authorized purchase inbox with the current session.
+
+### Country flags (2026-11-21)
+Country create/edit now uses the existing logo uploader and geography logo column. The additive migration stores an optional logo document reference.
