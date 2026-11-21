@@ -119,6 +119,25 @@ describe('Finance HTTP fiscal boundary', () => {
     ).rejects.toThrow('تعریف نشده');
     expect(read.handler.handle).not.toHaveBeenCalled();
   });
+  it('allows setting up detail coding before a fiscal year is assigned', async () => {
+    const action = 'setup-finance-coding-types';
+    const f = fixture(
+      '/api/finance/accounting/books/book/actions/' + action,
+      'POST',
+      {},
+      { ...scope, period: null },
+    );
+    Object.assign(f.context.switchToHttp().getRequest().params, { action });
+    expect(
+      await lastValueFrom(
+        await f.interceptor.intercept(f.context as never, f.handler),
+      ),
+    ).toBe('A');
+    expect(f.resolver.resolve).toHaveBeenCalledWith(
+      { userId: 'actor' },
+      { company: 'A', actorId: 'actor' },
+    );
+  });
   it('does not scope unrelated source-owner routes or the metadata endpoint', async () => {
     for (const path of [
       '/api/sales/contracts',

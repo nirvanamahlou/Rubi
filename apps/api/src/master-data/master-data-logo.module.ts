@@ -11,6 +11,7 @@ import { MasterDataModule } from './master-data.module';
 @Module({
   imports: [IamModule, MasterDataModule, DocumentsModule],
   controllers: [MasterDataLogoController],
+  exports: [MasterDataLogoService],
   providers: [AuthGuard, PermissionGuard, MasterDataLogoService],
 })
 export class MasterDataLogoModule {}

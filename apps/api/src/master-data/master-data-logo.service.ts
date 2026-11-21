@@ -16,6 +16,7 @@ import {
 import { MasterDataService } from './master-data.service';
 
 const logoResources = new Set([
+  'countries',
   'banks',
   'insurers',
   'airlines',
