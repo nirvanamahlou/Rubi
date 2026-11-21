@@ -49,7 +49,7 @@ it('lists only explicitly floating tours and ignores a regular tour in the URL',
   vi.stubGlobal('window', { location: { search: '?tour=ordinary' } });
   try {
     renderToStaticMarkup(<FloatingTourPricingWorkspace />);
-    vi.mocked(useEffect).mock.calls[0][0]();
+    vi.mocked(useEffect).mock.calls[0]?.[0]();
     await vi.waitFor(() => expect(h.states[1]).toEqual([floating]));
     expect(h.states[2]).toBe('');
   } finally {
