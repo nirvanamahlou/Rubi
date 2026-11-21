@@ -6497,8 +6497,50 @@ export class HrService {
                 (r.data as HrWorkflowData).endsAt ?? `${date}T23:59:59+03:30`,
               ) > shiftStart.getTime(),
           );
-          const status =
-            leave && leave.leaveMinutes > 0
+          // Compare each in-shift break with the union of approved leave and mission coverage.
+          const unexplainedExit =
+            shiftStart &&
+            shiftEnd &&
+            events.some((event, index) => {
+              const next = events[index + 1];
+              if (event.kind !== 'خروج' || next?.kind !== 'ورود') return false;
+              const from = new Date(
+                Math.max(event.at.getTime(), shiftStart.getTime()),
+              );
+              const to = new Date(
+                Math.min(next.at.getTime(), shiftEnd.getTime()),
+              );
+              if (to.getTime() - from.getTime() < 60000) return false;
+              const intervals = source.flatMap((r) => {
+                if (
+                  r.employeeId !== employee.id ||
+                  !['leave', 'radanLeave', 'mission', 'radanMission'].includes(
+                    r.tab,
+                  ) ||
+                  !validate.APPROVED.has(r.status)
+                )
+                  return [];
+                const v = r.values as string[];
+                const d = r.data as HrWorkflowData;
+                const daily = r.tab === 'radanLeave' && v[4] === 'روزانه';
+                return [
+                  [
+                    Date.parse(
+                      (daily ? undefined : d.startsAt) ??
+                        `${v[2]}T00:00:00+03:30`,
+                    ),
+                    Date.parse(
+                      (daily ? undefined : d.endsAt) ??
+                        `${v[3]}T23:59:59+03:30`,
+                    ),
+                  ] as [number, number],
+                ];
+              });
+              return !approvedLeaveCoverage([], from, to, intervals).fullDay;
+            });
+          const status = unexplainedExit
+            ? 'خروج غیرموجه'
+            : leave && leave.leaveMinutes > 0
               ? missionDay
                 ? 'مأموریت'
                 : hourlyLeave
@@ -6541,6 +6583,10 @@ export class HrService {
             reason: reviewExceptions.join('، '),
             minutes: result.worked,
             ...attendanceClockTimes(events),
+            attendancePunches: events.map(({ kind, at }) => ({
+              kind,
+              at: at.toISOString(),
+            })),
             registrationType: selected.length
               ? selected.some(
                   (r) =>

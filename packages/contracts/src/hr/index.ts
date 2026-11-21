@@ -128,6 +128,7 @@ export interface HrWorkflowData {
   attendanceSource?: string;
   sourceRecordId?: string;
   sourceEntryType?: string;
+  attendancePunches?: { kind: string; at: string }[];
   firstIn?: string | null;
   lastOut?: string | null;
   deficitMinutes?: number | null;

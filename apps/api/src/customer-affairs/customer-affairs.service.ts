@@ -2668,7 +2668,16 @@ export class CustomerAffairsService {
         subject: row.subject,
         description: row.description,
         destinationUnit: row.executionUnit,
-        status: workbenchReviewStatus(row),
+        status:
+          row.status === 'IN_PROGRESS' &&
+          !row.resolutionOutcome &&
+          row.timeline.some(
+            (e) =>
+              e.type === 'WORKBENCH_RECIPIENT_REVIEW' &&
+              e.outcome === 'APPROVED',
+          )
+            ? 'NEW'
+            : workbenchReviewStatus(row),
         priority: row.priority,
         nextActionAt: row.nextActionAt.toISOString(),
         updatedAt: row.updatedAt.toISOString(),
@@ -2815,7 +2824,7 @@ export class CustomerAffairsService {
               ? {
                   executionUnit: 'منابع انسانی',
                   executionOwnerUserId: recipients[0]!,
-                  status: 'IN_PROGRESS',
+                  status: 'NEW',
                   resolutionOutcome: null,
                 }
               : {

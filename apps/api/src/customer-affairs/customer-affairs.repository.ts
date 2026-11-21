@@ -584,6 +584,7 @@ export class CustomerAffairsRepository {
               in: [
                 'WORKBENCH_LEAVE',
                 'WORKBENCH_MISSION',
+                'WORKBENCH_RECIPIENT_REVIEW',
                 'WORKBENCH_SUBSTITUTE',
               ],
             },

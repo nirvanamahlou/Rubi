@@ -87,12 +87,14 @@ export function employeeAttendanceDataset(
               weekday: 'long',
             }).format(new Date(`${date}T12:00:00Z`))
           : '—',
-        record.data.firstIn !== undefined
-          ? attendanceClock(record.data.firstIn)
-          : (arrivals[0] ?? '—'),
-        record.data.lastOut !== undefined
-          ? attendanceClock(record.data.lastOut)
-          : (departures.at(-1) ?? '—'),
+        punchCell(record.data.attendancePunches, 'ورود') ??
+          (record.data.firstIn !== undefined
+            ? attendanceClock(record.data.firstIn)
+            : (arrivals[0] ?? '—')),
+        punchCell(record.data.attendancePunches, 'خروج') ??
+          (record.data.lastOut !== undefined
+            ? attendanceClock(record.data.lastOut)
+            : (departures.at(-1) ?? '—')),
         inactive ? '—' : clearLate || exempt ? '0' : (record.values[4] ?? '—'),
         inactive ? '—' : clearEarly || exempt ? '0' : (record.values[5] ?? '—'),
         inactive || displayedDeficit == null ? '—' : String(displayedDeficit),
@@ -185,4 +187,16 @@ export function eligibleAttendanceRecords(records: readonly HrRecordDto[]) {
           excluded.has(`${row.employeeId}:${row.values[1]}`))
       ),
   );
+}
+
+function punchCell(
+  punches: { kind: string; at: string }[] | undefined,
+  kind: string,
+) {
+  const lines = punches
+    ?.filter((punch) => punch.kind === kind)
+    .map((punch) => attendanceClock(punch.at));
+  return lines?.length
+    ? { label: lines.join(' / '), tone: 'neutral' as const, lines }
+    : undefined;
 }
