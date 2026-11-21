@@ -628,12 +628,28 @@ export function AccountingDetailEditor({
                   value={draft.title}
                   disabled={!type}
                   required
+                  {...(sourceKind === 'BANK' ? { wide: 'end' as const } : {})}
                   columns={
-                    sourceKind === 'BRANCH'
-                      ? ['عنوان', 'کد', 'نام بنگاه']
-                      : sourceKind
-                        ? ['عنوان', 'کد', 'وضعیت']
-                        : ['نام کامل', 'شماره', 'نوع']
+                    sourceKind === 'BANK'
+                      ? [
+                          'نام بانک',
+                          'کد بانک',
+                          'شماره حساب',
+                          'نام شعبه',
+                          'کد شعبه',
+                          'کد تفصیلی',
+                          'نوع ارز',
+                          'نوع حساب',
+                          'وضعیت',
+                          'کد سوئیفت',
+                          'شماره حساب پشتیبان',
+                          'شماره شبا',
+                        ]
+                      : sourceKind === 'BRANCH'
+                        ? ['عنوان', 'کد', 'نام بنگاه']
+                        : sourceKind
+                          ? ['عنوان', 'کد', 'وضعیت']
+                          : ['نام کامل', 'شماره', 'نوع']
                   }
                   rows={
                     sourceKind
@@ -641,15 +657,42 @@ export function AccountingDetailEditor({
                           .filter((row) => row.active)
                           .map((row) => ({
                             id: row.id,
-                            cells: [
-                              row.title,
-                              row.code,
-                              sourceKind === 'BRANCH'
-                                ? (book?.book.title ?? '')
-                                : row.active
-                                  ? 'فعال'
-                                  : 'غیرفعال',
-                            ],
+                            cells:
+                              sourceKind === 'BANK'
+                                ? [
+                                    String(
+                                      row.attributes.bankName ?? row.title,
+                                    ),
+                                    String(row.attributes.bankCode ?? ''),
+                                    String(
+                                      row.attributes.maskedAccountNumber ?? '',
+                                    ),
+                                    String(row.attributes.bankBranchName ?? ''),
+                                    String(row.attributes.bankBranchCode ?? ''),
+                                    detailRows.find(
+                                      (detail) =>
+                                        detail.sourceAccountId === row.id,
+                                    )?.code ?? '',
+                                    row.currency ?? '',
+                                    String(
+                                      row.attributes.bankAccountType ?? '',
+                                    ),
+                                    row.active ? 'فعال' : 'غیرفعال',
+                                    String(row.attributes.swiftCode ?? ''),
+                                    String(
+                                      row.attributes.backupAccountNumber ?? '',
+                                    ),
+                                    String(row.attributes.maskedIban ?? ''),
+                                  ]
+                                : [
+                                    row.title,
+                                    row.code,
+                                    sourceKind === 'BRANCH'
+                                      ? (book?.book.title ?? '')
+                                      : row.active
+                                        ? 'فعال'
+                                        : 'غیرفعال',
+                                  ],
                           }))
                       : personTitle
                         ? (people.data?.data ?? []).map((row) => ({

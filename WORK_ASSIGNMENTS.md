@@ -1,3 +1,7 @@
+## BANK-DETAIL-TITLE-1121 — PC-D — COMPLETED
+
+Reserve Accounting bank title lookup and the specialized Finance form. Reserve the bounded Finance bank account profile and Master Data bank metadata producers, compatible request fields, Customer public signer validation, focused tests and related schema/migration. Use existing bank/account IDs, permissions, encryption and auditing. Only additive nullable bank fields and new profile tables. No operational schema execution or data edits. Continues the FIN-CODING-001 task branch.
+
 ## FIN-CODING-001 — PC-D — COMPLETED
 
 Reserve the four Accounting detail type definitions, their native editor and save path, their year-independent setup action in the fiscal scope registry, a System Management internal numbering port and narrow guards for its reserved schemes, a shared additive Contracts catalogue, focused tests and task notes. Producer is System Numbering in the same transaction as its Accounting consumer. Reuse existing schemas and preserve all operational records. Dedicated title and native HR, Customer and bank record forms are outside this Accounting definition stage.

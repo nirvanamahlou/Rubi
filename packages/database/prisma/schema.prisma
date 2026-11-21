@@ -1384,6 +1384,11 @@ model MasterDraftExchangeRate {
 }
 
 model MasterBank {
+  institutionKind                 String?                          @db.VarChar(32)
+  publicRelationsPhone            String?                          @db.VarChar(80)
+  website                         String?                          @db.VarChar(500)
+  description                     String?                          @db.VarChar(2000)
+  descriptionEn                   String?                          @db.VarChar(2000)
   financeSupplierPaymentRevisions FinanceSupplierPaymentRevision[]
   financeSettlementAccounts       FinanceSettlementAccount[]
   id                              String                           @id @default(uuid()) @db.Uuid
@@ -1439,6 +1444,7 @@ model MasterBankBranch {
 }
 
 model MasterPaymentMethod {
+  bankAccountProfiles                FinanceBankAccountProfile[]
   financeOperationalPayments         FinanceOperationalRevision[]
   financeTicketPaymentRevisions      FinanceTicketPurchasePaymentRevision[]
   b2bAgreementRevisions              B2bAgreementRevision[]
@@ -3099,6 +3105,7 @@ enum CustomerDuplicateReviewStatus {
 }
 
 model Customer {
+  bankAccountSignatures      FinanceBankAccountSigner[]
   ledgerCompanyCode          String?                      @db.VarChar(20)
   ledgerCompanyEnvelope      String?                      @db.Text
   ledgerPersonCode           String?                      @db.VarChar(20)
@@ -4941,6 +4948,8 @@ model TreasuryCashierAssignment {
 }
 
 model FinanceSettlementAccount {
+  bankProfile                FinanceBankAccountProfile?             @relation("BankAccountProfile")
+  backedBankProfiles         FinanceBankAccountProfile[]            @relation("BackupBankAccount")
   sourcedDetails             AccountingDetail[]                     @relation("DetailSourceAccount")
   beneficiaries              FinanceBeneficiary[]
   bankStatements             FinanceBankStatement[]
@@ -4994,6 +5003,38 @@ model FinanceSettlementAccount {
   @@index([bankBranchId])
   @@index([branchId, isActive, title])
   @@index([bankId, isActive])
+}
+
+model FinanceBankAccountProfile {
+  accountId         String                     @id @db.Uuid
+  creditLimit       Decimal?                   @db.Decimal(24, 4)
+  reserveBalance    Decimal?                   @db.Decimal(24, 4)
+  materiality       Decimal?                   @db.Decimal(24, 4)
+  backupAccountId   String?                    @db.Uuid
+  automaticTransfer Boolean                    @default(false)
+  transferMethodId  String?                    @db.Uuid
+  description       String?                    @db.VarChar(2000)
+  descriptionEn     String?                    @db.VarChar(2000)
+  notes             String?                    @db.VarChar(4000)
+  account           FinanceSettlementAccount   @relation("BankAccountProfile", fields: [accountId], references: [id], onDelete: Restrict)
+  backupAccount     FinanceSettlementAccount?  @relation("BackupBankAccount", fields: [backupAccountId], references: [id], onDelete: Restrict)
+  transferMethod    MasterPaymentMethod?       @relation(fields: [transferMethodId], references: [id], onDelete: Restrict)
+  signers           FinanceBankAccountSigner[]
+
+  @@index([backupAccountId])
+  @@index([transferMethodId])
+  @@map("finance_bank_account_profiles")
+}
+
+model FinanceBankAccountSigner {
+  accountId String                    @db.Uuid
+  personId  String                    @db.Uuid
+  profile   FinanceBankAccountProfile @relation(fields: [accountId], references: [accountId], onDelete: Restrict)
+  person    Customer                  @relation(fields: [personId], references: [id], onDelete: Restrict)
+
+  @@id([accountId, personId])
+  @@index([personId])
+  @@map("finance_bank_account_signers")
 }
 
 model FinanceBankAccountAudit {

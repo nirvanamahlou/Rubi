@@ -1,3 +1,7 @@
+## 2026-11-21 — BANK-DETAIL-TITLE-1121 — PC-D
+
+Connected the bank-account detail title to native bank and company bank-account forms, including in-place legacy account completion, bank institution types, scoped account references and cheque signers. The additive migration was rehearsed on disposable data. See [BANK-DETAIL-TITLE-1121](tasks/BANK-DETAIL-TITLE-1121.md).
+
 ## 2026-11-21 — FIN-CODING-001 — PC-D
 
 Added four fixed Accounting detail type definitions and global eight-digit issuance through existing System Management numbering. Existing ledgers add missing definitions from the native type screen. New ledgers receive them at creation. Existing business codes and financial records are preserved. No migration or live deployment. See [FIN-CODING-001](tasks/FIN-CODING-001.md).

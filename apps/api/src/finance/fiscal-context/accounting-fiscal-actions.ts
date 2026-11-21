@@ -43,7 +43,7 @@ export function fiscalYearIndependentRequest(
     return true;
   if (action && accountingFiscalMetadataActions.has(action)) return true;
   if (
-    /^\/finance\/accounting\/books\/[^/]+\/reports\/analytical\/(?:standard-mapping|treasury-instruments|beneficiaries|tax-mapping)$/.test(
+    /^\/finance\/accounting\/books\/[^/]+\/reports\/analytical\/(?:standard-mapping|treasury-instruments|beneficiaries|tax-mapping|detail-owners)$/.test(
       path,
     ) &&
     method === 'GET'

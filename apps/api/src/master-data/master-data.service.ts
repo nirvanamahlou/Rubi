@@ -1,5 +1,6 @@
 import type { Prisma } from '@nora/database';
 import type { DisplayLanguage } from '../common/i18n/language';
+import { validateBankInstitutionFields } from './bank-institution-fields';
 import {
   FACILITY_NAME_MAX_CHARACTERS,
   postgresCharacterLength,
@@ -353,6 +354,11 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'englishName',
     'countryId',
     'swiftCode',
+    'institutionKind',
+    'publicRelationsPhone',
+    'website',
+    'description',
+    'descriptionEn',
     'logoFileReference',
   ],
   'bank-branches': [
@@ -2873,6 +2879,7 @@ export class MasterDataService {
         throw new BadRequestException('سیاست نمایش ارز معتبر نیست.');
       data.displayPolicy = displayPolicy;
     }
+    if (resource === 'banks') validateBankInstitutionFields(data);
     if (resource === 'banks' && data.swiftCode !== undefined) {
       const swiftCode = String(data.swiftCode).trim().toUpperCase();
       if (swiftCode && !/^[A-Z0-9]{8}([A-Z0-9]{3})?$/.test(swiftCode))

@@ -8,6 +8,7 @@ import {
   type AccountingSnapshotV1,
 } from '@nora/contracts';
 import { AccountingDetailOwnerDialog } from './accounting-detail-owner-dialog';
+import { BankInstitutionDialog } from './accounting-bank-reference-dialogs';
 vi.mock('@/components/ui/overlays', () => ({
   Dialog: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   DialogContent: ({ children }: { children: ReactNode }) => (
@@ -15,8 +16,13 @@ vi.mock('@/components/ui/overlays', () => ({
   ),
   DialogTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
 }));
-vi.mock('./company-bank-accounts', () => ({
-  CompanyBankAccounts: () => <div>فرم بومی حساب بانکی شرکت</div>,
+vi.mock('@/modules/iam/access-context', () => ({
+  useAccessPermissions: () => [
+    'finance.account.manage',
+    'master_data.read',
+    'master_data.create',
+  ],
+  useRouteAccess: () => () => true,
 }));
 vi.mock('./accounting-setup-notes', () => ({
   parseSetupNotes: () => [],
@@ -53,7 +59,7 @@ describe('dedicated detail owner forms', () => {
     'shows the dedicated $title form and its required controls',
     ({ kind, title }) => {
       const html = render(kind);
-      expect(html).toContain('ایجاد');
+      expect(html).toContain(kind === 'BANK' ? 'تعریف' : 'ایجاد');
       expect(html).toContain(title);
       if (kind !== 'BANK') {
         expect(html).toContain('aria-label="کد مرجع"');
@@ -76,11 +82,51 @@ describe('dedicated detail owner forms', () => {
     expect(render('CASH')).toContain('مسئول صندوق');
     expect(render('PETTY_CASH')).toContain('تنخواه‌دار');
     expect(render('PETTY_CASH')).toContain('تاریخ استقرار');
-    expect(render('BANK')).toContain('انتخاب بانک');
+    expect(render('BANK')).toContain('نام بانک');
     expect(render('FISCAL_YEAR')).toContain('یادداشت‌های دوره مالی');
+  });
+  it('renders the banking fields and all three institution choices', () => {
+    const html = render('BANK');
+    for (const label of [
+      'نام بانک',
+      'شعبه بانک',
+      'کد شعبه',
+      'شهر شعبه',
+      'شماره حساب',
+      'نوع ارز',
+      'نوع حساب',
+      'موجودی ذخیره',
+      'مبلغ اهمیت',
+      'اعتبار حساب',
+      'شبا',
+      'حساب پشتیبان',
+      'انتقال خودکار',
+      'روش انتقال',
+      'شرح به زبان دوم',
+      'امضاکنندگان دسته چک',
+    ])
+      expect(html).toContain(label);
+    const client = new QueryClient();
+    const bank = renderToStaticMarkup(
+      <QueryClientProvider client={client}>
+        <BankInstitutionDialog onSaved={vi.fn()} onClose={vi.fn()} />
+      </QueryClientProvider>,
+    );
+    for (const label of [
+      'بانک',
+      'مؤسسه مالی و اعتباری',
+      'صندوق قرض‌الحسنه',
+      'نام به زبان دوم',
+      'کد بانک',
+      'تلفن روابط عمومی',
+      'وب‌سایت',
+      'کد سوئیفت',
+    ])
+      expect(bank).toContain(label);
   });
   it('recognizes normalized legacy spellings without reclassifying person/company or arbitrary types', () => {
     expect(detailOwnerKind('حساب بانكي')).toBe('BANK');
+    expect(detailOwnerKind('حساب‌های بانکی')).toBe('BANK');
     expect(detailOwnerKind('منبع تأمین اعتبار')).toBe('FUND');
     expect(detailOwnerKind('شخص')).toBeUndefined();
     expect(detailOwnerKind('نوع اختصاصی')).toBeUndefined();
