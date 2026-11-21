@@ -6,6 +6,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import {
   bankInstitutionKinds,
   hasAccessControl,
+  type AccountingConfigurationV1,
   type AccountingDetailOwnerPageV1,
   type AccountingDetailOwnerV1,
   type AccountingSnapshotV1,
@@ -28,6 +29,11 @@ import {
   BankBranchDialog,
   BankInstitutionDialog,
 } from './accounting-bank-reference-dialogs';
+import {
+  BankAccountTypeDialog,
+  BankRialDialog,
+  rialDefaults,
+} from './accounting-bank-type-currency-dialogs';
 import type { PersistedEditorRun } from './accounting-persisted-editor';
 
 type Props = {
@@ -141,7 +147,10 @@ function BankAccountFields({
   const ledger = book.book;
   const permissions = useAccessPermissions() ?? [];
   const canManage = permissions.includes('finance.account.manage');
-  const canCreateReference = (id: 'banks' | 'bank-branches') =>
+  const canReadCurrencyCatalogue =
+    permissions.includes('master_data.read') &&
+    hasAccessControl(permissions, 'master-data.resource.currencies');
+  const canCreateReference = (id: 'banks' | 'bank-branches' | 'currencies') =>
     permissions.includes('master_data.create') &&
     hasAccessControl(permissions, 'master-data.resource.' + id);
   const client = useQueryClient();
@@ -150,7 +159,9 @@ function BankAccountFields({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [tab, setTab] = useState<'main' | 'notes'>('main');
-  const [nested, setNested] = useState<'bank' | 'branch' | 'type' | null>(null);
+  const [nested, setNested] = useState<
+    'bank' | 'branch' | 'type' | 'rial' | null
+  >(null);
   const [bankId, setBankId] = useState(current?.bankId ?? '');
   const [bankChoice, setBankChoice] = useState<MasterDataRecord>();
   const [branchId, setBranchId] = useState(
@@ -162,12 +173,12 @@ function BankAccountFields({
   const [existingPage, setExistingPage] = useState(1);
   const [showExisting, setShowExisting] = useState(false);
   const [branchSearch, setBranchSearch] = useState('');
+  const [branchPage, setBranchPage] = useState(1);
   const [backupSearch, setBackupSearch] = useState('');
   const [signerSearch, setSignerSearch] = useState('');
   const [methodSearch, setMethodSearch] = useState('');
-  const [typeCode, setTypeCode] = useState('');
-  const [typeTitle, setTypeTitle] = useState('');
-  const [addedType, setAddedType] = useState<{ id: string; title: string }>();
+  const [editingType, setEditingType] = useState<AccountingConfigurationV1>();
+  const [savedType, setSavedType] = useState<AccountingConfigurationV1>();
   const [signers, setSigners] = useState(current?.bankProfile?.signers ?? []);
   const [draft, setDraft] = useState({
     title: current?.title ?? '',
@@ -211,10 +222,19 @@ function BankAccountFields({
       bankAccountsApi.list(bankId, existingPage, ledger.branchId, ledger.id),
   });
   const branches = useQuery({
-    queryKey: ['accounting', 'bank-title-branches', bankId, branchSearch],
+    queryKey: [
+      'accounting',
+      'bank-title-branches',
+      bankId,
+      branchSearch,
+      branchPage,
+    ],
     enabled: !!bankId,
     queryFn: () =>
-      masterDataApi.list('bank-branches', { ...list(branchSearch), bankId }),
+      masterDataApi.list('bank-branches', {
+        ...list(branchSearch, branchPage),
+        bankId,
+      }),
   });
   const selectedBranch = useQuery({
     queryKey: ['accounting', 'bank-title-branch-record', branchId],
@@ -286,6 +306,8 @@ function BankAccountFields({
   const chooseBank = (row: MasterDataRecord) => {
     if (row.id !== bankId) {
       setBranchId('');
+      setBranchPage(1);
+      setBranchSearch('');
       setExistingPage(1);
       setShowExisting(false);
     }
@@ -302,10 +324,12 @@ function BankAccountFields({
       row.kind === 'bank-account-types' &&
       (row.active || row.id === draft.type),
   );
-  const visibleTypes =
-    addedType && !typeRows.some(({ id }) => id === addedType.id)
-      ? [...typeRows, addedType]
-      : typeRows;
+  const visibleTypes = savedType
+    ? [...typeRows.filter(({ id }) => id !== savedType.id), savedType]
+    : typeRows;
+  const currencies = options.data?.currencies ?? [
+    { code: rialDefaults.code, name: rialDefaults.name },
+  ];
 
   async function save() {
     if (busy.current || !canManage) return;
@@ -516,31 +540,57 @@ function BankAccountFields({
                 <DetailPicker
                   label="شعبه بانک"
                   required
-                  disabled={!bankId}
+                  disabled={!bankId && !canCreateReference('bank-branches')}
                   value={
                     branch?.name ??
                     String(initial?.attributes.bankBranchName ?? '')
                   }
-                  columns={['نام شعبه', 'کد شعبه']}
+                  columns={['نام شعبه', 'کد شعبه', 'شهر شعبه']}
                   rows={(branches.data?.data ?? []).map((row) => ({
                     id: row.id,
-                    cells: [row.name, row.code],
+                    cells: [row.name, row.code, bankAttr(row, 'cityName')],
                   }))}
-                  onSearch={setBranchSearch}
+                  onSearch={(search) => {
+                    setBranchSearch(search);
+                    setBranchPage(1);
+                  }}
                   onSelect={setBranchId}
                   message={branches.error?.message}
                   footer={
-                    bank && canCreateReference('bank-branches') ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setNested('branch')}
-                      >
-                        <Plus className="size-4" />
-                        افزودن شعبه بانک
-                      </Button>
-                    ) : undefined
+                    <>
+                      {canCreateReference('bank-branches') && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setNested('branch')}
+                        >
+                          <Plus className="size-4" />
+                          افزودن شعبه بانک
+                        </Button>
+                      )}
+                      {branchPage > 1 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setBranchPage((page) => page - 1)}
+                        >
+                          قبلی
+                        </Button>
+                      )}
+                      {branches.data &&
+                        branchPage * 30 < branches.data.meta.total && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setBranchPage((page) => page + 1)}
+                          >
+                            بعدی
+                          </Button>
+                        )}
+                    </>
                   }
                 />
                 <FormField id="bank-account-branch-code" label="کد شعبه">
@@ -563,55 +613,85 @@ function BankAccountFields({
               </div>
               <div className="space-y-3">
                 {field('accountNumber', 'شماره حساب', true)}
-                <FormField id="bank-account-currency" label="نوع ارز" required>
-                  <select
-                    id="bank-account-currency"
-                    className="w-full rounded-md border bg-background p-2"
-                    required
-                    disabled={Boolean(current)}
-                    value={draft.currencyCode}
-                    onChange={(e) => set('currencyCode', e.target.value)}
-                  >
-                    <option value="">انتخاب کنید</option>
-                    {(
-                      options.data?.currencies ?? [
-                        { code: 'IRR', name: 'ریال' },
-                      ]
-                    ).map(({ code, name }) => (
-                      <option key={code} value={code}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                </FormField>
-                <FormField id="bank-account-kind" label="نوع حساب" required>
-                  <div className="flex gap-2">
-                    <select
-                      id="bank-account-kind"
-                      className="min-w-0 flex-1 rounded-md border bg-background p-2"
-                      required
-                      value={draft.type}
-                      onChange={(e) => set('type', e.target.value)}
+                <DetailPicker
+                  label="نوع ارز"
+                  required
+                  disabled={Boolean(current)}
+                  value={
+                    currencies.find((row) => row.code === draft.currencyCode)
+                      ?.name ??
+                    (draft.currencyCode === rialDefaults.code
+                      ? rialDefaults.name
+                      : draft.currencyCode)
+                  }
+                  columns={['عنوان', 'حروف اختصاری']}
+                  rows={currencies.map(({ code, name }) => ({
+                    id: code,
+                    cells: [name, code],
+                  }))}
+                  onSelect={(code) => set('currencyCode', code)}
+                  footer={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setNested('rial')}
                     >
-                      <option value="">انتخاب کنید</option>
-                      {visibleTypes.map(({ id, title }) => (
-                        <option key={id} value={id}>
-                          {title}
-                        </option>
-                      ))}
-                    </select>
-                    {canManage && (
+                      <Plus className="size-4" />
+                      ارز ریال
+                    </Button>
+                  }
+                />
+                <DetailPicker
+                  label="نوع حساب"
+                  required
+                  value={
+                    visibleTypes.find((row) => row.id === draft.type)?.title ??
+                    ''
+                  }
+                  columns={['نام', 'دسته چک دارد؟']}
+                  rows={visibleTypes.map(({ id, title, attributes }) => ({
+                    id,
+                    cells: [
+                      title,
+                      attributes.hasCheckbook === true
+                        ? 'بله'
+                        : attributes.hasCheckbook === false
+                          ? 'خیر'
+                          : '—',
+                    ],
+                  }))}
+                  onSelect={(id) => set('type', id)}
+                  {...(canManage
+                    ? {
+                        onEdit: (id: string) => {
+                          const row = visibleTypes.find(
+                            (item) => item.id === id,
+                          );
+                          if (row) {
+                            setEditingType(row);
+                            setNested('type');
+                          }
+                        },
+                      }
+                    : {})}
+                  footer={
+                    canManage && (
                       <Button
                         type="button"
                         variant="outline"
-                        aria-label="تعریف نوع حساب بانکی"
-                        onClick={() => setNested('type')}
+                        size="sm"
+                        onClick={() => {
+                          setEditingType(undefined);
+                          setNested('type');
+                        }}
                       >
                         <Plus className="size-4" />
+                        تعریف نوع حساب بانکی
                       </Button>
-                    )}
-                  </div>
-                </FormField>
+                    )
+                  }
+                />
                 {amount('reserveBalance', 'موجودی ذخیره')}
                 {amount('materiality', 'مبلغ اهمیت')}
               </div>
@@ -902,92 +982,57 @@ function BankAccountFields({
           }}
         />
       )}
-      {nested === 'branch' && bank && (
+      {nested === 'branch' && (
         <BankBranchDialog
-          bank={bank}
+          bankId={bankId}
+          lockBank={Boolean(current)}
           onClose={() => setNested(null)}
           onSaved={(row) => {
+            const owner = String(row.attributes.bankId ?? '');
+            if (owner && owner !== bankId && !current) {
+              setBankId(owner);
+              setBankChoice(undefined);
+              setBranchSearch('');
+              setBranchPage(1);
+              setExistingPage(1);
+              setShowExisting(false);
+            }
             setNewBranch(row);
             setBranchId(row.id);
             setNested(null);
             void client.invalidateQueries({
-              queryKey: ['accounting', 'bank-title-branches', bankId],
+              queryKey: ['accounting', 'bank-title-branches', owner || bankId],
             });
           }}
         />
       )}
       {nested === 'type' && (
-        <Dialog
-          open
-          onOpenChange={(open) => {
-            if (!open && !saving) setNested(null);
+        <BankAccountTypeDialog
+          initial={editingType}
+          run={run}
+          onClose={() => setNested(null)}
+          onSaved={(row) => {
+            setSavedType(row);
+            if (row.active) set('type', row.id);
+            setNested(null);
           }}
-        >
-          <DialogContent dir="rtl" aria-describedby={undefined}>
-            <DialogTitle>تعریف نوع حساب بانکی</DialogTitle>
-            <form
-              className="space-y-3"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (busy.current) return;
-                busy.current = true;
-                setSaving(true);
-                try {
-                  const row = await run<{ id: string; title: string }>(
-                    'save-configuration',
-                    {
-                      kind: 'bank-account-types',
-                      code: typeCode,
-                      title: typeTitle,
-                      active: true,
-                      attributes: {},
-                    },
-                  );
-                  if (row) {
-                    setAddedType(row);
-                    set('type', row.id);
-                    setNested(null);
-                    setTypeCode('');
-                    setTypeTitle('');
-                  }
-                } finally {
-                  setSaving(false);
-                  busy.current = false;
-                }
-              }}
-            >
-              <FormField
-                id="bank-account-type-code"
-                label="کد نوع حساب"
-                required
-              >
-                <Input
-                  id="bank-account-type-code"
-                  required
-                  maxLength={40}
-                  value={typeCode}
-                  onChange={(e) => setTypeCode(e.target.value)}
-                />
-              </FormField>
-              <FormField
-                id="bank-account-type-title"
-                label="عنوان نوع حساب"
-                required
-              >
-                <Input
-                  id="bank-account-type-title"
-                  required
-                  maxLength={160}
-                  value={typeTitle}
-                  onChange={(e) => setTypeTitle(e.target.value)}
-                />
-              </FormField>
-              <Button type="submit" disabled={saving}>
-                ذخیره نوع حساب
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        />
+      )}
+      {nested === 'rial' && (
+        <BankRialDialog
+          catalogueAccess={canReadCurrencyCatalogue}
+          canCreate={
+            canReadCurrencyCatalogue && canCreateReference('currencies')
+          }
+          onClose={() => setNested(null)}
+          onSelected={() => {
+            set('currencyCode', rialDefaults.code);
+            setNested(null);
+            void client.invalidateQueries({
+              queryKey: ['accounting', 'bank-title-currencies'],
+            });
+          }}
+        />
       )}
     </>
   );

@@ -8,7 +8,14 @@ import {
   type AccountingSnapshotV1,
 } from '@nora/contracts';
 import { AccountingDetailOwnerDialog } from './accounting-detail-owner-dialog';
-import { BankInstitutionDialog } from './accounting-bank-reference-dialogs';
+import {
+  BankAccountTypeDialog,
+  BankRialDialog,
+} from './accounting-bank-type-currency-dialogs';
+import {
+  BankBranchDialog,
+  BankInstitutionDialog,
+} from './accounting-bank-reference-dialogs';
 vi.mock('@/components/ui/overlays', () => ({
   Dialog: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   DialogContent: ({ children }: { children: ReactNode }) => (
@@ -123,6 +130,81 @@ describe('dedicated detail owner forms', () => {
       'کد سوئیفت',
     ])
       expect(bank).toContain(label);
+  });
+
+  it('shows the complete bank branch definition and keeps the native bank and city selectors', () => {
+    const html = renderToStaticMarkup(
+      <QueryClientProvider client={new QueryClient()}>
+        <BankBranchDialog
+          bankId="existing-bank"
+          onSaved={vi.fn()}
+          onClose={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+    for (const field of [
+      'نام بانک',
+      'نام شعبه',
+      'نام به زبان دوم',
+      'کد شعبه',
+      'شهر شعبه',
+      'کد سوئیفت',
+      'تلفن',
+      'نشانی',
+      'وب‌سایت',
+    ])
+      expect(html).toContain(field);
+  });
+
+  it('renders only account type name and checkbook availability as editable fields', () => {
+    const html = renderToStaticMarkup(
+      <BankAccountTypeDialog
+        run={vi.fn()}
+        onSaved={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(html).toContain('id="bank-account-type-title"');
+    expect(html).toContain('دسته چک دارد');
+    expect(html).not.toContain('bank-account-type-code');
+  });
+
+  it('renders the existing active Rial with its canonical values and exposes the select action', () => {
+    const client = new QueryClient();
+    client.setQueryData(['accounting', 'bank-title-rial', true], {
+      data: [
+        {
+          code: 'IRR',
+          name: 'ریال',
+          status: 'active',
+          attributes: { englishName: 'Rial', decimalDigits: 0, symbol: 'ریال' },
+        },
+      ],
+    });
+    const html = renderToStaticMarkup(
+      <QueryClientProvider client={client}>
+        <BankRialDialog
+          catalogueAccess
+          canCreate={false}
+          onSelected={vi.fn()}
+          onClose={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+    for (const label of [
+      'ارز (ریال)',
+      'واحد مبادله',
+      'روش گرد کردن',
+      'گرد کردن اتوماتیک',
+      'عنوان واحد فرعی به زبان دوم',
+      'تعداد ارقام اعشار',
+      'علامت',
+      'انتخاب ریال',
+    ])
+      expect(html).toContain(label);
+    expect(html).toMatch(/id="bank-rial-code"[^>]*value="IRR"/);
+    expect(html).toMatch(/id="bank-rial-digits"[^>]*value="0"/);
+    expect(html).not.toContain('ثبت و انتخاب ریال');
   });
   it('recognizes normalized legacy spellings without reclassifying person/company or arbitrary types', () => {
     expect(detailOwnerKind('حساب بانكي')).toBe('BANK');

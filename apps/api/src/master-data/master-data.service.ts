@@ -1,6 +1,9 @@
 import type { Prisma } from '@nora/database';
 import type { DisplayLanguage } from '../common/i18n/language';
-import { validateBankInstitutionFields } from './bank-institution-fields';
+import {
+  validateBankBranchMetadata,
+  validateBankInstitutionFields,
+} from './bank-institution-fields';
 import {
   FACILITY_NAME_MAX_CHARACTERS,
   postgresCharacterLength,
@@ -365,6 +368,8 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'code',
     'name',
     'englishName',
+    'swiftCode',
+    'website',
     'bankId',
     'cityId',
     'address',
@@ -3674,6 +3679,7 @@ export class MasterDataService {
         throw new BadRequestException('کلاس پروازی فعال یافت نشد.');
     }
     if (resource === 'bank-branches') {
+      validateBankBranchMetadata(data);
       if (typeof data.cityId === 'string') {
         const city = await this.repository.find('cities', data.cityId);
         if (!city?.isActive)

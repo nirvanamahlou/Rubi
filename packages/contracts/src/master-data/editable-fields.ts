@@ -84,6 +84,8 @@ export const MASTER_DATA_EDITABLE_FIELDS = {
     'code',
     'name',
     'englishName',
+    'swiftCode',
+    'website',
     'bankId',
     'cityId',
     'address',

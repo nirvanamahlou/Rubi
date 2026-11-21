@@ -1,3 +1,7 @@
+## 2026-11-21 — BANK-REFERENCE-PICKERS-1121 — PC-D
+
+Completed the bank branch, bank account type and Rial pickers in the Accounting bank account form. The new native branch fields use an additive migration. See [BANK-REFERENCE-PICKERS-1121](tasks/BANK-REFERENCE-PICKERS-1121.md).
+
 ## 2026-11-21 — BANK-DETAIL-TITLE-1121 — PC-D
 
 Connected the bank-account detail title to native bank and company bank-account forms, including in-place legacy account completion, bank institution types, scoped account references and cheque signers. The additive migration was rehearsed on disposable data. See [BANK-DETAIL-TITLE-1121](tasks/BANK-DETAIL-TITLE-1121.md).

@@ -1415,6 +1415,8 @@ model MasterBank {
 }
 
 model MasterBankBranch {
+  swiftCode           String?                    @db.VarChar(11)
+  website             String?                    @db.VarChar(500)
   beneficiaries       FinanceBeneficiary[]
   settlementAccounts  FinanceSettlementAccount[]
   id                  String                     @id @default(uuid()) @db.Uuid

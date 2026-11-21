@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { bankInstitutionKinds, type MasterDataRecord } from '@nora/contracts';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
 import { Button } from '@/components/ui/button';
@@ -164,92 +165,151 @@ export function BankInstitutionDialog({ onSaved, onClose }: Props) {
 }
 
 export function BankBranchDialog({
-  bank,
+  bankId,
+  lockBank = false,
   onSaved,
   onClose,
-}: Props & { bank: MasterDataRecord }) {
-  const [name, setName] = useState('');
-  const [code, setCode] = useState('');
-  const [cityId, setCityId] = useState('');
+}: Props & { bankId: string; lockBank?: boolean }) {
+  const [draft, setDraft] = useState({
+    bankId,
+    cityId: '',
+    name: '',
+    englishName: '',
+    code: '',
+    swiftCode: '',
+    phone: '',
+    address: '',
+    website: '',
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const countryId = String(bank.attributes.countryId ?? '');
+  const pending = useRef(false);
+  const bank = useQuery({
+    queryKey: ['accounting', 'bank-title-bank-record', draft.bankId],
+    queryFn: () => masterDataApi.detail('banks', draft.bankId),
+    enabled: !!draft.bankId,
+  });
+  const countryId = String(bank.data?.data.attributes.countryId ?? '');
+  const field = (
+    key: Exclude<keyof typeof draft, 'bankId' | 'cityId'>,
+    label: string,
+    maxLength: number,
+    required = false,
+  ) => (
+    <FormField id={'new-bank-branch-' + key} label={label} required={required}>
+      <Input
+        id={'new-bank-branch-' + key}
+        value={draft[key]}
+        maxLength={maxLength}
+        required={required}
+        dir={key === 'swiftCode' || key === 'website' ? 'ltr' : 'auto'}
+        onChange={(event) =>
+          setDraft((old) => ({ ...old, [key]: event.target.value }))
+        }
+      />
+    </FormField>
+  );
+
+  async function save() {
+    if (pending.current) return;
+    setError('');
+    if (
+      !draft.bankId ||
+      !draft.cityId ||
+      !draft.name.trim() ||
+      !draft.code.trim()
+    ) {
+      setError('بانک، شهر، نام و کد شعبه را وارد کنید.');
+      return;
+    }
+    pending.current = true;
+    setSaving(true);
+    try {
+      const values = Object.fromEntries(
+        Object.entries(draft)
+          .map(([key, value]) => [key, value.trim()])
+          .filter(([, value]) => value),
+      );
+      onSaved((await masterDataApi.create('bank-branches', { values })).data);
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : 'ذخیره شعبه ناموفق بود.',
+      );
+    } finally {
+      pending.current = false;
+      setSaving(false);
+    }
+  }
+
   return (
     <Dialog
       open
       onOpenChange={(open) => {
-        if (!open && !saving) onClose();
+        if (!open && !pending.current) onClose();
       }}
     >
-      <DialogContent dir="rtl" aria-describedby={undefined}>
+      <DialogContent
+        dir="rtl"
+        aria-describedby={undefined}
+        className="max-h-[90vh] max-w-3xl overflow-auto"
+      >
         <DialogTitle>تعریف شعبه بانک</DialogTitle>
         <form
-          className="space-y-3"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (saving) return;
-            if (!cityId) {
-              setError('شهر شعبه را انتخاب کنید.');
-              return;
-            }
-            setSaving(true);
-            setError('');
-            try {
-              onSaved(
-                (
-                  await masterDataApi.create('bank-branches', {
-                    values: { name, code, cityId, bankId: bank.id },
-                  })
-                ).data,
-              );
-            } catch (cause) {
-              setError(
-                cause instanceof Error
-                  ? cause.message
-                  : 'ذخیره شعبه ناموفق بود.',
-              );
-            } finally {
-              setSaving(false);
-            }
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void save();
           }}
         >
-          <FormField id="new-bank-branch-name" label="نام شعبه" required>
-            <Input
-              id="new-bank-branch-name"
-              required
-              maxLength={160}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </FormField>
-          <FormField id="new-bank-branch-code" label="کد شعبه" required>
-            <Input
-              id="new-bank-branch-code"
-              required
-              maxLength={32}
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-            />
-          </FormField>
-          <FormField id="new-bank-branch-city" label="شهر شعبه" required>
-            <MasterDataReferenceSelector
-              id="new-bank-branch-city"
-              disabled={saving}
-              label="شهر شعبه"
-              config={{
-                target: 'cities',
-                payload: 'id',
-                scopeField: 'countryId',
-              }}
-              scopeValue={countryId}
-              value={cityId}
-              onChange={setCityId}
-              required
-            />
-          </FormField>
-          {error && (
+          <fieldset className="grid gap-3 sm:grid-cols-2" disabled={saving}>
+            <div className="space-y-3">
+              <FormField id="new-bank-branch-bank" label="نام بانک" required>
+                <MasterDataReferenceSelector
+                  id="new-bank-branch-bank"
+                  label="نام بانک"
+                  disabled={saving || lockBank}
+                  config={{ target: 'banks', payload: 'id' }}
+                  value={draft.bankId}
+                  required
+                  onChange={(id) =>
+                    setDraft((old) =>
+                      id === old.bankId
+                        ? old
+                        : { ...old, bankId: id, cityId: '' },
+                    )
+                  }
+                />
+              </FormField>
+              {field('name', 'نام شعبه', 160, true)}
+              {field('englishName', 'نام به زبان دوم', 160)}
+              {field('code', 'کد شعبه', 32, true)}
+              {field('swiftCode', 'کد سوئیفت', 11)}
+            </div>
+            <div className="space-y-3">
+              <FormField id="new-bank-branch-city" label="شهر شعبه" required>
+                <MasterDataReferenceSelector
+                  id="new-bank-branch-city"
+                  label="شهر شعبه"
+                  disabled={saving || !countryId}
+                  config={{
+                    target: 'cities',
+                    payload: 'id',
+                    scopeField: 'countryId',
+                  }}
+                  scopeValue={countryId}
+                  value={draft.cityId}
+                  required
+                  onChange={(id) => setDraft((old) => ({ ...old, cityId: id }))}
+                />
+              </FormField>
+              {field('phone', 'تلفن', 32)}
+              {field('address', 'نشانی', 500)}
+              {field('website', 'وب‌سایت', 500)}
+            </div>
+          </fieldset>
+          {(error || bank.error) && (
             <p role="alert" className="text-destructive">
-              {error}
+              {error || bank.error?.message}
             </p>
           )}
           <div className="flex gap-2">

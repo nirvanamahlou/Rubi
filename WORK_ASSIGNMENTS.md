@@ -1,3 +1,7 @@
+## BANK-REFERENCE-PICKERS-1121 — PC-D — COMPLETED
+
+Reserve the Accounting bank account pickers, focused Web forms and regressions, and the bounded Master Data bank branch fields, validation and additive migration. Reuse the native bank-account-type and currency contracts. Keep existing records and currency behavior. No operational schema updates. Continues BANK-DETAIL-TITLE-1121.
+
 ## BANK-DETAIL-TITLE-1121 — PC-D — COMPLETED
 
 Reserve Accounting bank title lookup and the specialized Finance form. Reserve the bounded Finance bank account profile and Master Data bank metadata producers, compatible request fields, Customer public signer validation, focused tests and related schema/migration. Use existing bank/account IDs, permissions, encryption and auditing. Only additive nullable bank fields and new profile tables. No operational schema execution or data edits. Continues the FIN-CODING-001 task branch.

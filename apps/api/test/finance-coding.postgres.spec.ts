@@ -9,6 +9,7 @@ import { detailOwners } from '../src/finance/accounting/detail-owners';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   financeCodingProfiles,
+  type AccountingConfigurationV1,
   type AuthenticatedActor,
 } from '@nora/contracts';
 import { createDatabaseClient, type DatabaseClient } from '@nora/database';
@@ -148,18 +149,47 @@ describe.skipIf(!url)('FIN-CODING-001 on isolated PostgreSQL', () => {
         descriptionEn: 'Synthetic EN',
       },
     });
-    bankBranchId = (
-      await master.create(
+    const branch = await master.create(
+      'bank-branches',
+      {
+        code: '0002',
+        name: 'Synthetic bank branch',
+        englishName: 'Branch QA',
+        phone: '0210000',
+        address: 'Synthetic address',
+        swiftCode: 'abcdxza1qa1',
+        website: 'https://branch.example.invalid',
+        cityId: city.id,
+        bankId,
+      },
+      actor,
+    );
+    bankBranchId = branch.data.id;
+    expect(branch.data).toMatchObject({
+      code: '0002',
+      attributes: {
+        bankId,
+        cityName: 'Synthetic city',
+        englishName: 'Branch QA',
+        phone: '0210000',
+        address: 'Synthetic address',
+        swiftCode: 'ABCDXZA1QA1',
+        website: 'https://branch.example.invalid',
+      },
+    });
+    await expect(
+      master.create(
         'bank-branches',
         {
-          code: '0002',
-          name: 'Synthetic bank branch',
-          cityId: city.id,
+          code: '0003',
+          name: 'Invalid branch',
           bankId,
+          cityId: city.id,
+          swiftCode: 'invalid',
         },
         actor,
-      )
-    ).data.id;
+      ),
+    ).rejects.toMatchObject({ status: 400 });
     bankAccounts = new BankAccountService(
       holder,
       new MasterProcurementDirectory(holder),
@@ -172,15 +202,19 @@ describe.skipIf(!url)('FIN-CODING-001 on isolated PostgreSQL', () => {
       ),
     );
     for (const bookId of [firstBook, otherBook]) {
-      const type = await db.accountingConfiguration.create({
-        data: {
-          bookId,
+      const hasCheckbook = bookId === firstBook;
+      const type = await run<AccountingConfigurationV1>(
+        bookId,
+        'save-configuration',
+        {
           kind: 'bank-account-types',
-          code: 'CHECKING',
           title: 'Checking',
-          attributes: {},
+          active: true,
+          attributes: { hasCheckbook },
         },
-      });
+      );
+      expect(type.code).toMatch(/^CFG-/);
+      expect(type.attributes).toEqual({ hasCheckbook });
       typeByBook.set(bookId, type.id);
     }
   }, 30000);
