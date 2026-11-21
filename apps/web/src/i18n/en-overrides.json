@@ -6905,5 +6905,12 @@
   "دریافت اطلاعات مشتریان ناموفق بود. دوباره تلاش کنید.": "Customer information could not be loaded. Try again.",
   "فیلتر موردنظر را در پنل مشتریان تنظیم کنید و از همان صفحه دوباره بپرسید.": "Set the requested filter in Customers and ask again from that page.",
   "مشتریان B2C": "B2C customers",
-  "نرخ بازگشت مشتری در دسترس نیست.": "The returning customer rate is unavailable."
+  "نرخ بازگشت مشتری در دسترس نیست.": "The returning customer rate is unavailable.",
+  "اطلاعات ثبت شد.": "Information was published.",
+  "ثبت در جهان باستان": "Publish to Jahan Bastan",
+  "ثبت در جهان باستان انجام نشد.": "Publication to Jahan Bastan failed.",
+  "ثبت در جهان باستان تأیید نشد.": "Jahan Bastan did not confirm publication.",
+  "حجم پرچم بیش از حد مجاز است.": "The flag image exceeds the size limit.",
+  "سرویس تصویر پرچم در دسترس نیست.": "The flag image service is unavailable.",
+  "مشاهده در جهان باستان": "View on Jahan Bastan"
 }
