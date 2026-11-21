@@ -42,6 +42,15 @@ export function issuedReportQuery(query: IssuedTicketQuery) {
       params.set(key, String(value));
   return params.toString();
 }
+export class ReservationReportHttpError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+  }
+}
+
 async function reportFetch(
   path: string,
   signal?: AbortSignal,
@@ -68,9 +77,10 @@ async function reportFetch(
     const body = (await response.json().catch(() => null)) as {
       message?: string;
     } | null;
-    throw new Error(
+    throw new ReservationReportHttpError(
       body?.message ||
         'دریافت گزارش انجام نشد؛ دسترسی و فیلترها را بررسی کنید.',
+      response.status,
     );
   }
   return response;

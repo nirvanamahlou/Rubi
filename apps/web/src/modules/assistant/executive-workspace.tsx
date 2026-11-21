@@ -6,6 +6,17 @@ import {
   readDocumentGuide,
 } from './document-guides';
 
+import {
+  getReservationReport,
+  reservationReportHref,
+} from '@/modules/ticket-catalog/model/reservation-report-context';
+import {
+  readReservationReportAnswer,
+  reservationReportPermissionMessage,
+  renderReservationReportGuide,
+  resolveReservationReportQuestion,
+  type ReservationReportTopic,
+} from './reservation-report-guide';
 import { normalizeQuestion } from './question-text';
 import { AssistantResponseContent } from './response-content';
 import { formatAssistantSources } from './response-presentation';
@@ -111,7 +122,7 @@ import { conversationResponseSchema } from './conversation';
 import { agentResponseSchema, conversationHistory } from './agent-response';
 import { routeAssistantQuestion, type AnswerContext } from './question-routing';
 import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
-import { useAccessActor } from '@/modules/iam/access-context';
+import { useAccessActor, useScreenAccess } from '@/modules/iam/access-context';
 
 type Translate = (text: AssistantText) => string;
 function SourceUpdated({
@@ -355,6 +366,8 @@ function AssistantComposerContent({
       : pathname === '/customer-affairs/call-center'
         ? 'call-center'
         : undefined;
+  const canViewScreen = useScreenAccess();
+  const reportTopic = useRef<ReservationReportTopic | undefined>(undefined);
   const documentTopic = useRef<string | undefined>(undefined);
   const workbenchTopic = useRef<string | undefined>(undefined);
   const lastVersion = useRef<number | undefined>(undefined);
@@ -510,6 +523,59 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    const reportQuestion = resolveReservationReportQuestion(
+      message,
+      pathname === reservationReportHref,
+      reportTopic.current,
+    );
+    reportTopic.current = undefined;
+    if (reportQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      workbenchTopic.current = undefined;
+      documentTopic.current = undefined;
+      guideTopic.current = undefined;
+      const link = { href: reservationReportHref, label: 'گزارش رزرواسیون' };
+      if (reportQuestion.kind === 'guide') {
+        reportTopic.current = reportQuestion.topic;
+        replyLocally(
+          renderReservationReportGuide(
+            reportQuestion.topic,
+            reportQuestion.followUp,
+          ),
+          undefined,
+          undefined,
+          link,
+        );
+      } else if (reportQuestion.kind === 'clarify') {
+        replyLocally(reportQuestion.text, undefined, undefined, link);
+      } else if (!actor || !canViewScreen('ticket-catalog.tab.issued')) {
+        replyLocally(
+          reservationReportPermissionMessage,
+          undefined,
+          undefined,
+          link,
+        );
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readReservationReportAnswer(
+            reportQuestion,
+            pathname === reservationReportHref
+              ? getReservationReport()
+              : undefined,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer, undefined, undefined, link);
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
+        }
+      }
+      return;
+    }
     const documentQuestion = resolveDocumentQuestion(
       message,
       pathname === '/documents',

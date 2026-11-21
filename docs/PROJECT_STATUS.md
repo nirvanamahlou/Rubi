@@ -10414,3 +10414,7 @@ The defined-tour list displays the existing floating-tour flag next to the tour 
 The floating package pricing picker and URL preselection require an explicitly floating tour definition.
 
 Floating package price imports report Excel row numbers for validation errors and preview warnings.
+
+## راهنمای گزارش رزرواسیون در نورا
+
+کاتالوگ گزارش، تاریخ و فیلتر، روش شمارش، ردیف و خروجی را پوشش می‌دهد. پاسخ «همین گزارش» از آخرین خوانش موفق و فیلترهای اعمال‌شده همان پنل ساخته می‌شود. خوانش صریح بازه از API مجاز موجود استفاده می‌کند. گروه‌بندی مسیر شامل ردیف‌های پرواز منطبق است و در پاسخ به صدور، فقط ردیف دارای سند صدور قابل مشاهده شمرده می‌شود. استرداد و ابطال در داده فعلی به‌صورت جداگانه قابل شمارش نیستند. پذیرش مرورگری به نسخه کاندید نیاز دارد.
