@@ -11,7 +11,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Button, Card, ConfirmDialog, Input } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog, Input } from '@/components/ui';
 
 export const tourDay = (now = new Date()) =>
   new Intl.DateTimeFormat('en-CA', {
@@ -359,7 +359,10 @@ export function TourOverview({
               className="flex flex-wrap items-center justify-between gap-4 rounded-xl border p-4"
             >
               <div>
-                <h4 className="font-semibold">{item.name}</h4>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h4 className="font-semibold">{item.name}</h4>
+                  {item.details?.isFloating && <Badge>شناور</Badge>}
+                </div>
                 <span>
                   {item.publicationStatus === 'DRAFT' ? 'پیش‌نویس' : 'منتشرشده'}
                 </span>
