@@ -1,5 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
+import { CustomerService } from '../src/customers/customer.service';
+import { CustomerRepository } from '../src/customers/customer.repository';
+import { CustomerContactCrypto } from '../src/customers/customer-contact.crypto';
+import { CustomerNationalIdProtector } from '../src/customers/customer-national-id';
 import { BankAccountService } from '../src/finance/bank-accounts/bank-account.service';
 import { BankAccountCrypto } from '../src/finance/bank-accounts/bank-account.crypto';
 import { MasterProcurementDirectory } from '../src/master-data/master-procurement-directory';
@@ -26,6 +30,9 @@ const actor: AuthenticatedActor = {
     'finance.read',
     'finance.journal.read',
     'finance.account.manage',
+    'customers.create',
+    'customers.read',
+    'customers.sensitive.read',
     'master_data.read',
     'master_data.create',
   ],
@@ -41,6 +48,7 @@ describe.skipIf(!url)('FIN-CODING-001 on isolated PostgreSQL', () => {
   let bankId: string;
   let bankBranchId: string;
   let bankAccounts: BankAccountService;
+  let customers: CustomerService;
   const typeByBook = new Map<string, string>();
   let serial = 0;
 
@@ -108,6 +116,20 @@ describe.skipIf(!url)('FIN-CODING-001 on isolated PostgreSQL', () => {
       })
     ).id;
     const holder = { client: db } as never;
+    const config = new ConfigService({
+      CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64: Buffer.alloc(32, 1).toString(
+        'base64',
+      ),
+      CUSTOMER_CONTACT_FINGERPRINT_KEY_BASE64: Buffer.alloc(32, 2).toString(
+        'base64',
+      ),
+      CUSTOMER_CONTACT_ENCRYPTION_KEY_VERSION: 1,
+    });
+    customers = new CustomerService(
+      new CustomerRepository(holder),
+      new CustomerContactCrypto(config),
+      new CustomerNationalIdProtector(config),
+    );
     const stamp = {
       createdByUserId: actor.userId,
       updatedByUserId: actor.userId,
@@ -235,7 +257,27 @@ describe.skipIf(!url)('FIN-CODING-001 on isolated PostgreSQL', () => {
       },
     };
   };
+  function newPerson() {
+    serial += 1;
+    return customers.saveLedgerPerson(
+      {
+        code: String(serial).padStart(5, '0'),
+        firstName: 'Synthetic',
+        lastName: 'Buyer',
+        gender: 'F',
+        birthDate: '2000-01-01',
+        nationalId: '',
+        fields: { salutation: 'خانم', mobile: '09000000001' },
+        addresses: [],
+        notes: [],
+        taxRows: [],
+      },
+      branchId,
+      actor,
+    );
+  }
   async function source(bookId: string, prefix: string) {
+    if (prefix === '4') return { customerId: (await newPerson()).data.id };
     if (prefix !== '5') return {};
     return {
       sourceAccountId: (
@@ -579,5 +621,60 @@ describe.skipIf(!url)('FIN-CODING-001 on isolated PostgreSQL', () => {
         actor,
       ),
     ).rejects.toMatchObject({ status: 409 });
+  });
+
+  it('links the compact B2C form to an active Customer and rejects a visitor or unlinked new title', async () => {
+    const type = await typeId(firstBook, financeCodingProfiles[2].typeCode);
+    const { data: person } = await newPerson();
+    const readback = (await customers.ledgerPerson(person.id, branchId, actor))
+      .data;
+    expect(readback).toMatchObject({
+      code: String(serial).padStart(5, '0'),
+      firstName: 'Synthetic',
+      lastName: 'Buyer',
+      gender: 'F',
+      birthDate: '2000-01-01',
+      fields: { salutation: 'خانم', mobile: '09000000001' },
+    });
+    await expect(
+      run(firstBook, 'save-detail', {
+        typeId: type,
+        title: 'Unlinked',
+      }),
+    ).rejects.toMatchObject({ status: 422 });
+    const visitor = await db.customer.create({
+      data: {
+        kind: 'PERSON',
+        firstName: 'Synthetic',
+        lastName: 'Passenger',
+        displayName: 'Synthetic Passenger',
+        isCustomer: false,
+        isPassenger: true,
+        ownerBranchId: branchId,
+        createdByUserId: actor.userId,
+        updatedByUserId: actor.userId,
+      },
+    });
+    await expect(
+      run(firstBook, 'save-detail', {
+        typeId: type,
+        title: 'Passenger',
+        customerId: visitor.id,
+      }),
+    ).rejects.toMatchObject({ status: 422 });
+    const created = await run<Detail & { customerId: string }>(
+      firstBook,
+      'save-detail',
+      {
+        typeId: type,
+        title: 'Submitted title',
+        customerId: person.id,
+      },
+    );
+    expect(created).toMatchObject({
+      code: '40000004',
+      title: 'Synthetic Buyer',
+      customerId: person.id,
+    });
   });
 });

@@ -6,6 +6,7 @@ export function accountingOwner(
   id: string,
   branchId: string,
   company: boolean,
+  customerOnly = false,
 ) {
   return tx.customer.findFirst({
     where: {
@@ -13,6 +14,7 @@ export function accountingOwner(
       ownerBranchId: branchId,
       mergedIntoId: null,
       isActive: true,
+      ...(customerOnly ? { isCustomer: true } : {}),
       kind: company ? 'ORGANIZATION' : 'PERSON',
     },
     select: { id: true, displayName: true },

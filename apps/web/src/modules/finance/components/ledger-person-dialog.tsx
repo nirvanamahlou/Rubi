@@ -78,14 +78,25 @@ const options: Partial<Record<Key, readonly string[]>> = {
   marital: personMarital,
   gender: ['M', 'F'],
 };
+const customerFields = [
+  ['code', 'کد'],
+  ['gender', 'عنوان'],
+  ['firstName', 'نام'],
+  ['lastName', 'نام خانوادگی'],
+  ['nationalId', 'کد ملی'],
+  ['birthDate', 'تاریخ تولد'],
+  ['mobile', 'شماره تلفن'],
+] as const satisfies readonly (readonly [Key, string])[];
 const required = new Set<Key>(['code', 'firstName', 'lastName', 'gender']);
 export function LedgerPersonDialog({
   initial,
+  compact = false,
   book,
   onClose,
   onSelected,
 }: {
   initial?: LedgerPersonView | undefined;
+  compact?: boolean;
   book: AccountingSnapshotV1;
   onClose: () => void;
   onSelected: (row: { id: string; displayName: string }) => void;
@@ -142,7 +153,19 @@ export function LedgerPersonDialog({
     setBusy(true);
     try {
       const { data } = await customersApi.saveLedgerPerson(
-        { ...input, gender: draft.gender, ...(id ? { version } : {}) },
+        {
+          ...input,
+          gender: draft.gender,
+          ...(compact
+            ? {
+                fields: {
+                  ...input.fields,
+                  salutation: draft.gender === 'M' ? 'آقا' : 'خانم',
+                },
+              }
+            : {}),
+          ...(id ? { version } : {}),
+        },
         book.book.branchId,
         id || undefined,
       );
@@ -194,7 +217,15 @@ export function LedgerPersonDialog({
             <option value="" />
             {select.map((o) => (
               <option key={o} value={o}>
-                {key === 'gender' ? (o === 'M' ? 'مذکر' : 'مؤنث') : o}
+                {key === 'gender'
+                  ? o === 'M'
+                    ? compact
+                      ? 'آقا'
+                      : 'مذکر'
+                    : compact
+                      ? 'خانم'
+                      : 'مؤنث'
+                  : o}
               </option>
             ))}
           </select>
@@ -214,7 +245,13 @@ export function LedgerPersonDialog({
           <input
             id={id}
             value={val}
-            type={key === 'email' || key === 'workflowEmail' ? 'email' : 'text'}
+            type={
+              key === 'email' || key === 'workflowEmail'
+                ? 'email'
+                : compact && key === 'mobile'
+                  ? 'tel'
+                  : 'text'
+            }
             required={required.has(key)}
             inputMode={
               key === 'code' || key === 'nationalId' ? 'numeric' : undefined
@@ -224,9 +261,11 @@ export function LedgerPersonDialog({
                 ? 20
                 : key === 'nationalId'
                   ? 10
-                  : key === 'firstName' || key === 'lastName'
-                    ? 120
-                    : 200
+                  : compact && key === 'mobile'
+                    ? 32
+                    : key === 'firstName' || key === 'lastName'
+                      ? 120
+                      : 200
             }
             dir={
               [
@@ -242,7 +281,9 @@ export function LedgerPersonDialog({
             }
             onChange={(e) =>
               change(
-                key === 'code' || key === 'nationalId'
+                key === 'code' ||
+                  key === 'nationalId' ||
+                  (compact && key === 'mobile')
                   ? detailDigits(e.target.value)
                   : e.target.value,
               )
@@ -261,53 +302,75 @@ export function LedgerPersonDialog({
     >
       <DialogContent
         aria-describedby={undefined}
-        className={styles.dialog}
+        className={
+          compact ? 'max-h-[90vh] max-w-3xl overflow-auto' : styles.dialog
+        }
         dir="rtl"
       >
-        <DialogTitle>{draft.id ? 'ویرایش شخص' : 'ایجاد شخص'}</DialogTitle>
+        <DialogTitle>
+          {compact
+            ? draft.id
+              ? 'ویرایش مشتری حقیقی'
+              : 'افزودن مشتری حقیقی'
+            : draft.id
+              ? 'ویرایش شخص'
+              : 'ایجاد شخص'}
+        </DialogTitle>
         <form onSubmit={save}>
-          <div className={styles.tabs} role="tablist">
-            {tabs.map((name, i) => (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={i === tab}
-                key={name}
-                onClick={() => setTab(i)}
-              >
-                {name}
-              </button>
-            ))}
-          </div>
-          <fieldset disabled={busy} className={styles.panel} role="tabpanel">
-            {tab === 0 && (
-              <>
-                <fieldset>
-                  <legend>شخص</legend>
-                  <div className={styles.columns}>
-                    {cols.map((col) => (
-                      <div key={col[0]![0]}>
-                        {col.map(([k, l]) => field(k, l))}
-                      </div>
-                    ))}
-                  </div>
-                </fieldset>
-                <LedgerPersonAddresses
-                  rows={draft.addresses}
-                  change={(addresses) =>
-                    setDraft((old) => ({ ...old, addresses }))
-                  }
-                />
-              </>
+          {!compact && (
+            <div className={styles.tabs} role="tablist">
+              {tabs.map((name, i) => (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={i === tab}
+                  key={name}
+                  onClick={() => setTab(i)}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          )}
+          <fieldset
+            disabled={busy}
+            className={styles.panel}
+            role={compact ? undefined : 'tabpanel'}
+          >
+            {compact ? (
+              <div className="grid gap-x-5 gap-y-2 sm:grid-cols-2">
+                {customerFields.map(([key, label]) => field(key, label))}
+              </div>
+            ) : (
+              tab === 0 && (
+                <>
+                  <fieldset>
+                    <legend>شخص</legend>
+                    <div className={styles.columns}>
+                      {cols.map((col) => (
+                        <div key={col[0]![0]}>
+                          {col.map(([k, l]) => field(k, l))}
+                        </div>
+                      ))}
+                    </div>
+                  </fieldset>
+                  <LedgerPersonAddresses
+                    rows={draft.addresses}
+                    change={(addresses) =>
+                      setDraft((old) => ({ ...old, addresses }))
+                    }
+                  />
+                </>
+              )
             )}
-            {tab === 1 && (
+            {!compact && tab === 1 && (
               <fieldset>
                 <legend>اطلاعات گردش کار</legend>
                 {field('workflowCode', 'کد')}
                 {field('workflowEmail', 'پست الکترونیک')}
               </fieldset>
             )}
-            {tab === 2 && (
+            {!compact && tab === 2 && (
               <AccountingSetupNotes
                 book={book}
                 record={
@@ -323,7 +386,7 @@ export function LedgerPersonDialog({
                 onChange={(notes) => setDraft((old) => ({ ...old, notes }))}
               />
             )}
-            {tab === 3 && (
+            {!compact && tab === 3 && (
               <LedgerPartyTax
                 rows={draft.taxRows}
                 onChange={(taxRows) => setDraft((old) => ({ ...old, taxRows }))}
@@ -339,9 +402,11 @@ export function LedgerPersonDialog({
             <button disabled={busy} type="submit" value="select">
               ذخیره و انتخاب
             </button>
-            <button disabled={busy} type="submit" value="stay">
-              ذخیره
-            </button>
+            {!compact && (
+              <button disabled={busy} type="submit" value="stay">
+                ذخیره
+              </button>
+            )}
             <button disabled={busy} type="button" onClick={onClose}>
               بستن
             </button>

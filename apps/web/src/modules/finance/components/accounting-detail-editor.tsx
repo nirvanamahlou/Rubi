@@ -135,7 +135,10 @@ export function AccountingDetailEditor({
   const codingProfile = financeCodingProfile(type?.code);
   const [ownerSearch, setOwnerSearch] = useState('');
   const sourceKind = !isType ? detailOwnerKind(type?.title ?? '') : undefined;
-  const personTitle = !isType && ['شخص', 'شرکت'].includes(type?.title ?? '');
+  const individualCustomer = !isType && codingProfile?.prefix === '4';
+  const personTitle =
+    individualCustomer ||
+    (!isType && ['شخص', 'شرکت'].includes(type?.title ?? ''));
   const detailRows = (book?.details ?? []).filter(
     (row) => row.typeId === draft.typeId,
   );
@@ -155,7 +158,8 @@ export function AccountingDetailEditor({
       : null;
   const displayCode = suggesting ? (suggestedCode ?? '') : draft.code;
   const personEditor =
-    ownerDialog === 'new' ? newKind === 'person' : type?.title === 'شخص';
+    individualCustomer ||
+    (ownerDialog === 'new' ? newKind === 'person' : type?.title === 'شخص');
   const profile = useQuery({
     queryKey: ['ledger-person', book?.book.branchId, ownerDialog],
     queryFn: () => customersApi.ledgerPerson(ownerDialog!, book!.book.branchId),
@@ -198,7 +202,7 @@ export function AccountingDetailEditor({
         search: ownerSearch,
         kind: type?.title === 'شرکت' ? 'organization' : 'person',
         status: 'active',
-        role: 'all',
+        role: individualCustomer ? 'customer' : 'all',
         branchId: book!.book.branchId,
         sortBy: 'displayName',
         sortDirection: 'asc',
@@ -246,6 +250,10 @@ export function AccountingDetailEditor({
     }
   }
   function openOwner(id: string) {
+    if (individualCustomer) {
+      setOwnerDialog(id);
+      return;
+    }
     if (id === 'new') {
       setNewKind(type?.title === 'شرکت' ? 'organization' : 'person');
       setOwnerDialog('choose');
@@ -274,9 +282,12 @@ export function AccountingDetailEditor({
     customer: { id: string; displayName: string },
     kind: 'person' | 'organization',
   ) {
-    const target = types.find(
-      (t) => t.active && t.title === (kind === 'person' ? 'شخص' : 'شرکت'),
-    );
+    const target =
+      individualCustomer && kind === 'person'
+        ? type
+        : types.find(
+            (t) => t.active && t.title === (kind === 'person' ? 'شخص' : 'شرکت'),
+          );
     if (!target) return;
     if (target.id !== draft.typeId) selectType(target.id);
     setDraft((old) => ({
@@ -797,7 +808,9 @@ export function AccountingDetailEditor({
                             type="button"
                             onClick={() => openOwner('new')}
                           >
-                            ＋ ایجاد {type?.title}
+                            {individualCustomer
+                              ? '＋ افزودن مشتری حقیقی'
+                              : '＋ ایجاد ' + type?.title}
                           </button>
                           {ownerPage > 1 && (
                             <button
@@ -926,6 +939,7 @@ export function AccountingDetailEditor({
         (ownerDialog === 'new' || profile.data) ? (
         <LedgerPersonDialog
           key={ownerDialog}
+          compact={individualCustomer}
           initial={ownerDialog === 'new' ? undefined : profile.data?.data}
           book={book}
           onClose={() => setOwnerDialog(null)}

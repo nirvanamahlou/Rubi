@@ -1,3 +1,7 @@
+## 2026-11-21 — CUSTOMER-DETAIL-TITLE-1121 — PC-D
+
+Added the compact individual customer title form and linked the native person Customer record to Accounting details in series four. The existing Customer API and eight-digit allocator are reused. See [CUSTOMER-DETAIL-TITLE-1121](tasks/CUSTOMER-DETAIL-TITLE-1121.md).
+
 ## 2026-11-21 — GHESTIROO-FLIGHT-PRODUCER-1121 — PC-D
 
 Independent Ghestiroo ticket delivery and draft service-account setup reuse the
