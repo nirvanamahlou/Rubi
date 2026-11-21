@@ -103,6 +103,8 @@ describe('master data catalog', () => {
       'cityId',
       'address',
       'phone',
+      'swiftCode',
+      'website',
     ]);
     expect(
       getMasterDataDefinition('payment-methods').fields.find(
