@@ -116,6 +116,7 @@ describe.skipIf(!url)('FIN-CODING-001 on isolated PostgreSQL', () => {
       })
     ).id;
     const holder = { client: db } as never;
+    const master = new MasterDataService(new MasterDataRepository(holder));
     const config = new ConfigService({
       CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64: Buffer.alloc(32, 1).toString(
         'base64',
@@ -129,6 +130,8 @@ describe.skipIf(!url)('FIN-CODING-001 on isolated PostgreSQL', () => {
       new CustomerRepository(holder),
       new CustomerContactCrypto(config),
       new CustomerNationalIdProtector(config),
+      undefined,
+      master,
     );
     const stamp = {
       createdByUserId: actor.userId,
@@ -145,7 +148,6 @@ describe.skipIf(!url)('FIN-CODING-001 on isolated PostgreSQL', () => {
         ...stamp,
       },
     });
-    const master = new MasterDataService(new MasterDataRepository(holder));
     const bank = await master.create(
       'banks',
       {
@@ -276,7 +278,39 @@ describe.skipIf(!url)('FIN-CODING-001 on isolated PostgreSQL', () => {
       actor,
     );
   }
+  function newCompany(branch = branchId, companyActor = actor) {
+    serial += 1;
+    return customers.saveLedgerCompany(
+      {
+        code: String(serial).padStart(5, '0'),
+        name: 'Synthetic Buyer Company ' + serial,
+        registrationNumber: String(1000 + serial),
+        fields: { companyType: 'سهامی خاص', workflowCode: 'WF-25' },
+        addresses: [
+          {
+            id: randomUUID(),
+            primary: true,
+            title: 'Office',
+            region: 'Area',
+            address: 'Example address',
+          },
+        ],
+        notes: [
+          {
+            id: randomUUID(),
+            title: 'Memo',
+            text: 'Internal',
+            date: '2026-11-21',
+          },
+        ],
+        taxRows: [{ operation: 'sale', kind: 'registered' }],
+      },
+      branch,
+      companyActor,
+    );
+  }
   async function source(bookId: string, prefix: string) {
+    if (prefix === '3') return { customerId: (await newCompany()).data.id };
     if (prefix === '4') return { customerId: (await newPerson()).data.id };
     if (prefix !== '5') return {};
     return {
@@ -621,6 +655,59 @@ describe.skipIf(!url)('FIN-CODING-001 on isolated PostgreSQL', () => {
         actor,
       ),
     ).rejects.toMatchObject({ status: 409 });
+  });
+
+  it('links the native company profile to the corporate customer detail in its own branch', async () => {
+    const typeIdForCompany = await typeId(
+      firstBook,
+      financeCodingProfiles[1].typeCode,
+    );
+    const { data: company } = await newCompany();
+    const profile = (await customers.ledgerCompany(company.id, branchId, actor))
+      .data;
+    expect(profile).toMatchObject({
+      code: String(serial).padStart(5, '0'),
+      name: company.displayName,
+      registrationNumber: String(1000 + serial),
+      fields: { companyType: 'سهامی خاص', workflowCode: 'WF-25' },
+      addresses: [
+        { primary: true, title: 'Office', address: 'Example address' },
+      ],
+      notes: [{ title: 'Memo', text: 'Internal' }],
+      taxRows: [{ operation: 'sale', kind: 'registered' }],
+    });
+    const { data: person } = await newPerson();
+    const otherBranch = await db.branch.create({
+      data: { code: randomUUID(), name: 'Different synthetic branch' },
+    });
+    const { data: otherCompany } = await newCompany(otherBranch.id, {
+      ...actor,
+      branchIds: [otherBranch.id],
+    });
+    for (const customerId of [undefined, person.id, otherCompany.id]) {
+      await expect(
+        run(firstBook, 'save-detail', {
+          typeId: typeIdForCompany,
+          title: 'Submitted title',
+          customerId,
+        }),
+      ).rejects.toMatchObject({ status: 422 });
+    }
+    const saved = await run<Detail & { customerId: string; typeId: string }>(
+      firstBook,
+      'save-detail',
+      {
+        typeId: typeIdForCompany,
+        title: 'Submitted title',
+        customerId: company.id,
+      },
+    );
+    expect(saved).toMatchObject({
+      code: '30000004',
+      title: company.displayName,
+      typeId: typeIdForCompany,
+      customerId: company.id,
+    });
   });
 
   it('links the compact B2C form to an active Customer and rejects a visitor or unlinked new title', async () => {
