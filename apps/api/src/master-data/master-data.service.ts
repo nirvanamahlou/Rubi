@@ -1,6 +1,10 @@
 import type { Prisma } from '@nora/database';
 import type { DisplayLanguage } from '../common/i18n/language';
 import {
+  validateBankBranchMetadata,
+  validateBankInstitutionFields,
+} from './bank-institution-fields';
+import {
   FACILITY_NAME_MAX_CHARACTERS,
   postgresCharacterLength,
 } from './facility-text';
@@ -360,12 +364,19 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'englishName',
     'countryId',
     'swiftCode',
+    'institutionKind',
+    'publicRelationsPhone',
+    'website',
+    'description',
+    'descriptionEn',
     'logoFileReference',
   ],
   'bank-branches': [
     'code',
     'name',
     'englishName',
+    'swiftCode',
+    'website',
     'bankId',
     'cityId',
     'address',
@@ -2880,6 +2891,7 @@ export class MasterDataService {
         throw new BadRequestException('سیاست نمایش ارز معتبر نیست.');
       data.displayPolicy = displayPolicy;
     }
+    if (resource === 'banks') validateBankInstitutionFields(data);
     if (resource === 'banks' && data.swiftCode !== undefined) {
       const swiftCode = String(data.swiftCode).trim().toUpperCase();
       if (swiftCode && !/^[A-Z0-9]{8}([A-Z0-9]{3})?$/.test(swiftCode))
@@ -3674,6 +3686,7 @@ export class MasterDataService {
         throw new BadRequestException('کلاس پروازی فعال یافت نشد.');
     }
     if (resource === 'bank-branches') {
+      validateBankBranchMetadata(data);
       if (typeof data.cityId === 'string') {
         const city = await this.repository.find('cities', data.cityId);
         if (!city?.isActive)

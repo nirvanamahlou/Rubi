@@ -30,6 +30,8 @@ import type {
 } from '@nora/contracts';
 import {
   accessValuesEqual,
+  financeCodingProfile,
+  financeCodingProfiles,
   hasAccessControl,
   systemSettingControlId,
 } from '@nora/contracts';
@@ -323,6 +325,11 @@ export class SystemManagementService {
 
   async listNumberingSchemes(): Promise<SystemNumberingSchemeV1[]> {
     const rows = await this.database.client.systemNumberingScheme.findMany({
+      where: {
+        code: {
+          notIn: financeCodingProfiles.map((profile) => profile.typeCode),
+        },
+      },
       orderBy: [{ code: 'asc' }, { scopeKey: 'asc' }],
       take: 300,
     });
@@ -335,6 +342,7 @@ export class SystemManagementService {
     metadata: AuditMetadata,
   ): Promise<SystemNumberingSchemeV1> {
     const code = validIdentifier(input?.code, 'کد طرح').toUpperCase();
+    if (financeCodingProfile(code)) throw new ForbiddenException();
     const reason = validReason(input?.reason);
     const key = scopeKey(input.scope, input.scopeId);
     const prefix = input.prefix?.trim().toUpperCase();
@@ -432,6 +440,8 @@ export class SystemManagementService {
           where: { schemeId_idempotencyKey: { schemeId, idempotencyKey } },
           include: { scheme: true },
         });
+        if (existing && financeCodingProfile(existing.scheme.code))
+          throw new ForbiddenException();
         if (existing)
           return {
             contract: 'system.number-issued.v1',
@@ -443,7 +453,7 @@ export class SystemManagementService {
         const scheme = await tx.systemNumberingScheme.findUnique({
           where: { id: schemeId },
         });
-        if (!scheme || !scheme.isActive)
+        if (!scheme || !scheme.isActive || financeCodingProfile(scheme.code))
           throw new NotFoundException('طرح شماره‌گذاری فعال یافت نشد.');
         const periodKey = this.periodKey(scheme, date);
         const sequence = await tx.systemNumberingSequence.upsert({
@@ -1037,7 +1047,7 @@ export class SystemManagementService {
     const scheme = await this.database.client.systemNumberingScheme.findUnique({
       where: { id },
     });
-    if (!scheme || !scheme.isActive)
+    if (!scheme || !scheme.isActive || financeCodingProfile(scheme.code))
       throw new NotFoundException('طرح شماره‌گذاری فعال یافت نشد.');
     return scheme;
   }

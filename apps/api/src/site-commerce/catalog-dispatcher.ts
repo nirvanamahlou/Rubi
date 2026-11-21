@@ -48,10 +48,22 @@ export class WebsiteCatalogDispatcher implements OnModuleInit, OnModuleDestroy {
       const config = commerceSites[site];
       const secret = process.env[config.signingKey];
       if (!secret) return;
-      const binding = JSON.parse(process.env.SITE_COMMERCE_BINDINGS ?? '{}')[
-        site
-      ];
+      const bindings = JSON.parse(
+        process.env.SITE_COMMERCE_BINDINGS ?? '{}',
+      ) as Record<string, { branchId?: string; userId?: string }>;
+      const binding = bindings[site];
       if (!binding?.branchId || !binding.userId) return;
+      if (
+        site === 'ghestiroo' &&
+        Object.entries(bindings).some(
+          ([other, value]) =>
+            other !== site && value?.userId === binding.userId,
+        )
+      ) {
+        this.logger.warn('Ghestiroo requires a dedicated site user');
+        delay = 20000;
+        return;
+      }
       await this.db.client.websiteCatalogDelivery.upsert({
         where: { siteCode: site },
         create: { siteCode: site, branchId: binding.branchId },
@@ -78,7 +90,10 @@ export class WebsiteCatalogDispatcher implements OnModuleInit, OnModuleDestroy {
       if (
         secret.length < 32 ||
         (site === 'jahan-bastan' &&
-          secret === process.env.NSS_CATALOG_WEBHOOK_SECRET)
+          secret === process.env.NSS_CATALOG_WEBHOOK_SECRET) ||
+        (site === 'ghestiroo' &&
+          (secret === process.env.NSS_CATALOG_WEBHOOK_SECRET ||
+            secret === process.env.JAHAN_BASTAN_CATALOG_WEBHOOK_SECRET))
       ) {
         errorCode = 'invalid_site_key';
         throw Error(errorCode);
