@@ -127,6 +127,57 @@ function harness(status = 'VERIFIED') {
   return { row, tx, service, capacity, proof };
 }
 describe('verified checkout draft witness and transitions', () => {
+  it('pins a floating quote without allocating seats and requires amount-matched bank proof', async () => {
+    const h = harness('PREPARED');
+    Object.assign(h.row.quoteSnapshot, {
+      floatingDraft: input(),
+      offerIds: [],
+    });
+    const attemptKey = h.row.paymentAttemptKey;
+    const pinned = await h.service.pin('qa', 'checkout', attemptKey, actor);
+    expect(pinned.data).toMatchObject({ paymentPending: true, offerIds: [] });
+    expect(pinned.data).not.toHaveProperty('floatingDraft');
+    expect(h.capacity.pin).not.toHaveBeenCalled();
+    await expect(
+      h.service.resolve(
+        'qa',
+        'checkout',
+        {
+          attemptKey,
+          outcome: 'VERIFIED',
+        },
+        actor,
+      ),
+    ).rejects.toThrow();
+    h.proof.resolve.mockResolvedValueOnce({ amount: '999' });
+    const gatewayReceipt = { amount: '1000' } as never;
+    await expect(
+      h.service.resolve(
+        'qa',
+        'checkout',
+        {
+          attemptKey,
+          outcome: 'VERIFIED',
+          gatewayReceipt,
+        },
+        actor,
+      ),
+    ).rejects.toThrow();
+    const verified = await h.service.resolve(
+      'qa',
+      'checkout',
+      {
+        attemptKey,
+        outcome: 'VERIFIED',
+        gatewayReceipt,
+      },
+      actor,
+    );
+    expect(verified.data.status).toBe('VERIFIED');
+    await expect(
+      h.service.validateDraft('qa', 'checkout', input(), actor),
+    ).rejects.toThrow();
+  });
   it('permits exact frozen last-seat quote without calling public availability', async () => {
     const h = harness();
     expect(

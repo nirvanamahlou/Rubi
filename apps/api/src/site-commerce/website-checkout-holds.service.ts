@@ -159,6 +159,76 @@ export class WebsiteCheckoutHoldsService {
         .map((k) => [k, s[k]]),
     );
   }
+  async prepareFloating(
+    site: string,
+    externalId: string,
+    fingerprint: string,
+    customerExternalId: string,
+    expiresNotAfter: string,
+    quote: () => Promise<SalesContractCreateRequest>,
+    actor: AuthenticatedActor,
+  ) {
+    const scoped = this.scope(site, actor);
+    const key = { siteCode: site, branchId: scoped.branchIds[0]!, externalId };
+    externalOrderId(externalId);
+    if (
+      !/^[A-Za-z0-9_.:-]{1,100}$/.test(customerExternalId) ||
+      typeof expiresNotAfter !== 'string' ||
+      !Number.isFinite(Date.parse(expiresNotAfter))
+    )
+      throw new BadRequestException('درخواست رزرو خرید معتبر نیست.');
+    const where = { siteCode_branchId_externalId: key };
+    const replay = (
+      row: NonNullable<
+        Awaited<
+          ReturnType<typeof this.db.client.websiteCheckoutSession.findUnique>
+        >
+      >,
+    ) => {
+      if (row.fingerprint !== fingerprint)
+        throw new ConflictException('ترکیب درخواست خرید تغییر کرده است.');
+      if (
+        row.status === 'RELEASED' ||
+        (row.status === 'PREPARED' && row.expiresAt <= new Date())
+      )
+        throw new ConflictException('مهلت رزرو تمام شده؛ دوباره استعلام کنید.');
+      return this.view(row);
+    };
+    const prior = await this.db.client.websiteCheckoutSession.findUnique({
+      where,
+    });
+    if (prior) return replay(prior);
+    const draft = await quote();
+    const expiresAt = new Date(
+      Math.min(Date.parse(expiresNotAfter), Date.now() + CHECKOUT_HOLD_MS),
+    );
+    if (expiresAt <= new Date())
+      throw new ConflictException('مهلت رزرو تمام شده؛ دوباره استعلام کنید.');
+    const counts = ageCounts(draft.passengers.map((p) => p.ageCategory!));
+    const snapshot = {
+      floatingDraft: draft,
+      offerIds: [],
+      counts,
+      seatCount: counts.adults + counts.children,
+      priceComponents: draft.priceComponents,
+    };
+    return replay(
+      await this.db.client.websiteCheckoutSession.upsert({
+        where,
+        update: {},
+        create: {
+          ...key,
+          fingerprint,
+          customerExternalId,
+          expiresAt,
+          createdByUserId: scoped.userId,
+          requesterName: draft.buyerContact!.name,
+          requesterPhone: draft.buyerContact!.phone,
+          quoteSnapshot: asJson(snapshot),
+        },
+      }),
+    );
+  }
   async prepare(
     site: string,
     externalId: string,
@@ -443,6 +513,8 @@ export class WebsiteCheckoutHoldsService {
     }
     if (!['VERIFIED', 'BOUND'].includes(row.status))
       throw new ConflictException('ابتدا تأیید قطعی بانک لازم است.');
+    if ((row.quoteSnapshot as Record<string, unknown>).floatingDraft)
+      throw new ConflictException('قرارداد با رزرو پرداخت مطابقت ندارد.');
     const snapshot = row.quoteSnapshot as unknown as {
       offerIds: string[];
       offers: Awaited<ReturnType<TicketPublicService['websiteOffer']>>[];
@@ -582,7 +654,13 @@ export class WebsiteCheckoutHoldsService {
         )
       )
         throw new ConflictException('وضعیت رزرو اجازه پرداخت تازه نمی‌دهد.');
-      await this.capacity.pin(tx, row.id, row.branchId, attemptKey);
+      if ((row.quoteSnapshot as Record<string, unknown>).floatingDraft) {
+        if (
+          !/^[A-Za-z0-9_.:-]{16,160}$/.test(attemptKey) ||
+          (row.status === 'PREPARED' && row.expiresAt <= new Date())
+        )
+          throw new ConflictException('وضعیت رزرو اجازه پرداخت تازه نمی‌دهد.');
+      } else await this.capacity.pin(tx, row.id, row.branchId, attemptKey);
       return this.view(
         await tx.websiteCheckoutSession.update({
           where: { id: row.id },
@@ -658,12 +736,13 @@ export class WebsiteCheckoutHoldsService {
         input.failureProof,
         scoped,
       );
-      await this.capacity.releaseFailed(
-        tx,
-        row.id,
-        row.branchId,
-        input.attemptKey,
-      );
+      if (!(row.quoteSnapshot as Record<string, unknown>).floatingDraft)
+        await this.capacity.releaseFailed(
+          tx,
+          row.id,
+          row.branchId,
+          input.attemptKey,
+        );
       return this.view(
         await tx.websiteCheckoutSession.update({
           where: { id: row.id },
@@ -695,6 +774,7 @@ export class WebsiteCheckoutHoldsService {
         scoped,
       );
       const snapshot = row.quoteSnapshot as unknown as {
+        floatingDraft?: SalesContractCreateRequest;
         offerIds: string[];
         counts: { adults: number; children: number; infants: number };
         priceComponents: { amount: string; currencyCode: string }[];
@@ -730,7 +810,8 @@ export class WebsiteCheckoutHoldsService {
           stableFingerprint(totals(snapshot.priceComponents))
       )
         throw new ConflictException('قرارداد با رزرو پرداخت مطابقت ندارد.');
-      await this.capacity.bind(tx, row.id, row.branchId, contract.id);
+      if (!snapshot.floatingDraft)
+        await this.capacity.bind(tx, row.id, row.branchId, contract.id);
       return this.view(
         await tx.websiteCheckoutSession.update({
           where: { id: row.id },
