@@ -90,6 +90,7 @@ export function assertWebsiteDraft(input: SalesContractCreateRequest) {
             )
           )) ||
         s.metadata?.legacyContractV1 ||
+        s.metadata?.websiteFloatingFingerprint ||
         s.metadata?.legacyServicePartiesV2,
     ) ||
     !Array.isArray(input.priceComponents) ||
