@@ -138,12 +138,15 @@ export function FloatingTourPricingWorkspace() {
       .then(async (s) => {
         const result = await packagePricingApi.floatingTours(s);
         if (active) {
+          const floatingTours = result.data.filter(
+            (tour) => tour.details?.isFloating === true,
+          );
           setSession(s);
-          setTours(result.data);
+          setTours(floatingTours);
           const requested = new URLSearchParams(window.location.search).get(
             'tour',
           );
-          const selected = result.data.find((tour) => tour.id === requested);
+          const selected = floatingTours.find((tour) => tour.id === requested);
           if (selected) {
             setId(selected.id);
             setOptions((old) => ({
