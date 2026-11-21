@@ -13267,3 +13267,7 @@ Reserve B2B guidance, composer routing and scoped directory reads using existing
 ## NORA-B2-LIVE-FIXES — PC-C
 
 Reserve the Nora customer guide routing, normalized customer query and focused tests for production acceptance. No API or schema changes.
+
+## NORA-PANEL-SESSION — PC-C
+
+Reserve read-only Master Data and ticket reference session recovery and focused tests for the B2B and flight pricing production acceptance. Preserve the existing authentication and authorization contracts.
