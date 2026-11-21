@@ -17,6 +17,7 @@ import {
   resolveReservationReportQuestion,
   type ReservationReportTopic,
 } from './reservation-report-guide';
+import { canViewScreen } from '@nora/contracts';
 import { normalizeQuestion } from './question-text';
 import { AssistantResponseContent } from './response-content';
 import { formatAssistantSources } from './response-presentation';
@@ -122,7 +123,7 @@ import { conversationResponseSchema } from './conversation';
 import { agentResponseSchema, conversationHistory } from './agent-response';
 import { routeAssistantQuestion, type AnswerContext } from './question-routing';
 import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
-import { useAccessActor, useScreenAccess } from '@/modules/iam/access-context';
+import { useAccessActor } from '@/modules/iam/access-context';
 
 type Translate = (text: AssistantText) => string;
 function SourceUpdated({
@@ -366,7 +367,6 @@ function AssistantComposerContent({
       : pathname === '/customer-affairs/call-center'
         ? 'call-center'
         : undefined;
-  const canViewScreen = useScreenAccess();
   const reportTopic = useRef<ReservationReportTopic | undefined>(undefined);
   const documentTopic = useRef<string | undefined>(undefined);
   const workbenchTopic = useRef<string | undefined>(undefined);
@@ -549,7 +549,10 @@ function AssistantComposerContent({
         );
       } else if (reportQuestion.kind === 'clarify') {
         replyLocally(reportQuestion.text, undefined, undefined, link);
-      } else if (!actor || !canViewScreen('ticket-catalog.tab.issued')) {
+      } else if (
+        !actor ||
+        !canViewScreen(actor.permissions, 'ticket-catalog.tab.issued')
+      ) {
         replyLocally(
           reservationReportPermissionMessage,
           undefined,
