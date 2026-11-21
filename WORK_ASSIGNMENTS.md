@@ -1,3 +1,7 @@
+## NORA-GUIDE-LIVE-FIXES — PC-C
+
+Reserve Documents intent matching and shared Workbench approval labels, with focused regressions. No data contract or schema changes.
+
 ## ACCOUNT-DETAIL-LEVELS-1118 — PC-D — IMPLEMENTED
 
 COMPUTER_ID=PC-D. The owner requests independent detail dimensions for every subsidiary account, initially visible through level 8 with an account-specific add action capped at 12, and persistent selection of native detail types. The task branch starts at origin/PC-D-Integration and fast-forwards to its existing descendant origin/develop@48d72de41 to consume the current accounting code. Reserve bounded chart, account and journal validation/persistence/display, related Accounting reports, focused tests, Accounting contracts and own status notes. Accounting API produces backward-compatible attributes and optional detail fields for the Accounting Web consumer; level 4–6 selections and historical documents keep their existing identities. Reserve the Accounting-only additive migration and corresponding fields in the shared Prisma schema. The existing Detail Owner and Payment Hold migrations are in develop; the separate Hotel Identification implementation is frozen and its migration touches a different table. Existing Accounting detail FKs and documents remain compatible. No dependency, external module or live data changes in development.
@@ -13176,6 +13180,18 @@ Reserve the TourOverview card and its focused render test on codex/pc-a-tour-flo
 # FLOATING-PRICING-PICKER-1121 — PC-A
 
 Reserve the floating pricing picker and its focused test. Use the existing floating definition flag for the dropdown and URL preselection.
+
+## FLOATING-IMPORT-DIAGNOSTICS-1121 — PC-A
+
+Reserve Floating Pricing API parsing, preview diagnostics, the Web preview and focused tests. The producer and consumer retain the existing response and warning fields.
+
+## FLOATING-PACKAGE-FLIGHT-SCHEDULE-1121 — PC-A
+
+Reserve Floating Pricing Web and API, an additive flight schedule in the public floating catalog, the shared contract and focused tests. Keep monthly imports and existing consumers compatible.
+
+## NSS-FLOATING-TOUR-CHECKOUT-1121 — PC-A
+
+Reserve Site Commerce's opt-in floating projection and dedicated order intake, with the matching Niyayesh site catalog and checkout consumer. No schema or dependency changes. Legacy products retain their existing endpoints. Floating drafts use native Sales and payment confirmation without ticket inventory.
 
 ## NORA-B2C-GUIDE — PC-C
 

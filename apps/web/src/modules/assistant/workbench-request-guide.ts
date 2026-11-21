@@ -1,5 +1,8 @@
 import type { WorkbenchRequestItemV1 } from '@nora/contracts';
-import { workbenchRequestStatusLabel } from '@/modules/workbench/workbench-request-status';
+import {
+  workbenchApprovalProgressLabel,
+  workbenchRequestStatusLabel,
+} from '@/modules/workbench/workbench-request-status';
 import { containsQuestionPhrase, normalizeQuestion } from './question-text';
 
 export function asksWorkbenchRequestStatus(
@@ -86,8 +89,8 @@ export function describeWorkbenchRequest(
         : ['مسئول یا واحد در کارتابل مشخص نشده است.']),
       ...(row.leave
         ? [
-            `تأیید مدیر واحد: ${row.progress?.managerApproved ? 'ثبت شده' : 'در کارتابل ثبت نشده'}`,
-            `تأیید منابع انسانی: ${row.progress?.hrApproved ? 'ثبت شده' : 'در کارتابل ثبت نشده'}`,
+            `تأیید مدیر واحد: ${workbenchApprovalProgressLabel(row.progress?.managerApproved)}`,
+            `تأیید منابع انسانی: ${workbenchApprovalProgressLabel(row.progress?.hrApproved)}`,
           ]
         : []),
       'منبع: آخرین خواندن کارتابل درخواست‌ها',

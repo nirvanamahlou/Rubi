@@ -122,6 +122,7 @@ it('keeps preview and final confirmation separate and blocks mutation for read-o
   seed(7);
   h.states[5] = {
     rows: [],
+    warnings: ['Row 7: خدمات اقامت وارد نشده است.'],
     options: { nights: 7, mode: 'DATED' },
     digest: 'a',
     expectedVersion: 0,
@@ -130,6 +131,8 @@ it('keeps preview and final confirmation separate and blocks mutation for read-o
   const html = renderToStaticMarkup(<FloatingTourPricingWorkspace />);
   expect(html).toContain('پیش‌نمایش ورود قیمت');
   expect(html).toContain('ثبت نهایی قیمت فروش');
+  expect(html).toContain('ردیف 7: خدمات اقامت وارد نشده است.');
+  expect(html).toContain('ردیف اکسل');
   expect(
     html.match(/<input[^>]*aria-label="فایل قیمت تور"[^>]*>/)?.[0],
   ).toContain('disabled=""');

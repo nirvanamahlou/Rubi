@@ -52,6 +52,21 @@ describe('Documents help in Nora', () => {
     });
   });
 
+  it.each([true, false])(
+    'routes split upload wording from panel=%s',
+    (onPanel) => {
+      expect(
+        resolveDocumentQuestion(
+          'چطور فایل را در اسناد و فایل‌ها بارگذاری کنم؟',
+          onPanel,
+        ),
+      ).toMatchObject({
+        kind: 'guide',
+        topic: { title: 'بارگذاری فایل' },
+      });
+    },
+  );
+
   it('reads an exact code through Documents and renders verified status', async () => {
     const intent = resolveDocumentQuestion(`وضعیت سند ${code} چیست؟`, true);
     if (intent?.kind !== 'record') throw new Error('Expected record intent');
