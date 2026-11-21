@@ -336,6 +336,61 @@ it('preview does not mutate data; commit stores sales-only data and an immutable
   expect(result.dated[0]?.prices.double?.[0]?.amount).toBe('300');
   expect(f.imports).toHaveLength(1);
 });
+it('dates the floating flights from Excel and exposes the saved schedule to the site', async () => {
+  const f = fixture();
+  const bytes = workbook('2026-08-01');
+  const airport = (suffix: string, code: string) => ({
+    id: '10000000-0000-4000-8000-00000000000' + suffix,
+    cityId: '20000000-0000-4000-8000-00000000000' + suffix,
+    countryId: '30000000-0000-4000-8000-00000000000' + suffix,
+    code,
+    name: code,
+  });
+  const origin = airport('1', 'IKA');
+  const destination = airport('2', 'AYT');
+  const outbound = {
+    carrierName: 'Airline',
+    serviceNumber: '123',
+    cabinClassCode: 'ECONOMY',
+    departureClock: '23:30',
+    arrivalClock: '02:00',
+    originAirport: origin,
+    destinationAirport: destination,
+  };
+  const input = {
+    ...options,
+    flightPattern: {
+      outbound,
+      inbound: {
+        ...outbound,
+        originAirport: destination,
+        destinationAirport: origin,
+      },
+    },
+  };
+  const preview = await f.service.preview('tour', bytes, input, actor);
+  const schedule = preview.rows[0]?.flightSchedule;
+  expect(schedule).toMatchObject({
+    startsOn: '2026-08-01',
+    endsOn: '2026-08-08',
+    outbound: { arrivalAt: '2026-08-01T22:30:00.000Z' },
+    inbound: { departureAt: '2026-08-08T20:00:00.000Z' },
+  });
+  await f.service.commit(
+    'tour',
+    bytes,
+    input,
+    preview.expectedVersion,
+    preview.digest,
+    actor,
+  );
+  const product = await f.service.websiteProduct(
+    'tour',
+    ['branch'],
+    'dated:2026-08-01:7',
+  );
+  expect(product.dated[0]?.flightSchedule).toEqual(schedule);
+});
 it('reimport replaces only touched date and nights while retaining all other periods', async () => {
   const f = fixture();
   for (const date of ['2026-08-01', '2026-08-10']) {
