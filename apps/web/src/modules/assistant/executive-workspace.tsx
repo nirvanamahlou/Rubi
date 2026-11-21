@@ -1,6 +1,12 @@
 'use client';
 
 import {
+  purchaseGuideLink,
+  readPurchaseGuide,
+  renderPurchaseGuide,
+  resolvePurchaseQuestion,
+} from './purchase-guides';
+import {
   resolveDocumentQuestion,
   renderDocumentGuide,
   readDocumentGuide,
@@ -355,6 +361,14 @@ function AssistantComposerContent({
       : pathname === '/customer-affairs/call-center'
         ? 'call-center'
         : undefined;
+  const purchaseTopic = useRef<
+    | Extract<
+        ReturnType<typeof resolvePurchaseQuestion>,
+        { kind: 'guide' }
+      >['topic']['id']
+    | 'status'
+    | undefined
+  >(undefined);
   const documentTopic = useRef<string | undefined>(undefined);
   const workbenchTopic = useRef<string | undefined>(undefined);
   const lastVersion = useRef<number | undefined>(undefined);
@@ -510,6 +524,50 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    const purchaseQuestion = resolvePurchaseQuestion(
+      message,
+      pathname === '/ticket-purchases',
+      purchaseTopic.current,
+    );
+    purchaseTopic.current = undefined;
+    if (purchaseQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      documentTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      guideTopic.current = undefined;
+      if (purchaseQuestion.kind === 'guide') {
+        purchaseTopic.current = purchaseQuestion.topic.id;
+        replyLocally(
+          renderPurchaseGuide(purchaseQuestion.topic),
+          undefined,
+          undefined,
+          purchaseGuideLink,
+        );
+      } else {
+        if (!purchaseQuestion.code) purchaseTopic.current = 'status';
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readPurchaseGuide(
+            purchaseQuestion.code,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer.text, undefined, undefined, answer.link);
+        } catch {
+          if (!controller.signal.aborted)
+            replyLocally(
+              'دریافت خریدهای رزرواسیون ناموفق بود.',
+              undefined,
+              undefined,
+              purchaseGuideLink,
+            );
+        }
+      }
+      return;
+    }
     const documentQuestion = resolveDocumentQuestion(
       message,
       pathname === '/documents',
