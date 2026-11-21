@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import * as customerClient from '../customers/api/client';
+import type * as customerClient from '../customers/api/client';
 import { CustomersApiError, customersApi } from '../customers/api/client';
 import { readCustomerGuide, resolveCustomerQuestion } from './customer-guides';
 
