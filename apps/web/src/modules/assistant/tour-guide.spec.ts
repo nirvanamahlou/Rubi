@@ -137,11 +137,9 @@ it('does not resolve duplicate names or records outside the branch scope', async
 it('distinguishes legacy publication, no departure, and cancelled request', async () => {
   const question = read('وضعیت تور ' + id);
   const api = {
-    packages: vi
-      .fn()
-      .mockResolvedValue({
-        data: [{ ...tour, publicationStatus: undefined, details: undefined }],
-      }),
+    packages: vi.fn().mockResolvedValue({
+      data: [{ ...tour, publicationStatus: undefined, details: undefined }],
+    }),
     departures: vi.fn().mockResolvedValue({ data: [] }),
   };
   const result = await readTourGuideStatus(
