@@ -295,7 +295,14 @@ function normalizeManufacturerModel(value: unknown): {
 }
 
 const allowedFields: Record<MasterDataResource, readonly string[]> = {
-  countries: ['iso2Code', 'name', 'englishName', 'gmtOffset', 'displayOrder'],
+  countries: [
+    'iso2Code',
+    'name',
+    'englishName',
+    'gmtOffset',
+    'displayOrder',
+    'logoFileReference',
+  ],
   regions: ['code', 'name', 'englishName', 'countryId'],
   cities: ['code', 'name', 'englishName', 'countryId', 'regionId'],
   airports: [

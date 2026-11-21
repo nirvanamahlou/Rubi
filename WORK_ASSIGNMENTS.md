@@ -1,3 +1,7 @@
+## NORA-TOUR-GUIDE — PC-C
+
+Reserve Nora tour catalogue, routing and read-only reuse of Ticket Catalog clients, with focused tests. No tour policy, grants or migrations.
+
 ## BANK-REFERENCE-PICKERS-1121 — PC-D — COMPLETED
 
 Reserve the Accounting bank account pickers, focused Web forms and regressions, and the bounded Master Data bank branch fields, validation and additive migration. Reuse the native bank-account-type and currency contracts. Keep existing records and currency behavior. No operational schema updates. Continues BANK-DETAIL-TITLE-1121.
@@ -13204,3 +13208,14 @@ Reserve Floating Pricing Web and API, an additive flight schedule in the public 
 ## NSS-FLOATING-TOUR-CHECKOUT-1121 — PC-A
 
 Reserve Site Commerce's opt-in floating projection and dedicated order intake, with the matching Niyayesh site catalog and checkout consumer. No schema or dependency changes. Legacy products retain their existing endpoints. Floating drafts use native Sales and payment confirmation without ticket inventory.
+
+## NORA-PURCHASE-GUIDE — PC-C
+
+Reserve assistant purchase guide, its composer integration and focused tests. Reuse the authorized reservation purchase inbox and existing form links.
+
+## NORA-B2C-GUIDE — PC-C
+
+Owned scope includes the B2C assistant catalog, authenticated read guidance and its tests. Existing customer endpoints and permissions remain in force.
+
+### COUNTRY-FLAGS-1121 (PC-B)
+Country flag upload and existing logo display. Reserve country logo field in the Master Data catalog, editable contract, logo service and additive migration 20261121120000_country_flag.
