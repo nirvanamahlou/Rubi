@@ -13168,3 +13168,7 @@ Reserve package pricing website projection and preview rate presentation. Publis
 ## NSS-SALE-CATALOG-COMPAT — PC-A
 
 Scope is package sale response compatibility and the website catalogue consumer. Passenger display rates are requested explicitly by the website publisher. Checkout reads retain the existing response contract.
+
+## NORA-GUIDE-LIVE-FIXES — PC-C
+
+Reserve Documents intent matching and shared Workbench approval labels, with focused regressions. No data contract or schema changes.
