@@ -9438,5 +9438,20 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "این شناسه قبلاً کد تفصیلی گرفته است.": "A detail code has already been issued for this record.",
+  "این کد تفصیلی قبلاً صادر شده است.": "This detail code has already been issued.",
+  "قواعد نوع تفصیلی ۸ رقمی ثابت است.": "Rules for this eight-digit detail type are fixed.",
+  "نوع تفصیلی رکورد دارای کد ۸ رقمی قابل تغییر نیست.": "The detail type of this eight-digit record cannot be changed.",
+  "کد تفصیلی ۸ رقمی به‌صورت خودکار صادر می‌شود.": "The eight-digit detail code is issued automatically.",
+  "برای این عنوان از تعریف نوع‌های تفصیلی ۸ رقمی استفاده کنید.": "Set up the eight-digit detail types to use this title.",
+  "اطلاعات تکمیلی بانک معتبر نیست.": "The bank profile is invalid.",
+  "اطلاعات تکمیلی حساب بانکی معتبر نیست.": "The bank account profile is invalid.",
+  "امضاکننده باید شخص فعال در شعبه این دفتر باشد.": "A signer must be an active person in this ledger's branch.",
+  "برای اطلاعات تکمیلی حساب، دفتر و شعبه بانک را انتخاب کنید.": "Select the ledger and bank branch to save the account profile.",
+  "برای انتقال خودکار، حساب پشتیبان و روش انتقال را انتخاب کنید.": "Choose a backup account and a transfer method for automatic transfers.",
+  "حساب پشتیبان باید حساب فعال دیگری در همین دفتر و با همین ارز باشد.": "The backup must be another active account in the same ledger and currency.",
+  "روش انتقال خروجی معتبر نیست.": "Choose a valid outgoing transfer method.",
+  "نشانی وب‌سایت بانک معتبر نیست.": "The bank website address is invalid.",
+  "نوع بانک معتبر نیست.": "The bank institution type is invalid."
 }

@@ -588,6 +588,13 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         type: 'text',
         placeholder: '021-...',
       },
+      { key: 'swiftCode', label: 'کد سوئیفت', type: 'text', placeholder: '' },
+      {
+        key: 'website',
+        label: 'وب‌سایت',
+        type: 'text',
+        placeholder: 'https://',
+      },
     ],
     preview: { code: 'CENTRAL_001', name: 'شعبه مرکزی' },
   },
