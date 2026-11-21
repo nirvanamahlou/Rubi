@@ -13176,3 +13176,7 @@ Reserve the TourOverview card and its focused render test on codex/pc-a-tour-flo
 # FLOATING-PRICING-PICKER-1121 — PC-A
 
 Reserve the floating pricing picker and its focused test. Use the existing floating definition flag for the dropdown and URL preselection.
+
+## NORA-B2C-GUIDE — PC-C
+
+Owned scope includes the B2C assistant catalog, authenticated read guidance and its tests. Existing customer endpoints and permissions remain in force.

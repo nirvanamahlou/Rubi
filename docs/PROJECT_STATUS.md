@@ -10412,3 +10412,5 @@ The existing preview publication accepts an optional dated, display-only room ra
 Fixed package projections expose single and double per-person amounts, child-with-bed rates from marked bands, and third-person supplements when a double and a triple share the same room and board. Preview amounts remain display-only.
 The defined-tour list displays the existing floating-tour flag next to the tour name.
 The floating package pricing picker and URL preselection require an explicitly floating tour definition.
+
+Nora B2C guidance documents customer panel workflows and reads scoped metrics and record status through the existing authenticated customer API.

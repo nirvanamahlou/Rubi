@@ -1,6 +1,12 @@
 'use client';
 
 import {
+  customerGuideLink,
+  readCustomerGuide,
+  renderCustomerGuide,
+  resolveCustomerQuestion,
+} from './customer-guides';
+import {
   resolveDocumentQuestion,
   renderDocumentGuide,
   readDocumentGuide,
@@ -355,6 +361,10 @@ function AssistantComposerContent({
       : pathname === '/customer-affairs/call-center'
         ? 'call-center'
         : undefined;
+  const customerTopic = useRef<string | undefined>(undefined);
+  const customerLookup = useRef<AbortController | null>(null);
+  const customerLocation = pathname + '?' + searchParams.toString();
+  useEffect(() => () => customerLookup.current?.abort(), [customerLocation]);
   const documentTopic = useRef<string | undefined>(undefined);
   const workbenchTopic = useRef<string | undefined>(undefined);
   const lastVersion = useRef<number | undefined>(undefined);
@@ -510,6 +520,64 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    customerLookup.current?.abort();
+    const customerQuestion = resolveCustomerQuestion(
+      message,
+      pathname === '/customers',
+      customerTopic.current,
+    );
+    customerTopic.current = undefined;
+    if (customerQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      documentTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      guideTopic.current = undefined;
+      if (customerQuestion.kind === 'guide') {
+        customerTopic.current = customerQuestion.topic.id;
+        replyLocally(
+          renderCustomerGuide(customerQuestion.topic),
+          undefined,
+          undefined,
+          customerGuideLink,
+        );
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        customerLookup.current = controller;
+        setActionState('loading');
+        const filters = new URLSearchParams(
+          pathname === '/customers' ? searchParams.toString() : '',
+        );
+        const currentSearch = () =>
+          pathname === '/customers'
+            ? ((
+                document.getElementById(
+                  'customer-search-live',
+                ) as HTMLInputElement | null
+              )?.value ?? '')
+            : '';
+        const selectedSearch = currentSearch();
+        filters.set('search', selectedSearch);
+        try {
+          const answer = await readCustomerGuide(
+            customerQuestion,
+            filters,
+            controller.signal,
+          );
+          if (!controller.signal.aborted && currentSearch() === selectedSearch)
+            replyLocally(answer.text, undefined, undefined, {
+              ...customerGuideLink,
+              href: answer.href,
+            });
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
+        } finally {
+          if (pending.current === controller) setActionState(null);
+        }
+      }
+      return;
+    }
     const documentQuestion = resolveDocumentQuestion(
       message,
       pathname === '/documents',

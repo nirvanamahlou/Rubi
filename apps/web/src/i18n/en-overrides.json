@@ -6878,5 +6878,14 @@
   "وضعیت ثبت‌شده": "Recorded status",
   "وضعیت سند در دسترس نیست. نشست و دسترسی خود را در پنل اسناد بررسی کنید یا دوباره تلاش کنید.": "Document status is unavailable. Check your session and access in Documents or try again.",
   "هر هتل یک ردیف؛ شناسه هتل ثابت و یکتا باشد. ستون‌های چندمقداری را با | جدا کنید.": "Use one row per hotel and keep each hotel identifier unique and stable. Separate multiple values with |.",
-  "منتشرشده": "Published"
+  "منتشرشده": "Published",
+  "برای بررسی وضعیت، پرونده درست را در پنل مشتریان انتخاب کنید.": "Select the correct record in Customers to check its status.",
+  "پرونده غیرفعال است.": "The record is inactive.",
+  "پرونده فعال است.": "The record is active.",
+  "دامنه پاسخ، فیلترهای جاری و شعب مجاز حساب شماست.": "The answer uses the current filters and the branches your account can access.",
+  "در محدوده مجاز پرونده‌ای پیدا نشد.": "No record was found within your access scope.",
+  "دریافت اطلاعات مشتریان ناموفق بود. دوباره تلاش کنید.": "Customer information could not be loaded. Try again.",
+  "فیلتر موردنظر را در پنل مشتریان تنظیم کنید و از همان صفحه دوباره بپرسید.": "Set the requested filter in Customers and ask again from that page.",
+  "مشتریان B2C": "B2C customers",
+  "نرخ بازگشت مشتری در دسترس نیست.": "The returning customer rate is unavailable."
 }
