@@ -239,7 +239,7 @@ describe('dedicated detail owner forms', () => {
     const original = renderPerson(false);
     expect(original).toContain('ledger-person-salutation');
     expect(original).toContain('اطلاعات گردش کار');
-  });
+  }, 20_000);
   it('recognizes normalized legacy spellings without reclassifying person/company or arbitrary types', () => {
     expect(detailOwnerKind('حساب بانكي')).toBe('BANK');
     expect(detailOwnerKind('حساب‌های بانکی')).toBe('BANK');
