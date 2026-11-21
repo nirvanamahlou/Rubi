@@ -13176,3 +13176,7 @@ Reserve the TourOverview card and its focused render test on codex/pc-a-tour-flo
 # FLOATING-PRICING-PICKER-1121 — PC-A
 
 Reserve the floating pricing picker and its focused test. Use the existing floating definition flag for the dropdown and URL preselection.
+
+## FLOATING-IMPORT-DIAGNOSTICS-1121 — PC-A
+
+Reserve Floating Pricing API parsing, preview diagnostics, the Web preview and focused tests. The producer and consumer retain the existing response and warning fields.

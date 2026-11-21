@@ -52,7 +52,16 @@ const groups = [
   ['childNoBed', 'کودک بدون تخت'],
   ['infant', 'نوزاد'],
 ] as const;
-function Rows({ rows }: { rows: FloatingTourSaleRow[] }) {
+const excelMessage = (message: string) =>
+  message.replace(/^Row (?=\d)/gm, 'ردیف ');
+
+function Rows({
+  rows,
+  showSource = false,
+}: {
+  rows: FloatingTourSaleRow[];
+  showSource?: boolean;
+}) {
   const amount = (items: { currency: string; amount: string }[] | undefined) =>
     items
       ?.map((m) => {
@@ -67,6 +76,7 @@ function Rows({ rows }: { rows: FloatingTourSaleRow[] }) {
         <thead>
           <tr>
             {[
+              ...(showSource ? ['ردیف اکسل'] : []),
               'تاریخ حرکت',
               'تاریخ برگشت',
               'تعداد شب',
@@ -83,6 +93,9 @@ function Rows({ rows }: { rows: FloatingTourSaleRow[] }) {
         <tbody>
           {rows.map((row, i) => (
             <tr className="border-t" key={i}>
+              {showSource && (
+                <td className="p-3">{row.sourceRows.join('، ')}</td>
+              )}
               <td className="p-3" dir="ltr">
                 {row.startsOn ?? '—'}
               </td>
@@ -428,8 +441,8 @@ export function FloatingTourPricingWorkspace() {
           </>
         )}
         {error && (
-          <p role="alert" className="text-red-600">
-            {error}
+          <p role="alert" className="whitespace-pre-line text-red-600">
+            {excelMessage(error)}
           </p>
         )}
         {message && <p role="status">{message}</p>}
@@ -441,7 +454,17 @@ export function FloatingTourPricingWorkspace() {
             قیمت تاریخ‌های داخل فایل جایگزین می‌شود؛ تاریخ‌های دیگر حفظ می‌شوند.
             در حالت ویژه ماه، مجموعهٔ ماهانه جایگزین می‌شود.
           </p>
-          <Rows rows={preview.rows} />
+          {!!preview.warnings?.length && (
+            <section className="rounded-lg border border-amber-500 p-3">
+              <h3 className="font-semibold">هشدارها</h3>
+              <ul className="list-disc space-y-1 ps-5">
+                {preview.warnings.map((warning, index) => (
+                  <li key={index}>{excelMessage(warning)}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+          <Rows rows={preview.rows} showSource />
           <Button disabled={busy || !canManage} onClick={() => void run(true)}>
             ثبت نهایی قیمت فروش
           </Button>

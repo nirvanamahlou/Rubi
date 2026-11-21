@@ -305,7 +305,9 @@ export class FloatingTourPricingService {
       for (const m of r.prices.double) {
         const rate = fx[m.currency];
         if (!rate)
-          throw new BadRequestException(`Missing exchange rate: ${m.currency}`);
+          throw new BadRequestException(
+            `Row ${r.sourceRows.join(', ')}: نرخ تبدیل ارز ${m.currency} ثبت نشده است.`,
+          );
         total = total.plus(new Decimal(m.amount).mul(rate));
       }
       return total;
@@ -340,7 +342,15 @@ export class FloatingTourPricingService {
       digest,
       rows,
       options,
-      warnings: [],
+      warnings: rows.flatMap((price) =>
+        price.stays.flatMap((stay, index) =>
+          stay.service
+            ? []
+            : [
+                `Row ${price.sourceRows[index] ?? price.sourceRows[0]}: خدمات اقامت برای «${stay.hotelName}» وارد نشده است.`,
+              ],
+        ),
+      ),
     };
   }
   async commit(
