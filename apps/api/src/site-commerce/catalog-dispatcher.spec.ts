@@ -96,6 +96,76 @@ describe('update-driven website catalog delivery', () => {
   });
 });
 
+describe('Ghestiroo flight delivery', () => {
+  const key = 'ghestiroo-fixture-signing-key-000001';
+  const jahan = 'jahan-fixture-signing-key-0000000001';
+
+  function ghestirooFixture(secret = key, userId = 'ghestiroo-service') {
+    const f = fixture();
+    vi.stubEnv('GHESTIROO_CATALOG_WEBHOOK_SECRET', secret);
+    vi.stubEnv('JAHAN_BASTAN_CATALOG_WEBHOOK_SECRET', jahan);
+    vi.stubEnv(
+      'SITE_COMMERCE_BINDINGS',
+      JSON.stringify({
+        nss: { branchId: 'branch', userId: 'service' },
+        'jahan-bastan': { branchId: 'branch', userId: 'jahan-service' },
+        ghestiroo: { branchId: 'branch', userId },
+      }),
+    );
+    const sender = f.sender as unknown as { tick(site: string): Promise<void> };
+    return { ...f, tickGhestiroo: () => sender.tick('ghestiroo') };
+  }
+
+  it('signs the Ghestiroo revision and records only its receipt', async () => {
+    const f = ghestirooFixture();
+    try {
+      await f.tickGhestiroo();
+      expect(f.commerce.catalog).toHaveBeenCalledWith(
+        'ghestiroo',
+        expect.objectContaining({
+          userId: 'ghestiroo-service',
+          branchIds: ['branch'],
+        }),
+      );
+      const [url, request] = f.fetcher.mock.calls[0]!;
+      expect(url).toBe('https://ghestiroo.ir/api/v1/erp/catalog-delivery');
+      expect(JSON.parse(request.body)).toEqual({
+        site: 'ghestiroo',
+        version: 1,
+        revision: 2,
+        data: [],
+      });
+      expect(request.headers['x-erp-signature']).toBe(
+        createHmac('sha256', key)
+          .update(request.headers['x-erp-timestamp'] + '.' + request.body)
+          .digest('hex'),
+      );
+      expect(f.table.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ siteCode: 'ghestiroo' }),
+          data: expect.objectContaining({ deliveredRevision: 2n }),
+        }),
+      );
+    } finally {
+      f.sender.onModuleDestroy();
+    }
+  });
+
+  it.each([
+    [jahan, 'ghestiroo-service'],
+    [key, 'service'],
+  ])('rejects a reused signing key or actor (%#)', async (secret, actor) => {
+    const f = ghestirooFixture(secret, actor);
+    try {
+      await f.tickGhestiroo();
+      expect(f.fetcher).not.toHaveBeenCalled();
+      expect(f.commerce.catalog).not.toHaveBeenCalled();
+    } finally {
+      f.sender.onModuleDestroy();
+    }
+  });
+});
+
 it('acknowledges NSS while the other receiver is still pending', async () => {
   const f = fixture();
   vi.stubEnv(

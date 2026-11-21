@@ -28,6 +28,7 @@ import { FinanceTicketCostModule } from '../finance/finance-ticket-cost.module';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import { Module } from '@nestjs/common';
 import { SalesReferencesController } from './sales-references.controller';
+import { MasterDataLogoModule } from '../master-data/master-data-logo.module';
 import { MasterDataModule } from '../master-data/master-data.module';
 
 import { CustomersModule } from '../customers/customers.module';
@@ -59,6 +60,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
     PassengerCorrectionModule,
     FinanceTicketCostModule,
     MasterDataModule,
+    MasterDataLogoModule,
     IamModule,
     LegalEntitiesModule,
     CustomersModule,

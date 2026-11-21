@@ -1,3 +1,11 @@
+import { financeCodingProfile, financeCodingProfiles } from '@nora/contracts';
+import { assertFinanceCodeUnissued } from '../../system-management/finance-coding.public';
+import {
+  allocateFinanceAccountingCode,
+  assertFinanceCodingTypeUnchanged,
+  newFinanceCodingTypes,
+  setupFinanceCodingTypes,
+} from './finance-coding-types';
 import {
   newOwnerTypes,
   detailOwners,
@@ -447,6 +455,7 @@ export class AccountingService {
       await tx.accountingConfiguration.createMany({
         data: [
           ...newOwnerTypes(id),
+          ...newFinanceCodingTypes(id),
           ...['شخص', 'شرکت'].map((title) => ({
             bookId: id,
             kind: 'detail-types',
@@ -3506,6 +3515,8 @@ export class AccountingService {
         },
       });
     }
+    if (action === 'setup-finance-coding-types')
+      return setupFinanceCodingTypes(tx, bookId);
     if (action === 'save-detail-owner')
       return saveDetailOwner(tx, book, p, expected, actor.userId);
     if (action === 'save-treasury-instrument')
@@ -3521,7 +3532,19 @@ export class AccountingService {
         this.version(existing.version, expected);
         if (existing.kind !== kind) v.invalid('نوع رکورد قابل تغییر نیست.');
       }
+      const requestedCode = v.text(p.code, 40);
+      const financeProfile = financeCodingProfile(existing?.code);
+      if (
+        (financeCodingProfile(requestedCode) &&
+          requestedCode !== existing?.code) ||
+        (financeProfile &&
+          ((requestedCode && requestedCode !== financeProfile.typeCode) ||
+            p.active === false))
+      )
+        v.rule('قواعد نوع تفصیلی ۸ رقمی ثابت است.');
       let attributes = v.attributes(p.attributes);
+      if (financeProfile)
+        assertFinanceCodingTypeUnchanged(financeProfile, attributes);
       if (treasuryConfigKinds.includes(kind))
         attributes = treasuryConfigAttributes(kind, p.code, attributes);
       if (kind === 'accounting-list-filters')
@@ -3595,6 +3618,13 @@ export class AccountingService {
         if (attributes.defaultFirstCode !== undefined)
           attributes.defaultFirstCode = first;
         const title = v.text(p.title, 160, true);
+        if (
+          title !== existing?.title &&
+          financeCodingProfiles.some(
+            (profile) => detailTypeKey(profile.title) === detailTypeKey(title),
+          )
+        )
+          v.rule('برای این عنوان از تعریف نوع‌های تفصیلی ۸ رقمی استفاده کنید.');
         const siblings = await tx.accountingConfiguration.findMany({
           where: { bookId, kind, id: { not: id } },
           select: { title: true },
@@ -3703,7 +3733,7 @@ export class AccountingService {
         bookId,
         kind,
         code:
-          v.text(p.code, 40) ||
+          requestedCode ||
           existing?.code ||
           `${kind === 'fiscal-years' ? 'FY' : kind === 'voucher-types' ? 'VT' : kind === 'detail-types' ? 'DT' : 'CFG'}-${id.slice(0, 8).toUpperCase()}`,
         title: v.text(p.title, 160, true),
@@ -4073,7 +4103,15 @@ export class AccountingService {
       }
       const existing = await tx.accountingDetail.findFirst({
         where: { id, bookId },
+        include: { type: { select: { code: true } } },
       });
+      const codingProfile = financeCodingProfile(detailType.code);
+      if (
+        existing &&
+        existing.typeId !== typeId &&
+        (codingProfile || financeCodingProfile(existing.type?.code))
+      )
+        v.rule('نوع تفصیلی رکورد دارای کد ۸ رقمی قابل تغییر نیست.');
       if (existing) {
         this.version(existing.version, expected);
         if (
@@ -4101,35 +4139,51 @@ export class AccountingService {
             actorName,
           ),
         );
-      const width = detailWidth(typeAttrs.classificationNumberLength);
-      if (!width) v.rule('طول شماره طبقه‌بندی نوع تفصیلی معتبر نیست.');
       const supplied = detailDigits(v.text(p.code, 20));
-      const preserveCode =
-        existing?.typeId === typeId && existing.code === supplied;
-      const codes = await tx.accountingDetail.findMany({
-        where: { bookId, typeId, id: { not: id } },
-        select: { code: true },
-      });
-      const detailCode = preserveCode
-        ? supplied
-        : supplied
-          ? paddedDetailCode(supplied, width)
-          : nextDetailCode(
-              width,
-              v.text(typeAttrs.defaultFirstCode, 20),
-              codes.map((row) => row.code),
-            );
-      if (!detailCode)
-        v.rule(
-          supplied
-            ? 'کد با طول نوع تفصیلی سازگار نیست.'
-            : 'بازه کد این نوع تفصیلی تکمیل شده است.',
-        );
-      if (
-        !preserveCode &&
-        codes.some((row) => paddedDetailCode(row.code, width) === detailCode)
-      )
-        v.rule('کد در این نوع تفصیلی تکراری است.');
+      let detailCode: string;
+      if (codingProfile) {
+        if (supplied && supplied !== existing?.code)
+          v.rule('کد تفصیلی ۸ رقمی به‌صورت خودکار صادر می‌شود.');
+        detailCode =
+          existing?.code ??
+          (await allocateFinanceAccountingCode(
+            tx,
+            codingProfile,
+            actor.userId,
+            id,
+          ));
+      } else {
+        const width = detailWidth(typeAttrs.classificationNumberLength);
+        if (!width) v.rule('طول شماره طبقه‌بندی نوع تفصیلی معتبر نیست.');
+        const preserveCode =
+          existing?.typeId === typeId && existing.code === supplied;
+        const codes = await tx.accountingDetail.findMany({
+          where: { bookId, typeId, id: { not: id } },
+          select: { code: true },
+        });
+        const candidateCode = preserveCode
+          ? supplied
+          : supplied
+            ? paddedDetailCode(supplied, width)
+            : nextDetailCode(
+                width,
+                v.text(typeAttrs.defaultFirstCode, 20),
+                codes.map((row) => row.code),
+              );
+        if (!candidateCode)
+          v.rule(
+            supplied
+              ? 'کد با طول نوع تفصیلی سازگار نیست.'
+              : 'بازه کد این نوع تفصیلی تکمیل شده است.',
+          );
+        detailCode = candidateCode;
+        if (
+          !preserveCode &&
+          codes.some((row) => paddedDetailCode(row.code, width) === detailCode)
+        )
+          v.rule('کد در این نوع تفصیلی تکراری است.');
+        if (!preserveCode) await assertFinanceCodeUnissued(tx, detailCode);
+      }
       let title = v.text(p.title, 160, true);
       let customerId: string | null = null;
       if (['شخص', 'شرکت'].includes(detailType.title)) {

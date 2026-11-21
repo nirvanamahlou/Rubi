@@ -203,6 +203,7 @@ describe('SystemManagementService', () => {
 
   it('returns an already-issued number for a repeated idempotency key', async () => {
     const issued = {
+      scheme: { code: 'SALES-CONTRACT' },
       issuedValue: 'SC-1405-000001',
       sequenceValue: 1n,
       periodKey: '1405',
@@ -222,6 +223,32 @@ describe('SystemManagementService', () => {
     );
     expect(result.value).toBe('SC-1405-000001');
     expect(result.sequence).toBe('1');
+  });
+
+  it('keeps Finance detail numbering private to Accounting', async () => {
+    const transaction = {
+      systemIssuedNumber: { findUnique: vi.fn().mockResolvedValue(null) },
+      systemNumberingScheme: {
+        findUnique: vi
+          .fn()
+          .mockResolvedValue({ code: 'FIN-CODING-001-2', isActive: true }),
+      },
+    };
+    const database = {
+      client: { $transaction: vi.fn((run) => run(transaction)) },
+    };
+    const service = new SystemManagementService(database as never, {} as never);
+    const schemeId = '00000000-0000-4000-8000-000000000005';
+    const input = { idempotencyKey: 'request-0001' };
+    await expect(
+      service.issueNumber(schemeId, input, actor, {}),
+    ).rejects.toMatchObject({ status: 404 });
+    transaction.systemIssuedNumber.findUnique.mockResolvedValue({
+      scheme: { code: 'FIN-CODING-001-2' },
+    });
+    await expect(
+      service.issueNumber(schemeId, input, actor, {}),
+    ).rejects.toMatchObject({ status: 403 });
   });
 
   it('reports a published but unreachable Worker port as UNAVAILABLE', async () => {

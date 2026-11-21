@@ -8,6 +8,7 @@ import {
   type AccountingDetailOwnerV1,
 } from '@nora/contracts';
 import type { Prisma } from '@nora/database';
+import { readBankAndBranchLabels } from '../../master-data/master-procurement-directory';
 import * as v from './accounting.validation';
 type Tx = Prisma.TransactionClient;
 type Book = { id: string; branchId: string; baseCurrency: string };
@@ -82,9 +83,29 @@ export async function detailOwners(
         ...(kind === 'CASH'
           ? { treasuryInstrument: { bookId: book.id } }
           : { treasuryBookId: book.id }),
-        ...(id ? { id } : { title: { contains: search, mode: 'insensitive' } }),
+        ...(id
+          ? { id }
+          : kind === 'BANK' && search
+            ? {
+                OR: [
+                  { title: { contains: search, mode: 'insensitive' } },
+                  { maskedAccountNumber: { contains: search } },
+                  { accountingCode: { contains: search } },
+                  { bank: { name: { contains: search, mode: 'insensitive' } } },
+                  {
+                    bankBranch: {
+                      name: { contains: search, mode: 'insensitive' },
+                    },
+                  },
+                ],
+              }
+            : { title: { contains: search, mode: 'insensitive' } }),
       },
       include: {
+        bankAccountType: { select: { title: true } },
+        bankProfile: {
+          select: { backupAccount: { select: { maskedAccountNumber: true } } },
+        },
         treasuryInstrument: {
           select: {
             titleEn: true,
@@ -99,7 +120,21 @@ export async function detailOwners(
       skip: (page - 1) * 30,
       take: 31,
     });
+    const [banks, branches] =
+      kind === 'BANK' && accounts.length
+        ? await readBankAndBranchLabels(
+            tx,
+            accounts.flatMap((a) => (a.bankId ? [a.bankId] : [])),
+            accounts.flatMap((a) => (a.bankBranchId ? [a.bankBranchId] : [])),
+          )
+        : [[], []];
+    const bankById = new Map(banks.map((bank) => [bank.id, bank]));
+    const branchById = new Map(branches.map((branch) => [branch.id, branch]));
     rows = accounts.map((a) => {
+      const bank = a.bankId ? bankById.get(a.bankId) : undefined;
+      const branch = a.bankBranchId
+        ? branchById.get(a.bankBranchId)
+        : undefined;
       const c = config.find((c) => c.id === a.id);
       return {
         id: a.id,
@@ -117,6 +152,19 @@ export async function detailOwners(
           ...(c ? attrs(c.attributes) : {}),
           ...(a.treasuryInstrument ?? {}),
           maskedAccountNumber: a.maskedAccountNumber,
+          ...(kind === 'BANK'
+            ? {
+                bankName: bank?.name,
+                bankCode: bank?.code,
+                swiftCode: bank?.swiftCode,
+                bankBranchName: branch?.name,
+                bankBranchCode: branch?.code,
+                bankAccountType: a.bankAccountType?.title,
+                backupAccountNumber:
+                  a.bankProfile?.backupAccount?.maskedAccountNumber,
+                maskedIban: a.maskedIban,
+              }
+            : {}),
         },
       };
     });

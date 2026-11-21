@@ -7,17 +7,27 @@ const { createDatabaseClient } = load('@nora/database');
 const { hash } = load('argon2');
 const db = createDatabaseClient();
 const site = process.env.SITE_COMMERCE_SITE_CODE ?? 'nss';
-if (!['nss', 'jahan-bastan'].includes(site)) throw Error('Unknown sales site');
+if (!['nss', 'jahan-bastan', 'ghestiroo'].includes(site))
+  throw Error('Unknown sales site');
 const isJahan = site === 'jahan-bastan';
-const username = isJahan ? 'jahan-bastan-site-sales' : 'nss-site-sales';
-const displayName = isJahan ? 'سایت جهان باستان' : 'سایت نیایش';
+const isGhestiroo = site === 'ghestiroo';
+const username = `${site}-site-sales`;
+const displayName = {
+  nss: 'سایت نیایش',
+  'jahan-bastan': 'سایت جهان باستان',
+  ghestiroo: 'سایت قسطی‌رو',
+}[site];
 const codes = [
   'sales.contracts.create',
   'sales.contracts.read.own',
-  'sales.contracts.confirm',
-  'sales.reservation_request.create',
-  'sales.payments.create',
-  'sales.export',
+  ...(isGhestiroo
+    ? []
+    : [
+        'sales.contracts.confirm',
+        'sales.reservation_request.create',
+        'sales.payments.create',
+        'sales.export',
+      ]),
 ];
 
 async function main() {
@@ -76,6 +86,13 @@ async function main() {
       );
     memberships.push({ branchId: jahanBranch.id, isPrimary: false });
   }
+  if (
+    isGhestiroo &&
+    (branches.find((branch) => branch.id === branchId)?.code !== 'HQ' ||
+      issuers.find((entity) => entity.id === legalEntityId)?.code !==
+        'GHESATI_RO')
+  )
+    throw Error('Ghestiroo requires HQ inventory and its own legal issuer');
   if (existing || permissions.length !== codes.length)
     throw Error(
       'Existing identity or missing permissions; no modification performed',
@@ -93,7 +110,9 @@ async function main() {
   });
   fs.writeFileSync(
     output,
-    `ERP_COMMERCE_ENABLED=${!isJahan}\nERP_API_URL=https://avinaofficial.ir/api/v1\nERP_USERNAME=${username}\nERP_PASSWORD=${password}\nERP_SITE_CODE=${site}\n`,
+    isGhestiroo
+      ? `GHESTIROO_AVINA_API_URL=https://avinaofficial.ir/api/v1\nGHESTIROO_AVINA_USERNAME=${username}\nGHESTIROO_AVINA_PASSWORD=${password}\n`
+      : `ERP_COMMERCE_ENABLED=${!isJahan}\nERP_API_URL=https://avinaofficial.ir/api/v1\nERP_USERNAME=${username}\nERP_PASSWORD=${password}\nERP_SITE_CODE=${site}\n`,
     { mode: 0o600, flag: 'wx' },
   );
   try {

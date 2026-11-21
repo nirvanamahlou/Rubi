@@ -18,6 +18,7 @@ export function DetailPicker({
   message,
   disabled,
   required,
+  wide,
 }: {
   label: string;
   value: string;
@@ -31,6 +32,7 @@ export function DetailPicker({
   message?: string | undefined;
   disabled?: boolean;
   required?: boolean;
+  wide?: 'start' | 'end';
 }) {
   const id = useId();
   const trigger = useRef<HTMLButtonElement>(null);
@@ -97,7 +99,7 @@ export function DetailPicker({
         <div
           data-detail-options
           id={id + '-list'}
-          className="absolute start-0 z-40 mt-1 w-full max-h-80 overflow-auto rounded-md border bg-background p-2 shadow-lg"
+          className={`absolute z-40 mt-1 max-h-80 overflow-auto rounded-md border bg-background p-2 shadow-lg ${wide ? (wide === 'start' ? 'start-0 w-[min(54rem,85vw)]' : 'end-0 w-[min(54rem,85vw)]') : 'start-0 w-full'}`}
         >
           <Input
             autoFocus
@@ -112,7 +114,13 @@ export function DetailPicker({
               if (e.key === 'Enter') e.preventDefault();
             }}
           />
-          <table className="w-full text-start text-xs">
+          <table
+            className={
+              wide
+                ? 'w-full min-w-max text-start text-xs'
+                : 'w-full text-start text-xs'
+            }
+          >
             <thead>
               <tr>
                 {columns.map((col) => (

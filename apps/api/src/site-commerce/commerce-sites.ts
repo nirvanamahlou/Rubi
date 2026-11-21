@@ -7,6 +7,10 @@ export const commerceSites = {
     origin: 'https://jahanbastan.ir',
     signingKey: 'JAHAN_BASTAN_CATALOG_WEBHOOK_SECRET',
   },
+  ghestiroo: {
+    origin: 'https://ghestiroo.ir',
+    signingKey: 'GHESTIROO_CATALOG_WEBHOOK_SECRET',
+  },
 } as const;
 
 export type CommerceSite = keyof typeof commerceSites;
