@@ -179,7 +179,7 @@ export const financeInboxApi = {
         data: readonly FinanceCustomerDocumentDeliveryCandidateV1[];
       }>(
         `/finance/customer-document-delivery?contractNumber=${encodeURIComponent(contractNumber)}`,
-        { signal },
+        signal ? { signal } : undefined,
       )
     ).data,
   reservationDocumentDelivery: (contractId: string) =>

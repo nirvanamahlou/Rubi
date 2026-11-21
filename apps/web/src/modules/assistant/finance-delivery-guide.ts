@@ -108,7 +108,7 @@ export async function readFinanceDeliveryStatus(
       Date.parse(exceptionExpiresAt) <= now;
     return [
       row.contractNumber,
-      approved && !expired ? catalog.copy.approved : catalog.copy.blocked,
+      `${catalog.copy.recorded}: ${approved ? catalog.copy.approved : catalog.copy.blocked}`,
       settlementLabels[row.settlementStatus],
       row.hasConfirmedPayment
         ? catalog.copy.confirmed
