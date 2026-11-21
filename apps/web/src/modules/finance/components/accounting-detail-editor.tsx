@@ -135,10 +135,15 @@ export function AccountingDetailEditor({
   const codingProfile = financeCodingProfile(type?.code);
   const [ownerSearch, setOwnerSearch] = useState('');
   const sourceKind = !isType ? detailOwnerKind(type?.title ?? '') : undefined;
-  const individualCustomer = !isType && codingProfile?.prefix === '4';
-  const personTitle =
-    individualCustomer ||
-    (!isType && ['شخص', 'شرکت'].includes(type?.title ?? ''));
+  const customerKind =
+    !isType && codingProfile?.prefix === '3'
+      ? 'organization'
+      : !isType && codingProfile?.prefix === '4'
+        ? 'person'
+        : undefined;
+  const individualCustomer = customerKind === 'person';
+  const partyTitle =
+    !!customerKind || (!isType && ['شخص', 'شرکت'].includes(type?.title ?? ''));
   const detailRows = (book?.details ?? []).filter(
     (row) => row.typeId === draft.typeId,
   );
@@ -157,9 +162,10 @@ export function AccountingDetailEditor({
         )
       : null;
   const displayCode = suggesting ? (suggestedCode ?? '') : draft.code;
+  const ownerKind = type?.title === 'شرکت' ? 'organization' : 'person';
   const personEditor =
-    individualCustomer ||
-    (ownerDialog === 'new' ? newKind === 'person' : type?.title === 'شخص');
+    (customerKind ?? (ownerDialog === 'new' ? newKind : ownerKind)) ===
+    'person';
   const profile = useQuery({
     queryKey: ['ledger-person', book?.book.branchId, ownerDialog],
     queryFn: () => customersApi.ledgerPerson(ownerDialog!, book!.book.branchId),
@@ -193,23 +199,23 @@ export function AccountingDetailEditor({
       'accounting',
       'detail-title',
       book?.book.branchId,
-      type?.title,
+      type?.id,
       ownerSearch,
       ownerPage,
     ],
     queryFn: () =>
       customersApi.selections('accounting', {
         search: ownerSearch,
-        kind: type?.title === 'شرکت' ? 'organization' : 'person',
+        kind: customerKind ?? ownerKind,
         status: 'active',
-        role: individualCustomer ? 'customer' : 'all',
+        role: customerKind ? 'customer' : 'all',
         branchId: book!.book.branchId,
         sortBy: 'displayName',
         sortDirection: 'asc',
         page: ownerPage,
         pageSize: 30,
       }),
-    enabled: !!book && personTitle,
+    enabled: !!book && partyTitle,
   });
   const sourceOwners = useQuery({
     queryKey: [
@@ -250,12 +256,8 @@ export function AccountingDetailEditor({
     }
   }
   function openOwner(id: string) {
-    if (individualCustomer) {
-      setOwnerDialog(id);
-      return;
-    }
-    if (id === 'new') {
-      setNewKind(type?.title === 'شرکت' ? 'organization' : 'person');
+    if (id === 'new' && !customerKind) {
+      setNewKind(ownerKind);
       setOwnerDialog('choose');
     } else setOwnerDialog(id);
   }
@@ -282,12 +284,12 @@ export function AccountingDetailEditor({
     customer: { id: string; displayName: string },
     kind: 'person' | 'organization',
   ) {
-    const target =
-      individualCustomer && kind === 'person'
-        ? type
-        : types.find(
-            (t) => t.active && t.title === (kind === 'person' ? 'شخص' : 'شرکت'),
-          );
+    if (customerKind && customerKind !== kind) return;
+    const target = customerKind
+      ? type
+      : types.find(
+          (t) => t.active && t.title === (kind === 'person' ? 'شخص' : 'شرکت'),
+        );
     if (!target) return;
     if (target.id !== draft.typeId) selectType(target.id);
     setDraft((old) => ({
@@ -705,7 +707,7 @@ export function AccountingDetailEditor({
                                         : 'غیرفعال',
                                   ],
                           }))
-                      : personTitle
+                      : partyTitle
                         ? (people.data?.data ?? []).map((row) => ({
                             id: row.id,
                             cells: [
@@ -723,7 +725,7 @@ export function AccountingDetailEditor({
                             cells: [row.title, row.code, type?.title ?? ''],
                           }))
                   }
-                  {...(personTitle || sourceKind
+                  {...(partyTitle || sourceKind
                     ? {
                         onSearch: (value: string) => {
                           setOwnerSearch(value);
@@ -737,7 +739,7 @@ export function AccountingDetailEditor({
                         (r) => r.id === id,
                       );
                       if (row) adoptSource(row);
-                    } else if (personTitle) {
+                    } else if (partyTitle) {
                       const row = people.data?.data.find(
                         (item) => item.id === id,
                       );
@@ -760,7 +762,7 @@ export function AccountingDetailEditor({
                           );
                           if (row) setSourceDialog(row);
                         }
-                      : personTitle
+                      : partyTitle
                         ? openOwner
                         : editDetail
                   }
@@ -769,7 +771,7 @@ export function AccountingDetailEditor({
                       ? sourceOwners.isFetching
                         ? 'در حال دریافت…'
                         : sourceOwners.error?.message
-                      : personTitle
+                      : partyTitle
                         ? people.isFetching
                           ? 'در حال دریافت…'
                           : people.error?.message
@@ -802,7 +804,7 @@ export function AccountingDetailEditor({
                         )}
                       </>
                     ) : (
-                      personTitle && (
+                      partyTitle && (
                         <>
                           <button
                             type="button"
@@ -810,7 +812,9 @@ export function AccountingDetailEditor({
                           >
                             {individualCustomer
                               ? '＋ افزودن مشتری حقیقی'
-                              : '＋ ایجاد ' + type?.title}
+                              : customerKind === 'organization'
+                                ? '＋ افزودن مشتری حقوقی'
+                                : '＋ ایجاد ' + type?.title}
                           </button>
                           {ownerPage > 1 && (
                             <button
@@ -954,7 +958,10 @@ export function AccountingDetailEditor({
             key={ownerDialog}
             initial={ownerDialog === 'new' ? undefined : ownerRecord.data?.data}
             book={book}
-            onClose={() => setOwnerDialog(null)}
+            onClose={() => {
+              setOwnerDialog(null);
+              void people.refetch();
+            }}
             onSelected={(row) => adoptOwner(row, 'organization')}
           />
         ) : (

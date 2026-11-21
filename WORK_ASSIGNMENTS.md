@@ -1,3 +1,7 @@
+## ORGANIZATION-DETAIL-TITLE-1121 — PC-D — COMPLETED
+
+Reserve the legal customer branch of the Accounting detail editor, Customer owner lookup/validation, English action label, focused regressions and task status. Reuse the native company dialog and Customer API. No migration or shared contract change.
+
 ## CUSTOMER-DETAIL-TITLE-1121 — PC-D — COMPLETED
 
 Reserve the individual customer detail editor, compact existing person form, public Customers owner projection and Accounting person-reference validation, with focused tests and task/status notes. Use the existing Customer endpoint and Finance detail numbering across ledgers without a schema change. Keep other detail types and historical records compatible.

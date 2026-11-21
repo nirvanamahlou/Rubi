@@ -1,3 +1,7 @@
+## 2026-11-21 — ORGANIZATION-DETAIL-TITLE-1121 — PC-D
+
+The corporate customer title picker opens the existing company form and lists active organization customers for the ledger branch. Save and select links the Customer profile to the eight-digit series-three detail. Web regressions and an isolated PostgreSQL round trip cover the picker action, the native company profile and branch and kind validation. No schema change.
+
 ## 2026-11-21 — CUSTOMER-DETAIL-TITLE-1121 — PC-D
 
 Added the compact individual customer title form and linked the native person Customer record to Accounting details in series four. The existing Customer API and eight-digit allocator are reused. See [CUSTOMER-DETAIL-TITLE-1121](tasks/CUSTOMER-DETAIL-TITLE-1121.md).

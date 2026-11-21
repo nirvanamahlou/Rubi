@@ -6,6 +6,7 @@ import { financeCodingProfiles } from '@nora/contracts';
 import type * as Operations from './accounting-operations';
 import { TooltipProvider } from '@/components/ui/overlays';
 import { AccountingWorkspace } from './accounting-workspace';
+import type { DetailPicker } from './accounting-detail-picker';
 
 vi.mock('@/modules/legal-entities/components/legal-entity-context', () => ({
   useLegalEntityContext: () => ({
@@ -37,11 +38,18 @@ vi.mock('./accounting-operations', async (original) => ({
   ),
 }));
 
+vi.mock('./accounting-detail-picker', () => ({
+  DetailPicker: ({ label, footer }: ComponentProps<typeof DetailPicker>) => (
+    <div aria-label={label}>{footer}</div>
+  ),
+}));
+
 function render({
   hasBook = false,
   failed = false,
   route = 'accounts/detail-types',
   hasCodingTypes = false,
+  detailProfile = financeCodingProfiles[0] as (typeof financeCodingProfiles)[number],
   recordId = undefined as string | undefined,
 } = {}) {
   detailRecordId = recordId;
@@ -63,8 +71,8 @@ function render({
           ? [
               {
                 id: 'finance-detail',
-                typeId: financeCodingProfiles[0].typeCode,
-                code: '20000001',
+                typeId: detailProfile.typeCode,
+                code: detailProfile.firstCode,
                 title: 'Synthetic title',
                 active: true,
                 attributes: {},
@@ -174,6 +182,18 @@ describe('detail type route with no accounting books', () => {
     expect(field).toMatch(/readonly=""/i);
     expect(field).toContain('value="20000001"');
     expect(field).toContain('pattern="2[0-9]{7}"');
+  });
+
+  it('offers company creation in the corporate customer title picker', () => {
+    const html = render({
+      hasBook: true,
+      hasCodingTypes: true,
+      detailProfile: financeCodingProfiles[1],
+      recordId: 'finance-detail',
+      route: 'accounts/details',
+    });
+    expect(html).toContain('＋ افزودن مشتری حقوقی');
+    expect(html).not.toContain('＋ افزودن مشتری حقیقی');
   });
 
   it('keeps ledger creation reachable and preserves failed-read handling', () => {
