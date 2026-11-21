@@ -44,8 +44,8 @@ describe('Workbench request guidance', () => {
       progress: { managerApproved: true, hrApproved: false, completed: false },
     });
     const pending = describeWorkbenchRequest('درخواست من کجاست', [hr]).text;
-    expect(pending).toContain('تأیید مدیر واحد: ثبت شده');
-    expect(pending).toContain('تأیید منابع انسانی: در کارتابل ثبت نشده');
+    expect(pending).toContain('تأیید مدیر واحد: انجام‌شده');
+    expect(pending).toContain('تأیید منابع انسانی: در انتظار');
     for (const status of ['APPROVED', 'REJECTED', 'CLOSED'])
       expect(
         describeWorkbenchRequest('درخواستم دست کیه', [{ ...hr, status }]).text,

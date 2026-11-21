@@ -23,6 +23,7 @@ export function ContractFlightEditor({
   destinationCityId = '',
   destinationCountryId = '',
   workflow = 'sales',
+  packagePricing = false,
   international,
   onChange,
 }: {
@@ -35,6 +36,7 @@ export function ContractFlightEditor({
   destinationCityId?: string;
   destinationCountryId?: string;
   workflow?: 'sales' | 'reservations';
+  packagePricing?: boolean;
   onChange: (value: ContractFlightDraft | undefined) => void;
 }) {
   if (!value)
@@ -60,7 +62,7 @@ export function ContractFlightEditor({
     onChange({ ...value, ...next, confirmation: undefined });
   return (
     <section
-      aria-label="بلیط شناور این قرارداد"
+      aria-label={packagePricing ? 'بلیط شناور' : 'بلیط شناور این قرارداد'}
       className="grid gap-3 rounded-xl border border-primary bg-primary/5 p-3"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -71,12 +73,15 @@ export function ContractFlightEditor({
           variant="outline"
           onClick={() => onChange(undefined)}
         >
-          لغو بلیط شناور و انتخاب از موجودی شرکت
+          {packagePricing
+            ? 'حذف اطلاعات پرواز'
+            : 'لغو بلیط شناور و انتخاب از موجودی شرکت'}
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        فقط در همین قرارداد ثبت می‌شود؛ ظرفیت شرکت کم نمی‌شود. تأمین و صدور باید
-        در رزرواسیون پیگیری شود. ساعت‌ها به وقت تهران هستند.
+        {packagePricing
+          ? 'ساعت‌ها به وقت تهران هستند.'
+          : 'فقط در همین قرارداد ثبت می‌شود؛ ظرفیت شرکت کم نمی‌شود. تأمین و صدور باید در رزرواسیون پیگیری شود. ساعت‌ها به وقت تهران هستند.'}
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         <FormField label="ایرلاین" required>
@@ -164,7 +169,7 @@ export function ContractFlightEditor({
             ]}
           />
         </FormField>
-        <FormField label="فرودگاه مبدأ">
+        <FormField label="فرودگاه مبدأ" required={packagePricing}>
           <FloatingFlightAirport
             label="فرودگاه مبدأ"
             international={
@@ -182,7 +187,7 @@ export function ContractFlightEditor({
             onChange={(originAirport) => patch({ originAirport })}
           />
         </FormField>
-        <FormField label="فرودگاه مقصد">
+        <FormField label="فرودگاه مقصد" required={packagePricing}>
           <FloatingFlightAirport
             cityId={destinationCityId}
             international={
@@ -203,7 +208,14 @@ export function ContractFlightEditor({
       <Button
         type="button"
         aria-label="ثبت بلیط شناور"
-        onClick={() => onChange(confirmFloatingFlight(date, value))}
+        onClick={() =>
+          onChange(
+            packagePricing &&
+              (!value.originAirport || !value.destinationAirport)
+              ? { ...value, confirmation: 'invalid' }
+              : confirmFloatingFlight(date, value),
+          )
+        }
       >
         ثبت بلیط شناور
       </Button>

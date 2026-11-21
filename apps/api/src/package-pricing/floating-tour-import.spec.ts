@@ -60,6 +60,17 @@ const tour = {
 } satisfies TourPackageInputV1;
 const hotels = [{ id: 'h1', name: 'Hotel One', cityId: 'city' }];
 const options = { nights: 7, mode: 'DATED' as const };
+it('reports invalid Excel rows together and preserves their original numbers', () => {
+  const workbook = [
+    book()[0]!,
+    book({ hotel_name: 'Unknown' })[1]!,
+    [],
+    book({ departure_date: 'invalid' })[1]!,
+  ];
+  expect(() => parseFloatingRows(workbook, options, tour, hotels)).toThrow(
+    /Row 2: نام هتل[^\n]*\nRow 4: تاریخ حرکت/,
+  );
+});
 it('infers three destination cities from Excel hotels and assigns form nights without changing the saved route', () => {
   const refs = [1, 2, 3].map((n) => ({
     id: `h${n}`,

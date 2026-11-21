@@ -14,6 +14,12 @@ import { Button, Card, Input } from '@/components/ui';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { useAccessPermissions } from '@/modules/iam/access-context';
 import { packagePricingApi } from '../api/client';
+import { floatingFlightClock } from '@/modules/sales/model/floating-flight-times';
+import {
+  FloatingPackageFlights,
+  packageFlightInput,
+  type FloatingPackageFlightDrafts,
+} from './floating-package-flights';
 const monthNames = {
   PERSIAN: [
     'فروردین',
@@ -52,7 +58,16 @@ const groups = [
   ['childNoBed', 'کودک بدون تخت'],
   ['infant', 'نوزاد'],
 ] as const;
-function Rows({ rows }: { rows: FloatingTourSaleRow[] }) {
+const excelMessage = (message: string) =>
+  message.replace(/^Row (?=\d)/gm, 'ردیف ');
+
+function Rows({
+  rows,
+  showSource = false,
+}: {
+  rows: FloatingTourSaleRow[];
+  showSource?: boolean;
+}) {
   const amount = (items: { currency: string; amount: string }[] | undefined) =>
     items
       ?.map((m) => {
@@ -67,6 +82,7 @@ function Rows({ rows }: { rows: FloatingTourSaleRow[] }) {
         <thead>
           <tr>
             {[
+              ...(showSource ? ['ردیف اکسل'] : []),
               'تاریخ حرکت',
               'تاریخ برگشت',
               'تعداد شب',
@@ -83,6 +99,9 @@ function Rows({ rows }: { rows: FloatingTourSaleRow[] }) {
         <tbody>
           {rows.map((row, i) => (
             <tr className="border-t" key={i}>
+              {showSource && (
+                <td className="p-3">{row.sourceRows.join('، ')}</td>
+              )}
               <td className="p-3" dir="ltr">
                 {row.startsOn ?? '—'}
               </td>
@@ -96,6 +115,26 @@ function Rows({ rows }: { rows: FloatingTourSaleRow[] }) {
                     {s.hotelName} · {s.room} · {s.service} · {s.nights}
                   </div>
                 ))}
+                {row.flightSchedule && (
+                  <div className="mt-2 space-y-1 text-xs">
+                    {(
+                      [
+                        ['پرواز رفت', row.flightSchedule.outbound],
+                        ['پرواز برگشت', row.flightSchedule.inbound],
+                      ] as const
+                    ).map(([label, leg]) => (
+                      <div key={label}>
+                        {label} · {leg.carrierName} · {leg.serviceNumber} ·{' '}
+                        <bdi>
+                          {leg.originAirport.code} →{' '}
+                          {leg.destinationAirport.code}{' '}
+                          {floatingFlightClock(leg.departureAt)}–
+                          {floatingFlightClock(leg.arrivalAt)}
+                        </bdi>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </td>
               {groups.map(([g]) => (
                 <td className="p-3" dir="ltr" key={g}>
@@ -131,6 +170,14 @@ export function FloatingTourPricingWorkspace() {
     combined: false,
   });
   const [period, setPeriod] = useState('');
+  const [flightDrafts, setFlightDrafts] = useState<FloatingPackageFlightDrafts>(
+    {},
+  );
+  const activeTour = tours.find((tour) => tour.id === id);
+  const outbound = packageFlightInput(flightDrafts.outbound);
+  const inbound = packageFlightInput(flightDrafts.inbound);
+  const flightPattern = outbound && inbound ? { outbound, inbound } : undefined;
+  const validFlights = options.mode === 'MONTHLY' || Boolean(flightPattern);
   useEffect(() => {
     let active = true;
     packagePricingApi
@@ -138,12 +185,15 @@ export function FloatingTourPricingWorkspace() {
       .then(async (s) => {
         const result = await packagePricingApi.floatingTours(s);
         if (active) {
+          const floatingTours = result.data.filter(
+            (tour) => tour.details?.isFloating === true,
+          );
           setSession(s);
-          setTours(result.data);
+          setTours(floatingTours);
           const requested = new URLSearchParams(window.location.search).get(
             'tour',
           );
-          const selected = result.data.find((tour) => tour.id === requested);
+          const selected = floatingTours.find((tour) => tour.id === requested);
           if (selected) {
             setId(selected.id);
             setOptions((old) => ({
@@ -197,7 +247,8 @@ export function FloatingTourPricingWorkspace() {
         options.destinationNights.length >= 2 &&
         options.destinationNights.every((n) => Number.isInteger(n) && n >= 1)));
   async function run(commit = false) {
-    if (!session || !file || !id || busy || !validNights) return;
+    if (!session || !file || !id || busy || !validNights || !validFlights)
+      return;
     setBusy(true);
     setError('');
     setMessage('');
@@ -205,7 +256,12 @@ export function FloatingTourPricingWorkspace() {
       const result = await packagePricingApi.floatingImport(
         id,
         file,
-        options,
+        {
+          ...options,
+          ...(options.mode === 'DATED' && flightPattern
+            ? { flightPattern }
+            : {}),
+        },
         session,
         commit ? (preview ?? undefined) : undefined,
       );
@@ -235,6 +291,7 @@ export function FloatingTourPricingWorkspace() {
           onChange={(e) => {
             const selected = tours.find((t) => t.id === e.target.value);
             setId(e.target.value);
+            setFlightDrafts({});
             setFile(null);
             setError('');
             setCatalog(null);
@@ -298,6 +355,28 @@ export function FloatingTourPricingWorkspace() {
                 تور ترکیبی با قیمت مشترک اقامت‌ها
               </label>
             </div>
+            {options.mode === 'DATED' && activeTour && (
+              <FloatingPackageFlights
+                tour={activeTour}
+                drafts={flightDrafts}
+                disabled={busy || !canManage}
+                onChange={(direction, value) => {
+                  setFlightDrafts((current) => {
+                    const next = { ...current };
+                    if (value) next[direction] = value;
+                    else delete next[direction];
+                    return next;
+                  });
+                  setPreview(null);
+                  setMessage('');
+                }}
+              />
+            )}
+            {options.mode === 'DATED' && !validFlights && (
+              <p className="text-sm text-muted-foreground">
+                برای پیش‌نمایش، اطلاعات هر دو پرواز و فرودگاه‌ها را تکمیل کنید.
+              </p>
+            )}
             {options.combined && (
               <div className="space-y-4 rounded-2xl border border-blue-100 bg-blue-50/40 p-4">
                 <label className="block max-w-xs">
@@ -417,7 +496,9 @@ export function FloatingTourPricingWorkspace() {
               }}
             />
             <Button
-              disabled={busy || !canManage || !file || !validNights}
+              disabled={
+                busy || !canManage || !file || !validNights || !validFlights
+              }
               onClick={() => void run()}
             >
               پیش‌نمایش قیمت فروش
@@ -425,8 +506,8 @@ export function FloatingTourPricingWorkspace() {
           </>
         )}
         {error && (
-          <p role="alert" className="text-red-600">
-            {error}
+          <p role="alert" className="whitespace-pre-line text-red-600">
+            {excelMessage(error)}
           </p>
         )}
         {message && <p role="status">{message}</p>}
@@ -438,7 +519,17 @@ export function FloatingTourPricingWorkspace() {
             قیمت تاریخ‌های داخل فایل جایگزین می‌شود؛ تاریخ‌های دیگر حفظ می‌شوند.
             در حالت ویژه ماه، مجموعهٔ ماهانه جایگزین می‌شود.
           </p>
-          <Rows rows={preview.rows} />
+          {!!preview.warnings?.length && (
+            <section className="rounded-lg border border-amber-500 p-3">
+              <h3 className="font-semibold">هشدارها</h3>
+              <ul className="list-disc space-y-1 ps-5">
+                {preview.warnings.map((warning, index) => (
+                  <li key={index}>{excelMessage(warning)}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+          <Rows rows={preview.rows} showSource />
           <Button disabled={busy || !canManage} onClick={() => void run(true)}>
             ثبت نهایی قیمت فروش
           </Button>

@@ -10411,5 +10411,13 @@ The existing preview publication accepts an optional dated, display-only room ra
 
 Fixed package projections expose single and double per-person amounts, child-with-bed rates from marked bands, and third-person supplements when a double and a triple share the same room and board. Preview amounts remain display-only.
 The defined-tour list displays the existing floating-tour flag next to the tour name.
+The floating package pricing picker and URL preselection require an explicitly floating tour definition.
+
+Floating package price imports report Excel row numbers for validation errors and preview warnings.
+
+Dated floating price imports attach outbound and inbound flight details to Excel-derived periods and include the schedule in the opt-in website catalog. Monthly and older catalog rows remain compatible.
+
+Niyayesh floating checkout consumes dated periods with matching room references and an approved rial rate. ERP freezes the selected itinerary and price before bank payment, then creates the native contract from the bank-verified quote without allocating charter seats. Monthly periods remain available to existing catalog clients.
+
 
 The Nora purchase guide covers the reservation purchase dashboard, filters, registration, finance and seat pricing. Exact contract status uses the authorized purchase inbox with the current session.
