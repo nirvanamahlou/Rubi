@@ -13247,3 +13247,7 @@ Reserve the assistant flight pricing guide and its composer integration. Reuse e
 ## NORA-MASTER-DATA-GUIDE — PC-C
 
 Reserve operational master data guidance, the composer integration and authorized read tests. Reuse the master data catalog, navigation and scoped API.
+
+## NORA-B2B-GUIDE — PC-C
+
+Reserve B2B guidance, composer routing and scoped directory reads using existing interfaces.

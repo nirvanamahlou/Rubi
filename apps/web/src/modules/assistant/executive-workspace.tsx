@@ -27,6 +27,13 @@ import {
   resolveMasterDataQuestion,
 } from './master-data-guide';
 import {
+  b2bDirectoryContext,
+  b2bGuideLink,
+  readB2bGuide,
+  renderB2bGuide,
+  resolveB2bQuestion,
+} from './b2b-guide';
+import {
   resolveDocumentQuestion,
   renderDocumentGuide,
   readDocumentGuide,
@@ -427,6 +434,9 @@ function AssistantComposerContent({
   const masterDataTopic = useRef<string | undefined>(undefined);
   const masterDataRead = useRef<AbortController | null>(null);
   useEffect(() => () => masterDataRead.current?.abort(), [pathname]);
+  const b2bTopic = useRef<string | undefined>(undefined);
+  const b2bRead = useRef<AbortController | null>(null);
+  useEffect(() => () => b2bRead.current?.abort(), [pathname]);
   const documentTopic = useRef<string | undefined>(undefined);
   const workbenchTopic = useRef<string | undefined>(undefined);
   const lastVersion = useRef<number | undefined>(undefined);
@@ -873,6 +883,47 @@ function AssistantComposerContent({
             replyLocally(answer, undefined, undefined, link);
         } catch (error) {
           if (!controller.signal.aborted) throw error;
+        } finally {
+          if (pending.current === controller) setActionState(null);
+        }
+      }
+      return;
+    }
+    b2bRead.current?.abort();
+    const b2bIntent = resolveB2bQuestion(
+      message,
+      pathname === b2bGuideLink.href,
+      b2bTopic.current,
+    );
+    b2bTopic.current = undefined;
+    if (b2bIntent) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      documentTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      guideTopic.current = undefined;
+      if (b2bIntent.kind === 'guide') {
+        b2bTopic.current = b2bIntent.topic.id;
+        replyLocally(
+          renderB2bGuide(b2bIntent.topic),
+          undefined,
+          undefined,
+          b2bGuideLink,
+        );
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        b2bRead.current = controller;
+        const snapshot = b2bDirectoryContext();
+        const snapshotKey = JSON.stringify(snapshot);
+        const isCurrent = () =>
+          !controller.signal.aborted &&
+          JSON.stringify(b2bDirectoryContext()) === snapshotKey;
+        setActionState('loading');
+        try {
+          const answer = await readB2bGuide(b2bIntent, snapshot, isCurrent);
+          if (isCurrent())
+            replyLocally(answer, undefined, undefined, b2bGuideLink);
         } finally {
           if (pending.current === controller) setActionState(null);
         }

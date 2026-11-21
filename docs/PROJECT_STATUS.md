@@ -10459,3 +10459,5 @@ Country create/edit now uses the existing logo uploader and geography logo colum
 Nora flight pricing guidance covers list filters, base and age fares, return pairs, tier pricing, destination commissions, Excel and site publication. Live lookups use the authenticated managed-offer projection.
 
 Nora now guides the eight Master Data sections and reads exact authorized reference codes with a restricted result projection.
+
+Nora guides B2B workflows and reads authorized status and filtered directory metrics using existing organization reads.
