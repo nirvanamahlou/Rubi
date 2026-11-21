@@ -5,6 +5,7 @@ export type HrPreviewTone = 'success' | 'warning' | 'danger' | 'neutral';
 export interface HrPreviewStatus {
   label: string;
   tone: HrPreviewTone;
+  lines?: readonly string[];
 }
 
 export type HrPreviewCell = string | HrPreviewStatus;
