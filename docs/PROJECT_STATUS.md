@@ -10474,4 +10474,6 @@ Nora now guides the eight Master Data sections and reads exact authorized refere
 
 Nora guides B2B workflows and reads authorized status and filtered directory metrics using existing organization reads.
 
+Nora customer acceptance follow-up: explicit B2B questions use the organization guide, and B2C lookups use the supported minimum page size and existing customer query normalization.
+
 B2B directory reads and flight pricing references recover an expired access session once through the existing authenticated refresh flow.

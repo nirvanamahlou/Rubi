@@ -1,5 +1,5 @@
-import type { CustomerListQuery } from '@nora/contracts';
 import { customersApi, CustomersApiError } from '../customers/api/client';
+import { normalizeCustomerListQuery } from '../customers/api/contracts';
 import catalog from './customer-guide-catalog.json';
 import { normalizeQuestion } from './question-text';
 
@@ -22,7 +22,7 @@ export function resolveCustomerQuestion(
   if (last && /^(بعدش|بعدش چی|مرحله بعد|بیشتر توضیح بده)$/.test(text))
     return { kind: 'guide' as const, topic: last };
   if (
-    /کال سنتر|امور مشتریان|وضعیت قرارداد|قیمت قرارداد|خرید و تامین|مشتری.*قرارداد|مسافر.*قرارداد/.test(
+    /\bb2b\b|آژانس همکار|مشتری سازمانی|کال سنتر|امور مشتریان|وضعیت قرارداد|قیمت قرارداد|خرید و تامین|مشتری.*قرارداد|مسافر.*قرارداد/.test(
       text,
     )
   )
@@ -99,7 +99,7 @@ export async function readCustomerGuide(
   filters: URLSearchParams,
   signal: AbortSignal,
 ) {
-  const query: CustomerListQuery = {
+  const query = normalizeCustomerListQuery({
     kind: 'all',
     status: 'all',
     role: 'all',
@@ -108,11 +108,13 @@ export async function readCustomerGuide(
     acquaintanceMethodId: filters.get('acquaintanceMethodId') ?? 'all',
     createdFrom: filters.get('createdFrom'),
     createdTo: filters.get('createdTo'),
+    updatedFrom: filters.get('updatedFrom'),
+    updatedTo: filters.get('updatedTo'),
     sortBy: 'updatedAt',
     sortDirection: 'desc',
     page: 1,
-    pageSize: 2,
-  };
+    pageSize: 10,
+  });
   if (intent.kind === 'metrics' && intent.externalFilters)
     return {
       text: 'فیلتر موردنظر را در پنل مشتریان تنظیم کنید و از همان صفحه دوباره بپرسید.',
