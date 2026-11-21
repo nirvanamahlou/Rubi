@@ -1,3 +1,8 @@
+## 2026-11-21 — GHESTIROO-FLIGHT-PRODUCER-1121 — PC-D
+
+Independent Ghestiroo ticket delivery and draft service-account setup reuse the
+Site Commerce v1 contract. See [the operator and deployment notes](tasks/GHESTIROO-FLIGHT-PRODUCER-1121.md).
+
 ## 2026-11-21 — COUNTRY-FLAG-TRANSLATION-1121 — PC-D
 
 Added the missing English label for the country flag in Master Data.

@@ -43,6 +43,7 @@ function setup() {
     JSON.stringify({
       nss: { branchId: 'branch-a' },
       'jahan-bastan': { branchId: 'branch-a', userId: 'jahan-service' },
+      ghestiroo: { branchId: 'branch-a', userId: 'ghestiroo-service' },
     }),
   );
   const publication = {
@@ -109,6 +110,41 @@ function setup() {
 }
 afterEach(() => vi.unstubAllEnvs());
 describe('website destination management', () => {
+  it('publishes a priced ticket only to Ghestiroo', async () => {
+    const f = setup();
+    const result = await f.service.publish(
+      'ghestiroo',
+      'ticket',
+      'flight-a',
+      { enabled: true, version: 0, branchId: 'branch-a' },
+      actor,
+    );
+    expect(f.tickets.websiteOffer).toHaveBeenCalledWith(
+      'flight-a',
+      ['branch-a'],
+      'target',
+    );
+    expect(result.data).toMatchObject({
+      siteCode: 'ghestiroo',
+      branchId: 'branch-a',
+      resourceId: 'flight-a',
+      enabled: true,
+    });
+    expect(f.publication.create).toHaveBeenCalledTimes(1);
+    const siteActor = { ...actor, userId: 'ghestiroo-service' };
+    await expect(
+      f.service.catalog('ghestiroo', siteActor),
+    ).resolves.toMatchObject({ version: 1, data: [] });
+    expect(f.publication.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { siteCode: 'ghestiroo', branchId: 'branch-a', kind: 'ticket' },
+      }),
+    );
+    await expect(
+      f.service.catalog('jahan-bastan', siteActor),
+    ).rejects.toThrow();
+  });
+
   it('publishes each floating period independently without requiring an inventory departure', async () => {
     const f = setup();
     for (const periodKey of ['dated:2026-11-20:7', 'dated:2026-11-27:7']) {
@@ -225,7 +261,7 @@ describe('website destination management', () => {
   it('validates future-site ticket eligibility without using the Niayesh price target', async () => {
     const f = setup();
     await f.service.publish(
-      'ghestiroo',
+      'jahan-academy',
       'ticket',
       'ticket-a',
       { enabled: true, version: 0, branchId: 'branch-a' },

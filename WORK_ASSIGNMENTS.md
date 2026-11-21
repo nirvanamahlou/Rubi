@@ -13223,3 +13223,14 @@ Owned scope includes the B2C assistant catalog, authenticated read guidance and 
 
 ### COUNTRY-FLAGS-1121 (PC-B)
 Country flag upload and existing logo display. Reserve country logo field in the Master Data catalog, editable contract, logo service and additive migration 20261121120000_country_flag.
+
+## GHESTIROO-FLIGHT-PRODUCER-1121 — PC-D
+
+Owner assigns the Ghestiroo-specific Rubi flight connection to PC-D on
+`codex/pc-d-ghestiroo-flight-producer-1121` from `develop@cf26ada24`.
+Reserve the commerce destination registry, dispatcher and focused tests,
+Ghestiroo-only ticket catalogue policy, and a scoped operator setup script.
+PC-A's floating tour projection and order scope remain independent.
+Producer Rubi sends the existing signed v1 snapshot to the Ghestiroo
+consumer. Existing sites retain their price targets, credentials, products
+and routes. No shared contract, schema, migration or lockfile change.
