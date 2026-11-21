@@ -63,7 +63,6 @@ import {
     MasterHotelBaseRatePublicService,
   ],
   exports: [
-    MasterDataLogoService,
     MasterSalesDirectory,
     MasterProcurementDirectory,
     MasterDataService,

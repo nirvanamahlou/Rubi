@@ -225,7 +225,11 @@ export class SiteCommerceService {
       },
       body,
     });
-    const receipt = await response.json().catch(() => null);
+    const receipt = (await response.json().catch(() => null)) as {
+      slug?: unknown;
+      identificationCode?: unknown;
+      detail?: unknown;
+    } | null;
     if (
       !response.ok ||
       typeof receipt?.slug !== 'string' ||
