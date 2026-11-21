@@ -13226,6 +13226,7 @@ Reserve assistant purchase guide, its composer integration and focused tests. Re
 Owned scope includes the B2C assistant catalog, authenticated read guidance and its tests. Existing customer endpoints and permissions remain in force.
 
 ### COUNTRY-FLAGS-1121 (PC-B)
+
 Country flag upload and existing logo display. Reserve country logo field in the Master Data catalog, editable contract, logo service and additive migration 20261121120000_country_flag.
 
 ## GHESTIROO-FLIGHT-PRODUCER-1121 — PC-D
