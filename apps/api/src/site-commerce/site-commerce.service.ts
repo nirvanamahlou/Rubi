@@ -1,3 +1,5 @@
+import { MasterDataLogoService } from '../master-data/master-data-logo.service';
+import sharp from 'sharp';
 import { WebsiteCheckoutHoldsService } from './website-checkout-holds.service';
 import { commerceSites, isDeliverySite } from './commerce-sites';
 import { createHmac } from 'node:crypto';
@@ -93,6 +95,9 @@ export class SiteCommerceService {
     @Optional()
     @Inject(WebsiteCheckoutHoldsService)
     private readonly checkoutHolds?: WebsiteCheckoutHoldsService,
+    @Optional()
+    @Inject(MasterDataLogoService)
+    private readonly logos?: MasterDataLogoService,
   ) {}
 
   private scoped(site: string, actor: AuthenticatedActor) {
@@ -132,21 +137,87 @@ export class SiteCommerceService {
       'checkInTime',
       'checkOutTime',
       'website',
+      'description',
+      'hotelRules',
+      'sourceRefundRules',
+      'sourceMainImage',
+      'sourceGalleryImages',
     ];
-    const body = JSON.stringify({
+    return this.sendProfile(config.origin, secret, '/hotel-profile', {
       site,
       kind: 'hotel-profile',
       name: data.name,
       ...Object.fromEntries(allowed.map((key) => [key, fields[key] ?? null])),
     });
+  }
+
+  async publishGeography(
+    site: string,
+    kind: string,
+    id: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (site !== 'jahan-bastan' || (kind !== 'countries' && kind !== 'cities'))
+      throw new BadRequestException();
+    this.publicationBranch(site, actor, undefined, 'master_data.update');
+    const { data } = await this.references.detail(kind, id);
+    if (!actor.permissions.includes('master_data.read'))
+      throw new ForbiddenException();
+    const config = commerceSites[site];
+    const secret = process.env[config.signingKey];
+    if (!secret || secret.length < 32)
+      throw new BadRequestException('اتصال سایت پیکربندی نشده است.');
+    let flag: string | undefined;
+    if (kind === 'countries' && data.attributes.logoFileReference) {
+      if (!this.logos)
+        throw new BadRequestException('سرویس تصویر پرچم در دسترس نیست.');
+      const { stream } = await this.logos.preview(kind, id, actor, {});
+      const chunks: Buffer[] = [];
+      let size = 0;
+      for await (const chunk of stream) {
+        const buffer = Buffer.from(chunk);
+        size += buffer.length;
+        if (size > 5_000_000)
+          throw new BadRequestException('حجم پرچم بیش از حد مجاز است.');
+        chunks.push(buffer);
+      }
+      flag = (
+        await sharp(Buffer.concat(chunks), { limitInputPixels: 16_000_000 })
+          .resize({
+            width: 400,
+            height: 400,
+            fit: 'inside',
+            withoutEnlargement: true,
+          })
+          .webp()
+          .toBuffer()
+      ).toString('base64');
+    }
+    return this.sendProfile(config.origin, secret, '/geography-profile', {
+      site,
+      kind,
+      id,
+      name: data.name,
+      flag,
+      countryName: data.attributes.countryName || undefined,
+    });
+  }
+
+  private async sendProfile(
+    origin: string,
+    secret: string,
+    path: string,
+    payload: Record<string, unknown>,
+  ) {
+    const body = JSON.stringify(payload);
     const stamp = String(Math.floor(Date.now() / 1000));
     const signature = createHmac('sha256', secret)
       .update(stamp + '.' + body)
       .digest('hex');
-    const response = await fetch(config.origin + '/api/v1/erp/hotel-profile', {
+    const response = await fetch(origin + '/api/v1/erp' + path, {
       method: 'POST',
       redirect: 'error',
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(50000),
       headers: {
         'content-type': 'application/json',
         'x-erp-timestamp': stamp,
@@ -154,23 +225,28 @@ export class SiteCommerceService {
       },
       body,
     });
-    const receipt = (await response.json().catch(() => null)) as {
-      identificationCode?: string;
-      slug?: string;
-    } | null;
+    const receipt = await response.json().catch(() => null);
     if (
       !response.ok ||
-      receipt?.identificationCode !==
-        String(fields.identificationCode).trim() ||
-      typeof receipt.slug !== 'string'
+      typeof receipt?.slug !== 'string' ||
+      (payload.kind === 'hotel-profile' &&
+        receipt.identificationCode !== payload.identificationCode)
     )
       throw new BadRequestException(
-        response.status === 409
-          ? 'کد شناسایی یا مقصد هتل را در جهان باستان بررسی کنید.'
-          : 'ثبت اطلاعات هتل در جهان باستان تأیید نشد.',
+        typeof receipt?.detail === 'string'
+          ? receipt.detail
+          : 'ثبت در جهان باستان تأیید نشد.',
       );
+    const slug = encodeURIComponent(receipt.slug);
     return {
-      url: config.origin + '/hotels/' + encodeURIComponent(receipt.slug) + '/',
+      url:
+        origin +
+        (payload.kind === 'hotel-profile'
+          ? '/hotels/' + slug + '/'
+          : payload.kind === 'cities'
+            ? '/destinations/' + slug + '/'
+            : '/destinations/?country=' +
+              encodeURIComponent(String(payload.name))),
     };
   }
 
@@ -229,9 +305,10 @@ export class SiteCommerceService {
     site: string,
     actor: AuthenticatedActor,
     requested?: string,
+    permission:
+      'ticket_catalog.manage' | 'master_data.update' = 'ticket_catalog.manage',
   ) {
-    if (!actor.permissions.includes('ticket_catalog.manage'))
-      throw new ForbiddenException();
+    if (!actor.permissions.includes(permission)) throw new ForbiddenException();
     if (!['nss', 'jahan-bastan', 'ghestiroo', 'jahan-academy'].includes(site))
       throw new BadRequestException('انتشار سایت معتبر نیست.');
     let bindings: Record<string, { branchId?: string }> = {};
