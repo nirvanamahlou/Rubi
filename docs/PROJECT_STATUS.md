@@ -10410,3 +10410,4 @@ The existing preview publication accepts an optional dated, display-only room ra
 ### Website passenger rates
 
 Fixed package projections expose single and double per-person amounts, child-with-bed rates from marked bands, and third-person supplements when a double and a triple share the same room and board. Preview amounts remain display-only.
+The defined-tour list displays the existing floating-tour flag next to the tour name.
