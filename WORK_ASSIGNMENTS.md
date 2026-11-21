@@ -13168,3 +13168,6 @@ Reserve package pricing website projection and preview rate presentation. Publis
 ## NSS-SALE-CATALOG-COMPAT — PC-A
 
 Scope is package sale response compatibility and the website catalogue consumer. Passenger display rates are requested explicitly by the website publisher. Checkout reads retain the existing response contract.
+# TOUR-FLOATING-LABEL-1121 — PC-A
+
+Reserve the TourOverview card and its focused render test on codex/pc-a-tour-floating-label-1121. The badge uses the existing tour definition flag.
