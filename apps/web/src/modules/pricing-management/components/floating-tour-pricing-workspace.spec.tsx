@@ -1,6 +1,8 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import type * as ReactModule from 'react';
+import { useEffect } from 'react';
 import { beforeEach, expect, it, vi } from 'vitest';
+import { packagePricingApi } from '../api/client';
 import { FloatingTourPricingWorkspace } from './floating-tour-pricing-workspace';
 const h = vi.hoisted(() => ({
   states: [] as unknown[],
@@ -27,10 +29,32 @@ vi.mock('@/modules/iam/access-context', () => ({
   useRouteAccess: () => () => true,
 }));
 vi.mock('@/lib/environment', () => ({ getPublicApiBaseUrl: () => '/api/v1' }));
+vi.mock('../api/client', () => ({
+  packagePricingApi: { session: vi.fn(), floatingTours: vi.fn() },
+}));
 beforeEach(() => {
   h.states = [];
   h.index = 0;
+  vi.clearAllMocks();
   h.permissions = ['package_pricing.read', 'package_pricing.period.manage'];
+});
+it('lists only explicitly floating tours and ignores a regular tour in the URL', async () => {
+  const floating = { id: 'floating', details: { isFloating: true } };
+  const ordinary = { id: 'ordinary', details: { isFloating: false } };
+  const legacy = { id: 'legacy' };
+  vi.mocked(packagePricingApi.session).mockResolvedValue({} as never);
+  vi.mocked(packagePricingApi.floatingTours).mockResolvedValue({
+    data: [floating, ordinary, legacy],
+  } as never);
+  vi.stubGlobal('window', { location: { search: '?tour=ordinary' } });
+  try {
+    renderToStaticMarkup(<FloatingTourPricingWorkspace />);
+    vi.mocked(useEffect).mock.calls[0][0]();
+    await vi.waitFor(() => expect(h.states[1]).toEqual([floating]));
+    expect(h.states[2]).toBe('');
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });
 function seed(nights: number) {
   h.states = [
