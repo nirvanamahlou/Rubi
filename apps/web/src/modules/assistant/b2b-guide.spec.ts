@@ -49,12 +49,10 @@ describe('B2B assistant guidance', () => {
     expect(resolveB2bQuestion('مدارک مشتری B2C کجاست', true)).toBeUndefined();
   });
   it('merges duplicate roles for an exact status lookup without exposing identity fields', async () => {
-    using list = vi
-      .spyOn(agencyClient, 'list')
-      .mockResolvedValue({
-        data: [organization],
-        meta: { page: 1, pageSize: 10, total: 1 },
-      });
+    using list = vi.spyOn(agencyClient, 'list').mockResolvedValue({
+      data: [organization],
+      meta: { page: 1, pageSize: 10, total: 1 },
+    });
     const lookup = resolveB2bQuestion('وضعیت آژانس همکار کد ABC چیست؟', true);
     if (lookup?.kind !== 'status') throw new Error('Expected status lookup');
     const result = await readB2bGuide(lookup, context, () => true);
@@ -68,12 +66,10 @@ describe('B2B assistant guidance', () => {
     expect(await readB2bGuide(lookup, context, () => true)).toContain('یکتا');
   });
   it('reports filtered metrics using both roles and a deduplicated identity count', async () => {
-    using list = vi
-      .spyOn(agencyClient, 'list')
-      .mockResolvedValue({
-        data: [organization],
-        meta: { page: 1, pageSize: 100, total: 1 },
-      });
+    using list = vi.spyOn(agencyClient, 'list').mockResolvedValue({
+      data: [organization],
+      meta: { page: 1, pageSize: 100, total: 1 },
+    });
     const result = await readB2bGuide(
       { kind: 'metrics', external: false },
       context,

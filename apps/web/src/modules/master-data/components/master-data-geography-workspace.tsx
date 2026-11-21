@@ -67,6 +67,7 @@ import {
 import { MasterDataTerminalForm } from './master-data-terminal-form';
 import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataLogoCell } from './master-data-logo-cell';
+import { HotelPublicationAction } from '../../integrations/components/hotel-publication';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { MasterDataFilterBar } from './master-data-filter-bar';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
@@ -1501,6 +1502,14 @@ export function MasterDataGeographyWorkspace() {
                         >
                           <FilePenLine aria-hidden="true" className="size-4" />
                         </Button>
+                        {(record.resource === 'countries' ||
+                          record.resource === 'cities') && (
+                          <HotelPublicationAction
+                            id={record.id}
+                            name={record.name}
+                            resource={record.resource}
+                          />
+                        )}
                         <MasterDataDeleteButton
                           record={record}
                           onDeleted={afterDelete}
@@ -1634,6 +1643,11 @@ export function MasterDataGeographyWorkspace() {
                                             className="size-4"
                                           />
                                         </Button>
+                                        <HotelPublicationAction
+                                          id={city.id}
+                                          name={city.name}
+                                          resource="cities"
+                                        />
                                         <MasterDataDeleteButton
                                           onDeleted={afterDelete}
                                           record={city}
@@ -1922,6 +1936,11 @@ export function MasterDataGeographyWorkspace() {
                               className="size-4"
                             />
                           </Button>
+                          <HotelPublicationAction
+                            id={record.id}
+                            name={record.name}
+                            resource="countries"
+                          />
                           <MasterDataDeleteButton
                             record={record}
                             onDeleted={afterDelete}

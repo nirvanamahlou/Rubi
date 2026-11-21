@@ -8,6 +8,22 @@ export function readBankNames(tx: Prisma.TransactionClient, ids: string[]) {
     select: { id: true, name: true },
   });
 }
+export async function readBankAndBranchLabels(
+  tx: Prisma.TransactionClient,
+  bankIds: string[],
+  branchIds: string[],
+) {
+  const banks = await tx.masterBank.findMany({
+    where: { id: { in: bankIds } },
+    select: { id: true, name: true, code: true, swiftCode: true },
+  });
+  const branches = await tx.masterBankBranch.findMany({
+    where: { id: { in: branchIds } },
+    select: { id: true, name: true, code: true },
+  });
+  return [banks, branches] as const;
+}
+
 /** Public owner projection. Procurement never reads Master Data tables itself. */
 @Injectable()
 export class MasterProcurementDirectory {

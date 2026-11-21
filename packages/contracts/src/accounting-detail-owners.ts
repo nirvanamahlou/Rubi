@@ -19,6 +19,7 @@ export function detailOwnerKind(
       .replaceAll('ك', 'ک')
       .replace(/\s|‌/g, '')
       .replace('تأمین', 'تامین');
+  if (key(title) === key('حساب‌های بانکی')) return 'BANK';
   return accountingDetailOwners.find((x) => key(x.title) === key(title))?.kind;
 }
 export interface AccountingDetailOwnerV1 {

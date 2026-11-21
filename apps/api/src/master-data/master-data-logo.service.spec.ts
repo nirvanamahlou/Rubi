@@ -218,7 +218,7 @@ describe('MasterDataLogoService', () => {
     const { service, documents } = setup();
     await expect(
       service.replace(
-        'countries',
+        'regions',
         record().id,
         { title: 'لوگو', version: 3 },
         undefined,
