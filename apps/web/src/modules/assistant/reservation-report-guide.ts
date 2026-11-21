@@ -240,7 +240,12 @@ export async function readReservationReportAnswer(
   snapshot: ReservationReportSnapshot | undefined,
   signal: AbortSignal,
   now = Date.now(),
-  load = loadReservationIssuedTickets,
+  load: (
+    signal: AbortSignal,
+    query: IssuedTicketQuery,
+  ) => Promise<{
+    data: readonly IssuedTicketReadModel[];
+  }> = loadReservationIssuedTickets,
 ) {
   if (intent.metric === '/refunds' || intent.metric === '/voids')
     return copy.combinedOnly;
