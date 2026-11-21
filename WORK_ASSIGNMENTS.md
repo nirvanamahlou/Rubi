@@ -13185,6 +13185,14 @@ Reserve the floating pricing picker and its focused test. Use the existing float
 
 Reserve Floating Pricing API parsing, preview diagnostics, the Web preview and focused tests. The producer and consumer retain the existing response and warning fields.
 
+## FLOATING-PACKAGE-FLIGHT-SCHEDULE-1121 — PC-A
+
+Reserve Floating Pricing Web and API, an additive flight schedule in the public floating catalog, the shared contract and focused tests. Keep monthly imports and existing consumers compatible.
+
+## NSS-FLOATING-TOUR-CHECKOUT-1121 — PC-A
+
+Reserve Site Commerce's opt-in floating projection and dedicated order intake, with the matching Niyayesh site catalog and checkout consumer. No schema or dependency changes. Legacy products retain their existing endpoints. Floating drafts use native Sales and payment confirmation without ticket inventory.
+
 ## NORA-B2B-GUIDE — PC-C
 
 Reserve B2B guidance, composer routing and scoped directory reads using existing interfaces.
