@@ -180,7 +180,9 @@ export class SiteCommerceService {
     });
     if (binding?.branchId !== branchId || !binding.salePriceTargetId)
       throw new BadRequestException(
-        'ابتدا درصد مقصد «نیایش سیر سحر» را در مدیریت قیمت بلیط ثبت کنید.',
+        site === 'ghestiroo'
+          ? 'ابتدا مقصد فروش «قسطی‌رو» را برای شعبه تنظیم کنید.'
+          : 'ابتدا درصد مقصد «نیایش سیر سحر» را در مدیریت قیمت بلیط ثبت کنید.',
       );
     return binding.salePriceTargetId;
   }
@@ -264,15 +266,18 @@ export class SiteCommerceService {
     if (!['ticket', 'tour', 'floating-tour'].includes(kind))
       throw new BadRequestException();
     const periodKey = this.publicationPeriod(kind, requestedPeriod);
-    const delivery = await this.db.client.websiteCatalogDelivery.findFirst({
-      where: { siteCode: site, branchId },
-      select: {
-        lastError: true,
-        deliveredAt: true,
-        deliveredRevision: true,
-        revision: true,
-      },
-    });
+    const delivery =
+      site === 'ghestiroo' && kind !== 'ticket'
+        ? null
+        : await this.db.client.websiteCatalogDelivery.findFirst({
+            where: { siteCode: site, branchId },
+            select: {
+              lastError: true,
+              deliveredAt: true,
+              deliveredRevision: true,
+              revision: true,
+            },
+          });
     const deliveryStatus = !delivery
       ? 'unconfigured'
       : delivery.lastError
@@ -314,6 +319,8 @@ export class SiteCommerceService {
       throw new BadRequestException('انتشار سایت معتبر نیست.');
     if (!actor.permissions.includes('ticket_catalog.manage'))
       throw new ForbiddenException();
+    if (site === 'ghestiroo' && kind !== 'ticket' && input.enabled)
+      throw new BadRequestException('اتصال فروش قسطی‌رو برای پرواز فعال است.');
     const branchId = this.publicationBranch(site, actor, input.branchId);
     const periodKey = this.publicationPeriod(kind, input.periodKey ?? '');
     const key = {
@@ -511,11 +518,13 @@ export class SiteCommerceService {
       where: {
         siteCode: site,
         branchId: scoped.branchIds[0]!,
-        ...(floatingOnly
-          ? { kind: 'floating-tour' }
-          : !includeFloating
-            ? { kind: { in: ['ticket', 'tour'] } }
-            : {}),
+        ...(site === 'ghestiroo'
+          ? { kind: 'ticket' }
+          : floatingOnly
+            ? { kind: 'floating-tour' }
+            : !includeFloating
+              ? { kind: { in: ['ticket', 'tour'] } }
+              : {}),
       },
       orderBy: { id: 'asc' },
       take: 501,
