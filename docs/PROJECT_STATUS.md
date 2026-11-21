@@ -10414,3 +10414,5 @@ The defined-tour list displays the existing floating-tour flag next to the tour 
 The floating package pricing picker and URL preselection require an explicitly floating tour definition.
 
 Floating package price imports report Excel row numbers for validation errors and preview warnings.
+
+Nora flight pricing guidance covers list filters, base and age fares, return pairs, tier pricing, destination commissions, Excel and site publication. Live lookups use the authenticated managed-offer projection.

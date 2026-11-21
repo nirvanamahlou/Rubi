@@ -6878,5 +6878,7 @@
   "وضعیت ثبت‌شده": "Recorded status",
   "وضعیت سند در دسترس نیست. نشست و دسترسی خود را در پنل اسناد بررسی کنید یا دوباره تلاش کنید.": "Document status is unavailable. Check your session and access in Documents or try again.",
   "هر هتل یک ردیف؛ شناسه هتل ثابت و یکتا باشد. ستون‌های چندمقداری را با | جدا کنید.": "Use one row per hotel and keep each hotel identifier unique and stable. Separate multiple values with |.",
-  "منتشرشده": "Published"
+  "منتشرشده": "Published",
+  ": نرخ تبدیل ارز": ": Exchange rate",
+  "· نوزاد": "· Infant"
 }
