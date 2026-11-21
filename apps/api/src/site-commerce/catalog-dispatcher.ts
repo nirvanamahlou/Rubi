@@ -115,8 +115,8 @@ export class WebsiteCatalogDispatcher implements OnModuleInit, OnModuleDestroy {
         binding.branchId,
       );
       const catalog = await (site === 'jahan-bastan'
-          ? this.commerce.catalog(site, actor, true)
-          : this.commerce.catalog(site, actor));
+        ? this.commerce.catalog(site, actor, true)
+        : this.commerce.catalog(site, actor));
       const body = JSON.stringify({
         ...catalog,
         site,

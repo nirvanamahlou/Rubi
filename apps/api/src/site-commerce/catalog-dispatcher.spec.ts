@@ -194,6 +194,11 @@ it('acknowledges NSS while the other receiver is still pending', async () => {
   const pending = sender.tick('jahan-bastan');
   try {
     await sender.tick('nss');
+    expect(f.commerce.catalog).toHaveBeenCalledWith(
+      'jahan-bastan',
+      expect.objectContaining({ userId: 'jahan-service' }),
+      true,
+    );
     expect(f.table.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ siteCode: 'nss' }),
