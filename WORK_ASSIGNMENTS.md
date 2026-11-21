@@ -13196,3 +13196,7 @@ Reserve Floating Pricing Web and API, an additive flight schedule in the public 
 ## NSS-FLOATING-TOUR-CHECKOUT-1121 — PC-A
 
 Reserve Site Commerce's opt-in floating projection and dedicated order intake, with the matching Niyayesh site catalog and checkout consumer. No schema or dependency changes. Legacy products retain their existing endpoints. Floating drafts use native Sales and payment confirmation without ticket inventory.
+
+## NORA-PURCHASE-GUIDE — PC-C
+
+Reserve assistant purchase guide, its composer integration and focused tests. Reuse the authorized reservation purchase inbox and existing form links.

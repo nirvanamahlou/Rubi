@@ -10422,3 +10422,6 @@ Niyayesh floating checkout consumes dated periods with matching room references 
 ## راهنمای تعریف تور و خدمات در نورا
 
 راهنمای تعریف، مسیر ترکیبی، ویرایش، نوبت، ظرفیت، نرخ و انتشار در نورا اضافه شد. پرسش درباره تور مشخص با APIهای خواندنی پنل و در شعب مجاز پاسخ می‌گیرد. وضعیت تعریف و ظرفیت نوبت از قیمت و انتشار مستقل گزارش می‌شوند. پذیرش حساب واقعی به نسخهٔ کاندید نیاز دارد.
+
+
+The Nora purchase guide covers the reservation purchase dashboard, filters, registration, finance and seat pricing. Exact contract status uses the authorized purchase inbox with the current session.
