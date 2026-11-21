@@ -11,11 +11,18 @@ import {
   type AuthenticatedActor,
   type CompanyBankAccountV1,
   type TreasuryBankReferencesV1,
+  type TreasuryBankProfileInputV1,
   type CompanyBankAccountOptionsV1,
 } from '@nora/contracts';
 import { type Prisma, type DatabaseClient } from '@nora/database';
 import { DatabaseService } from '../../database/database.service';
 import { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
+import {
+  assertTreasuryBankProfile,
+  normalizeTreasuryBankProfile,
+  readTreasuryBankProfile,
+  saveTreasuryBankProfile,
+} from './bank-account-profile';
 import { BankAccountCrypto, type BankIdentifiers } from './bank-account.crypto';
 import { currentFinanceFiscalRequest } from '../fiscal-context/finance-fiscal-storage';
 import {
@@ -62,7 +69,7 @@ export class BankAccountService {
   }) {
     return `finance:company-bank:v1:${row.branchId}:${row.bankId}:${row.id}`;
   }
-  private projection(row: Account): CompanyBankAccountV1 {
+  private projection(row: Account): Omit<CompanyBankAccountV1, 'bankProfile'> {
     return {
       id: row.id,
       branchId: row.branchId,
@@ -186,7 +193,7 @@ export class BankAccountService {
     row: Account,
     actor: AuthenticatedActor,
     action: string,
-    before?: CompanyBankAccountV1,
+    before?: Omit<CompanyBankAccountV1, 'bankProfile'>,
   ) {
     await tx.financeBankAccountAudit.create({
       data: {
@@ -214,7 +221,14 @@ export class BankAccountService {
         this.context(row),
       );
       await this.audit(tx, row, actor, 'REVEAL');
-      return { ...this.projection(row), ...identifiers };
+      const bankProfile = row.treasuryBookId
+        ? await readTreasuryBankProfile(tx, row.id)
+        : undefined;
+      return {
+        ...this.projection(row),
+        ...identifiers,
+        ...(bankProfile ? { bankProfile } : {}),
+      };
     });
   }
   async remove(
@@ -325,10 +339,15 @@ export class BankAccountService {
       'branchId',
       ...fields,
       'treasury',
+      'bankProfile',
       ...(id ? ['expectedVersion'] : ['requestId']),
     ]);
     if (input.isExternal !== undefined && typeof input.isExternal !== 'boolean')
       throw new BadRequestException('اطلاعات حساب بانکی معتبر نیست.');
+    const bankProfile =
+      input.bankProfile === undefined
+        ? undefined
+        : normalizeTreasuryBankProfile(input.bankProfile);
     const expectedVersion = id ? bankVersion(input.expectedVersion) : null;
     const requestId = id ?? bankUuid(input.requestId);
     try {
@@ -426,6 +445,10 @@ export class BankAccountService {
                 tx,
               );
           }
+          if (bankProfile && !treasury)
+            throw new BadRequestException(
+              'برای اطلاعات تکمیلی حساب، دفتر و شعبه بانک را انتخاب کنید.',
+            );
           if (
             current &&
             treasury &&
@@ -496,6 +519,16 @@ export class BankAccountService {
               throw new ConflictException(
                 'برای تغییر شماره حساب ذی‌نفع، حساب جدید معرفی کنید.',
               );
+            if (bankProfile && treasury && branchId) {
+              const retained = await readTreasuryBankProfile(tx, id);
+              await assertTreasuryBankProfile(
+                tx,
+                this.directory,
+                { id, branchId, bookId: treasury.treasuryBookId, currencyCode },
+                bankProfile,
+                retained,
+              );
+            }
             const result = await tx.financeSettlementAccount.updateMany({
               where: {
                 id,
@@ -521,6 +554,7 @@ export class BankAccountService {
               throw new ConflictException(
                 'حساب هم‌زمان تغییر کرده است؛ دوباره آن را باز کنید.',
               );
+            if (bankProfile) await saveTreasuryBankProfile(tx, id, bankProfile);
             const row = await this.find(tx, bankId, id, actor);
             await this.audit(
               tx,
@@ -551,7 +585,17 @@ export class BankAccountService {
           if (treasury && !identifiers.accountNumber)
             throw new BadRequestException('شماره حساب الزامی است.');
           if (previous) {
+            const storedProfile = bankProfile
+              ? await readTreasuryBankProfile(tx, requestId)
+              : undefined;
             if (
+              (bankProfile &&
+                Object.entries(bankProfile).some(
+                  ([key, expected]) =>
+                    JSON.stringify(
+                      storedProfile?.[key as keyof TreasuryBankProfileInputV1],
+                    ) !== JSON.stringify(expected),
+                )) ||
               (previous.treasuryBookId ?? null) !==
                 (treasury?.treasuryBookId ?? null) ||
               (previous.bankBranchId ?? null) !==
@@ -575,6 +619,18 @@ export class BankAccountService {
               );
             return this.projection(previous);
           }
+          if (bankProfile && treasury && branchId)
+            await assertTreasuryBankProfile(
+              tx,
+              this.directory,
+              {
+                id: requestId,
+                branchId,
+                bookId: treasury.treasuryBookId,
+                currencyCode,
+              },
+              bankProfile,
+            );
           const row = await tx.financeSettlementAccount.create({
             data: {
               id: requestId,
@@ -590,6 +646,8 @@ export class BankAccountService {
               ...protectedData,
             },
           });
+          if (bankProfile)
+            await saveTreasuryBankProfile(tx, row.id, bankProfile);
           await this.audit(tx, row, actor, 'CREATE');
           return this.projection(row);
         },

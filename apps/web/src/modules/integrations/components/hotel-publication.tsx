@@ -15,12 +15,16 @@ import Link from '@/i18n/link';
 import { localizedFetch } from '@/i18n/localized-fetch';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
+type PublicationResource = 'hotels' | 'countries' | 'cities';
+
 export function HotelPublicationAction({
   id,
   name,
+  resource = 'hotels',
 }: {
   id: string;
   name: string;
+  resource?: PublicationResource;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -65,7 +69,7 @@ export function HotelPublicationAction({
           </button>
         </header>
         <div className="p-5">
-          <HotelPublication id={id} />
+          <HotelPublication id={id} resource={resource} />
         </div>
       </dialog>
     </>
@@ -75,9 +79,11 @@ export function HotelPublicationAction({
 export function HotelPublication({
   id,
   manage = false,
+  resource = 'hotels',
 }: {
   id: string;
   manage?: boolean;
+  resource?: PublicationResource;
 }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -89,7 +95,10 @@ export function HotelPublication({
     try {
       const response = await localizedFetch(
         getPublicApiBaseUrl() +
-          '/sales/site-commerce/v1/jahan-bastan/hotel-profiles/' +
+          '/sales/site-commerce/v1/jahan-bastan/' +
+          (resource === 'hotels'
+            ? 'hotel-profiles/'
+            : 'geography-profiles/' + resource + '/') +
           encodeURIComponent(id),
         {
           method: 'POST',
@@ -104,10 +113,12 @@ export function HotelPublication({
       const result = await response.json();
       if (!response.ok)
         throw new Error(
-          result.error?.message || result.message || 'ثبت هتل انجام نشد.',
+          result.error?.message ||
+            result.message ||
+            'ثبت در جهان باستان انجام نشد.',
         );
       setUrl(result.url);
-      setMessage('اطلاعات هتل ثبت شد.');
+      setMessage('اطلاعات ثبت شد.');
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : 'ارتباط با سایت برقرار نشد.',
@@ -129,7 +140,7 @@ export function HotelPublication({
           type="button"
           onClick={publish}
           disabled={busy}
-          aria-label="ثبت هتل در جهان باستان"
+          aria-label="ثبت در جهان باستان"
           className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg bg-primary px-3 font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
         >
           {busy ? (
@@ -153,11 +164,11 @@ export function HotelPublication({
           className="inline-flex items-center gap-2 font-medium text-primary hover:underline"
           href={url}
         >
-          مشاهده صفحه هتل
+          مشاهده در جهان باستان
           <ArrowUpRight aria-hidden="true" className="size-4" />
         </a>
       )}
-      {!manage && (
+      {!manage && resource === 'hotels' && (
         <Link
           className="flex items-center gap-2 border-t border-border pt-3 font-medium text-primary hover:underline"
           href={'/integrations?view=hotels&hotelId=' + encodeURIComponent(id)}

@@ -119,6 +119,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: '+03:30',
       },
       {
+        key: 'logoFileReference',
+        label: 'پرچم کشور',
+        type: 'text',
+        placeholder: '',
+      },
+      {
         key: 'displayOrder',
         label: 'ترتیب نمایش',
         type: 'number',
@@ -581,6 +587,13 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'تلفن عمومی',
         type: 'text',
         placeholder: '021-...',
+      },
+      { key: 'swiftCode', label: 'کد سوئیفت', type: 'text', placeholder: '' },
+      {
+        key: 'website',
+        label: 'وب‌سایت',
+        type: 'text',
+        placeholder: 'https://',
       },
     ],
     preview: { code: 'CENTRAL_001', name: 'شعبه مرکزی' },

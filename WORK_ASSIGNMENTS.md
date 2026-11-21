@@ -1,6 +1,22 @@
+## COUNTRY-FLAG-TRANSLATION-1121 — PC-D — COMPLETED
+
+Add the missing English label for the country flag field introduced in PR #1833. Scope is the translation catalogue and task/status notes.
+
 ## NORA-TOUR-GUIDE — PC-C
 
 Reserve Nora tour catalogue, routing and read-only reuse of Ticket Catalog clients, with focused tests. No tour policy, grants or migrations.
+
+## BANK-REFERENCE-PICKERS-1121 — PC-D — COMPLETED
+
+Reserve the Accounting bank account pickers, focused Web forms and regressions, and the bounded Master Data bank branch fields, validation and additive migration. Reuse the native bank-account-type and currency contracts. Keep existing records and currency behavior. No operational schema updates. Continues BANK-DETAIL-TITLE-1121.
+
+## BANK-DETAIL-TITLE-1121 — PC-D — COMPLETED
+
+Reserve Accounting bank title lookup and the specialized Finance form. Reserve the bounded Finance bank account profile and Master Data bank metadata producers, compatible request fields, Customer public signer validation, focused tests and related schema/migration. Use existing bank/account IDs, permissions, encryption and auditing. Only additive nullable bank fields and new profile tables. No operational schema execution or data edits. Continues the FIN-CODING-001 task branch.
+
+## FIN-CODING-001 — PC-D — COMPLETED
+
+Reserve the four Accounting detail type definitions, their native editor and save path, their year-independent setup action in the fiscal scope registry, a System Management internal numbering port and narrow guards for its reserved schemes, a shared additive Contracts catalogue, focused tests and task notes. Producer is System Numbering in the same transaction as its Accounting consumer. Reuse existing schemas and preserve all operational records. Dedicated title and native HR, Customer and bank record forms are outside this Accounting definition stage.
 
 ## NORA-FINANCE-DELIVERY — PC-C
 
@@ -13208,3 +13224,17 @@ Reserve assistant purchase guide, its composer integration and focused tests. Re
 ## NORA-B2C-GUIDE — PC-C
 
 Owned scope includes the B2C assistant catalog, authenticated read guidance and its tests. Existing customer endpoints and permissions remain in force.
+
+### COUNTRY-FLAGS-1121 (PC-B)
+Country flag upload and existing logo display. Reserve country logo field in the Master Data catalog, editable contract, logo service and additive migration 20261121120000_country_flag.
+
+## GHESTIROO-FLIGHT-PRODUCER-1121 — PC-D
+
+Owner assigns the Ghestiroo-specific Rubi flight connection to PC-D on
+`codex/pc-d-ghestiroo-flight-producer-1121` from `develop@cf26ada24`.
+Reserve the commerce destination registry, dispatcher and focused tests,
+Ghestiroo-only ticket catalogue policy, and a scoped operator setup script.
+PC-A's floating tour projection and order scope remain independent.
+Producer Rubi sends the existing signed v1 snapshot to the Ghestiroo
+consumer. Existing sites retain their price targets, credentials, products
+and routes. No shared contract, schema, migration or lockfile change.

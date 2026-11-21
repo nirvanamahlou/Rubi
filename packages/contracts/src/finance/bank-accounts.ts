@@ -4,7 +4,29 @@ export type TreasuryBankReferencesV1 = {
   bankAccountTypeId: string;
   bankBranchId: string;
 };
+export const bankInstitutionKinds = [
+  { value: 'BANK', label: 'بانک' },
+  { value: 'FINANCIAL_INSTITUTION', label: 'مؤسسه مالی و اعتباری' },
+  { value: 'QARD_HASAN_FUND', label: 'صندوق قرض‌الحسنه' },
+] as const;
+
+export interface TreasuryBankProfileInputV1 {
+  creditLimit: string | null;
+  reserveBalance: string | null;
+  materiality: string | null;
+  backupAccountId: string | null;
+  automaticTransfer: boolean;
+  transferMethodId: string | null;
+  description: string;
+  descriptionEn: string;
+  notes: string;
+  signerIds: string[];
+}
+
 export interface CompanyBankAccountV1 {
+  bankProfile?: TreasuryBankProfileInputV1 & {
+    signers: { id: string; name: string }[];
+  };
   treasury?: TreasuryBankReferencesV1;
   accountingCode?: string | null;
   id: string;
@@ -20,6 +42,7 @@ export interface CompanyBankAccountV1 {
   iban: string | null;
 }
 export interface CompanyBankAccountInputV1 {
+  bankProfile?: TreasuryBankProfileInputV1;
   treasury?: TreasuryBankReferencesV1;
   branchId?: string | null;
   title: string;
