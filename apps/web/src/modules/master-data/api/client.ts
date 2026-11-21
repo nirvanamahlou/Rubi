@@ -168,7 +168,11 @@ async function requestFile(
   return { blob, fileName };
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  retried = false,
+): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new MasterDataApiError('نشانی API پیکربندی نشده است.', 0);
   const response = await localizedFetch(`${baseUrl}/master-data${path}`, {
@@ -182,6 +186,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       ...init?.headers,
     },
   });
+  const method = (init?.method ?? 'GET').toUpperCase();
+  if (
+    response.status === 401 &&
+    method === 'GET' &&
+    !retried &&
+    !init?.signal?.aborted &&
+    (await refreshAuthenticatedSession(baseUrl))
+  )
+    return request<T>(path, init, true);
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as {
       error?: { message?: string };
@@ -195,7 +208,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     );
   }
   const payload = (await response.json()) as T;
-  const method = (init?.method ?? 'GET').toUpperCase();
   if (typeof window !== 'undefined' && method !== 'GET' && method !== 'HEAD')
     window.dispatchEvent(new Event(MASTER_DATA_CHANGED_EVENT));
   return payload;

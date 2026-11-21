@@ -1,4 +1,5 @@
 import { localizedFetch } from '@/i18n/localized-fetch';
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import {
   type MasterDataListResponse,
   type MasterDataRecord,
@@ -67,12 +68,20 @@ export async function listReferences(
   if (filters.countryId) query.set('countryId', filters.countryId);
   if (filters.cityId) query.set('cityId', filters.cityId);
   const path = `/selections/${workflow}/${resource}`;
-  const response = await localizedFetch(`${base}/master-data${path}?${query}`, {
+  const url = `${base}/master-data${path}?${query}`;
+  const init: RequestInit = {
     method: 'GET',
     credentials: 'include',
     headers: { accept: 'application/json' },
     ...(signal ? { signal } : {}),
-  });
+  };
+  let response = await localizedFetch(url, init);
+  if (
+    response.status === 401 &&
+    !signal?.aborted &&
+    (await refreshAuthenticatedSession(base))
+  )
+    response = await localizedFetch(url, init);
   if (!response.ok)
     throw new ReferenceApiError(
       referenceState(response.status),

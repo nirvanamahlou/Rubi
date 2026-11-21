@@ -1,15 +1,64 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import { masterDataApi } from '@/modules/master-data/api/client';
 import {
   asReference,
   getActiveCityReference,
   listActiveCurrencyReferences,
   listReferences,
 } from './references';
+vi.mock('@/lib/auth-session');
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
 });
 describe('Published read-only Master Data adapter', () => {
+  it.each([
+    {
+      read: () => listReferences('cities', '', 1, undefined, {}, 'sales'),
+      expected: '/selections/sales/cities?',
+    },
+    {
+      read: () =>
+        masterDataApi.list('organizations', {
+          page: 1,
+          pageSize: 20,
+          search: '',
+          status: 'all',
+          sortBy: 'updatedAt',
+          sortDirection: 'desc',
+        }),
+      expected: '/organizations?',
+    },
+  ])(
+    'retries a read once with the refreshed session: $expected',
+    async ({ read, expected }) => {
+      vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
+      const refresh = vi.mocked(refreshAuthenticatedSession);
+      refresh.mockClear();
+      refresh.mockResolvedValue(
+        {} as NonNullable<
+          Awaited<ReturnType<typeof refreshAuthenticatedSession>>
+        >,
+      );
+      const fetcher = vi
+        .fn()
+        .mockResolvedValueOnce(new Response(null, { status: 401 }))
+        .mockResolvedValueOnce(
+          Response.json({
+            data: [],
+            meta: { total: 0, page: 1, pageSize: 25 },
+          }),
+        );
+      vi.stubGlobal('fetch', fetcher);
+      await expect(read()).resolves.toMatchObject({ data: [] });
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(fetcher).toHaveBeenCalledTimes(2);
+      expect(fetcher.mock.calls[0]?.[0]).toContain(expected);
+      expect(fetcher.mock.calls[1]?.[0]).toBe(fetcher.mock.calls[0]?.[0]);
+    },
+  );
+
   it.each([
     { scope: 'iran', attributes: { cityId: 'tehran' }, expected: 'iran' },
     { scope: undefined, attributes: { cityId: 'tehran' }, expected: undefined },

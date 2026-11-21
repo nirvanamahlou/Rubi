@@ -13263,3 +13263,7 @@ Reserve operational master data guidance, the composer integration and authorize
 ## NORA-B2B-GUIDE — PC-C
 
 Reserve B2B guidance, composer routing and scoped directory reads using existing interfaces.
+
+## NORA-PANEL-SESSION — PC-C
+
+Reserve read-only Master Data and ticket reference session recovery and focused tests for the B2B and flight pricing production acceptance. Preserve the existing authentication and authorization contracts.
