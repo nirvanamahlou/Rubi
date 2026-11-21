@@ -73,6 +73,7 @@ describe('Customer panel guidance', () => {
       expect.objectContaining({
         branchId: 'branch',
         createdFrom: '2026-11-01',
+        pageSize: 10,
       }),
       signal,
     );
@@ -86,6 +87,17 @@ describe('Customer panel guidance', () => {
       ).text,
     ).toContain('در دسترس نیست');
   });
+  it.each([true, false])(
+    'leaves explicit B2B counts to the organization guide (on B2C panel: %s)',
+    (onPanel) => {
+      expect(
+        resolveCustomerQuestion('تعداد مشتریان B2B چند است؟', onPanel),
+      ).toBeUndefined();
+      expect(
+        resolveCustomerQuestion('تعداد مشتریان B2C چند است؟', onPanel),
+      ).toMatchObject({ kind: 'metrics' });
+    },
+  );
   it('distinguishes absent and ambiguous records without leaking candidates', async () => {
     vi.mocked(customersApi.list).mockResolvedValue({
       data: [],

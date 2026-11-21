@@ -13263,3 +13263,7 @@ Reserve operational master data guidance, the composer integration and authorize
 ## NORA-B2B-GUIDE — PC-C
 
 Reserve B2B guidance, composer routing and scoped directory reads using existing interfaces.
+
+## NORA-B2-LIVE-FIXES — PC-C
+
+Reserve the Nora customer guide routing, normalized customer query and focused tests for production acceptance. No API or schema changes.
