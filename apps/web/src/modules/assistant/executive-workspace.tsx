@@ -13,6 +13,13 @@ import {
   resolveCustomerQuestion,
 } from './customer-guides';
 import {
+  flightPricingLink,
+  flightPricingTopicLink,
+  readFlightPricing,
+  renderFlightPricingGuide,
+  resolveFlightPricingQuestion,
+} from './flight-pricing-guide';
+import {
   resolveDocumentQuestion,
   renderDocumentGuide,
   readDocumentGuide,
@@ -406,6 +413,9 @@ function AssistantComposerContent({
       >['topic']
     | undefined
   >(undefined);
+  const flightPricingTopic = useRef<string | undefined>(undefined);
+  const flightPricingRead = useRef<AbortController | null>(null);
+  useEffect(() => () => flightPricingRead.current?.abort(), [pathname]);
   const documentTopic = useRef<string | undefined>(undefined);
   const workbenchTopic = useRef<string | undefined>(undefined);
   const lastVersion = useRef<number | undefined>(undefined);
@@ -768,6 +778,47 @@ function AssistantComposerContent({
             replyLocally(answer, undefined, undefined, link);
         } catch (error) {
           if (!controller.signal.aborted) throw error;
+        }
+      }
+      return;
+    }
+    flightPricingRead.current?.abort();
+    const flightPricingIntent = resolveFlightPricingQuestion(
+      message,
+      pathname === flightPricingLink.href,
+      flightPricingTopic.current,
+    );
+    flightPricingTopic.current = undefined;
+    if (flightPricingIntent) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      documentTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      guideTopic.current = undefined;
+      if (flightPricingIntent.kind === 'guide') {
+        flightPricingTopic.current = flightPricingIntent.topic.id;
+        replyLocally(
+          renderFlightPricingGuide(flightPricingIntent.topic),
+          undefined,
+          undefined,
+          flightPricingTopicLink(flightPricingIntent.topic),
+        );
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        flightPricingRead.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readFlightPricing(
+            flightPricingIntent,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer, undefined, undefined, flightPricingLink);
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
+        } finally {
+          if (pending.current === controller) setActionState(null);
         }
       }
       return;

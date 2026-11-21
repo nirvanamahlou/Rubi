@@ -10455,3 +10455,5 @@ Country create/edit now uses the existing logo uploader and geography logo colum
 ## راهنمای تحویل مدارک نورا
 
 کاتالوگ راهنمای جست‌وجو، مبانی صدور و لغو و خواندن وضعیت از API مجاز پنل مالی به نورا اضافه شد. این مسیر تنها خواندنی است. پذیرش با قرارداد واقعی در نسخهٔ کاندید باقی است.
+
+Nora flight pricing guidance covers list filters, base and age fares, return pairs, tier pricing, destination commissions, Excel and site publication. Live lookups use the authenticated managed-offer projection.

@@ -13239,3 +13239,7 @@ PC-A's floating tour projection and order scope remain independent.
 Producer Rubi sends the existing signed v1 snapshot to the Ghestiroo
 consumer. Existing sites retain their price targets, credentials, products
 and routes. No shared contract, schema, migration or lockfile change.
+
+## NORA-FLIGHT-PRICING-GUIDE — PC-C
+
+Reserve the assistant flight pricing guide and its composer integration. Reuse existing authenticated ticket catalog reads and pricing projections.
