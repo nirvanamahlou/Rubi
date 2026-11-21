@@ -32,6 +32,7 @@ import { workbenchDate } from './model';
 import { workbenchRequestPriorityLabel } from './workbench-request-priority';
 import {
   shouldShowWorkbenchRequestStatus,
+  workbenchApprovalProgressLabel,
   workbenchRequestStatusLabel,
 } from './workbench-request-status';
 
@@ -504,7 +505,7 @@ export function WorkbenchOwnRequests() {
                           />
                           <span>{label}</span>
                           <span className="sr-only">
-                            {done[index] ? 'انجام‌شده' : 'در انتظار'}
+                            {workbenchApprovalProgressLabel(done[index])}
                           </span>
                         </li>
                       );

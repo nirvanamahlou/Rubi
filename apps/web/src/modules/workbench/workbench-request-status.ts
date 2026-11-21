@@ -19,3 +19,7 @@ export function workbenchRequestStatusLabel(status: string | null | undefined) {
   if (!status) return 'تعیین نشده';
   return requestStatusLabels[status.trim().toUpperCase()] ?? 'تعیین نشده';
 }
+
+export function workbenchApprovalProgressLabel(done: boolean | undefined) {
+  return done ? 'انجام‌شده' : 'در انتظار';
+}

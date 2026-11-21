@@ -290,11 +290,19 @@ export function resolveDocumentQuestion(
         .map((alias) => ({ topic, score: normalizeQuestion(alias).length })),
     )
     .sort((a, b) => b.score - a.score)[0]?.topic;
+  const upload =
+    (onPanel || panelTopic) &&
+    /بارگذاری|آپلود/.test(question) &&
+    /فایل|سند|مدرک/.test(question) &&
+    (!matched || matched === guides[0])
+      ? guides.find((item) => item.title === 'بارگذاری فایل')
+      : undefined;
   const continuation = /^(?:بعدش چی|بعدش|ادامه بده|مرحله بعد چیه)$/.test(
     question,
   );
   const topic =
     (continuation && guides.find((item) => item.title === previous)) ||
+    upload ||
     matched ||
     ((onPanel || panelTopic) && /راهنما|این صفحه|اینجا/.test(question)
       ? guides[0]

@@ -1,3 +1,7 @@
+## NORA-GUIDE-LIVE-FIXES — PC-C
+
+Reserve Documents intent matching and shared Workbench approval labels, with focused regressions. No data contract or schema changes.
+
 ## ACCOUNT-DETAIL-LEVELS-1118 — PC-D — IMPLEMENTED
 
 COMPUTER_ID=PC-D. The owner requests independent detail dimensions for every subsidiary account, initially visible through level 8 with an account-specific add action capped at 12, and persistent selection of native detail types. The task branch starts at origin/PC-D-Integration and fast-forwards to its existing descendant origin/develop@48d72de41 to consume the current accounting code. Reserve bounded chart, account and journal validation/persistence/display, related Accounting reports, focused tests, Accounting contracts and own status notes. Accounting API produces backward-compatible attributes and optional detail fields for the Accounting Web consumer; level 4–6 selections and historical documents keep their existing identities. Reserve the Accounting-only additive migration and corresponding fields in the shared Prisma schema. The existing Detail Owner and Payment Hold migrations are in develop; the separate Hotel Identification implementation is frozen and its migration touches a different table. Existing Accounting detail FKs and documents remain compatible. No dependency, external module or live data changes in development.
