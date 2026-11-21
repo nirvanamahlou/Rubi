@@ -625,10 +625,11 @@ export const masterDataApi = {
     resource: MasterDataResource,
     query: MasterDataListQuery,
     workflow?: WorkflowSelectionContext,
+    signal?: AbortSignal,
   ) {
     return request<MasterDataListResponse>(
       `${workflow ? `/selections/${workflow}` : ''}/${resource}?${serializeMasterDataListQuery(query)}`,
-      { cache: 'no-store' },
+      { cache: 'no-store', ...(signal ? { signal } : {}) },
     );
   },
   listSummary(

@@ -10414,3 +10414,5 @@ The defined-tour list displays the existing floating-tour flag next to the tour 
 The floating package pricing picker and URL preselection require an explicitly floating tour definition.
 
 Floating package price imports report Excel row numbers for validation errors and preview warnings.
+
+Nora now guides the eight Master Data sections and reads exact authorized reference codes with a restricted result projection.

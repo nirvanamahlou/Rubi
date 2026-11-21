@@ -1,5 +1,12 @@
 'use client';
 
+import { canUseMasterDataResource } from '@nora/contracts';
+import {
+  masterDataGuideLink,
+  readMasterDataGuide,
+  renderMasterDataGuide,
+  resolveMasterDataQuestion,
+} from './master-data-guide';
 import {
   resolveDocumentQuestion,
   renderDocumentGuide,
@@ -355,6 +362,10 @@ function AssistantComposerContent({
       : pathname === '/customer-affairs/call-center'
         ? 'call-center'
         : undefined;
+  const masterDataPermissions = useAccessPermissions();
+  const masterDataTopic = useRef<string | undefined>(undefined);
+  const masterDataRead = useRef<AbortController | null>(null);
+  useEffect(() => () => masterDataRead.current?.abort(), [pathname]);
   const documentTopic = useRef<string | undefined>(undefined);
   const workbenchTopic = useRef<string | undefined>(undefined);
   const lastVersion = useRef<number | undefined>(undefined);
@@ -510,6 +521,51 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    masterDataRead.current?.abort();
+    const masterDataIntent = resolveMasterDataQuestion(
+      message,
+      pathname ?? '',
+      masterDataTopic.current,
+    );
+    masterDataTopic.current = undefined;
+    if (masterDataIntent) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      documentTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      guideTopic.current = undefined;
+      const link = { ...masterDataGuideLink, href: masterDataIntent.href };
+      if (masterDataIntent.kind === 'guide') {
+        masterDataTopic.current = masterDataIntent.topics[0]?.id;
+        replyLocally(
+          renderMasterDataGuide(masterDataIntent.topics),
+          undefined,
+          undefined,
+          link,
+        );
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        masterDataRead.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readMasterDataGuide(
+            masterDataIntent,
+            controller.signal,
+            (resource) =>
+              Array.isArray(masterDataPermissions) &&
+              canUseMasterDataResource(masterDataPermissions, resource),
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer, undefined, undefined, link);
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
+        } finally {
+          if (pending.current === controller) setActionState(null);
+        }
+      }
+      return;
+    }
     const documentQuestion = resolveDocumentQuestion(
       message,
       pathname === '/documents',
