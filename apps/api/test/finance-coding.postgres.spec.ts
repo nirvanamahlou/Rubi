@@ -278,7 +278,7 @@ describe.skipIf(!url)('FIN-CODING-001 on isolated PostgreSQL', () => {
       actor,
     );
   }
-  function newCompany(branch = branchId, companyActor = actor) {
+  function newCompany(branch: string = branchId, companyActor = actor) {
     serial += 1;
     return customers.saveLedgerCompany(
       {
