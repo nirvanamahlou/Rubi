@@ -1,3 +1,7 @@
+## 2026-11-21 — FIN-CODING-001 — PC-D
+
+Added four fixed Accounting detail type definitions and global eight-digit issuance through existing System Management numbering. Existing ledgers add missing definitions from the native type screen. New ledgers receive them at creation. Existing business codes and financial records are preserved. No migration or live deployment. See [FIN-CODING-001](tasks/FIN-CODING-001.md).
+
 ## 2026-11-18 — Nora final acceptance (PC-C)
 
 Handoff: [draft PR1791](https://github.com/nirvanamahlou/Rubi/pull/1791), code36c7e8f66. Live matrix BLOCKED_PROVIDER_QUOTA; idle runner/helper stopped, cases1–2 receipts verified intact.242 owned fixture databases/roles cleaned; no operational mutation or candidate activation.

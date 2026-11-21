@@ -9416,5 +9416,11 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "این شناسه قبلاً کد تفصیلی گرفته است.": "A detail code has already been issued for this record.",
+  "این کد تفصیلی قبلاً صادر شده است.": "This detail code has already been issued.",
+  "قواعد نوع تفصیلی ۸ رقمی ثابت است.": "Rules for this eight-digit detail type are fixed.",
+  "نوع تفصیلی رکورد دارای کد ۸ رقمی قابل تغییر نیست.": "The detail type of this eight-digit record cannot be changed.",
+  "کد تفصیلی ۸ رقمی به‌صورت خودکار صادر می‌شود.": "The eight-digit detail code is issued automatically.",
+  "برای این عنوان از تعریف نوع‌های تفصیلی ۸ رقمی استفاده کنید.": "Set up the eight-digit detail types to use this title."
 }

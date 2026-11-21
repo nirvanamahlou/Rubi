@@ -2,6 +2,9 @@
 import { AccountingDetailOwnerDialog } from './accounting-detail-owner-dialog';
 import {
   detailOwnerKind,
+  financeCodingProfile,
+  financeCodingProfiles,
+  financeCodingProfileForValue,
   type AccountingDetailOwnerV1,
   type AccountingDetailOwnerPageV1,
 } from '@nora/contracts';
@@ -88,11 +91,18 @@ export function AccountingDetailEditor({
   );
   const [draft, setDraft] = useState(() => initial(selected));
   const [tab, setTab] = useState('main');
+  const [codingConflicts, setCodingConflicts] = useState<string[]>([]);
+  const [invalidGeneratedCode, setInvalidGeneratedCode] = useState(false);
   const [notes, setNotes] = useState(() =>
     parseSetupNotes(selected?.attributes.notes),
   );
   const isType = kind === 'detail-types';
   const isSystem = isType && selected?.attributes.isSystem === true;
+  const fixedDefinition =
+    isType && Boolean(financeCodingProfile(selected?.code));
+  const missingCodingTypes = financeCodingProfiles.some(
+    (profile) => !types.some((row) => row.code === profile.typeCode),
+  );
   const close = () =>
     router.push(
       `/finance/accounting/general-ledger/accounts/lists/${kind}${book ? `?bookId=${book.book.id}` : ''}`,
@@ -107,6 +117,7 @@ export function AccountingDetailEditor({
   const focusRef = useRef<HTMLElement>(null);
   const fresh = () => {
     setManualCode(false);
+    setInvalidGeneratedCode(false);
     setOwnerPage(1);
     setOwnerDialog(null);
     setSourceDialog(null);
@@ -121,6 +132,7 @@ export function AccountingDetailEditor({
     value: (typeof draft)[K],
   ) => setDraft((old) => ({ ...old, [key]: value }));
   const type = types.find((row) => row.id === draft.typeId);
+  const codingProfile = financeCodingProfile(type?.code);
   const [ownerSearch, setOwnerSearch] = useState('');
   const sourceKind = !isType ? detailOwnerKind(type?.title ?? '') : undefined;
   const personTitle = !isType && ['شخص', 'شرکت'].includes(type?.title ?? '');
@@ -130,6 +142,7 @@ export function AccountingDetailEditor({
   const width = detailWidth(type?.attributes.classificationNumberLength);
   const suggesting =
     !isType &&
+    !codingProfile &&
     !manualCode &&
     (!selected || !('typeId' in selected) || selected.typeId !== draft.typeId);
   const suggestedCode =
@@ -320,6 +333,7 @@ export function AccountingDetailEditor({
         id={`detail-${key}`}
         required={required}
         disabled={disabled}
+        readOnly={key === 'code' && Boolean(codingProfile)}
         {...(key === 'classificationNumberLength'
           ? {
               inputMode: 'numeric' as const,
@@ -332,7 +346,10 @@ export function AccountingDetailEditor({
               inputMode: 'numeric' as const,
               dir: 'ltr',
               maxLength: 20,
-              pattern: '[0-9]+',
+              pattern:
+                key === 'code' && codingProfile
+                  ? codingProfile.prefix + '[0-9]{7}'
+                  : '[0-9]+',
             }
           : {})}
         onBlur={() => {
@@ -367,6 +384,29 @@ export function AccountingDetailEditor({
       dir="rtl"
     >
       <AccountingButton onClick={fresh}>جدید</AccountingButton>
+      {isType && book && missingCodingTypes && (
+        <AccountingButton
+          type="button"
+          permission="finance.account.manage"
+          disabled={busy}
+          onClick={() =>
+            void run<{ conflicts: string[] }>(
+              'setup-finance-coding-types',
+              {},
+            ).then((result) => {
+              if (result) setCodingConflicts(result.conflicts);
+            })
+          }
+        >
+          تعریف نوع‌های تفصیلی ۸ رقمی
+        </AccountingButton>
+      )}
+      {isType && missingCodingTypes && codingConflicts.length > 0 && (
+        <p role="alert" className="text-sm text-destructive">
+          عنوان‌های هم‌نام در این دفتر{' '}
+          <strong>{codingConflicts.join('، ')}</strong>
+        </p>
+      )}
       <AccountingDeleteButtons
         busy={busy || !!isSystem}
         selected={selected}
@@ -393,6 +433,7 @@ export function AccountingDetailEditor({
         onSubmit={(event) => {
           event.preventDefault();
           if (!book) return;
+          setInvalidGeneratedCode(false);
           const after = accountingSaveDisposition(event);
           const attributes = {
             ...selected?.attributes,
@@ -410,7 +451,14 @@ export function AccountingDetailEditor({
             isType ? 'save-configuration' : 'save-detail',
             {
               ...draft,
-              ...(!isType ? { code: suggesting ? '' : draft.code } : {}),
+              ...(!isType
+                ? {
+                    code:
+                      suggesting || (codingProfile && !selected)
+                        ? ''
+                        : draft.code,
+                  }
+                : {}),
               ...(isType ? { kind: 'detail-types' } : {}),
               attributes,
               ...(selected ? { id: selected.id } : {}),
@@ -419,6 +467,13 @@ export function AccountingDetailEditor({
           ).then((saved) => {
             if (!saved) return;
             setManualCode(false);
+            if (
+              codingProfile &&
+              !selected &&
+              financeCodingProfileForValue(saved.code) !== codingProfile
+            ) {
+              setInvalidGeneratedCode(true);
+            }
             setSelected(saved);
             setDraft(initial(saved));
             setNotes(parseSetupNotes(saved.attributes.notes));
@@ -457,13 +512,19 @@ export function AccountingDetailEditor({
               <div>
                 {field('title', 'عنوان', true, !!isSystem)}
                 {field('titleEn', 'عنوان به زبان دوم', false, !!isSystem)}
-                {field('defaultFirstCode', 'اولین کد پیش فرض')}
+                {field(
+                  'defaultFirstCode',
+                  'اولین کد پیش فرض',
+                  false,
+                  fixedDefinition,
+                )}
               </div>
               <div>
                 <FormField label="نوع تفصیلی پدر" id="detail-parentTypeId">
                   <SearchCombobox
                     id="detail-parentTypeId"
                     label="نوع تفصیلی پدر"
+                    disabled={fixedDefinition}
                     value={draft.parentTypeId}
                     onValueChange={(value) => update('parentTypeId', value)}
                     options={parentTypes.map((row) => ({
@@ -476,11 +537,13 @@ export function AccountingDetailEditor({
                   'classificationNumberLength',
                   'طول شماره طبقه بندی',
                   true,
+                  fixedDefinition,
                 )}
                 <label className={styles.parentControl}>
                   <input
                     type="checkbox"
                     checked={draft.enforceParent}
+                    disabled={fixedDefinition}
                     onChange={(e) => update('enforceParent', e.target.checked)}
                   />
                   کنترل رابطه پدر فرزندی
@@ -492,6 +555,7 @@ export function AccountingDetailEditor({
               <div>
                 <DetailPicker
                   label="نوع تفصیلی"
+                  disabled={Boolean(selected && codingProfile)}
                   required
                   value={type?.title ?? ''}
                   columns={[
@@ -501,7 +565,13 @@ export function AccountingDetailEditor({
                     'کنترل رابطه پدر فرزندی',
                   ]}
                   rows={types
-                    .filter((row) => row.active)
+                    .filter(
+                      (row) =>
+                        row.active &&
+                        (!selected ||
+                          codingProfile ||
+                          !financeCodingProfile(row.code)),
+                    )
                     .map((row) => ({
                       id: row.id,
                       cells: [
@@ -535,7 +605,17 @@ export function AccountingDetailEditor({
                 </label>
               </div>
               <div>
-                {field('code', 'کد', true, !type)}
+                {field('code', 'کد', !codingProfile, !type)}
+                {codingProfile && invalidGeneratedCode && (
+                  <p role="alert" className="text-xs text-destructive">
+                    قالب کد تفصیلی دریافتی معتبر نیست.
+                  </p>
+                )}
+                {codingProfile && !draft.code && (
+                  <p className="text-xs text-muted-foreground">
+                    کد پس از ذخیره اختصاص داده می‌شود.
+                  </p>
+                )}
                 {suggesting && type && !suggestedCode && (
                   <p role="alert">بازه کد این نوع تفصیلی تکمیل شده است.</p>
                 )}

@@ -12,6 +12,7 @@ export const accountingFiscalMetadataActions = new Set([
   'save-account',
   'save-detail',
   'save-detail-owner',
+  'setup-finance-coding-types',
   'save-account-group',
   'save-detail-group',
   'save-template',

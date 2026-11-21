@@ -1,3 +1,7 @@
+## FIN-CODING-001 — PC-D — COMPLETED
+
+Reserve the four Accounting detail type definitions, their native editor and save path, their year-independent setup action in the fiscal scope registry, a System Management internal numbering port and narrow guards for its reserved schemes, a shared additive Contracts catalogue, focused tests and task notes. Producer is System Numbering in the same transaction as its Accounting consumer. Reuse existing schemas and preserve all operational records. Dedicated title and native HR, Customer and bank record forms are outside this Accounting definition stage.
+
 ## NORA-GUIDE-LIVE-FIXES — PC-C
 
 Reserve Documents intent matching and shared Workbench approval labels, with focused regressions. No data contract or schema changes.

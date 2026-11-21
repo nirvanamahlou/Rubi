@@ -6883,5 +6883,18 @@
   "وضعیت ثبت‌شده": "Recorded status",
   "وضعیت سند در دسترس نیست. نشست و دسترسی خود را در پنل اسناد بررسی کنید یا دوباره تلاش کنید.": "Document status is unavailable. Check your session and access in Documents or try again.",
   "هر هتل یک ردیف؛ شناسه هتل ثابت و یکتا باشد. ستون‌های چندمقداری را با | جدا کنید.": "Use one row per hotel and keep each hotel identifier unique and stable. Separate multiple values with |.",
-  "منتشرشده": "Published"
+  "منتشرشده": "Published",
+  "مشتریان حقوقی": "Corporate customers",
+  "مشتریان حقیقی": "Individual customers",
+  "حساب‌های بانکی": "Bank accounts",
+  "تعریف نوع‌های تفصیلی ۸ رقمی": "Set up eight-digit detail types",
+  "عنوان‌های هم‌نام در این دفتر": "Existing detail types with the same title",
+  "کد پس از ذخیره اختصاص داده می‌شود.": "The code is assigned when the detail is saved.",
+  "قالب کد تفصیلی دریافتی معتبر نیست.": "The returned detail code has an invalid format.",
+  "این شناسه قبلاً کد تفصیلی گرفته است.": "A detail code has already been issued for this record.",
+  "این کد تفصیلی قبلاً صادر شده است.": "This detail code has already been issued.",
+  "قواعد نوع تفصیلی ۸ رقمی ثابت است.": "Rules for this eight-digit detail type are fixed.",
+  "نوع تفصیلی رکورد دارای کد ۸ رقمی قابل تغییر نیست.": "The detail type of this eight-digit record cannot be changed.",
+  "کد تفصیلی ۸ رقمی به‌صورت خودکار صادر می‌شود.": "The eight-digit detail code is issued automatically.",
+  "برای این عنوان از تعریف نوع‌های تفصیلی ۸ رقمی استفاده کنید.": "Set up the eight-digit detail types to use this title."
 }
