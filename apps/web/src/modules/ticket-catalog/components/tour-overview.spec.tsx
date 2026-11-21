@@ -94,7 +94,11 @@ describe('tour overview', () => {
         definitionMode
         packages={[
           pack,
-          { ...pack, id: 'floating', details: { version: 1, isFloating: true } },
+          {
+            ...pack,
+            id: 'floating',
+            details: { version: 1, isFloating: true },
+          },
         ]}
         departures={[]}
         cities={[]}
