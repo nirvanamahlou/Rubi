@@ -1,3 +1,7 @@
+## راهنمای گزارش رزرواسیون در نورا
+
+کاتالوگ گزارش، تاریخ و فیلتر، روش شمارش، ردیف و خروجی را پوشش می‌دهد. پاسخ «همین گزارش» از آخرین خوانش موفق و فیلترهای اعمال‌شده همان پنل ساخته می‌شود. خوانش صریح بازه از API مجاز موجود استفاده می‌کند. گروه‌بندی مسیر شامل ردیف‌های پرواز منطبق است و در پاسخ به صدور، فقط ردیف دارای سند صدور قابل مشاهده شمرده می‌شود. استرداد و ابطال در داده فعلی به‌صورت جداگانه قابل شمارش نیستند. پذیرش مرورگری به نسخه کاندید نیاز دارد.
+
 ## 2026-11-18 — Nora final acceptance (PC-C)
 
 Handoff: [draft PR1791](https://github.com/nirvanamahlou/Rubi/pull/1791), code36c7e8f66. Live matrix BLOCKED_PROVIDER_QUOTA; idle runner/helper stopped, cases1–2 receipts verified intact.242 owned fixture databases/roles cleaned; no operational mutation or candidate activation.
@@ -10415,6 +10419,4 @@ The floating package pricing picker and URL preselection require an explicitly f
 
 Floating package price imports report Excel row numbers for validation errors and preview warnings.
 
-## راهنمای گزارش رزرواسیون در نورا
-
-کاتالوگ گزارش، تاریخ و فیلتر، روش شمارش، ردیف و خروجی را پوشش می‌دهد. پاسخ «همین گزارش» از آخرین خوانش موفق و فیلترهای اعمال‌شده همان پنل ساخته می‌شود. خوانش صریح بازه از API مجاز موجود استفاده می‌کند. گروه‌بندی مسیر شامل ردیف‌های پرواز منطبق است و در پاسخ به صدور، فقط ردیف دارای سند صدور قابل مشاهده شمرده می‌شود. استرداد و ابطال در داده فعلی به‌صورت جداگانه قابل شمارش نیستند. پذیرش مرورگری به نسخه کاندید نیاز دارد.
+Dated floating price imports attach outbound and inbound flight details to Excel-derived periods and include the schedule in the opt-in website catalog. Monthly and older catalog rows remain compatible.
