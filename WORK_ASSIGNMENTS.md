@@ -22,6 +22,10 @@ Reserve the four Accounting detail type definitions, their native editor and sav
 
 Reserve Nora-only delivery guidance and tests; reuse the Finance read API. No Finance policy, grants or migrations.
 
+## NORA-RESERVATION-REPORT — PC-C
+
+Reserve Nora report guide, read-only panel snapshot bridge and focused tests. Reuse Reservations report and permission checks. No policy or schema changes.
+
 ## NORA-GUIDE-LIVE-FIXES — PC-C
 
 Reserve Documents intent matching and shared Workbench approval labels, with focused regressions. No data contract or schema changes.

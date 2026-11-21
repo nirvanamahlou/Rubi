@@ -56,6 +56,17 @@ import {
   renderFinanceDeliveryGuide,
   resolveFinanceDeliveryQuestion,
 } from './finance-delivery-guide';
+import {
+  getReservationReport,
+  reservationReportHref,
+} from '@/modules/ticket-catalog/model/reservation-report-context';
+import {
+  readReservationReportAnswer,
+  reservationReportPermissionMessage,
+  renderReservationReportGuide,
+  resolveReservationReportQuestion,
+  type ReservationReportTopic,
+} from './reservation-report-guide';
 import { normalizeQuestion } from './question-text';
 import { AssistantResponseContent } from './response-content';
 import { formatAssistantSources } from './response-presentation';
@@ -437,6 +448,7 @@ function AssistantComposerContent({
   const b2bTopic = useRef<string | undefined>(undefined);
   const b2bRead = useRef<AbortController | null>(null);
   useEffect(() => () => b2bRead.current?.abort(), [pathname]);
+  const reportTopic = useRef<ReservationReportTopic | undefined>(undefined);
   const documentTopic = useRef<string | undefined>(undefined);
   const workbenchTopic = useRef<string | undefined>(undefined);
   const lastVersion = useRef<number | undefined>(undefined);
@@ -926,6 +938,62 @@ function AssistantComposerContent({
             replyLocally(answer, undefined, undefined, b2bGuideLink);
         } finally {
           if (pending.current === controller) setActionState(null);
+        }
+      }
+      return;
+    }
+    const reportQuestion = resolveReservationReportQuestion(
+      message,
+      pathname === reservationReportHref,
+      reportTopic.current,
+    );
+    reportTopic.current = undefined;
+    if (reportQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      workbenchTopic.current = undefined;
+      documentTopic.current = undefined;
+      guideTopic.current = undefined;
+      const link = { href: reservationReportHref, label: 'گزارش رزرواسیون' };
+      if (reportQuestion.kind === 'guide') {
+        reportTopic.current = reportQuestion.topic;
+        replyLocally(
+          renderReservationReportGuide(
+            reportQuestion.topic,
+            reportQuestion.followUp,
+          ),
+          undefined,
+          undefined,
+          link,
+        );
+      } else if (reportQuestion.kind === 'clarify') {
+        replyLocally(reportQuestion.text, undefined, undefined, link);
+      } else if (
+        !actor ||
+        !canViewScreen(actor.permissions, 'ticket-catalog.tab.issued')
+      ) {
+        replyLocally(
+          reservationReportPermissionMessage,
+          undefined,
+          undefined,
+          link,
+        );
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readReservationReportAnswer(
+            reportQuestion,
+            pathname === reservationReportHref
+              ? getReservationReport()
+              : undefined,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer, undefined, undefined, link);
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
         }
       }
       return;
