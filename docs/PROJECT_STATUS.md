@@ -10473,3 +10473,5 @@ Nora flight pricing guidance covers list filters, base and age fares, return pai
 Nora now guides the eight Master Data sections and reads exact authorized reference codes with a restricted result projection.
 
 Nora guides B2B workflows and reads authorized status and filtered directory metrics using existing organization reads.
+
+Nora customer acceptance follow-up: explicit B2B questions use the organization guide, and B2C lookups use the supported minimum page size and existing customer query normalization.
