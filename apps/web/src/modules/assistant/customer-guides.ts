@@ -4,11 +4,12 @@ import catalog from './customer-guide-catalog.json';
 import { normalizeQuestion } from './question-text';
 
 export const customerGuideLink = { href: '/customers', label: 'مشتریان B2C' };
-const topics = catalog.map(({ id, title, pattern, text }) => ({
+const topics = catalog.map(({ id, title, pattern, text, guideHref }) => ({
   id,
   title,
   pattern: new RegExp(pattern, 'i'),
   text,
+  guideHref,
 }));
 type Topic = (typeof topics)[number];
 
@@ -57,7 +58,7 @@ export function resolveCustomerQuestion(
   }
   if (
     !onPanel &&
-    !/مشتریان|b2c|پرونده مشتری|مدرک مشتری|ثبت مشتری|مشتری جدید|اکسل مشتری/.test(
+    !/مشتریان|b2c|مشتری حقیقی|پرونده مشتری|مدرک مشتری|ثبت مشتری|مشتری جدید|اکسل مشتری/.test(
       text,
     )
   )

@@ -4,6 +4,7 @@ const directory = new URL('../docs/assistant/guides/', import.meta.url);
 const outputs = {
   sales: '../apps/web/src/modules/assistant/contract-guide.generated.json',
   workbench: '../services/assistant/workbench-guides.json',
+  b2c: '../apps/web/src/modules/assistant/customer-guide-catalog.json',
   'call-center': '../services/assistant/call-center-guides.json',
 };
 const workbenchTabs =
@@ -48,13 +49,15 @@ for (const file of readdirSync(directory).sort()) {
       const validHref =
         domain === 'sales'
           ? ['/sales', '/sales/contracts/new'].includes(metadata.href)
-          : domain === 'call-center'
-            ? metadata.tab === 'call-center' &&
-              /^\/customer-affairs\/call-center(?:#cc-follow-up-queue)?$/.test(
-                metadata.href,
-              )
-            : workbenchTabs.test(metadata.tab) &&
-              metadata.href === '/workbench?tab=' + metadata.tab;
+          : domain === 'b2c'
+            ? metadata.href === '/customers'
+            : domain === 'call-center'
+              ? metadata.tab === 'call-center' &&
+                /^\/customer-affairs\/call-center(?:#cc-follow-up-queue)?$/.test(
+                  metadata.href,
+                )
+              : workbenchTabs.test(metadata.tab) &&
+                metadata.href === '/workbench?tab=' + metadata.tab;
       if (
         metadata.id !== anchor ||
         sections.has(id) ||
@@ -66,7 +69,8 @@ for (const file of readdirSync(directory).sort()) {
         !Array.isArray(metadata.related)
       )
         throw new Error('Invalid or duplicate guide: ' + id);
-      if (domain === 'sales') new RegExp(metadata.pattern, metadata.flags);
+      if (domain === 'sales' || domain === 'b2c')
+        new RegExp(metadata.pattern, metadata.flags);
       else if (!validTextList(metadata.aliases))
         throw new Error('Missing aliases: ' + id);
 
@@ -95,7 +99,10 @@ for (const [domain, output] of Object.entries(outputs)) {
   const topics = catalogues.get(domain);
   if (!topics) throw new Error('Missing guide: ' + domain);
   const target = new URL(output, import.meta.url);
-  const data = { version: 1, topics };
+  const data =
+    domain === 'b2c'
+      ? topics.map((topic) => ({ ...topic, text: topic.steps.join(' ') }))
+      : { version: 1, topics };
   if (process.argv.includes('--check')) {
     if (
       JSON.stringify(JSON.parse(readFileSync(target, 'utf8'))) !==

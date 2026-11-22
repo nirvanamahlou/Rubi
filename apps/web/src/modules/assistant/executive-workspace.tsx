@@ -738,7 +738,7 @@ function AssistantComposerContent({
           renderCustomerGuide(customerQuestion.topic),
           undefined,
           undefined,
-          customerGuideLink,
+          { ...customerGuideLink, guideHref: customerQuestion.topic.guideHref },
         );
       } else {
         const controller = new AbortController();

@@ -1,3 +1,7 @@
+## NORA-B2C-GUIDE-DOCS-1122 — PC-C
+
+All 12 B2C topics are generated from linked Markdown. Previous topic content matches develop. Authenticated browser testing verified the registration answer, exact guide anchor and navigation to Customers. Explicit individual-customer guidance resolves from other panels.
+
 ## NORA-CALL-CENTER-GUIDE-DOCS-1122 — PC-C
 
 The 22 Call Center topics now use linked Markdown as their source. The generated catalogue retains the original topic IDs, text and panel destinations. Nora links to the corresponding section. The Call Center panel and record reader are unchanged. Authenticated browser testing confirmed the answer, the exact guide anchor, related sections and navigation to the Call Center panel. Structural comparison preserved all 22 original topic payloads.

@@ -1,3 +1,7 @@
+## NORA-B2C-GUIDE-DOCS-1122 — PC-C — ACTIVE
+
+Migrate the versioned B2C help catalogue and wire its guide page and Composer link. Preserve all live customer reads and panel UI. Stacked on Call Center document PR #1870.
+
 ## NORA-CALL-CENTER-GUIDE-DOCS-1122 — PC-C — ACTIVE
 
 Transfer the approved 22 Call Center help topics from merged PR #1859 to linked Markdown. Reserve the guide document, generator, authenticated guide page and coverage records. Preserve panel UI per docs/tasks/CALL-CENTER-UI-PRESERVATION.md and existing read paths. Stacked on pilot PR #1869.
