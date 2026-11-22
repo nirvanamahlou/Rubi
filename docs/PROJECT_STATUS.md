@@ -10477,3 +10477,6 @@ Nora guides B2B workflows and reads authorized status and filtered directory met
 Nora customer acceptance follow-up: explicit B2B questions use the organization guide, and B2C lookups use the supported minimum page size and existing customer query normalization.
 
 B2B directory reads and flight pricing references recover an expired access session once through the existing authenticated refresh flow.
+## 2026-11-22 — FLOATING-IMPORT-MATCHING-1122
+
+Floating Excel imports treat NULL price cells as absent. Preview proposes up to three similar catalog hotel names per unresolved cell and accepts explicit selections with the same file. Commit validates the choices within the existing catalog scope and requires a fresh valid preview digest.

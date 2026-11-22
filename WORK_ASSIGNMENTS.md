@@ -13275,3 +13275,7 @@ Reserve the Nora customer guide routing, normalized customer query and focused t
 ## NORA-PANEL-SESSION — PC-C
 
 Reserve read-only Master Data and ticket reference session recovery and focused tests for the B2B and flight pricing production acceptance. Preserve the existing authentication and authorization contracts.
+
+## FLOATING-IMPORT-MATCHING-1122 — PC-A
+
+Reserve floating import parser, preview service, and upload form. Add optional per-cell hotel selections and preview suggestions to the existing API. Keep the catalog scope and validate selections before commit. No migration or dependency change.
