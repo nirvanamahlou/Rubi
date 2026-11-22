@@ -261,18 +261,45 @@ export class FloatingTourPricingService {
       orderBy: { createdAt: 'desc' },
       take: 500,
     });
+    const definitions = rows.flatMap((row) => {
+      const definition = row.definition as unknown as TourPackageInputV1;
+      return definition.details?.isFloating ? [{ row, definition }] : [];
+    });
+    const routeIds = (tour: TourPackageInputV1) => [
+      tour.originId,
+      ...(tour.details?.isCombined && tour.details.destinations?.length
+        ? tour.details.destinations.map((stay) => stay.cityId)
+        : [tour.destinationId]),
+    ];
+    const cityIds = [
+      ...new Set(
+        definitions
+          .flatMap(({ definition }) => routeIds(definition))
+          .filter(Boolean),
+      ),
+    ];
+    const cities = await Promise.all(
+      cityIds.map(async (id) => {
+        try {
+          return await this.directory.hotelRatePeriodCityNames([id]);
+        } catch (error) {
+          if (error instanceof NotFoundException) return [];
+          throw error;
+        }
+      }),
+    );
+    const cityNames = new Map(
+      cities.flat().map((city) => [city.id, city.name]),
+    );
     return {
-      data: rows
-        .filter(
-          (r) =>
-            (r.definition as unknown as TourPackageInputV1).details?.isFloating,
-        )
-        .map((r) => ({
-          id: r.id,
-          branchId: r.branchId,
-          version: r.version,
-          ...(r.definition as unknown as TourPackageInputV1),
-        })),
+      data: definitions.map(({ row, definition }) => ({
+        ...definition,
+        id: row.id,
+        branchId: row.branchId,
+        version: row.version,
+        createdAt: row.createdAt.toISOString(),
+        routeNames: routeIds(definition).map((id) => cityNames.get(id) ?? ''),
+      })),
     };
   }
   async get(

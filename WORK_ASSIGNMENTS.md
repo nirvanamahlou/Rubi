@@ -1,3 +1,7 @@
+## FLOATING-TOUR-PICKER-1122 — PC-A — READY_FOR_CI
+
+Reserve the floating pricing tour list projection, picker and focused regression. Show route, branch, duration and identity for distinct same-name definitions. No schema or deployment change.
+
 ## ORGANIZATION-DETAIL-TITLE-1121 — PC-D — COMPLETED
 
 Reserve the legal customer branch of the Accounting detail editor, Customer owner lookup/validation, English action label, focused regressions and task status. Reuse the native company dialog and Customer API. No migration or shared contract change.
