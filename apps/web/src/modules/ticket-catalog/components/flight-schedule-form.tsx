@@ -280,17 +280,12 @@ export function FlightScheduleForm({
   const patchSegment = (patch: Partial<Segment>) =>
     setInput((current) => {
       const previous = current.segments[0]!;
-      const countryKey = `${saleSide}CountryId` as const;
-      const changedCountry =
-        patch[countryKey] !== undefined &&
-        patch[countryKey] !== previous[countryKey];
       return {
         ...current,
         segments: [{ ...previous, ...patch }],
         saleRoutes: current.saleRoutes
           ?.map((route) => ({
             ...route,
-            ...(changedCountry ? { [saleField]: '' } : {}),
             ...(current.journeyRole === 'return'
               ? {
                   destinationId: patch.destinationCityId ?? route.destinationId,
@@ -316,7 +311,11 @@ export function FlightScheduleForm({
     kind: Reference['kind'],
     value: string,
     change: (r: Reference | undefined) => void,
-    filters: { countryId?: string; cityId?: string } = {},
+    filters: {
+      countryId?: string;
+      cityId?: string;
+      allowAnyCityCountry?: boolean;
+    } = {},
   ) => (
     <ReferencePicker
       id={id}
@@ -536,7 +535,7 @@ export function FlightScheduleForm({
                           ),
                         })),
                       {
-                        countryId: segment[`${saleSide}CountryId`],
+                        allowAnyCityCountry: true,
                       },
                     )}
                     <Button
@@ -558,10 +557,7 @@ export function FlightScheduleForm({
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={
-                    !segment[`${saleSide}CountryId`] ||
-                    (input.saleRoutes?.length ?? 0) >= 20
-                  }
+                  disabled={(input.saleRoutes?.length ?? 0) >= 20}
                   onClick={() =>
                     setInput((c) => ({
                       ...c,
