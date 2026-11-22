@@ -17,6 +17,7 @@ import { isOptionalOperationReason } from '@nora/contracts';
 
 import { currencySymbol } from '@/lib/currency-symbol';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
+import { WebsiteTourPreviewPrices } from './website-tour-preview-prices';
 
 import type {
   LoginResponse,
@@ -886,6 +887,16 @@ export function TourPricingWorkspace() {
         ) : null}
       </Card>
 
+      {grid?.tour.id === tourId && grid && (
+        <WebsiteTourPreviewPrices
+          key={grid.tour.id}
+          departureId={grid.tour.id}
+          branchId={grid.tour.branchId}
+          canEdit={
+            session?.user.permissions.includes('ticket_catalog.manage') === true
+          }
+        />
+      )}
       <Card className="grid gap-4 p-5">
         <div className="flex items-center gap-2">
           <Hotel className="size-5 text-primary" />

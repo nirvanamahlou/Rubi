@@ -1,3 +1,7 @@
+## WEBSITE-TOUR-PRICE-SYNC-1122 — PC-A — READY_FOR_CI
+
+Reserve the tour pricing workspace preview editor and translations. Use branch-scoped website publication CAS and the existing signed dispatch path. Owner authorizes develop merge and Avina deployment. No schema or purchase-rate changes.
+
 ## FLOATING-TOUR-PICKER-1122 — PC-A — READY_FOR_CI
 
 Reserve the floating pricing tour list projection, picker and focused regression. Show route, branch, duration and identity for distinct same-name definitions. No schema or deployment change.
