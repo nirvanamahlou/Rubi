@@ -155,7 +155,9 @@ export function renderWorkbenchGuide(
     (item) => item.id === 'leave-approval',
   );
   const steps =
+    topic.id.startsWith('leave') &&
     'related' in topic &&
+    Array.isArray(topic.related) &&
     topic.related.includes('workbench/leave-approval') &&
     approval
       ? [...topic.steps, ...approval.steps]
@@ -176,7 +178,7 @@ export function renderWorkbenchGuide(
     ...(tracking && tracking.id !== topic.id
       ? [renderWorkbenchGuide(tracking, 'steps')]
       : []),
-    `منبع راهنما: ${topic.title} — نسخه `,
+    `منبع راهنما: ${topic.title} — نسخه ${catalog.version}`,
   ].join('\n\n');
 }
 

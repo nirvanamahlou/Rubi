@@ -1,6 +1,6 @@
 ## NORA-GUIDE-DOCS-1122 — PC-C
 
-Contract and Workbench guide content moved into versioned Markdown and deterministic generated catalogues. The chat uses local replies for migrated topics, with a protected guide route and links to owning panels. Record readers and Call Center UI are preserved. RAG is disabled.
+Contract and Workbench guide content moved into versioned Markdown and deterministic generated catalogues. The chat uses local replies for migrated topics, with a protected guide route and links to owning panels. Record readers and Call Center UI are preserved. RAG is disabled. Authenticated local browser acceptance passed with a synthetic IAM account and isolated database. The contract and hourly leave replies linked to the correct document sections and panels. The combined leave reply was retested after removing duplicate approval text.
 
 ## 2026-11-22 — DETAIL-CODE-SUGGESTIONS-1122 — PC-D
 

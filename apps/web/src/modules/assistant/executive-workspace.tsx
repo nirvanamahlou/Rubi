@@ -1204,7 +1204,8 @@ function AssistantComposerContent({
             {
               label: workbenchHelp.topic.title,
               href: workbenchHelp.topic.href,
-              ...('guideHref' in workbenchHelp.topic
+              ...('guideHref' in workbenchHelp.topic &&
+              typeof workbenchHelp.topic.guideHref === 'string'
                 ? {
                     label: english ? 'Open panel' : 'باز کردن پنل',
                     guideHref: workbenchHelp.topic.guideHref,
