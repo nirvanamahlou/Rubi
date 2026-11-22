@@ -3181,6 +3181,7 @@ export class HrService {
     employee: Employee,
     leave: WorkbenchLeaveInputV1,
     actor: AuthenticatedActor,
+    fromHrRecord = false,
   ) {
     validate.isoDate(leave.from);
     validate.isoDate(leave.to);
@@ -3212,21 +3213,28 @@ export class HrService {
     if (!policy)
       throw new ConflictException('برای این نوع مرخصی سیاست فعال تعریف کنید.');
     assertHourlyLeaveDuration(leave, policy);
-    let workdayEnd: Date | undefined;
-    if (leave.mode === 'ساعتی') {
-      const schedules = await tx.hrRecord.findMany({
-        where: {
-          branchId: employee.branchId,
-          section: 'time',
-          tab: { in: ['shift', 'workingHours'] },
-          deletedAt: null,
-        },
-      });
-      workdayEnd =
-        this.attendanceView(schedules, employee.id, leave.from).shiftEnd ??
-        undefined;
+    // HR can record leave for another employee after the self-service deadline.
+    const canRecordRetroactively =
+      fromHrRecord &&
+      this.has(actor, 'hr.manage') &&
+      employee.userId !== actor.userId;
+    if (!canRecordRetroactively) {
+      let workdayEnd: Date | undefined;
+      if (leave.mode === 'ساعتی') {
+        const schedules = await tx.hrRecord.findMany({
+          where: {
+            branchId: employee.branchId,
+            section: 'time',
+            tab: { in: ['shift', 'workingHours'] },
+            deletedAt: null,
+          },
+        });
+        workdayEnd =
+          this.attendanceView(schedules, employee.id, leave.from).shiftEnd ??
+          undefined;
+      }
+      assertLeaveDeadline(leave, policy, new Date(), workdayEnd);
     }
-    assertLeaveDeadline(leave, policy, new Date(), workdayEnd);
     if (leave.substituteUserId) {
       if (
         leave.substituteUserId === employee.userId ||
@@ -3628,6 +3636,7 @@ export class HrService {
             employee,
             recordLeave(values, data),
             actor,
+            true,
           );
           if (data.substituteUserId) data.substituteStatus = 'PENDING';
         }
@@ -4166,6 +4175,7 @@ export class HrService {
           employee,
           recordLeave(values, data),
           actor,
+          true,
         );
         if (changed)
           data.substituteStatus = data.substituteUserId ? 'PENDING' : undefined;
