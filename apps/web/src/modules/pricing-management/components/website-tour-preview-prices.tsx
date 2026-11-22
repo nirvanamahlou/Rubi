@@ -15,9 +15,32 @@ const flightFields = [
   ['adultFlightIrr', 'قیمت فروش پرواز بزرگسال'],
   ['childFlightIrr', 'قیمت فروش پرواز کودک'],
 ] as const;
+type HotelRates = Record<(typeof hotelFields)[number][0], string>;
 type Breakdown = Record<(typeof flightFields)[number][0], string> & {
-  hotel: Record<(typeof hotelFields)[number][0], string>;
+  hotel: HotelRates;
+  hotels?: Record<string, HotelRates>;
 };
+type PreviewHotel = { id: string; name: string };
+type PublicationResult = {
+  data: Publication | null;
+  previewHotels?: PreviewHotel[];
+};
+
+function hotelDraft(breakdown: Breakdown, hotels: PreviewHotel[]) {
+  return Object.fromEntries(
+    hotels.map(({ id }) => [
+      id,
+      breakdown.hotels
+        ? (breakdown.hotels[id] ?? {
+            double: '',
+            single: '',
+            childWithBed: '',
+            extra: '',
+          })
+        : breakdown.hotel,
+    ]),
+  );
+}
 type Publication = {
   version: number;
   enabled: boolean;
@@ -45,6 +68,7 @@ export function WebsiteTourPreviewPrices({
   canEdit: boolean;
 }) {
   const [publication, setPublication] = useState<Publication | null>(null);
+  const [hotels, setHotels] = useState<PreviewHotel[]>([]);
   const [draft, setDraft] = useState<Breakdown>();
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -62,14 +86,20 @@ export function WebsiteTourPreviewPrices({
       signal: controller.signal,
     })
       .then(async (response) => {
-        if (response.status === 403) return { data: null };
+        if (response.status === 403) return { data: null } as PublicationResult;
         if (!response.ok) throw Error();
-        return (await response.json()) as { data: Publication | null };
+        return (await response.json()) as PublicationResult;
       })
       .then((result) => {
         if (controller.signal.aborted) return;
         setPublication(result.data);
-        setDraft(result.data?.presentation?.previewHotelRate?.breakdown);
+        const options = result.previewHotels ?? [];
+        const breakdown =
+          result.data?.presentation?.previewHotelRate?.breakdown;
+        setHotels(options);
+        setDraft(
+          breakdown && { ...breakdown, hotels: hotelDraft(breakdown, options) },
+        );
       })
       .catch(() => {
         if (!controller.signal.aborted)
@@ -80,11 +110,22 @@ export function WebsiteTourPreviewPrices({
 
   const valid =
     draft &&
+    hotels.length > 0 &&
     [
       ...flightFields.map(([key]) => draft[key]),
-      ...hotelFields.map(([key]) => draft.hotel[key]),
+      ...hotels.flatMap(({ id }) =>
+        hotelFields.map(([key]) => draft.hotels?.[id]?.[key] ?? ''),
+      ),
     ].every((value) => /^[1-9]\d{0,14}$/.test(value));
-  const dirty = JSON.stringify(draft) !== JSON.stringify(rate?.breakdown);
+  const savedBreakdown = rate?.breakdown;
+  const dirty =
+    JSON.stringify(draft) !==
+    JSON.stringify(
+      savedBreakdown && {
+        ...savedBreakdown,
+        hotels: hotelDraft(savedBreakdown, hotels),
+      },
+    );
 
   async function save() {
     if (
@@ -168,25 +209,40 @@ export function WebsiteTourPreviewPrices({
             />
           </label>
         ))}
-        {hotelFields.map(([key, label]) => (
-          <label key={key}>
-            {label}
-            <Input
-              dir="ltr"
-              inputMode="numeric"
-              maxLength={15}
-              value={draft.hotel[key]}
-              readOnly={!canEdit || saving}
-              onChange={(event) =>
-                setDraft({
-                  ...draft,
-                  hotel: { ...draft.hotel, [key]: event.target.value },
-                })
-              }
-            />
-          </label>
-        ))}
       </div>
+      {hotels.map(({ id, name }) => {
+        const prices = draft.hotels?.[id];
+        if (!prices) return null;
+        return (
+          <fieldset
+            key={id}
+            className="grid gap-3 rounded-lg border p-3 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            <legend className="px-2 font-bold">{name}</legend>
+            {hotelFields.map(([key, label]) => (
+              <label key={key}>
+                {label}
+                <Input
+                  dir="ltr"
+                  inputMode="numeric"
+                  maxLength={15}
+                  value={prices[key]}
+                  readOnly={!canEdit || saving}
+                  onChange={(event) =>
+                    setDraft({
+                      ...draft,
+                      hotels: {
+                        ...draft.hotels,
+                        [id]: { ...prices, [key]: event.target.value },
+                      },
+                    })
+                  }
+                />
+              </label>
+            ))}
+          </fieldset>
+        );
+      })}
       {canEdit && (
         <Button
           type="button"

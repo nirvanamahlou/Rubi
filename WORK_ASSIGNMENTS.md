@@ -1,3 +1,7 @@
+## PREVIEW-PER-HOTEL-1122 — PC-A — READY_FOR_CI
+
+Reserve the website preview editor, publication presentation validator, catalogue projection and focused tests. Assign rates by the selected departure's hotel IDs and retain historical shared previews. Owner authorizes develop merge. No schema or deploy change.
+
 ## WEBSITE-TOUR-PRICE-SYNC-1122 — PC-A — READY_FOR_CI
 
 Reserve the tour pricing workspace preview editor and translations. Use branch-scoped website publication CAS and the existing signed dispatch path. Owner authorizes develop merge and Avina deployment. No schema or purchase-rate changes.
@@ -13283,3 +13287,11 @@ Reserve the Nora customer guide routing, normalized customer query and focused t
 ## NORA-PANEL-SESSION — PC-C
 
 Reserve read-only Master Data and ticket reference session recovery and focused tests for the B2B and flight pricing production acceptance. Preserve the existing authentication and authorization contracts.
+
+## TICKET-VOUCHER-1122 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-ticket-voucher-1122 from develop29c6c57b7. User requests hiding hotel voucher output for ticket-only contracts and explicitly authorizes develop merge. Reserve SalesTravelDocuments, its component regression and append-only task/status notes. No active overlapping writer found. Gate voucher output and pending notice on saved hotel selection/service facts; retain floating-contract behavior, ticket downloads and financial authorization. No API, schema, migration, dependency, operational data or deployment changes. Final-head hosted gates required before merge.
+
+## FISCAL-YEAR-LIST-1122 — PC-D — COMPLETED
+
+Reserve the Accounting fiscal-year list route, removal of its actions from the shared list UI, the fiscal boundary setup link, scoped Web tests and translations, and task/status notes. Resolve the company through fiscal context and read its allocated periods through the existing authorized ledger snapshot. Ledger commands, permissions and data contracts are outside this unit.

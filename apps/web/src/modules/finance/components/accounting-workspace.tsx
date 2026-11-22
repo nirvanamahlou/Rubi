@@ -46,6 +46,7 @@ import { AccountingAccountGroups } from './accounting-account-groups';
 import { AccountingSubsidiaryMapping } from './accounting-subsidiary-mapping';
 import { AccountingLedgerEditor } from './accounting-ledger-editor';
 import { AccountingFiscalDefault } from './accounting-fiscal-default';
+import { AccountingFiscalYearList } from './accounting-fiscal-year-list';
 import { AccountingBaseList } from './accounting-base-list';
 import { AccountingDefinitionToolbar } from './accounting-definition-toolbar';
 import {
@@ -54,7 +55,6 @@ import {
   accountingSaveDisposition,
 } from './accounting-operations';
 import { exportAccountingView } from '../accounting-view-export';
-import type { AccountingListKind } from '../accounting-list-filters';
 import { AccountingAdvancedWorkspace } from './accounting-advanced-workspace';
 import { AccountingSourceWorkspace } from './accounting-source-workspace';
 import { AccountingYearEndWorkspace } from './accounting-year-end-workspace';
@@ -260,6 +260,12 @@ const cell = 'border-t border-border px-3 py-3';
 export function AccountingWorkspace({ pathname }: { pathname: string }) {
   const viewRef = useRef<HTMLDivElement>(null);
   const params = useSearchParams();
+  if (
+    pathname ===
+    '/finance/accounting/general-ledger/base-information/lists/fiscal-years'
+  )
+    return <AccountingFiscalYearList />;
+
   return (
     <AccountingOperations
       key={`${pathname}:${params.get('bookId') ?? ''}:${params.get('new') ?? ''}:${params.get('recordId') ?? ''}`}
@@ -840,13 +846,14 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   } else if (
     snapshot &&
     (section === 'general-ledger/reports/legal-reports/lists/standards' ||
-      ['fiscal-years', 'ledgers', 'voucher-types'].some(
-        (kind) => section === `general-ledger/base-information/lists/${kind}`,
-      ))
+      section === 'general-ledger/base-information/lists/ledgers' ||
+      section === 'general-ledger/base-information/lists/voucher-types')
   ) {
-    const kind: AccountingListKind = section.endsWith('/lists/standards')
+    const kind = section.endsWith('/lists/standards')
       ? 'coding-standards'
-      : (section.split('/').at(-1) as AccountingListKind);
+      : section.endsWith('/lists/ledgers')
+        ? 'ledgers'
+        : 'voucher-types';
     content = (
       <AccountingBaseList
         key={`${bookId}:${kind}`}

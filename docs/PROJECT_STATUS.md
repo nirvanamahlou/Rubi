@@ -1,3 +1,7 @@
+## 2026-11-22 — FISCAL-YEAR-LIST-1122 — PC-D
+
+The Accounting fiscal-year list is a read-only view of the selected company’s ledger allocations. It shows allocated years and dates through the authorized Accounting snapshot, keeps the company default as a label, and excludes definitions without an allocation. The missing-year prompt directs users to general ledger setup.
+
 ## 2026-11-21 — ORGANIZATION-DETAIL-TITLE-1121 — PC-D
 
 The corporate customer title picker opens the existing company form and lists active organization customers for the ledger branch. Save and select links the Customer profile to the eight-digit series-three detail. Web regressions and an isolated PostgreSQL round trip cover the picker action, the native company profile and branch and kind validation. No schema change.
@@ -10448,6 +10452,8 @@ The floating package pricing picker and URL preselection require an explicitly f
 
 Floating package price imports report Excel row numbers for validation errors and preview warnings.
 
+Floating tour Excel prices accept numeric precision artifacts while retaining monetary scale validation. Unavailable optional rates can be blank or use the Niyayesh Seir placeholders, and the EXTRA column may be omitted. Explicit zero remains a price. Adult airfare is added to DBL, SGL and EXTRA. Effective child airfare is added to CHD W BED and foreign-currency child no bed. Toman child no bed and infant retain their supplied rates, and commission is stored separately. The website consumes the final prices published by ERP.
+
 Dated floating price imports attach outbound and inbound flight details to Excel-derived periods and include the schedule in the opt-in website catalog. Monthly and older catalog rows remain compatible.
 
 Niyayesh floating checkout consumes dated periods with matching room references and an approved rial rate. ERP freezes the selected itinerary and price before bank payment, then creates the native contract from the bank-verified quote without allocating charter seats. Monthly periods remain available to existing catalog clients.
@@ -10478,6 +10484,6 @@ Nora customer acceptance follow-up: explicit B2B questions use the organization 
 
 B2B directory reads and flight pricing references recover an expired access session once through the existing authenticated refresh flow.
 
-### Floating tour Excel prices (2026-11-22)
+## 2026-11-22 — TICKET-VOUCHER-1122 — PC-A
 
-The importer accepts Excel numeric precision artifacts while validating monetary scale. Unavailable optional rates can be left blank or marked with the Niyayesh Seir placeholders, and the EXTRA column may be omitted. Explicit zero remains a price. The shared fare composition adds adult airfare to DBL, SGL and EXTRA, and effective child airfare to CHD W BED and foreign-currency child no bed. Local child no bed, infant and commission stay separate from airfare. The website consumes the final amounts published by ERP.
+Sales passenger-document modal now renders hotel vouchers and their pending notice only when the saved contract snapshot contains a hotel selection or HOTEL service. Ticket-only contracts omit both, including stale voucherIssued state. Existing floating-contract exemption, ticket controls, branding flags and financial document authorization remain unchanged. Eight component tests, scoped ESLint and Web typecheck pass. No API/schema/migration/dependency/data/deployment change. User authorizes develop merge; all final-head hosted checks must pass first.
