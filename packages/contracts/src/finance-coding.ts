@@ -29,6 +29,12 @@ export const financeCodingWidth = 8;
 export const financeCodingCapacity = 9_999_999n;
 export type FinanceCodingProfile = (typeof financeCodingProfiles)[number];
 
+export function allowsManualFinanceCode(profile: FinanceCodingProfile) {
+  return (
+    profile.prefix === '2' || profile.prefix === '3' || profile.prefix === '4'
+  );
+}
+
 export function financeCodingProfile(typeCode: unknown) {
   return financeCodingProfiles.find((profile) => profile.typeCode === typeCode);
 }

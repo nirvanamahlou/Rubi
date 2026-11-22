@@ -1,3 +1,7 @@
+## 2026-11-22 — DETAIL-CODE-SUGGESTIONS-1122 — PC-D
+
+When defining personnel, corporate customer and individual customer details, Accounting suggests the first unused code across all ledgers and accepts a valid manual code on creation. Preview is read-only. The save transaction validates the eight-digit type series and prevents duplicate issuance. PostgreSQL coverage verifies cross-ledger contention, legacy occupancy and manual gaps. See [FIN-CODING-001](tasks/FIN-CODING-001.md).
+
 ## 2026-11-22 — FISCAL-YEAR-LIST-1122 — PC-D
 
 The Accounting fiscal-year list is a read-only view of the selected company’s ledger allocations. It shows allocated years and dates through the authorized Accounting snapshot, keeps the company default as a label, and excludes definitions without an allocation. The missing-year prompt directs users to general ledger setup.

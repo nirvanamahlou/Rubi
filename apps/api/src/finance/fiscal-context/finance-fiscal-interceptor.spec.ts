@@ -119,6 +119,19 @@ describe('Finance HTTP fiscal boundary', () => {
     ).rejects.toThrow('تعریف نشده');
     expect(read.handler.handle).not.toHaveBeenCalled();
   });
+  it('loads the read-only detail code suggestion before a fiscal year is assigned', async () => {
+    const f = fixture(
+      '/api/finance/accounting/books/book/detail-code-suggestion',
+      'GET',
+      {},
+      { ...scope, period: null },
+    );
+    expect(
+      await lastValueFrom(
+        await f.interceptor.intercept(f.context as never, f.handler),
+      ),
+    ).toBe('A');
+  });
   it('allows setting up detail coding before a fiscal year is assigned', async () => {
     const action = 'setup-finance-coding-types';
     const f = fixture(
