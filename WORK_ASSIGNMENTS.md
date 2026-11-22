@@ -14,6 +14,10 @@ Reserve the tour pricing workspace preview editor and translations. Use branch-s
 
 Reserve the floating pricing tour list projection, picker and focused regression. Show route, branch, duration and identity for distinct same-name definitions. No schema or deployment change.
 
+## FLOATING-EXCEL-PRECISION-1122 — PC-A — READY_FOR_CI
+
+Reserve floating tour Excel amount parsing and its focused API tests. The Niyayesh Seir importer and ERP price composition were checked together, along with 31 rows of the supplied workbook using test hotel references. No migration, dependency or deployment changes.
+
 ## ORGANIZATION-DETAIL-TITLE-1121 — PC-D — COMPLETED
 
 Reserve the legal customer branch of the Accounting detail editor, Customer owner lookup/validation, English action label, focused regressions and task status. Reuse the native company dialog and Customer API. No migration or shared contract change.

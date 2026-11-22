@@ -10456,6 +10456,8 @@ The floating package pricing picker and URL preselection require an explicitly f
 
 Floating package price imports report Excel row numbers for validation errors and preview warnings.
 
+Floating tour Excel prices accept numeric precision artifacts while retaining monetary scale validation. Unavailable optional rates can be blank or use the Niyayesh Seir placeholders, and the EXTRA column may be omitted. Explicit zero remains a price. Adult airfare is added to DBL, SGL and EXTRA. Effective child airfare is added to CHD W BED and foreign-currency child no bed. Toman child no bed and infant retain their supplied rates, and commission is stored separately. The website consumes the final prices published by ERP.
+
 Dated floating price imports attach outbound and inbound flight details to Excel-derived periods and include the schedule in the opt-in website catalog. Monthly and older catalog rows remain compatible.
 
 Niyayesh floating checkout consumes dated periods with matching room references and an approved rial rate. ERP freezes the selected itinerary and price before bank payment, then creates the native contract from the bank-verified quote without allocating charter seats. Monthly periods remain available to existing catalog clients.
@@ -10485,6 +10487,7 @@ Nora guides B2B workflows and reads authorized status and filtered directory met
 Nora customer acceptance follow-up: explicit B2B questions use the organization guide, and B2C lookups use the supported minimum page size and existing customer query normalization.
 
 B2B directory reads and flight pricing references recover an expired access session once through the existing authenticated refresh flow.
+
 ## 2026-11-22 — FLOATING-IMPORT-MATCHING-1122
 
 Floating Excel imports treat NULL price cells as absent. Preview proposes up to three similar catalog hotel names per unresolved cell and accepts explicit selections with the same file. Commit validates the choices within the existing catalog scope and requires a fresh valid preview digest.
