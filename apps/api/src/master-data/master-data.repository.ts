@@ -1049,6 +1049,7 @@ export class MasterDataRepository {
         id: true,
         name: true,
         englishName: true,
+        identificationCode: true,
         description: true,
         address: true,
         starRating: true,
