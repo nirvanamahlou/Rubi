@@ -122,7 +122,10 @@ function queryString(query: PackageListQueryV1) {
 
 export const packagePricingApi = {
   floatingTours: (active: LoginResponse) =>
-    request<{ data: TourPackageV1[] }>('/floating-tours', active),
+    request<{ data: (TourPackageV1 & { routeNames?: string[] })[] }>(
+      '/floating-tours',
+      active,
+    ),
   floatingPrices: (id: string, active: LoginResponse) =>
     request<FloatingTourSaleSet>(
       `/floating-tours/${encodeURIComponent(id)}`,

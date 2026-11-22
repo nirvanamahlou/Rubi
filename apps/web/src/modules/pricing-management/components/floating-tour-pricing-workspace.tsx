@@ -154,7 +154,9 @@ export function FloatingTourPricingWorkspace() {
   const canManage =
     permissions?.includes('package_pricing.period.manage') ?? false;
   const [session, setSession] = useState<LoginResponse | null>(null),
-    [tours, setTours] = useState<TourPackageV1[]>([]),
+    [tours, setTours] = useState<(TourPackageV1 & { routeNames?: string[] })[]>(
+      [],
+    ),
     [id, setId] = useState(''),
     [catalog, setCatalog] = useState<FloatingTourSaleSet | null>(null),
     [file, setFile] = useState<File | null>(null),
@@ -306,11 +308,36 @@ export function FloatingTourPricingWorkspace() {
           }}
         >
           <option value="">انتخاب تور شناور</option>
-          {tours.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
+          {tours.map((tour) => {
+            const branch = session?.user?.branches?.find(
+              (item) => item.id === tour.branchId,
+            );
+            const details = tour.details;
+            const route = tour.routeNames?.every(Boolean)
+              ? tour.routeNames.join(' ← ')
+              : [details?.originAirportCode, details?.destinationAirportCode]
+                  .filter(Boolean)
+                  .join(' ← ');
+            const duplicate = tours.some(
+              (other) => other.id !== tour.id && other.name === tour.name,
+            );
+            const label = [
+              tour.name,
+              route,
+              branch?.name,
+              details?.airlineName,
+              details?.durationDays ? `${details.durationDays} روز` : '',
+              duplicate ? tour.createdAt?.slice(0, 10) : '',
+              duplicate ? tour.id.slice(0, 8) : '',
+            ]
+              .filter(Boolean)
+              .join(' · ');
+            return (
+              <option key={tour.id} value={tour.id}>
+                {label}
+              </option>
+            );
+          })}
         </NativeSearchSelect>
         {!tours.length && <p>تور شناور را ابتدا در تعریف تور ثبت کنید.</p>}
         {id && (

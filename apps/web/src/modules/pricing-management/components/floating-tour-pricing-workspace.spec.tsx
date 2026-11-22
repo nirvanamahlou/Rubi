@@ -56,6 +56,36 @@ it('lists only explicitly floating tours and ignores a regular tour in the URL',
     vi.unstubAllGlobals();
   }
 });
+it('distinguishes same-name tours while keeping each definition selectable by ID', () => {
+  h.states = [
+    { user: { branches: [{ id: 'branch-a', name: 'شعبه آوینا' }] } },
+    [
+      {
+        id: '11111111-a',
+        name: 'تور ترکیه',
+        branchId: 'branch-a',
+        routeNames: ['تهران', 'آنتالیا', 'ازمیر'],
+        details: { durationDays: 8 },
+        createdAt: '2026-11-22T00:00:00Z',
+      },
+      {
+        id: '22222222-b',
+        name: 'تور ترکیه',
+        branchId: 'branch-a',
+        routeNames: ['تهران', 'ازمیر'],
+        details: { durationDays: 5 },
+      },
+    ],
+    '',
+  ];
+  const html = renderToStaticMarkup(<FloatingTourPricingWorkspace />);
+  expect(html).toContain(
+    'value="11111111-a">تور ترکیه · تهران ← آنتالیا ← ازمیر · شعبه آوینا · 8 روز · 2026-11-22 · 11111111',
+  );
+  expect(html).toContain(
+    'value="22222222-b">تور ترکیه · تهران ← ازمیر · شعبه آوینا · 5 روز · 22222222',
+  );
+});
 function seed(nights: number) {
   h.states = [
     {},
