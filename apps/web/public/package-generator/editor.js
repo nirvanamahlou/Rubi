@@ -4,6 +4,9 @@ window.PackageEditor=(()=>{
  const designs={},logos={},customFonts=[],jobs=new Set(),paper=new Map();let selected='title',lastTemplate='',nextText=1,nextFont=1;
  const address='آدرس: تهران، جردن، تقاطع میرداماد، کنار گذر مدرس، پلاک ۳۸۶، طبقه سوم';
  const geometry={
+  'antalya-airtour':{subtitle:[333,112,474,24],phone:[254,1230,218,42],address:[478,1230,530,42],serviceLabel:[880,1108,105,24],duration:[385,129,470,59],labelOffset:24},
+  'malaysia-singapore-azar':{subtitle:[333,112,474,24],phone:[254,1230,218,42],address:[478,1230,530,42],serviceLabel:[880,1108,105,24],duration:[385,129,470,59],labelOffset:24},
+
   combined:{subtitle:[482,151,427,34],phone:[125,1337,219,44],address:[440,1340,643,45],serviceLabel:[933,1249,82,36],duration:[588,207,134,34],labelOffset:32},
   kus:{subtitle:[695,207,373,36],phone:[137,1274,220,49],address:[456,1280,638,45],serviceLabel:[1014,1198,84,34],duration:[500,204,183,31],labelOffset:31},
   antalya:{subtitle:[491,178,422,37],phone:[124,1340,220,45],address:[443,1340,651,45],serviceLabel:[999,1281,86,30],duration:[451,163,429,16],labelOffset:30},
@@ -37,7 +40,7 @@ window.PackageEditor=(()=>{
   const p=profile(),geo=geometry[p.style],m=model(),cols=state.data?columns():p.columns.map((width,i)=>({key:(p.style==='combined'?['hotel','city','service','double','single','child','small']:p.style==='antalya'?['hotel','room','service','double','single','child']:p.style==='istanbul-3'?['hotel','service','double','single','extra','child']:p.style==='istanbul-4'?['hotel','service','double','single','child']:p.style.startsWith('malaysia-')?['hotel','service','double','single','extra','child','small']:p.style.startsWith('thailand-')?['hotel','service','double','single','child','small']:p.style==='spain-combined'?['hotel','stars','service','double','single','child','small']:p.style.startsWith('spain-')?['hotel','service','double','single','child','small']:['hotel','service','double','single','child'])[i],width}));
   const titles={city:'شهر',hotel:'نام هتل',stars:'ستاره',room:'نوع اتاق',service:'خدمات',double:'دوتخته',single:'یک تخت',extra:'اضافه',child:'کودک با تخت',small:p.style.startsWith('malaysia-')||p.style.startsWith('thailand-')?'کودک بدون تخت':'کودک ۲–۶ سال'};
   const list=[
-   {id:'title',label:'عنوان شهر',box:p.titleBox,kind:'core',size:({combined:66,kus:108,antalya:120,bodrum:92,nss:120})[p.style]||86},
+   {id:'title',label:'عنوان شهر',box:p.titleBox,kind:'core',size:p.azarPoster?48:({combined:66,kus:108,antalya:120,bodrum:92,nss:120})[p.style]||86},
    {id:'date',label:'تاریخ حرکت',box:p.date,kind:'core',size:26,color:'#ffffff'},
    {id:'duration',label:'مدت سفر',box:geo.duration,kind:'core',size:p.style==='antalya'?12:16},
    {id:'subtitle',label:'نام انگلیسی آژانس',box:geo.subtitle,kind:'static',value:p.style==='nss'?'Niayesh Seir tour & travel Agency':'Jahan Bastan tour & travel Agency',size:23,color:'#8b8b8b',direction:'ltr'},
@@ -48,15 +51,15 @@ window.PackageEditor=(()=>{
   if(p.adjustmentsBox)list.push({id:'adjustments',label:'تاریخ‌ها و افزایش نرخ',box:p.adjustmentsBox,kind:'core',size:15});
   if(p.style==='combined')list.push({id:'infant',label:'چینش کل نوار نوزاد',kind:'group',box:p.infantBox,size:24},{id:'stays',label:'تقسیم اقامت بین شهرها',kind:'core',box:p.staysBox,size:19},{id:'infantLabel',label:'عنوان نوار نوزاد',kind:'core',box:p.infantBox,size:24},{id:'infantValue',label:'مبلغ نوزاد',kind:'core',box:p.infantBox,size:28},{id:'infantUnit',label:'ارز نوزاد',kind:'core',box:p.infantBox,size:20});
   for(const slot of p.cardSlots){const cardTitle=window.PackageCards?.title(slot)??slot.label;list.push(
-   {id:'label_'+slot.key,label:'عنوان کادر: '+(cardTitle||'بدون عنوان'),kind:'static',value:slot.label+'\u00a0:',box:slot.labelBox||[slot.box[0]-2,slot.box[1]-geo.labelOffset,slot.box[2]+4,geo.labelOffset-1],size:slot.labelBox?16:(p.style==='bodrum'?15:18)},
+   {id:'label_'+slot.key,label:'عنوان کادر: '+(cardTitle||'بدون عنوان'),kind:'static',value:slot.label+'\u00a0:',box:slot.labelBox||[slot.box[0]-2,slot.box[1]-geo.labelOffset,slot.box[2]+4,geo.labelOffset-1],size:p.azarPoster&&!window.PackageCards?.active?14:slot.labelBox?16:(p.style==='bodrum'?15:18)},
    {id:'value_'+slot.key,label:'مبلغ کادر: '+(cardTitle||'بدون عنوان'),kind:'core',box:slot.box,size:p.style==='bodrum'?19:p.style==='nss'?18:26,direction:'ltr'},
    {id:'unit_'+slot.key,label:'واحد کادر: '+(cardTitle||'بدون عنوان'),kind:'core',box:slot.box,size:16}
   );}
   list.push(
    {id:'serviceLabel',label:'عنوان بخش خدمات',kind:'static',value:'خدمات:',box:geo.serviceLabel,size:21},
    {id:'services',label:'متن خدمات',kind:'core',box:p.servicesBox,size:21},
-   {id:'phone',label:'تلفن فوتر',kind:'static',value:'021-72075000',box:geo.phone,size:31,color:'#ffffff',direction:'ltr',background:'footer'},
-   {id:'address',label:'آدرس فوتر',kind:'static',value:address,box:geo.address,size:21,color:'#ffffff',background:'footer'},
+   {id:'phone',label:'تلفن فوتر',kind:'static',value:'021-72075000',box:geo.phone,size:p.azarPoster?20:31,color:'#ffffff',direction:'ltr',background:'footer'},
+   {id:'address',label:'آدرس فوتر',kind:'static',value:address,box:geo.address,size:p.azarPoster?16:21,color:'#ffffff',background:'footer'},
    ...m.extras.map(e=>({id:e.id,label:'متن دلخواه '+e.number,kind:'extra',box:e.box,value:e.text,size:24,...e}))
   );return list;
  }
@@ -91,6 +94,8 @@ window.PackageEditor=(()=>{
  function overlays(){
   const p=profile();let html='';
   for(const d of definitions())if(d.kind==='static'&&needs(d.id)||d.kind==='extra'){
+   if(p.azarPoster&&d.id.startsWith('label_')&&!window.PackageCards?.active)continue;
+   if(p.azarPoster&&d.id==='serviceLabel'&&!hasText(d.id))continue;
    let bg=d.kind==='extra'?'transparent':'#fff';
    if(d.background==='footer')bg=paper.get(p.style+'_'+d.id)?`url('${paper.get(p.style+'_'+d.id)}') 0 0 / 100% 100%`:'#03245c';
    html+=overlay(d,text(d.id,d.value),bg);
@@ -231,6 +236,7 @@ window.PackageEditor=(()=>{
  }catch(e){$('assetStatus').textContent='فونت بارگذاری نشد: '+e.message;}}
  async function preparePaper(){
   await Promise.all(Object.values(TEMPLATES).map(async p=>{
+   if(p.azarPoster||!p.image)return;
    const image=new Image();image.src=p.image;await image.decode();
    for(const key of ['phone','address']){const [x,,w,h]=geometry[p.style][key],canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(image,x,LAYER_GEOMETRY[p.style].footer[1]+4,w,1,0,0,w,h);paper.set(p.style+'_'+key,canvas.toDataURL('image/png'));}
   }));refresh();

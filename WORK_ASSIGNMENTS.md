@@ -13311,3 +13311,6 @@ Reserve the Accounting fiscal-year list route, removal of its actions from the s
 ## DETAIL-CODE-SUGGESTIONS-1122 — PC-D — COMPLETED
 
 Reserve the Accounting detail editor and year-independent suggestion endpoint, the System Management issued-code public projection and transaction allocator, their additive Contracts capability flag, and focused Web/API regressions. The Accounting producer serves the same code format and ledger access to the Web consumer. Existing detail IDs, issued codes and bank numbering remain compatible. No migration or data backfill.
+
+### PACKAGE-GENERATOR-AZAR-1122 (PC-B)
+Scoped XLSX support and poster profiles for Antalya Iran Airtour and Kuala Lumpur plus Singapore. Reuse package-generator renderer; no API, schema or dependency changes.
