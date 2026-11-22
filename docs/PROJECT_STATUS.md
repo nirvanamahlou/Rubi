@@ -1,3 +1,7 @@
+## NORA-GUIDE-DOCS-1122 — PC-C
+
+Contract and Workbench guide content moved into versioned Markdown and deterministic generated catalogues. The chat uses local replies for migrated topics, with a protected guide route and links to owning panels. Record readers and Call Center UI are preserved. RAG is disabled.
+
 ## 2026-11-22 — DETAIL-CODE-SUGGESTIONS-1122 — PC-D
 
 When defining personnel, corporate customer and individual customer details, Accounting suggests the first unused code across all ledgers and accepts a valid manual code on creation. Preview is read-only. The save transaction validates the eight-digit type series and prevents duplicate issuance. PostgreSQL coverage verifies cross-ledger contention, legacy occupancy and manual gaps. See [FIN-CODING-001](tasks/FIN-CODING-001.md).

@@ -52,15 +52,17 @@ export function resolveWorkbenchGuide(
       ? 'substitute'
       : /لغو|حذف/.test(text)
         ? 'request-delete'
-        : /تایید|تأیید|وضعیت|رد شده|ردشده/.test(text)
-          ? 'request-status'
-          : /استعلاجی/.test(text)
-            ? 'leave-medical'
-            : /ساعتی/.test(text)
-              ? 'leave-hourly'
-              : /روزانه/.test(text)
-                ? 'leave-daily'
-                : undefined
+        : /(?:مراحل|روند) (?:تایید|تأیید) مرخصی/.test(text)
+          ? 'leave-approval'
+          : /تایید|تأیید|وضعیت|رد شده|ردشده/.test(text)
+            ? 'request-status'
+            : /استعلاجی/.test(text)
+              ? 'leave-medical'
+              : /ساعتی/.test(text)
+                ? 'leave-hourly'
+                : /روزانه/.test(text)
+                  ? 'leave-daily'
+                  : undefined
     : undefined;
   const matches = catalog.topics
     .filter(
@@ -145,17 +147,33 @@ export function resolveWorkbenchGuide(
 export function renderWorkbenchGuide(
   topic: WorkbenchGuideTopic,
   goal: WorkbenchGuideGoal,
-) {
+  includeTracking = false,
+): string {
+  const approval = workbenchCatalog.topics.find(
+    (item) => item.id === 'leave-approval',
+  );
+  const steps =
+    'related' in topic &&
+    topic.related.includes('workbench/leave-approval') &&
+    approval
+      ? [...topic.steps, ...approval.steps]
+      : topic.steps;
+  const tracking = includeTracking
+    ? workbenchCatalog.topics.find((item) => item.id === 'request-status')
+    : undefined;
   return [
     topic.title,
     `مسیر: ${topic.path.join(' ← ')}`,
     `پیش‌نیاز:\n${topic.conditions.join('\n')}`,
-    `مراحل:\n${topic.steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}`,
+    `مراحل:\n${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}`,
     ...(goal === 'troubleshoot'
       ? [`اگر متوقف شدید:\n${topic.troubleshooting.join('\n')}`]
       : []),
     `محدودیت:\n${topic.limitations.join('\n')}`,
     `اقدام بعدی: ${topic.next}`,
+    ...(tracking && tracking.id !== topic.id
+      ? [renderWorkbenchGuide(tracking, 'steps')]
+      : []),
     `منبع راهنما: ${topic.title} — نسخه `,
   ].join('\n\n');
 }

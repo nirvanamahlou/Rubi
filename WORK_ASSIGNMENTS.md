@@ -1,3 +1,6 @@
+## NORA-GUIDE-DOCS-1122 — PC-C — ACTIVE
+
+PC-C confirmed by the owner. Pilot from develop a496d9231. Reserve new guide Markdown, build/check script, authenticated guide page, Sales and Workbench assistant catalogue adapters and bounded Composer guide link, tests, CI check and status notes. PC-C continues its guide reader ownership from merged PR1859. Preserve Call Center UI and live read paths. No migration, dependency or provider change.
 ## NORA-CALL-CATALOG-1122 — PC-C — ACTIVE
 
 Reserve the Nora guide catalogues, shared guide reader, scoped tests and coverage notes. Preserve the Call Center UI and producer contracts.

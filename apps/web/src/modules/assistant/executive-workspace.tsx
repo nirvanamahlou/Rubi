@@ -72,7 +72,12 @@ import { AssistantResponseContent } from './response-content';
 import { formatAssistantSources } from './response-presentation';
 import { useChatScroll } from './use-chat-scroll';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { resolveWorkbenchGuide, loadWorkbenchGuide } from './workbench-guides';
+import contractGuideCatalog from './contract-guide.generated.json';
+import {
+  resolveWorkbenchGuide,
+  loadWorkbenchGuide,
+  renderWorkbenchGuide,
+} from './workbench-guides';
 import {
   asksWorkbenchRequestStatus,
   describeWorkbenchRequest,
@@ -386,7 +391,7 @@ function AssistantComposerContent({
       agent?: boolean;
       links?: ContractLink[];
       targets?: { id: string; label: string }[];
-      guideLink?: { href: string; label: string };
+      guideLink?: { href: string; label: string; guideHref?: string };
       submissionId?: number;
     }>
   >([]);
@@ -580,7 +585,7 @@ function AssistantComposerContent({
       content: string,
       links?: ContractLink[],
       targets?: { id: string; label: string }[],
-      guideLink?: { href: string; label: string },
+      guideLink?: { href: string; label: string; guideHref?: string },
       answerContext?: AnswerContext,
     ) => {
       if (answerContext)
@@ -1176,11 +1181,20 @@ function AssistantComposerContent({
       setActionState('loading');
       setChatError(null);
       try {
-        const answer = await loadWorkbenchGuide(
-          workbenchHelp.topic,
-          workbenchHelp.goal,
-          controller.signal,
-        );
+        const answer =
+          'guideHref' in workbenchHelp.topic
+            ? renderWorkbenchGuide(
+                workbenchHelp.topic,
+                workbenchHelp.goal,
+                workbenchHelp.topic.id.startsWith('leave') &&
+                  /پیگیری/.test(guideQuestion) &&
+                  /چطور|چگونه|از کجا/.test(guideQuestion),
+              )
+            : await loadWorkbenchGuide(
+                workbenchHelp.topic,
+                workbenchHelp.goal,
+                controller.signal,
+              );
         if (!controller.signal.aborted) {
           workbenchTopic.current = workbenchHelp.topic.id;
           replyLocally(
@@ -1190,6 +1204,12 @@ function AssistantComposerContent({
             {
               label: workbenchHelp.topic.title,
               href: workbenchHelp.topic.href,
+              ...('guideHref' in workbenchHelp.topic
+                ? {
+                    label: english ? 'Open panel' : 'باز کردن پنل',
+                    guideHref: workbenchHelp.topic.guideHref,
+                  }
+                : {}),
             },
             {
               kind: 'guide',
@@ -1282,12 +1302,25 @@ function AssistantComposerContent({
     if (guidanceAllowed && guide && !recordFollowup && !liveReport) {
       guideTopic.current = guide.topicId;
       if (guide.topicId === 'create') contractId.current = undefined;
-      replyLocally(guide.text, undefined, undefined, undefined, {
-        kind: 'guide',
-        domain: 'sales',
-        question: guideQuestion,
-        topicId: guide.topicId,
-      });
+      const section = contractGuideCatalog.topics.find(
+        (topic) => topic.id === guide.topicId,
+      );
+      replyLocally(
+        guide.text,
+        undefined,
+        undefined,
+        section && {
+          href: section.href,
+          label: english ? 'Open panel' : 'باز کردن پنل',
+          guideHref: section.guideHref,
+        },
+        {
+          kind: 'guide',
+          domain: 'sales',
+          question: guideQuestion,
+          topicId: guide.topicId,
+        },
+      );
       return;
     }
     pending.current?.abort();
@@ -1339,12 +1372,25 @@ function AssistantComposerContent({
     }
     if (guidanceAllowed && guide && !agentMode) {
       guideTopic.current = guide.topicId;
-      replyLocally(guide.text, undefined, undefined, undefined, {
-        kind: 'guide',
-        domain: 'sales',
-        question: guideQuestion,
-        topicId: guide.topicId,
-      });
+      const section = contractGuideCatalog.topics.find(
+        (topic) => topic.id === guide.topicId,
+      );
+      replyLocally(
+        guide.text,
+        undefined,
+        undefined,
+        section && {
+          href: section.href,
+          label: english ? 'Open panel' : 'باز کردن پنل',
+          guideHref: section.guideHref,
+        },
+        {
+          kind: 'guide',
+          domain: 'sales',
+          question: guideQuestion,
+          topicId: guide.topicId,
+        },
+      );
       return;
     }
     pending.current?.abort();
@@ -1593,6 +1639,14 @@ function AssistantComposerContent({
                       />
                     ) : (
                       item.content
+                    )}
+                    {item.guideLink?.guideHref && (
+                      <Link
+                        className="block underline"
+                        href={item.guideLink.guideHref}
+                      >
+                        {english ? 'Read guide' : 'خواندن راهنما'}
+                      </Link>
                     )}
                     {item.guideLink && (
                       <Link
