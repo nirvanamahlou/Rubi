@@ -1,3 +1,11 @@
+## PREVIEW-PER-HOTEL-1122 — PC-A — READY_FOR_CI
+
+Reserve the website preview editor, publication presentation validator, catalogue projection and focused tests. Assign rates by the selected departure's hotel IDs and retain historical shared previews. Owner authorizes develop merge. No schema or deploy change.
+
+## WEBSITE-TOUR-PRICE-SYNC-1122 — PC-A — READY_FOR_CI
+
+Reserve the tour pricing workspace preview editor and translations. Use branch-scoped website publication CAS and the existing signed dispatch path. Owner authorizes develop merge and Avina deployment. No schema or purchase-rate changes.
+
 ## FLOATING-TOUR-PICKER-1122 — PC-A — READY_FOR_CI
 
 Reserve the floating pricing tour list projection, picker and focused regression. Show route, branch, duration and identity for distinct same-name definitions. No schema or deployment change.
@@ -12830,6 +12838,10 @@ PR1776 catalogue sync: add the same new HR error translation to its required app
 
 PR1776 concurrent producer integration: PR1782 delivered the same CI repairs while this run was validating. Retain its stronger fixture assertions for actor/branch and its canonical six English translations, and synchronize the API mirror to that exact wording. Both product scopes remain untouched; final merged-head CI must run again.
 
+## NORA-PRIVILEGED-FAILOVER-1122 — PC-C — READY_FOR_CI
+
+Owner requests no product consumption quotas for native danial/demo identities and provider failover Groq/OpenAI for their questions. Base bd301dda3; branch codex/pc-c-nora-provider-failover-1122. Reserve assistant agent-config/data-agent/server/groq-key-pool, a new failover helper and focused tests, own task/status notes. Reuse operator UUID exemption list; never trust client names/headers. Preserve ordinary-user quotas, native authentication/current-scope revalidation, output/evidence/tool validation, wire-size and finite request/turn/query safety bounds. Remove cumulative token/transport-attempt consumption quotas only in trusted exempt request context, audit actual provider usage and fail over only provider quota errors. No migration/dependency/public contract or permission grant changes. Existing Nora source scopes on other branches remain frozen; do not edit peer worktrees.
+
 ## NORA-DATA-AGENT-V1 — PC-C — IN_PROGRESS — 2026-11-14
 
 COMPUTER_ID=PC-C; branch codex/pc-c-nora-data-agent-v1 from origin/develop 5a9c72ae7. Owner explicitly authorizes the approved data-agent plan: Groq may receive authorized Sales results (names/contract numbers; no phones, identity documents, card data or credentials). Reserve services/assistant agent/provider/config/transport, additive apps/api/src/sales/assistant-agent source boundary and apps/api/src/assistant-read composition, additive Web v3 proxy/composer wiring and tests. Existing UI preserved. Other system follows this contract after handoff; do not concurrently edit these scopes. Shared locks: sole Dependency/Lockfile Owner PC-C for pgsql-ast-parser and pg plus types, API manifest/pnpm-lock.yaml; sole Migration Owner PC-C for additive nora_agent read views only, no existing row changes or Prisma model changes. Earlier published migration leases released; no current competing dependency lease found. Reserve bounded docs/DECISIONS, DATA_MODEL, PROJECT_STATUS and this assignment. Producer Sales public agent v1; consumer independent assistant v3; v1/v2 remain compatible. Feature disabled by default. Local-only acceptance after isolated database proofs; no production deployment or automatic merge. Stage/push only this work unit.
@@ -13276,6 +13288,6 @@ Reserve the Nora customer guide routing, normalized customer query and focused t
 
 Reserve read-only Master Data and ticket reference session recovery and focused tests for the B2B and flight pricing production acceptance. Preserve the existing authentication and authorization contracts.
 
-## NORA-PRIVILEGED-FAILOVER-1122 — PC-C — READY_FOR_CI
+## TICKET-VOUCHER-1122 — PC-A — READY_FOR_CI
 
-Owner requests no product consumption quotas for native danial/demo identities and provider failover Groq/OpenAI for their questions. Base bd301dda3; branch codex/pc-c-nora-provider-failover-1122. Reserve assistant agent-config/data-agent/server/groq-key-pool, a new failover helper and focused tests, own task/status notes. Reuse operator UUID exemption list; never trust client names/headers. Preserve ordinary-user quotas, native authentication/current-scope revalidation, output/evidence/tool validation, wire-size and finite request/turn/query safety bounds. Remove cumulative token/transport-attempt consumption quotas only in trusted exempt request context, audit actual provider usage and fail over only provider quota errors. No migration/dependency/public contract or permission grant changes. Existing Nora source scopes on other branches remain frozen; do not edit peer worktrees.
+COMPUTER_ID=PC-A; branch codex/pc-a-ticket-voucher-1122 from develop29c6c57b7. User requests hiding hotel voucher output for ticket-only contracts and explicitly authorizes develop merge. Reserve SalesTravelDocuments, its component regression and append-only task/status notes. No active overlapping writer found. Gate voucher output and pending notice on saved hotel selection/service facts; retain floating-contract behavior, ticket downloads and financial authorization. No API, schema, migration, dependency, operational data or deployment changes. Final-head hosted gates required before merge.
