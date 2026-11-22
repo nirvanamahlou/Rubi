@@ -10,6 +10,10 @@ The Accounting fiscal-year list is a read-only view of the selected company’s 
 
 The corporate customer title picker opens the existing company form and lists active organization customers for the ledger branch. Save and select links the Customer profile to the eight-digit series-three detail. Web regressions and an isolated PostgreSQL round trip cover the picker action, the native company profile and branch and kind validation. No schema change.
 
+## 2026-11-22 — PERSONNEL-DETAIL-TITLES-1122 — PC-D
+
+The personnel detail title picker supports manual person and site references, with a fixed site position. Accounting validates and persists the reference in the selected ledger and retains series-two accounting detail numbering.
+
 ## 2026-11-21 — CUSTOMER-DETAIL-TITLE-1121 — PC-D
 
 Added the compact individual customer title form and linked the native person Customer record to Accounting details in series four. The existing Customer API and eight-digit allocator are reused. See [CUSTOMER-DETAIL-TITLE-1121](tasks/CUSTOMER-DETAIL-TITLE-1121.md).
@@ -2579,6 +2583,10 @@ Migration افزایشی است و هنوز روی دیتابیس محلی یا 
 ## 2026-09-23 — HEADER-DATE-CLOCK-0923 — READY_FOR_REVIEW
 
 ساعت جاری کنار تاریخ سربرگ با timezone و نوع ارقام تنظیم‌شده سامانه و بدون نمایش ثانیه اضافه شد و در مرز هر دقیقه تازه می‌شود. ۸ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۲ مسیر موفق‌اند؛ Web روی `3100` و API روی `4191` با پاسخ سلامت `200` اجرا شدند. API، داده، Schema/Migration و Dependency/Lockfile تغییر نکردند.
+
+## 2026-11-22 — PACKAGE-GENERATOR-AZAR-CI-1122 — PC-D
+
+Updated the English catalogues and country-picker test for the Azar package templates introduced in PR #1861.
 
 ## 2026-09-23 — PACKAGE-GENERATOR-TEMPLATE-REFRESH-0923 — READY_FOR_REVIEW
 
@@ -10504,3 +10512,10 @@ Sales passenger-document modal now renders hotel vouchers and their pending noti
 
 ### Package generator Azar templates (2026-11-22)
 Antalya Iran Airtour and Kuala Lumpur plus Singapore XLSX formats now import to editable poster profiles. Validated the four supplied files with PNG and PDF exports.
+
+## اتصال تور قسطی‌رو (PC-D)
+
+اتصال موجود قسطی‌رو بستهٔ تاریخ‌دار یا دورهٔ شناور را با تأیید مستقل مقصد در
+کاتالوگ امضاشده تحویل می‌دهد. تنظیم‌های پیش‌نمایش، توقف فروش و اجازهٔ انتشار
+پروفایل هتل برای همان مقصد ذخیره می‌شوند. دریافت، ذخیره و نمایش در قسطی‌رو
+از مسیر نسخه‌بندی‌شده بررسی می‌شود. دریافت سفارش تور در اتصال قسطی‌رو غیرفعال است.

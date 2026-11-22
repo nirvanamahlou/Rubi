@@ -15,6 +15,7 @@ import {
   allowsManualFinanceCode,
   financeCodingProfiles,
   type AccountingConfigurationV1,
+  type AccountingDetailOwnerV1,
   type AuthenticatedActor,
 } from '@nora/contracts';
 import { createDatabaseClient, type DatabaseClient } from '@nora/database';
@@ -311,6 +312,23 @@ describe.skipIf(!url)('FIN-CODING-001 on isolated PostgreSQL', () => {
     );
   }
   async function source(bookId: string, prefix: string) {
+    if (prefix === '2') {
+      const staff = await run<AccountingDetailOwnerV1>(
+        bookId,
+        'save-detail-owner',
+        {
+          ownerKind: 'STAFF',
+          code: randomUUID(),
+          attributes: {
+            staffKind: 'person',
+            firstName: 'Synthetic',
+            lastName: 'Staff',
+            position: 'Finance',
+          },
+        },
+      );
+      return { sourceConfigurationId: staff.id };
+    }
     if (prefix === '3') return { customerId: (await newCompany()).data.id };
     if (prefix === '4') return { customerId: (await newPerson()).data.id };
     if (prefix !== '5') return {};
@@ -501,10 +519,15 @@ describe.skipIf(!url)('FIN-CODING-001 on isolated PostgreSQL', () => {
     const profile = financeCodingProfiles[0];
     const firstType = await typeId(firstBook, profile.typeCode);
     const otherType = await typeId(otherBook, profile.typeCode);
-    const first = { typeId: firstType, title: 'Synthetic staff' };
+    const first = {
+      typeId: firstType,
+      title: 'Synthetic staff',
+      ...(await source(firstBook, profile.prefix)),
+    };
     const other = {
       typeId: otherType,
       title: 'Synthetic staff in another ledger',
+      ...(await source(otherBook, profile.prefix)),
     };
     await expect(
       accounting.detailCodeSuggestion(otherBook, firstType, actor),
