@@ -4252,7 +4252,7 @@ export class AccountingService {
       const sourceOwner = await resolveDetailOwner(
         tx,
         book,
-        detailType.title,
+        detailType,
         p,
         existing?.typeId === typeId ? existing : null,
       );

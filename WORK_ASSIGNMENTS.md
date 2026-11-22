@@ -1,3 +1,7 @@
+## PERSONNEL-DETAIL-TITLES-1122 — PC-D — READY_FOR_CI
+
+Reserve personnel detail title picker, person/site reference forms and their existing Accounting reference command, translations, and focused tests. Uses the existing ledger-scoped configuration and detail links.
+
 ## PREVIEW-PER-HOTEL-1122 — PC-A — READY_FOR_CI
 
 Reserve the website preview editor, publication presentation validator, catalogue projection and focused tests. Assign rates by the selected departure's hotel IDs and retain historical shared previews. Owner authorizes develop merge. No schema or deploy change.

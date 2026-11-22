@@ -29,8 +29,163 @@ type Props = {
 export function AccountingDetailOwnerDialog(p: Props) {
   return p.kind === 'BANK' ? (
     <AccountingBankAccountDialog {...p} />
+  ) : p.kind === 'STAFF' ? (
+    <StaffDetailOwnerDialog {...p} />
   ) : (
     <StandardDetailOwnerDialog {...p} />
+  );
+}
+
+function StaffDetailOwnerDialog({ initial, run, onClose, onSelected }: Props) {
+  const [kind, setKind] = useState<'person' | 'site'>(
+    initial?.attributes.staffKind === 'site' ? 'site' : 'person',
+  );
+  const [firstName, setFirstName] = useState(
+    String(initial?.attributes.firstName ?? ''),
+  );
+  const [lastName, setLastName] = useState(
+    String(initial?.attributes.lastName ?? ''),
+  );
+  const [position, setPosition] = useState(
+    initial?.attributes.staffKind === 'person'
+      ? String(initial.attributes.position ?? '')
+      : '',
+  );
+  const [code, setCode] = useState(initial?.code ?? '');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const pending = useRef(false);
+  const isSite = kind === 'site';
+
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open && !pending.current) onClose();
+      }}
+    >
+      <DialogContent dir="rtl">
+        <DialogTitle>{initial ? 'ویرایش پرسنل' : 'افزودن پرسنل'}</DialogTitle>
+        <form
+          className="space-y-4"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            if (pending.current) return;
+            pending.current = true;
+            setBusy(true);
+            setError('');
+            try {
+              const row = await run<AccountingDetailOwnerV1>(
+                'save-detail-owner',
+                {
+                  id: initial?.id,
+                  ownerKind: 'STAFF',
+                  code,
+                  attributes: {
+                    staffKind: kind,
+                    firstName,
+                    lastName,
+                    position,
+                  },
+                },
+                initial?.version,
+              );
+              if (row) onSelected(row);
+              else setError('ذخیره عنوان ناموفق بود.');
+            } catch (cause) {
+              setError(
+                cause instanceof Error
+                  ? cause.message
+                  : 'ذخیره عنوان ناموفق بود.',
+              );
+            } finally {
+              pending.current = false;
+              setBusy(false);
+            }
+          }}
+        >
+          <fieldset className="flex gap-4" disabled={busy}>
+            <legend className="mb-2 text-sm font-medium">نوع عنوان</legend>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="staff-kind"
+                checked={!isSite}
+                onChange={() => setKind('person')}
+              />
+              شخص
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="staff-kind"
+                checked={isSite}
+                onChange={() => setKind('site')}
+              />
+              سایت
+            </label>
+          </fieldset>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <FormField label="نام" id="staff-name" required>
+              <Input
+                id="staff-name"
+                required
+                maxLength={isSite ? 160 : 79}
+                value={firstName}
+                onChange={(event) => setFirstName(event.target.value)}
+              />
+            </FormField>
+            {!isSite && (
+              <FormField label="نام خانوادگی" id="staff-last-name" required>
+                <Input
+                  id="staff-last-name"
+                  required
+                  maxLength={80}
+                  value={lastName}
+                  onChange={(event) => setLastName(event.target.value)}
+                />
+              </FormField>
+            )}
+            <FormField label="سمت" id="staff-position" required={!isSite}>
+              <Input
+                id="staff-position"
+                required={!isSite}
+                maxLength={120}
+                readOnly={isSite}
+                className={
+                  isSite ? 'bg-muted text-muted-foreground' : undefined
+                }
+                value={isSite ? 'سایت' : position}
+                onChange={(event) => setPosition(event.target.value)}
+              />
+            </FormField>
+            <FormField label="کد" id="staff-code" required>
+              <Input
+                id="staff-code"
+                required
+                maxLength={40}
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+              />
+            </FormField>
+          </div>
+          {error && <p role="alert">{error}</p>}
+          <div className="flex gap-3">
+            <Button type="submit" disabled={busy}>
+              ذخیره و انتخاب
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              onClick={onClose}
+            >
+              انصراف
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
