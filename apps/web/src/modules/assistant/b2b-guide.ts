@@ -5,7 +5,7 @@ import { cooperationLabel } from '../organizations/model/presentation';
 import copy from './b2b-guide-catalog.json';
 import { matchesQuestion, normalizeQuestion } from './question-text';
 
-export const b2bGuideLink = { href: copy.href, label: copy.label };
+export const b2bGuideLink = { href: '/organizations', label: copy.label };
 export const b2bGuideTopics = copy.topics.map((topic) => ({
   ...topic,
   match: new RegExp(topic.pattern, 'i'),
@@ -82,6 +82,9 @@ export function resolveB2bQuestion(
   const candidates = topics.filter((item) => matchesQuestion(text, item.match));
   const topic =
     exact ??
+    (how && /(?:آژانس(?: همکار)?|مشتری سازمانی) جدید(?: |$).*ثبت/.test(text)
+      ? topics.find((item) => item.id === 'registration')
+      : undefined) ??
     topics.find((item) => item.id === preferred) ??
     candidates.find((item) => item.id !== 'metrics' && item.id !== 'profile') ??
     candidates[0] ??

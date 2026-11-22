@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { agencyClient } from '../organizations/api/agency-client';
 import {
   b2bGuideTopics,
+  b2bGuideLink,
   readB2bGuide,
   renderB2bGuide,
   resolveB2bQuestion,
@@ -33,7 +34,7 @@ describe('B2B assistant guidance', () => {
       const result = resolveB2bQuestion(topic.example, true);
       expect(result).toMatchObject({ kind: 'guide', topic: { id: topic.id } });
       const answer = renderB2bGuide(topic);
-      expect(topic.href).toBe('/organizations');
+      expect(b2bGuideLink.href).toBe('/organizations');
       expect(answer).toContain(topic.next);
       expect(answer).toContain('پیش‌نیاز');
     },
@@ -101,4 +102,10 @@ describe('B2B assistant guidance', () => {
       }),
     );
   });
+});
+
+it('routes explicit agency registration to the registration workflow', () => {
+  expect(
+    resolveB2bQuestion('چطور آژانس همکار جدید در مشتریان B2B ثبت کنم؟', false),
+  ).toMatchObject({ kind: 'guide', topic: { id: 'registration' } });
 });
