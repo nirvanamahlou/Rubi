@@ -144,11 +144,24 @@ export function resolveRelativeSalesPeriods(message, now) {
     calendar: gregorian ? 'gregory' : 'persian',
   });
   const pattern =
-    /این (هفته|ماه|سال)|(هفته|ماه|سال) (?:ی )?(قبل تر|قبلی تر|پیش تر|گذشته|قبل|پیش)|(?:هفت|7) روز گذشته/g;
+    /این (هفته|ماه|سال)|(هفته|ماه|سال) (?:ی )?(قبل تر|قبلی تر|پیش تر|گذشته|قبل|پیش)|(?:هفت|7) روز گذشته|(امروز|دیروز|پریروز)(?![\p{L}\p{N}])/gu;
   const terms = [...text.matchAll(pattern)];
   if (!terms.length) return null;
   const matchedTime = /تا همین (?:موقع|زمان)/.test(text);
   const periods = terms.map((term) => {
+    if (term[4]) {
+      const offset = { امروز: 0, دیروز: -1, پریروز: -2 }[term[4]];
+      const date = civilShift(today, offset);
+      const cutoff =
+        matchedTime && offset !== 0
+          ? new Date(
+              Date.parse(midnight(date)) +
+                now.getTime() -
+                Date.parse(midnight(today)),
+            ).toISOString()
+          : undefined;
+      return make(date, date, offset === 0 || Boolean(cutoff), cutoff);
+    }
     const unit = term[1] ?? term[2];
     if (!unit) return make(civilShift(today, -7), civilShift(today, -1));
     const offset = term[1] ? 0 : term[3].endsWith(' تر') ? -2 : -1;

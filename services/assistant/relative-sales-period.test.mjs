@@ -42,6 +42,27 @@ test('calendar weeks cross the Persian month boundary at Tehran midnight', () =>
   );
 });
 
+test('Tehran civil days resolve independently of UTC midnight', () => {
+  const before = new Date('2026-11-21T20:29:59.999Z');
+  const midnight = new Date('2026-11-21T20:30:00.000Z');
+  assert.deepEqual(ranges('امروز', before), [['2026-11-21', '2026-11-21']]);
+  const [today, yesterday] = resolveRelativeSalesPeriods(
+    'امروز نسبت به دیروز',
+    midnight,
+  );
+  assert.equal(today.startDate, '2026-11-22');
+  assert.equal(today.startUtc, today.endExclusiveUtc);
+  assert.equal(yesterday.endExclusiveUtc, today.startUtc);
+  assert.deepEqual(ranges('دیروز نسبت به پریروز'), [
+    ['2026-11-21', '2026-11-21'],
+    ['2026-11-20', '2026-11-20'],
+  ]);
+  assert.equal(
+    resolveRelativeSalesPeriods('تا همین موقع دیروز', now)[0].endExclusiveUtc,
+    '2026-11-21T06:00:00.000Z',
+  );
+});
+
 test('agent applies exact half-open windows with a single clock and renders verified totals', async () => {
   const contextId = 'a'.repeat(64);
   const sources = ['contracts', 'amounts'];
@@ -120,4 +141,17 @@ test('agent applies exact half-open windows with a single clock and renders veri
   assert.equal(clockCalls, 1);
   assert.match(answer.text, /بازهٔ ۱: ۲۵، بازهٔ ۲: ۱۰، اختلاف: ۱۵/);
   assert.match(answer.text, /دورهٔ ناقص/);
+  const daily = await agent(
+    {
+      version: 1,
+      message: 'فروش امروز نسبت به دیروز چقدره؟',
+      history: [],
+    },
+    { signal: new AbortController().signal },
+  );
+  assert.equal(daily.status, 'ANSWER');
+  assert.equal(daily.sources.length, 2);
+  assert.equal(clockCalls, 2);
+  assert.match(daily.text, /بازهٔ ۱: ۵، بازهٔ ۲: ۲۰، اختلاف: -۱۵/);
+  assert.match(daily.text, /دورهٔ ناقص/);
 });
