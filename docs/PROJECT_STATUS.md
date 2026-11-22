@@ -60,6 +60,9 @@ Eight predefined typed detail title lookups and create/edit dialogs, seven-digit
 ## 2026-11-17 — Nora Sales evidence correction (PC-C)
 
 NORA-SALES-EVIDENCE-1117: reproduced Persian calendar/Tehran-boundary and contract-currency row-count defects. Added deterministic period resolution, same-snapshot authorized reconciliation and typed financial fact binding with model-chosen layout.180 service tests pass; real Groq/Germany plus native-session-scoped PostgreSQL passes in three model calls and two reads, matching independent count/currency oracles. No migration or operational writes. Exact-head CI, Nora-only activation and authenticated browser acceptance remain pending. See [task](tasks/NORA-SALES-EVIDENCE-1117.md).
+## PASSENGER-IDENTITY-PREFLIGHT-1117 — PC-A — VALIDATING
+
+Read-only ERP identity preflight before website review/payment, safe inline passenger errors, and payment-start recheck added. Existing same-national-ID profile sync and passport uniqueness retained. Synthetic tests pass; final build/PR/release gates pending. No data migration or payment replay. Order22 remains pending identity correction. See [task](tasks/PASSENGER-IDENTITY-PREFLIGHT-1117.md).
 
 ## NORA-GROQ-QUOTA-GROUPS-1117 — PC-C — VALIDATING
 
