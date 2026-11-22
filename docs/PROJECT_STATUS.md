@@ -10,6 +10,10 @@ The Accounting fiscal-year list is a read-only view of the selected company’s 
 
 The corporate customer title picker opens the existing company form and lists active organization customers for the ledger branch. Save and select links the Customer profile to the eight-digit series-three detail. Web regressions and an isolated PostgreSQL round trip cover the picker action, the native company profile and branch and kind validation. No schema change.
 
+## 2026-11-22 — PERSONNEL-DETAIL-TITLES-1122 — PC-D
+
+The personnel detail title picker supports manual person and site references, with a fixed site position. Accounting validates and persists the reference in the selected ledger and retains series-two accounting detail numbering.
+
 ## 2026-11-21 — CUSTOMER-DETAIL-TITLE-1121 — PC-D
 
 Added the compact individual customer title form and linked the native person Customer record to Accounting details in series four. The existing Customer API and eight-digit allocator are reused. See [CUSTOMER-DETAIL-TITLE-1121](tasks/CUSTOMER-DETAIL-TITLE-1121.md).

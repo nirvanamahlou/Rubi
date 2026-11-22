@@ -184,6 +184,16 @@ describe('detail type route with no accounting books', () => {
     expect(field).toContain('pattern="2[0-9]{7}"');
   });
 
+  it('offers staff creation inside the personnel title picker', () => {
+    const html = render({
+      hasBook: true,
+      hasCodingTypes: true,
+      recordId: 'finance-detail',
+      route: 'accounts/details',
+    });
+    expect(html).toContain('＋ افزودن پرسنل');
+  });
+
   it('offers company creation in the corporate customer title picker', () => {
     const html = render({
       hasBook: true,
