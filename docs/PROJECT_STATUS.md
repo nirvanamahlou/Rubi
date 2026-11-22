@@ -142,6 +142,10 @@ User authorizes latest develop Avina deployment with all data preserved. Reserve
 
 PR1768 UI is active in ERP with PR1769 Persian/source presentation preserved. Published Web build08Ajp-thgUW8QA5lVntoo;291 integrated tests and server compile/type/Agent admission pass. Authenticated browser confirms immediate messages, waiting spinner, transcript bottom scrolling, pause while reading, latest arrow, next-draft and close/reopen retention. No SQL/financial acceptance claim, migration, business writes or non-Web replacement. [Release receipt](tasks/NORA-CHAT-SCROLL-RELEASE-1117.md).
 
+## NORA-PRIVILEGED-FAILOVER-1122 — PC-C
+
+Trusted native danial/demo exemptions verified; hybrid provider quota failover implemented in both directions, including guide selection. Ordinary quotas and all evidence/access/deadline/finite execution guards preserved.213 service tests pass. No migration/dependency/billing or credential changes. Exact-head hosted CI and guarded native-only activation remain required. See docs/tasks/NORA-PRIVILEGED-FAILOVER-1122.md.
+
 ## NORA-COUNT-BREAKDOWN-1116 — PC-C — READY_FOR_CI
 
 Added authorized all-time contract count reconciliation with disjoint native

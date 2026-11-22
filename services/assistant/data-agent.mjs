@@ -72,10 +72,12 @@ export function createDataAgent({
   audit = () => {},
 } = {}) {
   const base = enabled ? configuredErpOrigin(erpBaseUrl) : undefined;
-  return async (input, { cookie, signal }) => {
+  return async (input, { cookie, signal, consumptionExempt = false }) => {
     if (!enabled) throw new ServiceError(503, 'AGENT_DISABLED');
     const request = validateDataAgentMessage(input);
-    const activeProvider = selectProvider?.(request) ?? provider;
+    const activeProvider =
+      selectProvider?.(request, { consumptionExempt }) ?? provider;
+    const tokenBudget = consumptionExempt ? Number.MAX_SAFE_INTEGER : 40000;
     const nativeStep = nativeCountRoute(request);
     let financialRequest;
     try {
@@ -87,7 +89,11 @@ export function createDataAgent({
     const requestId = randomUUID();
     let contextId;
     let tokens = 0;
-    const attemptBudget = { attempts: 0, retryTokens: 0 };
+    const attemptBudget = {
+      attempts: 0,
+      retryTokens: 0,
+      ...(consumptionExempt ? { maxAttempts: Number.MAX_SAFE_INTEGER } : {}),
+    };
     let queries = 0;
     let evidenceBytes = 0;
     let plan;
@@ -231,7 +237,7 @@ export function createDataAgent({
           ? nativeStep(messages)
           : await activeProvider.step(messages, {
               signal,
-              remainingTokens: 40000 - tokens - attemptBudget.retryTokens,
+              remainingTokens: tokenBudget - tokens - attemptBudget.retryTokens,
               attemptBudget,
               beforeRetry: () => call('catalog'),
               allowFinalResponse: Boolean(plan),
@@ -274,7 +280,7 @@ export function createDataAgent({
           error.tokenCharge > 0
         ) {
           tokens += error.tokenCharge;
-          if (tokens + attemptBudget.retryTokens > 40000)
+          if (tokens + attemptBudget.retryTokens > tokenBudget)
             throw new ServiceError(429, 'AGENT_TOKEN_BUDGET_EXCEEDED');
           messages.push({
             role: 'system',
@@ -313,7 +319,7 @@ export function createDataAgent({
       tokens += step.tokens;
       if (
         !Number.isSafeInteger(tokens) ||
-        tokens + attemptBudget.retryTokens > 40000
+        tokens + attemptBudget.retryTokens > tokenBudget
       )
         throw new ServiceError(429, 'AGENT_TOKEN_BUDGET_EXCEEDED');
       const args = step.args;
