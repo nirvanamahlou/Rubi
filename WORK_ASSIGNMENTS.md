@@ -1,3 +1,7 @@
+## FLOATING-EXCEL-PRECISION-1122 — PC-A
+
+Reserve floating tour Excel amount parsing and its focused API tests. Compare passenger fare composition with the Niyayesh Seir importer and preserve the existing catalog amounts and API contract. No migration, dependency or deployment changes.
+
 ## FLOATING-TOUR-PICKER-1122 — PC-A — READY_FOR_CI
 
 Reserve the floating pricing tour list projection, picker and focused regression. Show route, branch, duration and identity for distinct same-name definitions. No schema or deployment change.

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { strFromU8, strToU8, zipSync, unzipSync } from 'fflate';
 import {
   floatingDate,
+  floatingMoney,
   floatingPrices,
   parseFloatingRows,
   readFloatingWorkbook,
@@ -217,6 +218,57 @@ it('detects formatted currencies and rejects mixed foreign currencies, negative 
   expect(() => floatingPrices({ dbl: c('$100'), sgl: c('€100') })).toThrow();
   expect(() => floatingPrices({ 'flight per person': c('100') })).toThrow();
   expect(() => floatingPrices({ dbl: c('-20') })).toThrow();
+});
+it('accepts Excel numeric precision noise while rejecting genuine extra decimals', () => {
+  const euroFormat = '[$€-2]\\ #,##0';
+  expect(
+    floatingPrices({
+      sgl: c('513.70000000000005', euroFormat, true),
+      'chd w bed': c('115.69999999999999', euroFormat, true),
+      'child no bed': c('55900000', '#,##0', true),
+      infant: c('5990000', '#,##0', true),
+      'flight per person': c('49900000', '#,##0', true),
+    }).prices,
+  ).toEqual({
+    single: [
+      { currency: 'EUR', amount: '513.7' },
+      { currency: 'IRR', amount: '499000000' },
+    ],
+    childBed: [
+      { currency: 'EUR', amount: '115.7' },
+      { currency: 'IRR', amount: '499000000' },
+    ],
+    childNoBed: [{ currency: 'IRR', amount: '559000000' }],
+    infant: [{ currency: 'IRR', amount: '59900000' }],
+  });
+  expect(floatingMoney(c('12.345600000000001', euroFormat, true))).toEqual([
+    { currency: 'EUR', amount: '12.3456' },
+  ]);
+  expect(() => floatingMoney(c('12.34567', euroFormat, true))).toThrow();
+  expect(() => floatingMoney(c('115.69999999999999 EUR'))).toThrow();
+});
+it('treats unavailable rates as empty, and treats zero child airfare as a rate', () => {
+  const unavailable = book({ SGL: 'N/A', 'flight child w bed': '–' }).map(
+    (row) => row.slice(0, -1),
+  );
+  unavailable[1]![7] = c('€115.7');
+  const [row] = parseFloatingRows(unavailable, options, tour, hotels);
+  expect(row?.prices.single).toBeUndefined();
+  expect(row?.prices.extra).toBeUndefined();
+  expect(row?.prices.childBed).toEqual([
+    { currency: 'EUR', amount: '115.7' },
+    { currency: 'IRR', amount: '500000000' },
+  ]);
+  expect(
+    floatingPrices({
+      'chd w bed': c('€115.7'),
+      'flight child w bed': c('0'),
+      'flight per person': c('50000000'),
+    }).prices.childBed,
+  ).toEqual([
+    { currency: 'EUR', amount: '115.7' },
+    { currency: 'IRR', amount: '0' },
+  ]);
 });
 it('requires unique registered hotels and date-room entries and only preserves an unambiguous previous room', () => {
   expect(() => parseFloatingRows(book(), options, tour, [])).toThrow();

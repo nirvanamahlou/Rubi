@@ -10477,3 +10477,7 @@ Nora guides B2B workflows and reads authorized status and filtered directory met
 Nora customer acceptance follow-up: explicit B2B questions use the organization guide, and B2C lookups use the supported minimum page size and existing customer query normalization.
 
 B2B directory reads and flight pricing references recover an expired access session once through the existing authenticated refresh flow.
+
+### Floating tour Excel prices (2026-11-22)
+
+The importer accepts Excel numeric precision artifacts while validating monetary scale. Unavailable optional rates can be left blank or marked with the Niyayesh Seir placeholders, and the EXTRA column may be omitted. Explicit zero remains a price. The shared fare composition adds adult airfare to DBL, SGL and EXTRA, and effective child airfare to CHD W BED and foreign-currency child no bed. Local child no bed, infant and commission stay separate from airfare. The website consumes the final amounts published by ERP.
