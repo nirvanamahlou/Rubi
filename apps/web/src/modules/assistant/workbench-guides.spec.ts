@@ -102,11 +102,16 @@ describe('vetted Workbench guidance', () => {
       12,
     );
     for (const t of workbenchGuideCatalog.topics) {
-      expect(t.href).toBe(
-        t.tab === 'call-center'
-          ? '/customer-affairs/call-center'
-          : `/workbench?tab=${t.tab}`,
-      );
+      if (t.tab === 'call-center')
+        expect(t.href).toMatch(
+          /^\/customer-affairs\/call-center(?:#cc-follow-up-queue)?$/,
+        );
+      else
+        expect(t.href).toBe(
+          t.tab === 'call-center'
+            ? '/customer-affairs/call-center'
+            : `/workbench?tab=${t.tab}`,
+        );
       expect(t.steps.length).toBeGreaterThan(1);
       expect(t.conditions.length).toBeGreaterThan(0);
       for (const source of t.sources)
@@ -315,5 +320,40 @@ it('finds the audio download guide outside the Call Center and explains missing 
   });
   expect(renderWorkbenchGuide(result!.topic!, 'troubleshoot')).toContain(
     'مدت نگهداری',
+  );
+});
+
+describe('Call Center catalogue', () => {
+  const ids = [
+    'branch',
+    'anonymous',
+    'save',
+    'callback-diagnosis',
+    'notes',
+    'assignment',
+    'notification',
+    'report-reconcile',
+  ];
+  it.each(ids)(
+    'resolves %s and replies without a model request',
+    async (id) => {
+      const topic = workbenchGuideCatalog.topics.find(
+        (item) => item.id === 'call-center-' + id,
+      )!;
+      const question = 'در کال‌سنتر ' + topic.aliases[0];
+      expect(resolveWorkbenchGuide(question)?.topic?.id).toBe(topic.id);
+      expect(
+        resolveWorkbenchGuide('بعدش چی؟', undefined, topic.id)?.topic?.id,
+      ).toBe(topic.id);
+      const fetcher = vi.fn<typeof fetch>();
+      const answer = await loadWorkbenchGuide(
+        topic,
+        'troubleshoot',
+        new AbortController().signal,
+        fetcher,
+      );
+      expect(answer).toContain(topic.troubleshooting[0]);
+      expect(fetcher).not.toHaveBeenCalled();
+    },
   );
 });
