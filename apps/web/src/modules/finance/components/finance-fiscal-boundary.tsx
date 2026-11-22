@@ -51,9 +51,9 @@ export function FinanceFiscalBoundary({ children }: { children: ReactNode }) {
         </p>
         <Link
           className="text-primary underline"
-          href="/finance/accounting/general-ledger/base-information/lists/fiscal-years"
+          href="/finance/accounting/general-ledger/base-information/ledgers"
         >
-          فهرست دوره‌های مالی
+          معرفی دفتر کل
         </Link>
       </section>
     );

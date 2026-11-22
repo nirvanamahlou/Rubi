@@ -1,3 +1,7 @@
+## 2026-11-22 — FISCAL-YEAR-LIST-1122 — PC-D
+
+The Accounting fiscal-year list is a read-only view of the selected company’s ledger allocations. It shows allocated years and dates through the authorized Accounting snapshot, keeps the company default as a label, and excludes definitions without an allocation. The missing-year prompt directs users to general ledger setup.
+
 ## 2026-11-21 — ORGANIZATION-DETAIL-TITLE-1121 — PC-D
 
 The corporate customer title picker opens the existing company form and lists active organization customers for the ledger branch. Save and select links the Customer profile to the eight-digit series-three detail. Web regressions and an isolated PostgreSQL round trip cover the picker action, the native company profile and branch and kind validation. No schema change.
