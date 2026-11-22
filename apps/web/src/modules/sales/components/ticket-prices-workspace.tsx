@@ -60,6 +60,7 @@ import {
   normalizePercent,
   validPercent,
   type TicketPriceRow,
+  type TicketPriceStatus,
 } from '../model/ticket-price-rows';
 import { ticketPriceExportRows } from '../model/ticket-prices-export';
 import targetStyles from './ticket-price-targets.module.css';
@@ -308,6 +309,7 @@ export function TicketPricesWorkspace() {
     {},
   );
   const [baseSavedId, setBaseSavedId] = useState('');
+  const [priceStatus, setPriceStatus] = useState<TicketPriceStatus>('ALL');
   const load = useCallback(async () => {
     setBusy(true);
     setError('');
@@ -403,13 +405,24 @@ export function TicketPricesWorkspace() {
           originId,
           destinationId,
           tripType,
+          priceStatus,
           query,
           from: dateFrom,
           to: dateTo,
         },
         label,
       ),
-    [rows, originId, destinationId, tripType, query, dateFrom, dateTo, label],
+    [
+      rows,
+      originId,
+      destinationId,
+      tripType,
+      priceStatus,
+      query,
+      dateFrom,
+      dateTo,
+      label,
+    ],
   );
   const branches = useMemo(
     () => [...new Set(offers.map((o) => o.branchId))],
@@ -1018,12 +1031,29 @@ export function TicketPricesWorkspace() {
               </div>
             </FormField>
           </div>
-          <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+          <div className="grid gap-3 sm:grid-cols-2 sm:items-end xl:grid-cols-[1fr_1fr_1fr_auto]">
             <FormField label="تاریخ رفت از">
               <SalesDatePicker value={dateFrom} onChange={setDateFrom} />
             </FormField>
             <FormField label="تاریخ رفت تا">
               <SalesDatePicker value={dateTo} onChange={setDateTo} />
+            </FormField>
+            <FormField label="وضعیت قیمت پایه">
+              <Select
+                value={priceStatus}
+                onValueChange={(value) =>
+                  setPriceStatus(value as TicketPriceStatus)
+                }
+              >
+                <SelectTrigger aria-label="وضعیت قیمت پایه">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
+                  <SelectItem value="PRICED">قیمت‌دار</SelectItem>
+                  <SelectItem value="UNPRICED">بدون قیمت</SelectItem>
+                </SelectContent>
+              </Select>
             </FormField>
             <Button
               variant="outline"
@@ -1031,6 +1061,7 @@ export function TicketPricesWorkspace() {
                 setOriginId('');
                 setDestinationId('');
                 setTripType('ALL');
+                setPriceStatus('ALL');
                 setQuery('');
                 setDateFrom('');
                 setDateTo('');
@@ -1147,153 +1178,135 @@ export function TicketPricesWorkspace() {
                             {row.base ? (
                               <div
                                 className={targetStyles.panel}
+                                role="group"
                                 aria-label="قیمت مقصدهای فروش"
                               >
-                                {Array.from(
-                                  { length: Math.ceil(channels.length / 2) },
-                                  (_, index) =>
-                                    channels.slice(index * 2, index * 2 + 2),
-                                ).map((group) => (
-                                  <div
-                                    key={group[0]!.id}
-                                    className={targetStyles.group}
-                                  >
-                                    <div className={targetStyles.heading}>
-                                      مقصد فروش · کمیسیون ٪ · قیمت
-                                    </div>
-                                    {group.map((target) => {
-                                      const targetId =
-                                        target.id === DIRECT_TARGET
-                                          ? null
-                                          : target.id;
-                                      const current =
-                                        row.offer.saleCommissions?.find(
-                                          (c) =>
-                                            c.returnOfferId ===
-                                              row.returnOfferId &&
-                                            c.salePriceTargetId === targetId,
+                                <div className={targetStyles.heading}>
+                                  مقصد فروش · کمیسیون ٪ · قیمت
+                                </div>
+                                {channels.map((target) => {
+                                  const targetId =
+                                    target.id === DIRECT_TARGET
+                                      ? null
+                                      : target.id;
+                                  const current =
+                                    row.offer.saleCommissions?.find(
+                                      (c) =>
+                                        c.returnOfferId === row.returnOfferId &&
+                                        c.salePriceTargetId === targetId,
+                                    );
+                                  const legacy =
+                                    targetId && !row.returnOfferId
+                                      ? row.offer.targetedStandaloneSalePrices?.find(
+                                          (p) =>
+                                            p.salePriceTarget.id === targetId,
+                                        )
+                                      : undefined;
+                                  const fieldKey = row.id + ':' + target.id;
+                                  const percent =
+                                    percentDrafts[fieldKey] ??
+                                    current?.percent ??
+                                    '0';
+                                  const net =
+                                    legacy &&
+                                    !current &&
+                                    percentDrafts[fieldKey] === undefined
+                                      ? legacy.amount
+                                      : netTicketPrice(
+                                          row.base!.amount,
+                                          percent,
                                         );
-                                      const legacy =
-                                        targetId && !row.returnOfferId
-                                          ? row.offer.targetedStandaloneSalePrices?.find(
-                                              (p) =>
-                                                p.salePriceTarget.id ===
-                                                targetId,
+                                  return (
+                                    <div
+                                      key={target.id}
+                                      className={targetStyles.row}
+                                    >
+                                      <strong className={targetStyles.name}>
+                                        {target.name}
+                                      </strong>
+                                      <Input
+                                        className="h-8 min-w-0 rounded-lg px-1 text-xs"
+                                        aria-label={
+                                          'درصد ' +
+                                          target.name +
+                                          ' برای ' +
+                                          row.id
+                                        }
+                                        inputMode="decimal"
+                                        dir="ltr"
+                                        value={percent}
+                                        onChange={(e) =>
+                                          setPercentDrafts((p) => ({
+                                            ...p,
+                                            [fieldKey]: normalizePercent(
+                                              e.target.value,
+                                            ),
+                                          }))
+                                        }
+                                        aria-invalid={!validPercent(percent)}
+                                      />
+                                      <strong
+                                        dir="ltr"
+                                        className={targetStyles.price}
+                                      >
+                                        {validPercent(percent) &&
+                                        Number(percent) === 100
+                                          ? 'عدم نمایش'
+                                          : net
+                                            ? formatAmount(net) +
+                                              ' ' +
+                                              (legacy &&
+                                              !current &&
+                                              percentDrafts[fieldKey] ===
+                                                undefined
+                                                ? legacy.currencyCode
+                                                : row.base!.currencyCode)
+                                            : 'درصد نامعتبر'}
+                                      </strong>
+                                      <div className={targetStyles.actions}>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="min-h-8 px-2"
+                                          aria-label={'ثبت درصد ' + target.name}
+                                          onClick={() =>
+                                            void saveCommission(
+                                              row,
+                                              target.id,
+                                              false,
                                             )
-                                          : undefined;
-                                      const fieldKey = row.id + ':' + target.id;
-                                      const percent =
-                                        percentDrafts[fieldKey] ??
-                                        current?.percent ??
-                                        '0';
-                                      const net =
-                                        legacy &&
-                                        !current &&
-                                        percentDrafts[fieldKey] === undefined
-                                          ? legacy.amount
-                                          : netTicketPrice(
-                                              row.base!.amount,
-                                              percent,
-                                            );
-                                      return (
-                                        <div
-                                          key={target.id}
-                                          className={targetStyles.row}
+                                          }
+                                          disabled={
+                                            !!saving || !validPercent(percent)
+                                          }
+                                          loading={saving === fieldKey}
                                         >
-                                          <strong className={targetStyles.name}>
-                                            {target.name}
-                                          </strong>
-                                          <Input
-                                            className="h-8 min-w-0 rounded-lg px-1 text-xs"
-                                            aria-label={
-                                              'درصد ' +
-                                              target.name +
-                                              ' برای ' +
-                                              row.id
-                                            }
-                                            inputMode="decimal"
-                                            dir="ltr"
-                                            value={percent}
-                                            onChange={(e) =>
-                                              setPercentDrafts((p) => ({
-                                                ...p,
-                                                [fieldKey]: normalizePercent(
-                                                  e.target.value,
-                                                ),
-                                              }))
-                                            }
-                                            aria-invalid={
-                                              !validPercent(percent)
-                                            }
-                                          />
-                                          <strong
-                                            dir="ltr"
-                                            className={targetStyles.price}
-                                          >
-                                            {validPercent(percent) &&
-                                            Number(percent) === 100
-                                              ? 'عدم نمایش'
-                                              : net
-                                                ? formatAmount(net) +
-                                                  ' ' +
-                                                  (legacy &&
-                                                  !current &&
-                                                  percentDrafts[fieldKey] ===
-                                                    undefined
-                                                    ? legacy.currencyCode
-                                                    : row.base!.currencyCode)
-                                                : 'درصد نامعتبر'}
-                                          </strong>
-                                          <div className={targetStyles.actions}>
-                                            <Button
-                                              variant="outline"
-                                              size="sm"
-                                              className="min-h-8 px-2"
-                                              aria-label={
-                                                'ثبت درصد ' + target.name
-                                              }
-                                              onClick={() =>
-                                                void saveCommission(
-                                                  row,
-                                                  target.id,
-                                                  false,
-                                                )
-                                              }
-                                              disabled={
-                                                !!saving ||
-                                                !validPercent(percent)
-                                              }
-                                              loading={saving === fieldKey}
-                                            >
-                                              ثبت
-                                            </Button>
-                                            <Button
-                                              variant="outline"
-                                              size="sm"
-                                              className="min-h-8 px-2"
-                                              aria-label="کپی درصد برای این مقصد"
-                                              title="برای تمام بلیت‌های قیمت‌دار همین شعبه، حتی خارج از فیلتر"
-                                              onClick={() =>
-                                                void saveCommission(
-                                                  row,
-                                                  target.id,
-                                                  true,
-                                                )
-                                              }
-                                              disabled={
-                                                !!saving ||
-                                                !validPercent(percent)
-                                              }
-                                            >
-                                              <Copy className="size-3" />
-                                              کپی
-                                            </Button>
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                ))}
+                                          ثبت
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="min-h-8 px-2"
+                                          aria-label="کپی درصد برای این مقصد"
+                                          title="برای تمام بلیت‌های قیمت‌دار همین شعبه، حتی خارج از فیلتر"
+                                          onClick={() =>
+                                            void saveCommission(
+                                              row,
+                                              target.id,
+                                              true,
+                                            )
+                                          }
+                                          disabled={
+                                            !!saving || !validPercent(percent)
+                                          }
+                                        >
+                                          <Copy className="size-3" />
+                                          کپی
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             ) : (
                               <p className="mt-2 text-sm text-muted-foreground">

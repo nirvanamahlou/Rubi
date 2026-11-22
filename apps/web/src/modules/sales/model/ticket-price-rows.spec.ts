@@ -306,6 +306,22 @@ describe('unpriced defined load pairs', () => {
       filterTicketRows(rows, { ...filters, tripType: 'ONEWAY' }, (o) => o.id),
     ).toHaveLength(2);
   });
+  it('filters saved and unpriced base fares independently of the paired legs', () => {
+    const rows = ticketPriceRows([
+      going,
+      { ...back, standaloneSalePrice: null },
+    ]);
+    const ids = (priceStatus: 'PRICED' | 'UNPRICED', tripType = 'ALL') =>
+      filterTicketRows(
+        rows,
+        { ...filters, priceStatus, tripType },
+        (o) => o.id,
+      ).map((row) => row.id);
+    expect(ids('PRICED')).toEqual(['out']);
+    expect(ids('UNPRICED')).toEqual(['back', 'out:back']);
+    expect(ids('UNPRICED', 'ROUNDTRIP')).toEqual(['out:back']);
+    expect(ids('PRICED', 'ROUNDTRIP')).toEqual([]);
+  });
   it('never pairs another load, branch, cabin or outside the return window', () => {
     for (const change of [
       { loadGroupId: 'other' },

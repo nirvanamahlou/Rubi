@@ -1,14 +1,5 @@
 .panel {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
-  align-content: start;
-  align-items: start;
   margin-top: 0.5rem;
-  gap: 0.5rem;
-  min-width: 0;
-}
-
-.group {
   container-type: inline-size;
   min-width: 0;
   border: 1px solid var(--border);

@@ -22,6 +22,7 @@ export type TicketPriceRow = {
       }
     | undefined;
 };
+export type TicketPriceStatus = 'ALL' | 'PRICED' | 'UNPRICED';
 export function ticketCabinLabel(code: TicketOfferV1['cabinClassCode']) {
   return (
     ({ ECONOMY: 'اکونومی', BUSINESS: 'بیزینس', FIRST: 'فرست' } as const)[
@@ -139,6 +140,7 @@ export function filterTicketRows(
     originId: string;
     destinationId: string;
     tripType: string;
+    priceStatus?: TicketPriceStatus;
     query: string;
     from: string;
     to: string;
@@ -146,6 +148,11 @@ export function filterTicketRows(
   label: (offer: TicketOfferV1) => string,
 ) {
   return rows.filter((row) => {
+    if (
+      (filters.priceStatus === 'PRICED' && !row.base) ||
+      (filters.priceStatus === 'UNPRICED' && row.base)
+    )
+      return false;
     if (
       !ticketOfferRoutes(row.offer).some(
         (r) =>
