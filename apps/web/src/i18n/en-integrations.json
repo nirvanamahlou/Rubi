@@ -1,4 +1,10 @@
 {
+  "اجازه انتشار پروفایل هتل‌های این تور": "Allow publishing this tour’s hotel profiles",
+  "پیش‌نمایش تحویل شد": "Preview delivered",
+  "پیش‌نمایش عمومی تور": "Public tour preview",
+  "رزرو تور برای قسطی‌رو فعال نیست.": "Tour booking is unavailable for Ghestiroo.",
+  "قسطی‌رو": "Ghestiroo",
+  "قیمت نمایشی تور در سایت": "Tour prices displayed on the website",
   "اتصال و خدمات": "Connection and services",
   "اتصال API": "API connection",
   "اتصال API این سایت هنوز تنظیم نشده است.": "This site's API connection has not been configured yet.",
