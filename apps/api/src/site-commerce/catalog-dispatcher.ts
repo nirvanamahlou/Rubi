@@ -114,7 +114,7 @@ export class WebsiteCatalogDispatcher implements OnModuleInit, OnModuleDestroy {
       const nextRefreshAt = await this.commerce.nextCatalogCapacityChange(
         binding.branchId,
       );
-      const catalog = await (site === 'jahan-bastan'
+      const catalog = await (config.floatingTours
         ? this.commerce.catalog(site, actor, true)
         : this.commerce.catalog(site, actor));
       const body = JSON.stringify({

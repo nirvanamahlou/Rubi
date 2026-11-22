@@ -1,10 +1,15 @@
-import { financeCodingProfile, financeCodingProfiles } from '@nora/contracts';
+import {
+  allowsManualFinanceCode,
+  financeCodingProfile,
+  financeCodingProfiles,
+} from '@nora/contracts';
 import { assertFinanceCodeUnissued } from '../../system-management/finance-coding.public';
 import {
   allocateFinanceAccountingCode,
   assertFinanceCodingTypeUnchanged,
   newFinanceCodingTypes,
   setupFinanceCodingTypes,
+  suggestFinanceAccountingCode,
 } from './finance-coding-types';
 import {
   newOwnerTypes,
@@ -475,6 +480,31 @@ export class AccountingService {
       return created;
     });
   }
+  async detailCodeSuggestion(
+    bookId: string,
+    rawTypeId: unknown,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, 'finance.account.manage');
+    const tx = this.database.client;
+    await this.book(tx, bookId, actor);
+    const type = await tx.accountingConfiguration.findFirst({
+      where: {
+        id: v.uuid(rawTypeId)!,
+        bookId,
+        kind: 'detail-types',
+        active: true,
+      },
+      select: { code: true },
+    });
+    const profile = financeCodingProfile(type?.code);
+    if (!profile || !allowsManualFinanceCode(profile))
+      throw new NotFoundException(
+        'برای این نوع تفصیلی پیشنهاد کد در دسترس نیست.',
+      );
+    return { code: await suggestFinanceAccountingCode(tx, profile) };
+  }
+
   async snapshot(id: string, actor: AuthenticatedActor) {
     this.require(actor);
     return this.database.client.$transaction(
@@ -4142,8 +4172,8 @@ export class AccountingService {
       const supplied = detailDigits(v.text(p.code, 20));
       let detailCode: string;
       if (codingProfile) {
-        if (supplied && supplied !== existing?.code)
-          v.rule('کد تفصیلی ۸ رقمی به‌صورت خودکار صادر می‌شود.');
+        if (existing && supplied && supplied !== existing.code)
+          v.rule('کد حساب تفصیلی پس از ثبت قابل تغییر نیست.');
         detailCode =
           existing?.code ??
           (await allocateFinanceAccountingCode(
@@ -4151,6 +4181,7 @@ export class AccountingService {
             codingProfile,
             actor.userId,
             id,
+            supplied,
           ));
       } else {
         const width = detailWidth(typeAttrs.classificationNumberLength);
@@ -4221,7 +4252,7 @@ export class AccountingService {
       const sourceOwner = await resolveDetailOwner(
         tx,
         book,
-        detailType.title,
+        detailType,
         p,
         existing?.typeId === typeId ? existing : null,
       );

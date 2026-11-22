@@ -1,0 +1,70 @@
+.package-page:is(.antalya-airtour,.malaysia-singapore-azar) {
+  background: #fff;
+  color: #062b60;
+}
+.azar-side {
+  position: absolute;
+  inset: 0 auto 56px 0;
+  width: 142px;
+  background-repeat: no-repeat;
+  background-color: #062b60;
+}
+.azar-logo { position: absolute; background-repeat: no-repeat; }
+.azar-footer {
+  position: absolute;
+  inset: auto 0 0;
+  height: 56px;
+  display: grid;
+  align-items: center;
+  justify-items: start;
+  padding-inline: 30px;
+  direction: ltr;
+  background: #062b60;
+  color: #fff;
+  font-size: 18px;
+}
+.package-page:is(.antalya-airtour,.malaysia-singapore-azar) .title-slot {
+  font-size: 50px;
+}
+.package-page:is(.antalya-airtour,.malaysia-singapore-azar) .date-slot {
+  background: #062b60;
+  border-radius: 22px;
+  font-size: 19px;
+}
+.package-page:is(.antalya-airtour,.malaysia-singapore-azar) .custom-header { gap: 0; }
+.package-page:is(.antalya-airtour,.malaysia-singapore-azar) .data-table {
+  border-collapse: collapse;
+}
+.package-page:is(.antalya-airtour,.malaysia-singapore-azar) .data-table td {
+  border: 1px solid #d6e1ee;
+  padding: 0 4px;
+  font-weight: 700;
+}
+.package-page:is(.antalya-airtour,.malaysia-singapore-azar) .data-row:nth-child(even) td {
+  background: #e9f2fb;
+}
+.package-page.malaysia-singapore-azar .city-note { display: none; }
+.package-page:is(.antalya-airtour,.malaysia-singapore-azar) :is(.value-slot,.adjustments-slot,.services-slot) {
+  border: 1px solid #6e8cae;
+  border-radius: 12px;
+  background: #fff;
+  color: #062b60;
+  padding: 5px 10px;
+  font-size: 16px;
+  line-height: 1.45;
+  white-space: pre-line;
+  text-align: center;
+}
+.azar-card-label { font-size: 14px; font-weight: 700; }
+.package-page:is(.antalya-airtour,.malaysia-singapore-azar) .value-slot b { font-size: 25px; }
+.package-page:is(.antalya-airtour,.malaysia-singapore-azar) .value-slot small { font-size: 13px; }
+.package-page:is(.antalya-airtour,.malaysia-singapore-azar) .adjustments-slot {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  align-content: center;
+}
+.package-page:is(.antalya-airtour,.malaysia-singapore-azar) .data-table td {
+  border-radius: 0;
+}
+.azar-footer { font-size: 14px; }

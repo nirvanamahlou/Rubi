@@ -348,18 +348,15 @@ export class SiteCommerceService {
     if (!['ticket', 'tour', 'floating-tour'].includes(kind))
       throw new BadRequestException();
     const periodKey = this.publicationPeriod(kind, requestedPeriod);
-    const delivery =
-      site === 'ghestiroo' && kind !== 'ticket'
-        ? null
-        : await this.db.client.websiteCatalogDelivery.findFirst({
-            where: { siteCode: site, branchId },
-            select: {
-              lastError: true,
-              deliveredAt: true,
-              deliveredRevision: true,
-              revision: true,
-            },
-          });
+    const delivery = await this.db.client.websiteCatalogDelivery.findFirst({
+      where: { siteCode: site, branchId },
+      select: {
+        lastError: true,
+        deliveredAt: true,
+        deliveredRevision: true,
+        revision: true,
+      },
+    });
     const deliveryStatus = !delivery
       ? 'unconfigured'
       : delivery.lastError
@@ -368,6 +365,12 @@ export class SiteCommerceService {
             delivery.deliveredRevision === delivery.revision
           ? 'accepted'
           : 'pending';
+    const deliveryDetails = delivery && {
+      deliveredAt: delivery.deliveredAt,
+      revision: delivery.revision.toString(),
+      deliveredRevision: delivery.deliveredRevision.toString(),
+      lastError: delivery.lastError,
+    };
     const data = await this.db.client.websitePublication.findFirst({
       where: { siteCode: site, kind, resourceId, branchId, periodKey },
     });
@@ -384,11 +387,12 @@ export class SiteCommerceService {
       const names = new Map(profiles.map((hotel) => [hotel.id, hotel.name]));
       return {
         deliveryStatus,
+        deliveryDetails,
         data,
         previewHotels: ids.map((id) => ({ id, name: names.get(id) ?? id })),
       };
     }
-    return { deliveryStatus, data };
+    return { deliveryStatus, deliveryDetails, data };
   }
 
   async publish(
@@ -416,8 +420,6 @@ export class SiteCommerceService {
       throw new BadRequestException('انتشار سایت معتبر نیست.');
     if (!actor.permissions.includes('ticket_catalog.manage'))
       throw new ForbiddenException();
-    if (site === 'ghestiroo' && kind !== 'ticket' && input.enabled)
-      throw new BadRequestException('اتصال فروش قسطی‌رو برای پرواز فعال است.');
     const branchId = this.publicationBranch(site, actor, input.branchId);
     const periodKey = this.publicationPeriod(kind, input.periodKey ?? '');
     const key = {
@@ -504,12 +506,24 @@ export class SiteCommerceService {
       )
         throw new BadRequestException('قیمت منتشرشده پکیج الزامی است.');
     }
+    const ghestirooTour = site === 'ghestiroo' && kind !== 'ticket';
+    const storedPresentation = ghestirooTour
+      ? {
+          ...(presentation ??
+            currentPresentation ?? {
+              title: '',
+              description: '',
+              commissionPercent: '0',
+            }),
+          operatorApproved: true,
+        }
+      : presentation;
     if (!row)
       return {
         data: await this.db.client.websitePublication.create({
           data: {
             ...key,
-            ...(presentation ? { presentation } : {}),
+            ...(storedPresentation ? { presentation: storedPresentation } : {}),
             enabled: input.enabled,
             salesStopped: previewOnly || (input.salesStopped ?? false),
           },
@@ -519,8 +533,13 @@ export class SiteCommerceService {
       where: { id: row.id, version: input.version },
       data: {
         enabled: input.enabled,
-        ...(presentation ? { presentation } : {}),
-        salesStopped: previewOnly || (input.salesStopped ?? row.salesStopped),
+        ...(storedPresentation ? { presentation: storedPresentation } : {}),
+        salesStopped:
+          previewOnly ||
+          (input.salesStopped ??
+            (ghestirooTour && currentPresentation?.previewOnly
+              ? false
+              : row.salesStopped)),
         version: { increment: 1 },
       },
     });
@@ -625,13 +644,11 @@ export class SiteCommerceService {
       where: {
         siteCode: site,
         branchId: scoped.branchIds[0]!,
-        ...(site === 'ghestiroo'
-          ? { kind: 'ticket' }
-          : floatingOnly
-            ? { kind: 'floating-tour' }
-            : !includeFloating
-              ? { kind: { in: ['ticket', 'tour'] } }
-              : {}),
+        ...(floatingOnly
+          ? { kind: 'floating-tour' }
+          : !includeFloating
+            ? { kind: { in: ['ticket', 'tour'] } }
+            : {}),
       },
       orderBy: { id: 'asc' },
       take: 501,
@@ -644,7 +661,14 @@ export class SiteCommerceService {
     for (const row of rows) {
       // Legacy sites must explicitly opt into the additive floating-tour product contract.
       if (row.kind === 'floating-tour' && !includeFloating) continue;
-      if (!row.enabled) {
+      // Older rows could be created automatically when package pricing was saved.
+      // Require the explicit destination action before releasing a Ghestiroo tour.
+      const approved =
+        site !== 'ghestiroo' ||
+        row.kind === 'ticket' ||
+        (row.presentation as { operatorApproved?: boolean } | null)
+          ?.operatorApproved === true;
+      if (!row.enabled || !approved) {
         data.push({
           id: row.id,
           kind: row.kind,
@@ -724,11 +748,16 @@ export class SiteCommerceService {
             )
           : [];
         const hotels =
-          floatingTour && floatingRooms.length
+          floatingTour && (site === 'ghestiroo' || floatingRooms.length)
             ? await this.references.publishedHotelProfiles(
-                floatingRooms.flatMap((room) =>
-                  room.stays.map((stay) => stay.hotelId),
-                ),
+                site === 'ghestiroo'
+                  ? [
+                      ...floatingTour.dated,
+                      ...(floatingTour.monthly?.rows ?? []),
+                    ].flatMap((row) => row.stays.map((stay) => stay.hotelId))
+                  : floatingRooms.flatMap((room) =>
+                      room.stays.map((stay) => stay.hotelId),
+                    ),
               )
             : 'tour' in product && product.tour && product.rooms
               ? await this.references.publishedHotelProfiles([
@@ -942,6 +971,8 @@ export class SiteCommerceService {
         }));
     if (!resources.length || tourIds.length > 1)
       throw new BadRequestException('محصول ERP را انتخاب کنید.');
+    if (site === 'ghestiroo' && tourIds.length)
+      throw new ForbiddenException('رزرو تور برای قسطی‌رو فعال نیست.');
     for (const resource of resources) {
       const published = await this.db.client.websitePublication.findUnique({
         where: {
@@ -1205,6 +1236,8 @@ export class SiteCommerceService {
     scoped: AuthenticatedActor,
     input: FloatingWebsiteBooking,
   ) {
+    if (site === 'ghestiroo')
+      throw new ForbiddenException('رزرو تور برای قسطی‌رو فعال نیست.');
     assertWebsiteBookable('floating-tour');
     const publication = await this.db.client.websitePublication.findFirst({
       where: {

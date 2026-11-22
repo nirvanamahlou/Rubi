@@ -1,3 +1,7 @@
+## NORA-CALL-CATALOG-1122 — PC-C — ACTIVE
+
+Reserve the Nora guide catalogues, shared guide reader, scoped tests and coverage notes. Preserve the Call Center UI and producer contracts.
+
 ## PREVIEW-PER-HOTEL-1122 — PC-A — READY_FOR_CI
 
 Reserve the website preview editor, publication presentation validator, catalogue projection and focused tests. Assign rates by the selected departure's hotel IDs and retain historical shared previews. Owner authorizes develop merge. No schema or deploy change.
@@ -3009,6 +3013,10 @@ and post-merge results follow in the PR. Shared Core/data remain preserved.
 - ابزار Generator منبع استاتیک هم‌مبدأ است و هیچ داده قیمت‌گذاری را از API دریافت نمی‌کند؛ بنابراین کنترل دو مجوز `package_pricing.read` و `package_pricing.render` فقط از همین مسیر برداشته می‌شود و احراز هویت عمومی CRM و کنترل دسترسی APIهای قیمت‌گذاری حفظ می‌شوند.
 - نتیجه: Workspace بدون درخواست Session/API مستقیماً ابزار را نمایش می‌دهد؛ در نتیجه کاربران واردشده بدون مجوز قیمت‌گذاری نیز روی هر کامپیوتر به Generator دسترسی دارند و بارگذاری اولیه یک درخواست شبکه کمتر دارد. ۶ تست هدفمند، lint، typecheck و Production Build با Webpack و ۵۲ مسیر موفق‌اند؛ Build پیش‌فرض Turbopack فقط به محدودیت symlink محیط worktree برخورد کرد.
 
+## PACKAGE-GENERATOR-AZAR-CI-1122 — PC-D — READY_FOR_CI
+
+Reserve English application and standalone package catalogues and package generator assertions to restore CI after PR #1861. No renderer, template data, or deployment changes.
+
 ## PACKAGE-GENERATOR-TEMPLATE-REFRESH-0923 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-23: هفت تصویر اصلاح‌شدهٔ قالب‌های مالزی و تایلند جایگزین نسخه‌های قدیمی همان شهرها شوند.
@@ -3559,6 +3567,10 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
   و build تولیدی ۴۶ مسیر موفق‌اند؛ ادغام و فعال‌سازی Web3100 مجاز است.
 - هر چهار Gate CI پاس شدند؛ PR #246 با Merge Commit `88d26ebc` وارد `develop` شد.
   Web3100 با Build ID `60YeidM5vzsZuojUx7D85` فعال و API4190 سالم است؛ رزرو آزاد شد.
+
+## PERSONNEL-DETAIL-TITLES-1122 — PC-D — READY_FOR_CI
+
+Reserve personnel detail title picker, person/site reference forms and their existing Accounting reference command, translations, and focused tests. Uses the existing ledger-scoped configuration and detail links.
 
 ## FINANCE-004-ACCOUNTING-SECONDARY-NAV — PC-A — COMPLETE / MERGED
 
@@ -13303,3 +13315,22 @@ COMPUTER_ID=PC-A; branch codex/pc-a-ticket-voucher-1122 from develop29c6c57b7. U
 ## FISCAL-YEAR-LIST-1122 — PC-D — COMPLETED
 
 Reserve the Accounting fiscal-year list route, removal of its actions from the shared list UI, the fiscal boundary setup link, scoped Web tests and translations, and task/status notes. Resolve the company through fiscal context and read its allocated periods through the existing authorized ledger snapshot. Ledger commands, permissions and data contracts are outside this unit.
+
+## DETAIL-CODE-SUGGESTIONS-1122 — PC-D — COMPLETED
+
+Reserve the Accounting detail editor and year-independent suggestion endpoint, the System Management issued-code public projection and transaction allocator, their additive Contracts capability flag, and focused Web/API regressions. The Accounting producer serves the same code format and ledger access to the Web consumer. Existing detail IDs, issued codes and bank numbering remain compatible. No migration or data backfill.
+
+### PACKAGE-GENERATOR-AZAR-1122 (PC-B)
+
+Scoped XLSX support and poster profiles for Antalya Iran Airtour and Kuala Lumpur plus Singapore. Reuse package-generator renderer; no API, schema or dependency changes.
+
+## CROSS-COUNTRY-TICKET-DESTINATIONS-1122 — PC-A — READY_FOR_CI
+
+Allow extra sales destinations across countries in the flight schedule. Shared capacity and endpoint filters are covered by focused tests.
+
+## GHESTIROO-TOURS-1122 — PC-D
+
+Reserve the Ghestiroo destination policy and its signed tour delivery on
+`codex/pc-d-ghestiroo-tours-1122` from develop. The producer extends the existing
+v1 snapshot for the Ghestiroo consumer and keeps its tour order intake disabled.
+Other destinations retain their product policy, credentials and checkout.
