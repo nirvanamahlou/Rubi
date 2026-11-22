@@ -1,3 +1,7 @@
+## NORA-CALENDAR-1122 — PC-C — READY_FOR_REVIEW
+
+Reserve Assistant financial-period resolution, verified sales evidence integration and focused tests. No schema, dependency or deployment change.
+
 ## FLOATING-TOUR-PICKER-1122 — PC-A — READY_FOR_CI
 
 Reserve the floating pricing tour list projection, picker and focused regression. Show route, branch, duration and identity for distinct same-name definitions. No schema or deployment change.

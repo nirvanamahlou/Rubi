@@ -1,3 +1,7 @@
+## NORA-CALENDAR-1122 — PC-C
+
+Resolve ordinary Persian sales comparisons on the server using Tehran calendar boundaries and verified Sales evidence. Keep the existing completed-day report limit. Local synthetic acceptance only.
+
 ## 2026-11-21 — ORGANIZATION-DETAIL-TITLE-1121 — PC-D
 
 The corporate customer title picker opens the existing company form and lists active organization customers for the ledger branch. Save and select links the Customer profile to the eight-digit series-three detail. Web regressions and an isolated PostgreSQL round trip cover the picker action, the native company profile and branch and kind validation. No schema change.

@@ -142,7 +142,7 @@ test('successful JSON final answer retains evidence validation by the agent', as
   assert.deepEqual(step.args.resultIds, []);
 });
 const resultId = '12345678-1234-1234-1234-123456789abc';
-const message = { version: 1, message: 'فروش این ماه چقدر بوده؟', history: [] };
+const message = { version: 1, message: 'فروش چقدر بوده؟', history: [] };
 const signal = () => new AbortController().signal;
 const catalog = {
   version: 1,

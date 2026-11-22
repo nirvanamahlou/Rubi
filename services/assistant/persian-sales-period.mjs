@@ -118,3 +118,75 @@ export function resolvePersianSalesPeriod(message, now = new Date()) {
     endExclusiveUtc: midnight(nextDate),
   };
 }
+
+export const civilShift = (date, offset) =>
+  new Date(Date.parse(date + 'T00:00:00Z') + offset * day)
+    .toISOString()
+    .slice(0, 10);
+
+export const tehranCivilDate = (now) => civil.format(new Date(now));
+
+export function resolveRelativeSalesPeriods(message, now) {
+  const text = normalizeSalesText(message);
+  const gregorian = /میلادی/.test(text);
+  const today = tehranCivilDate(now);
+  const dow = new Date(today + 'T00:00:00Z').getUTCDay();
+  const startOfWeek = civilShift(today, -((dow + (gregorian ? 6 : 1)) % 7));
+  const current = parts(gregorian ? civil : calendar, now);
+  const make = (startDate, endDate, partial = false, cutoff) => ({
+    startDate,
+    endDate,
+    startUtc: midnight(startDate),
+    endExclusiveUtc:
+      cutoff ??
+      (partial ? now.toISOString() : midnight(civilShift(endDate, 1))),
+    partial,
+    calendar: gregorian ? 'gregory' : 'persian',
+  });
+  const pattern =
+    /این (هفته|ماه|سال)|(هفته|ماه|سال) (?:ی )?(قبل تر|قبلی تر|پیش تر|گذشته|قبل|پیش)|(?:هفت|7) روز گذشته/g;
+  const terms = [...text.matchAll(pattern)];
+  if (!terms.length) return null;
+  const matchedTime = /تا همین (?:موقع|زمان)/.test(text);
+  const periods = terms.map((term) => {
+    const unit = term[1] ?? term[2];
+    if (!unit) return make(civilShift(today, -7), civilShift(today, -1));
+    const offset = term[1] ? 0 : term[3].endsWith(' تر') ? -2 : -1;
+    if (unit === 'هفته') {
+      const start = civilShift(startOfWeek, offset * 7);
+      const sameDay = civilShift(today, offset * 7);
+      const cutoff = new Date(
+        Date.parse(midnight(sameDay)) +
+          now.getTime() -
+          Date.parse(midnight(today)),
+      ).toISOString();
+      return make(
+        start,
+        offset === 0 ? today : matchedTime ? sameDay : civilShift(start, 6),
+        offset === 0 || matchedTime,
+        matchedTime ? cutoff : undefined,
+      );
+    }
+    const monthIndex =
+      current.year * 12 + (unit === 'سال' ? 0 : current.month - 1);
+    const edge = (shift) => {
+      const n = monthIndex + shift * (unit === 'سال' ? 12 : 1);
+      const y = Math.floor(n / 12);
+      const m = (n % 12) + 1;
+      return gregorian
+        ? new Date(Date.UTC(y, m - 1, 1)).toISOString().slice(0, 10)
+        : gregorianDate(y, m, 1);
+    };
+    return make(
+      edge(offset),
+      offset === 0 ? today : civilShift(edge(offset + 1), -1),
+      offset === 0,
+    );
+  });
+  if (
+    periods.length > 2 ||
+    (periods.length === 2 && periods[0].startDate === periods[1].startDate)
+  )
+    return [];
+  return periods;
+}
