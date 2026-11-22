@@ -2,6 +2,10 @@
 
 Reserve the Nora guide catalogues, shared guide reader, scoped tests and coverage notes. Preserve the Call Center UI and producer contracts.
 
+## PASSENGER-IDENTITY-PREFLIGHT-1117 — PC-A — ACTIVE
+
+Owner request: read-only passenger identity and passport validation before website review and payment. Scope is Customers, SiteCommerce and the website checkout. No migration or dependency changes.
+
 ## PREVIEW-PER-HOTEL-1122 — PC-A — READY_FOR_CI
 
 Reserve the website preview editor, publication presentation validator, catalogue projection and focused tests. Assign rates by the selected departure's hotel IDs and retain historical shared previews. Owner authorizes develop merge. No schema or deploy change.
