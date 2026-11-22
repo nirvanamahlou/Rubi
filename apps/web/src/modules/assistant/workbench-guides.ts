@@ -52,7 +52,9 @@ export function resolveWorkbenchGuide(
       ? 'substitute'
       : /لغو|حذف/.test(text)
         ? 'request-delete'
-        : /(?:مراحل|روند) (?:تایید|تأیید) مرخصی/.test(text)
+        : /(?:مراحل|روند) (?:تایید|تأیید) مرخصی|(?:تایید|تأیید) و پیگیری مرخصی/.test(
+              text,
+            )
           ? 'leave-approval'
           : /تایید|تأیید|وضعیت|رد شده|ردشده/.test(text)
             ? 'request-status'
