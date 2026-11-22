@@ -7,6 +7,7 @@ import {
   type FloatingTourGroup,
   type FloatingTourSaleRow,
   type FloatingTourImportOptions,
+  type FloatingTourImportPreview,
   type FloatingTourStay,
   type TourPackageInputV1,
 } from '@nora/contracts';
@@ -346,15 +347,11 @@ export function resolveFloatingHotelCells(
   workbook: FloatingCell[][],
   hotels: FloatingHotelReference[],
   selections: Record<string, string> = {},
-): NonNullable<
-  import('@nora/contracts').FloatingTourImportPreview['hotelMatches']
-> {
+): NonNullable<FloatingTourImportPreview['hotelMatches']> {
   const columns = (workbook[0] ?? []).flatMap((cell, index) =>
     /^hotel_name(?:_[12])?$/i.test(cell?.value.trim() ?? '') ? [index] : [],
   );
-  const issues: NonNullable<
-    import('@nora/contracts').FloatingTourImportPreview['hotelMatches']
-  > = [];
+  const issues: NonNullable<FloatingTourImportPreview['hotelMatches']> = [];
   const suggestions = new Map<string, (typeof issues)[number]['candidates']>();
   const exactCounts = new Map<string, number>();
   const directory = hotels.map((hotel) => ({
@@ -381,7 +378,7 @@ export function resolveFloatingHotelCells(
         candidates = directory
           .map((hotel) => ({
             id: hotel.id,
-            name: hotel.englishName || hotel.name,
+            name: hotel.name,
             score: Math.max(
               0,
               ...hotel.names.map(({ name, pairs: reference }) => {
