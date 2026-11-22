@@ -34,6 +34,10 @@ Reserve the tour pricing workspace preview editor and translations. Use branch-s
 
 Reserve the floating pricing tour list projection, picker and focused regression. Show route, branch, duration and identity for distinct same-name definitions. No schema or deployment change.
 
+## TICKET-PRICE-FILTER-1122 — PC-A
+
+Reserve the Sales ticket pricing workspace, its filter model, destination styles, focused tests and UI labels on `codex/pc-a-ticket-price-filter-1122` from `develop@aa76ec30d`. Group sales destinations in one panel per ticket and filter existing rows by saved base price. Preserve commissions, search, export and price writes. No API or schema changes.
+
 ## FLOATING-EXCEL-PRECISION-1122 — PC-A — READY_FOR_CI
 
 Reserve floating tour Excel amount parsing and its focused API tests. The Niyayesh Seir importer and ERP price composition were checked together, along with 31 rows of the supplied workbook using test hotel references. No migration, dependency or deployment changes.

@@ -1852,6 +1852,8 @@ Reservations replaces the full Sales contract-profit action with a hotel-only co
 
 Flight pricing uses compact responsive two-column cards, smaller summaries and channel rows, a collapsed manual pair editor, and directly selectable all/one-way/round-trip modes. Unpriced reverse legs from the same published load, branch and cabin within an explicit return window are offered automatically; saved/manual prices take precedence and are not duplicated. This is a pricing candidate projection, not a persisted new fare. Older offers without load identity remain available through the manual editor. Fifteen focused model/render regressions pass. No API/schema/migration/dependency or live price mutations. Full quality/build checks gate the user-authorized develop merge.
 
+Flight pricing displays a single sales-destination panel per ticket card. The saved-base-price filter applies independently to one-way and round-trip rows and follows the same filtered rows in Excel export.
+
 ## 2026-10-13 — HOTEL-IMPORT-CITY-NORMALIZE-1013 — PC-B
 
 Hotel Excel import accepts equivalent city spelling across whitespace/joiners,
