@@ -151,7 +151,9 @@ export function AccountingDetailEditor({
     !!draft.code &&
     financeCodingProfileForValue(draft.code) !== editableCodingProfile;
   const [ownerSearch, setOwnerSearch] = useState('');
-  const sourceKind = !isType ? detailOwnerKind(type?.title ?? '') : undefined;
+  const sourceKind = !isType
+    ? detailOwnerKind(type?.title ?? '', type?.code)
+    : undefined;
   const customerKind =
     !isType && codingProfile?.prefix === '3'
       ? 'organization'
@@ -716,9 +718,11 @@ export function AccountingDetailEditor({
                         ]
                       : sourceKind === 'BRANCH'
                         ? ['عنوان', 'کد', 'نام بنگاه']
-                        : sourceKind
-                          ? ['عنوان', 'کد', 'وضعیت']
-                          : ['نام کامل', 'شماره', 'نوع']
+                        : sourceKind === 'STAFF'
+                          ? ['نام', 'کد', 'سمت']
+                          : sourceKind
+                            ? ['عنوان', 'کد', 'وضعیت']
+                            : ['نام کامل', 'شماره', 'نوع']
                   }
                   rows={
                     sourceKind
@@ -758,9 +762,11 @@ export function AccountingDetailEditor({
                                     row.code,
                                     sourceKind === 'BRANCH'
                                       ? (book?.book.title ?? '')
-                                      : row.active
-                                        ? 'فعال'
-                                        : 'غیرفعال',
+                                      : sourceKind === 'STAFF'
+                                        ? String(row.attributes.position ?? '')
+                                        : row.active
+                                          ? 'فعال'
+                                          : 'غیرفعال',
                                   ],
                           }))
                       : partyTitle
@@ -840,7 +846,9 @@ export function AccountingDetailEditor({
                           type="button"
                           onClick={() => setSourceDialog('new')}
                         >
-                          ＋ ایجاد {type?.title}
+                          {sourceKind === 'STAFF'
+                            ? '＋ افزودن پرسنل'
+                            : '＋ ایجاد ' + type?.title}
                         </button>
                         {ownerPage > 1 && (
                           <button

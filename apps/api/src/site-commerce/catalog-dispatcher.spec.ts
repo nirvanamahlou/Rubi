@@ -126,6 +126,7 @@ describe('Ghestiroo flight delivery', () => {
           userId: 'ghestiroo-service',
           branchIds: ['branch'],
         }),
+        true,
       );
       const [url, request] = f.fetcher.mock.calls[0]!;
       expect(url).toBe('https://ghestiroo.ir/api/v1/erp/catalog-delivery');

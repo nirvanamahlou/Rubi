@@ -888,14 +888,31 @@ export function TourPricingWorkspace() {
       </Card>
 
       {grid?.tour.id === tourId && grid && (
-        <WebsiteTourPreviewPrices
-          key={grid.tour.id}
-          departureId={grid.tour.id}
-          branchId={grid.tour.branchId}
-          canEdit={
-            session?.user.permissions.includes('ticket_catalog.manage') === true
-          }
-        />
+        <>
+          <WebsiteTourPreviewPrices
+            key={grid.tour.id}
+            departureId={grid.tour.id}
+            branchId={grid.tour.branchId}
+            canEdit={
+              session?.user.permissions.includes('ticket_catalog.manage') ===
+              true
+            }
+          />
+          <WebsiteTourPreviewPrices
+            key={grid.tour.id + '-ghestiroo'}
+            departureId={grid.tour.id}
+            branchId={grid.tour.branchId}
+            site="ghestiroo"
+            travelDates={{
+              checkIn: grid.tour.startsOn,
+              checkOut: grid.tour.endsOn,
+            }}
+            canEdit={
+              session?.user.permissions.includes('ticket_catalog.manage') ===
+              true
+            }
+          />
+        </>
       )}
       <Card className="grid gap-4 p-5">
         <div className="flex items-center gap-2">
