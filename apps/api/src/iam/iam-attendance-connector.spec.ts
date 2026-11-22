@@ -19,6 +19,16 @@ function subject({
       ? {
           id: userId,
           status: 'ACTIVE',
+          roles: [
+            {
+              role: {
+                isActive: true,
+                permissions: permissions.map((code) => ({
+                  permission: { code },
+                })),
+              },
+            },
+          ],
           branches: branches.map((branchId) => ({
             branchId,
             branch: { isActive: activeBranch },
@@ -34,7 +44,6 @@ function subject({
       client: { user: { findFirst }, session: { findFirst: sessionLookup } },
     },
     userAccessInclude: () => ({}),
-    permissionCodes: () => permissions,
   }) as IamService;
   return { service, findFirst, sessionLookup };
 }
