@@ -1,6 +1,6 @@
-## PERSONNEL-DETAIL-TITLES-1122 — PC-D — READY_FOR_CI
+## NORA-CALL-CATALOG-1122 — PC-C — ACTIVE
 
-Reserve personnel detail title picker, person/site reference forms and their existing Accounting reference command, translations, and focused tests. Uses the existing ledger-scoped configuration and detail links.
+Reserve the Nora guide catalogues, shared guide reader, scoped tests and coverage notes. Preserve the Call Center UI and producer contracts.
 
 ## PREVIEW-PER-HOTEL-1122 — PC-A — READY_FOR_CI
 
@@ -13311,3 +13311,7 @@ Reserve the Accounting fiscal-year list route, removal of its actions from the s
 ## DETAIL-CODE-SUGGESTIONS-1122 — PC-D — COMPLETED
 
 Reserve the Accounting detail editor and year-independent suggestion endpoint, the System Management issued-code public projection and transaction allocator, their additive Contracts capability flag, and focused Web/API regressions. The Accounting producer serves the same code format and ledger access to the Web consumer. Existing detail IDs, issued codes and bank numbering remain compatible. No migration or data backfill.
+
+## PERSONNEL-DETAIL-TITLES-1122 — PC-D — READY_FOR_CI
+
+Reserve personnel detail title picker, person/site reference forms and their existing Accounting reference command, translations, and focused tests. Uses the existing ledger-scoped configuration and detail links.

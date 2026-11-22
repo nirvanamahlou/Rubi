@@ -1,7 +1,3 @@
-## 2026-11-22 — PERSONNEL-DETAIL-TITLES-1122 — PC-D
-
-The personnel detail title picker supports manual person and site references, with a fixed site position. Accounting validates and persists the reference in the selected ledger and retains series-two accounting detail numbering.
-
 ## 2026-11-22 — DETAIL-CODE-SUGGESTIONS-1122 — PC-D
 
 When defining personnel, corporate customer and individual customer details, Accounting suggests the first unused code across all ledgers and accepts a valid manual code on creation. Preview is read-only. The save transaction validates the eight-digit type series and prevents duplicate issuance. PostgreSQL coverage verifies cross-ledger contention, legacy occupancy and manual gaps. See [FIN-CODING-001](tasks/FIN-CODING-001.md).
@@ -13,6 +9,10 @@ The Accounting fiscal-year list is a read-only view of the selected company’s 
 ## 2026-11-21 — ORGANIZATION-DETAIL-TITLE-1121 — PC-D
 
 The corporate customer title picker opens the existing company form and lists active organization customers for the ledger branch. Save and select links the Customer profile to the eight-digit series-three detail. Web regressions and an isolated PostgreSQL round trip cover the picker action, the native company profile and branch and kind validation. No schema change.
+
+## 2026-11-22 — PERSONNEL-DETAIL-TITLES-1122 — PC-D
+
+The personnel detail title picker supports manual person and site references, with a fixed site position. Accounting validates and persists the reference in the selected ledger and retains series-two accounting detail numbering.
 
 ## 2026-11-21 — CUSTOMER-DETAIL-TITLE-1121 — PC-D
 
