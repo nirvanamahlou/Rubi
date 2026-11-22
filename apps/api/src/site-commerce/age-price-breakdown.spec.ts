@@ -45,6 +45,24 @@ const sum = (amounts: string[]) =>
     .toFixed(2);
 
 describe('authoritative age-price presentation', () => {
+  it('rejects floating inventory in either flight direction before calculating a booking quote', () => {
+    expect(() =>
+      websiteFlightQuotes(
+        { ...outbound, supplyType: 'FLOATING' },
+        undefined,
+        2,
+        counts,
+      ),
+    ).toThrow('رزرو اینترنتی ندارد');
+    expect(() =>
+      websiteFlightQuotes(
+        outbound,
+        { ...returning, supplyType: 'FLOATING' },
+        2,
+        counts,
+      ),
+    ).toThrow('رزرو اینترنتی ندارد');
+  });
   it('uses explicit child and free-infant rates without a percentage assumption', () => {
     expect(ageFareBreakdown({ ...fare, infantAmount: '0' }, counts, 0)).toEqual(
       {

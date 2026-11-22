@@ -52,6 +52,7 @@ import {
 } from '../sales/sales.domain';
 import { assertFloatingFlightAirports } from '../sales/floating-flight-airports';
 import { websiteFlightQuotes } from './ticket-quote';
+import { assertWebsiteBookable, websitePriceOnly } from './price-only-policy';
 import {
   floatingBookingIdentity,
   floatingNativeDraft,
@@ -808,6 +809,10 @@ export class SiteCommerceService {
           'flight' in product &&
           !!product.flight &&
           product.flight.remainingCapacity <= 0;
+        const floatingPriceOnly = websitePriceOnly(
+          row.kind,
+          'flight' in product ? product.flight?.supplyType : undefined,
+        );
         data.push({
           id: row.id,
           kind: row.kind,
@@ -815,8 +820,12 @@ export class SiteCommerceService {
           ...(row.kind === 'floating-tour' ? { periodKey: row.periodKey } : {}),
           enabled: true,
           // Stock exhaustion is a reversible projection, never a manual publication edit.
-          salesStopped: previewOnly || row.salesStopped || capacityStopped,
-          ...(previewOnly ? { previewOnly: true } : {}),
+          salesStopped:
+            previewOnly ||
+            floatingPriceOnly ||
+            row.salesStopped ||
+            capacityStopped,
+          ...(previewOnly || floatingPriceOnly ? { previewOnly: true } : {}),
           ...(capacityStopped ? { capacityStopped: true } : {}),
           version: row.version,
           ...product,
@@ -1196,6 +1205,7 @@ export class SiteCommerceService {
     scoped: AuthenticatedActor,
     input: FloatingWebsiteBooking,
   ) {
+    assertWebsiteBookable('floating-tour');
     const publication = await this.db.client.websitePublication.findFirst({
       where: {
         id: input.publicationId,
@@ -1250,6 +1260,7 @@ export class SiteCommerceService {
     actor: AuthenticatedActor,
   ) {
     const scoped = this.scoped(site, actor);
+    assertWebsiteBookable('floating-tour');
     validateFloatingBooking(body?.booking);
     if (!this.checkoutHolds)
       throw new ConflictException('درخواست رزرو خرید معتبر نیست.');
@@ -1296,6 +1307,7 @@ export class SiteCommerceService {
         throw clash();
       contractId = recovered.data.id;
     } else {
+      assertWebsiteBookable('floating-tour');
       const hold = await this.db.client.websiteCheckoutSession.findUnique({
         where,
       });

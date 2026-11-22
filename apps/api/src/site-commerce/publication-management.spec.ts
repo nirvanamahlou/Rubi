@@ -211,6 +211,8 @@ describe('website destination management', () => {
       periodKey: row.periodKey,
       enabled: true,
       floatingTour: { version: 2 },
+      previewOnly: true,
+      salesStopped: true,
     });
     expect(result.data[0]).not.toHaveProperty('tour');
     const { BadRequestException } = await import('@nestjs/common');
