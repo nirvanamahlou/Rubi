@@ -3013,6 +3013,10 @@ and post-merge results follow in the PR. Shared Core/data remain preserved.
 - ابزار Generator منبع استاتیک هم‌مبدأ است و هیچ داده قیمت‌گذاری را از API دریافت نمی‌کند؛ بنابراین کنترل دو مجوز `package_pricing.read` و `package_pricing.render` فقط از همین مسیر برداشته می‌شود و احراز هویت عمومی CRM و کنترل دسترسی APIهای قیمت‌گذاری حفظ می‌شوند.
 - نتیجه: Workspace بدون درخواست Session/API مستقیماً ابزار را نمایش می‌دهد؛ در نتیجه کاربران واردشده بدون مجوز قیمت‌گذاری نیز روی هر کامپیوتر به Generator دسترسی دارند و بارگذاری اولیه یک درخواست شبکه کمتر دارد. ۶ تست هدفمند، lint، typecheck و Production Build با Webpack و ۵۲ مسیر موفق‌اند؛ Build پیش‌فرض Turbopack فقط به محدودیت symlink محیط worktree برخورد کرد.
 
+## PACKAGE-GENERATOR-AZAR-CI-1122 — PC-D — READY_FOR_CI
+
+Reserve English application and standalone package catalogues and package generator assertions to restore CI after PR #1861. No renderer, template data, or deployment changes.
+
 ## PACKAGE-GENERATOR-TEMPLATE-REFRESH-0923 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-23: هفت تصویر اصلاح‌شدهٔ قالب‌های مالزی و تایلند جایگزین نسخه‌های قدیمی همان شهرها شوند.
@@ -13319,3 +13323,7 @@ Reserve the Accounting detail editor and year-independent suggestion endpoint, t
 ### PACKAGE-GENERATOR-AZAR-1122 (PC-B)
 
 Scoped XLSX support and poster profiles for Antalya Iran Airtour and Kuala Lumpur plus Singapore. Reuse package-generator renderer; no API, schema or dependency changes.
+
+## CROSS-COUNTRY-TICKET-DESTINATIONS-1122 — PC-A — READY_FOR_CI
+
+Allow extra sales destinations across countries in the flight schedule. Shared capacity and endpoint filters are covered by focused tests.
