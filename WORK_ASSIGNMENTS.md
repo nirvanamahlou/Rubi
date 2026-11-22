@@ -2,9 +2,30 @@
 
 Reserve Assistant financial-period resolution, verified sales evidence integration and focused tests. No schema, dependency or deployment change.
 
+
+## NORA-REMAINING-GUIDE-DOCS-1122 — PC-C — ACTIVE
+
+Reserve only Nora catalogue sources and consumers, document compiler, guide page, scoped tests and status. Move remaining guides from merged develop content. Preserve producer panels, permissions and authenticated record reads. Stacked on #1871. No dependency, schema or deployment work.
+
+## NORA-B2C-GUIDE-DOCS-1122 — PC-C — ACTIVE
+
+Migrate the versioned B2C help catalogue and wire its guide page and Composer link. Preserve all live customer reads and panel UI. Stacked on Call Center document PR #1870.
+
+## NORA-CALL-CENTER-GUIDE-DOCS-1122 — PC-C — ACTIVE
+
+Transfer the approved 22 Call Center help topics from merged PR #1859 to linked Markdown. Reserve the guide document, generator, authenticated guide page and coverage records. Preserve panel UI per docs/tasks/CALL-CENTER-UI-PRESERVATION.md and existing read paths. Stacked on pilot PR #1869.
+
+## NORA-GUIDE-DOCS-1122 — PC-C — ACTIVE
+
+PC-C confirmed by the owner. Pilot from develop a496d9231. Reserve new guide Markdown, build/check script, authenticated guide page, Sales and Workbench assistant catalogue adapters and bounded Composer guide link, tests, CI check and status notes. PC-C continues its guide reader ownership from merged PR1859. Preserve Call Center UI and live read paths. No migration, dependency or provider change.
+
 ## NORA-CALL-CATALOG-1122 — PC-C — ACTIVE
 
 Reserve the Nora guide catalogues, shared guide reader, scoped tests and coverage notes. Preserve the Call Center UI and producer contracts.
+
+## PASSENGER-IDENTITY-PREFLIGHT-1117 — PC-A — ACTIVE
+
+Owner request: read-only passenger identity and passport validation before website review and payment. Scope is Customers, SiteCommerce and the website checkout. No migration or dependency changes.
 
 ## PREVIEW-PER-HOTEL-1122 — PC-A — READY_FOR_CI
 
@@ -3017,6 +3038,10 @@ and post-merge results follow in the PR. Shared Core/data remain preserved.
 - ابزار Generator منبع استاتیک هم‌مبدأ است و هیچ داده قیمت‌گذاری را از API دریافت نمی‌کند؛ بنابراین کنترل دو مجوز `package_pricing.read` و `package_pricing.render` فقط از همین مسیر برداشته می‌شود و احراز هویت عمومی CRM و کنترل دسترسی APIهای قیمت‌گذاری حفظ می‌شوند.
 - نتیجه: Workspace بدون درخواست Session/API مستقیماً ابزار را نمایش می‌دهد؛ در نتیجه کاربران واردشده بدون مجوز قیمت‌گذاری نیز روی هر کامپیوتر به Generator دسترسی دارند و بارگذاری اولیه یک درخواست شبکه کمتر دارد. ۶ تست هدفمند، lint، typecheck و Production Build با Webpack و ۵۲ مسیر موفق‌اند؛ Build پیش‌فرض Turbopack فقط به محدودیت symlink محیط worktree برخورد کرد.
 
+## PACKAGE-GENERATOR-AZAR-CI-1122 — PC-D — READY_FOR_CI
+
+Reserve English application and standalone package catalogues and package generator assertions to restore CI after PR #1861. No renderer, template data, or deployment changes.
+
 ## PACKAGE-GENERATOR-TEMPLATE-REFRESH-0923 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک در 2026-09-23: هفت تصویر اصلاح‌شدهٔ قالب‌های مالزی و تایلند جایگزین نسخه‌های قدیمی همان شهرها شوند.
@@ -3567,6 +3592,10 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
   و build تولیدی ۴۶ مسیر موفق‌اند؛ ادغام و فعال‌سازی Web3100 مجاز است.
 - هر چهار Gate CI پاس شدند؛ PR #246 با Merge Commit `88d26ebc` وارد `develop` شد.
   Web3100 با Build ID `60YeidM5vzsZuojUx7D85` فعال و API4190 سالم است؛ رزرو آزاد شد.
+
+## PERSONNEL-DETAIL-TITLES-1122 — PC-D — READY_FOR_CI
+
+Reserve personnel detail title picker, person/site reference forms and their existing Accounting reference command, translations, and focused tests. Uses the existing ledger-scoped configuration and detail links.
 
 ## FINANCE-004-ACCOUNTING-SECONDARY-NAV — PC-A — COMPLETE / MERGED
 
@@ -13315,3 +13344,18 @@ Reserve the Accounting fiscal-year list route, removal of its actions from the s
 ## DETAIL-CODE-SUGGESTIONS-1122 — PC-D — COMPLETED
 
 Reserve the Accounting detail editor and year-independent suggestion endpoint, the System Management issued-code public projection and transaction allocator, their additive Contracts capability flag, and focused Web/API regressions. The Accounting producer serves the same code format and ledger access to the Web consumer. Existing detail IDs, issued codes and bank numbering remain compatible. No migration or data backfill.
+
+### PACKAGE-GENERATOR-AZAR-1122 (PC-B)
+
+Scoped XLSX support and poster profiles for Antalya Iran Airtour and Kuala Lumpur plus Singapore. Reuse package-generator renderer; no API, schema or dependency changes.
+
+## CROSS-COUNTRY-TICKET-DESTINATIONS-1122 — PC-A — READY_FOR_CI
+
+Allow extra sales destinations across countries in the flight schedule. Shared capacity and endpoint filters are covered by focused tests.
+
+## GHESTIROO-TOURS-1122 — PC-D
+
+Reserve the Ghestiroo destination policy and its signed tour delivery on
+`codex/pc-d-ghestiroo-tours-1122` from develop. The producer extends the existing
+v1 snapshot for the Ghestiroo consumer and keeps its tour order intake disabled.
+Other destinations retain their product policy, credentials and checkout.

@@ -26,6 +26,22 @@ it('requires a country before searching airports', () => {
   expect(html).toContain('ابتدا کشور را انتخاب کنید');
 });
 
+it('enables global city search only for a city picker that opts in', () => {
+  const props = {
+    id: 'additional-city',
+    label: 'City',
+    resource: 'cities' as const,
+    value: undefined,
+    onSelect: () => {},
+  };
+  const render = (allowAnyCityCountry: boolean) =>
+    renderToStaticMarkup(
+      createElement(ReferencePicker, { ...props, allowAnyCityCountry }),
+    );
+  expect(render(false)).toContain('disabled=""');
+  expect(render(true)).not.toContain('disabled=""');
+});
+
 it('allows all airports in the country without requiring a commercial city', () => {
   const html = renderToStaticMarkup(
     createElement(ReferencePicker, {

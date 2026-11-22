@@ -1,5 +1,7 @@
 'use client';
 
+import { documentGuideLink } from './assistant-guide-registry';
+
 import {
   purchaseGuideLink,
   readPurchaseGuide,
@@ -72,7 +74,12 @@ import { AssistantResponseContent } from './response-content';
 import { formatAssistantSources } from './response-presentation';
 import { useChatScroll } from './use-chat-scroll';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { resolveWorkbenchGuide, loadWorkbenchGuide } from './workbench-guides';
+import contractGuideCatalog from './contract-guide.generated.json';
+import {
+  resolveWorkbenchGuide,
+  loadWorkbenchGuide,
+  renderWorkbenchGuide,
+} from './workbench-guides';
 import {
   asksWorkbenchRequestStatus,
   describeWorkbenchRequest,
@@ -386,7 +393,7 @@ function AssistantComposerContent({
       agent?: boolean;
       links?: ContractLink[];
       targets?: { id: string; label: string }[];
-      guideLink?: { href: string; label: string };
+      guideLink?: { href: string; label: string; guideHref?: string };
       submissionId?: number;
     }>
   >([]);
@@ -580,7 +587,7 @@ function AssistantComposerContent({
       content: string,
       links?: ContractLink[],
       targets?: { id: string; label: string }[],
-      guideLink?: { href: string; label: string },
+      guideLink?: { href: string; label: string; guideHref?: string },
       answerContext?: AnswerContext,
     ) => {
       if (answerContext)
@@ -631,10 +638,7 @@ function AssistantComposerContent({
           renderTourGuide(tourQuestion.topic, tourQuestion.followUp),
           undefined,
           undefined,
-          {
-            href,
-            label,
-          },
+          documentGuideLink({ href, label }, 'tour', tourQuestion.topic),
         );
       } else if (tourQuestion.kind === 'clarify') {
         replyLocally(tourQuestion.text, undefined, undefined, {
@@ -688,7 +692,11 @@ function AssistantComposerContent({
           renderPurchaseGuide(purchaseQuestion.topic),
           undefined,
           undefined,
-          purchaseGuideLink,
+          documentGuideLink(
+            purchaseGuideLink,
+            'purchase',
+            purchaseQuestion.topic.id,
+          ),
         );
       } else {
         if (!purchaseQuestion.code) purchaseTopic.current = 'status';
@@ -733,7 +741,7 @@ function AssistantComposerContent({
           renderCustomerGuide(customerQuestion.topic),
           undefined,
           undefined,
-          customerGuideLink,
+          { ...customerGuideLink, guideHref: customerQuestion.topic.guideHref },
         );
       } else {
         const controller = new AbortController();
@@ -794,7 +802,7 @@ function AssistantComposerContent({
           ),
           undefined,
           undefined,
-          link,
+          documentGuideLink(link, 'finance-delivery', deliveryQuestion.topic),
         );
       } else if (deliveryQuestion.kind === 'clarify') {
         replyLocally(financeDeliveryCopy.identify, undefined, undefined, link);
@@ -834,7 +842,11 @@ function AssistantComposerContent({
           renderFlightPricingGuide(flightPricingIntent.topic),
           undefined,
           undefined,
-          flightPricingTopicLink(flightPricingIntent.topic),
+          documentGuideLink(
+            flightPricingTopicLink(flightPricingIntent.topic),
+            'flight-pricing',
+            flightPricingIntent.topic.id,
+          ),
         );
       } else {
         const controller = new AbortController();
@@ -876,7 +888,11 @@ function AssistantComposerContent({
           renderMasterDataGuide(masterDataIntent.topics),
           undefined,
           undefined,
-          link,
+          documentGuideLink(
+            link,
+            'master-data',
+            masterDataIntent.topics[0]?.id,
+          ),
         );
       } else {
         const controller = new AbortController();
@@ -920,7 +936,7 @@ function AssistantComposerContent({
           renderB2bGuide(b2bIntent.topic),
           undefined,
           undefined,
-          b2bGuideLink,
+          documentGuideLink(b2bGuideLink, 'b2b', b2bIntent.topic.id),
         );
       } else {
         const controller = new AbortController();
@@ -964,7 +980,7 @@ function AssistantComposerContent({
           ),
           undefined,
           undefined,
-          link,
+          documentGuideLink(link, 'reservation-report', reportQuestion.topic),
         );
       } else if (reportQuestion.kind === 'clarify') {
         replyLocally(reportQuestion.text, undefined, undefined, link);
@@ -1019,10 +1035,11 @@ function AssistantComposerContent({
           ),
           undefined,
           undefined,
-          {
-            href: '/documents',
-            label: 'اسناد و فایل‌ها',
-          },
+          documentGuideLink(
+            { href: '/documents', label: 'اسناد و فایل‌ها' },
+            'documents',
+            documentQuestion.topic.id,
+          ),
         );
       } else if (documentQuestion.kind === 'clarify') {
         replyLocally(documentQuestion.text);
@@ -1176,11 +1193,20 @@ function AssistantComposerContent({
       setActionState('loading');
       setChatError(null);
       try {
-        const answer = await loadWorkbenchGuide(
-          workbenchHelp.topic,
-          workbenchHelp.goal,
-          controller.signal,
-        );
+        const answer =
+          'guideHref' in workbenchHelp.topic
+            ? renderWorkbenchGuide(
+                workbenchHelp.topic,
+                workbenchHelp.goal,
+                workbenchHelp.topic.id.startsWith('leave') &&
+                  /پیگیری/.test(guideQuestion) &&
+                  /چطور|چگونه|از کجا/.test(guideQuestion),
+              )
+            : await loadWorkbenchGuide(
+                workbenchHelp.topic,
+                workbenchHelp.goal,
+                controller.signal,
+              );
         if (!controller.signal.aborted) {
           workbenchTopic.current = workbenchHelp.topic.id;
           replyLocally(
@@ -1190,6 +1216,13 @@ function AssistantComposerContent({
             {
               label: workbenchHelp.topic.title,
               href: workbenchHelp.topic.href,
+              ...('guideHref' in workbenchHelp.topic &&
+              typeof workbenchHelp.topic.guideHref === 'string'
+                ? {
+                    label: english ? 'Open panel' : 'باز کردن پنل',
+                    guideHref: workbenchHelp.topic.guideHref,
+                  }
+                : {}),
             },
             {
               kind: 'guide',
@@ -1282,12 +1315,25 @@ function AssistantComposerContent({
     if (guidanceAllowed && guide && !recordFollowup && !liveReport) {
       guideTopic.current = guide.topicId;
       if (guide.topicId === 'create') contractId.current = undefined;
-      replyLocally(guide.text, undefined, undefined, undefined, {
-        kind: 'guide',
-        domain: 'sales',
-        question: guideQuestion,
-        topicId: guide.topicId,
-      });
+      const section = contractGuideCatalog.topics.find(
+        (topic) => topic.id === guide.topicId,
+      );
+      replyLocally(
+        guide.text,
+        undefined,
+        undefined,
+        section && {
+          href: section.href,
+          label: english ? 'Open panel' : 'باز کردن پنل',
+          guideHref: section.guideHref,
+        },
+        {
+          kind: 'guide',
+          domain: 'sales',
+          question: guideQuestion,
+          topicId: guide.topicId,
+        },
+      );
       return;
     }
     pending.current?.abort();
@@ -1339,12 +1385,25 @@ function AssistantComposerContent({
     }
     if (guidanceAllowed && guide && !agentMode) {
       guideTopic.current = guide.topicId;
-      replyLocally(guide.text, undefined, undefined, undefined, {
-        kind: 'guide',
-        domain: 'sales',
-        question: guideQuestion,
-        topicId: guide.topicId,
-      });
+      const section = contractGuideCatalog.topics.find(
+        (topic) => topic.id === guide.topicId,
+      );
+      replyLocally(
+        guide.text,
+        undefined,
+        undefined,
+        section && {
+          href: section.href,
+          label: english ? 'Open panel' : 'باز کردن پنل',
+          guideHref: section.guideHref,
+        },
+        {
+          kind: 'guide',
+          domain: 'sales',
+          question: guideQuestion,
+          topicId: guide.topicId,
+        },
+      );
       return;
     }
     pending.current?.abort();
@@ -1593,6 +1652,14 @@ function AssistantComposerContent({
                       />
                     ) : (
                       item.content
+                    )}
+                    {item.guideLink?.guideHref && (
+                      <Link
+                        className="block underline"
+                        href={item.guideLink.guideHref}
+                      >
+                        {english ? 'Read guide' : 'خواندن راهنما'}
+                      </Link>
                     )}
                     {item.guideLink && (
                       <Link

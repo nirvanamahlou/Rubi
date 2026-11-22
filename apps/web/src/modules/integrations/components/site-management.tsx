@@ -56,11 +56,19 @@ type Presentation = {
   title: string;
   description: string;
   commissionPercent: string;
+  previewOnly?: boolean;
+  publishHotelProfiles?: boolean;
 };
 type Publication = {
   enabled: boolean;
   version: number;
+  salesStopped?: boolean;
   presentation?: Presentation | null;
+};
+type DeliveryDetails = {
+  deliveredAt: string | null;
+  deliveredRevision: string;
+  lastError: string | null;
 };
 export function WebsiteDestination({
   site,
@@ -83,6 +91,8 @@ export function WebsiteDestination({
 }) {
   const [stored, setStored] = useState<Publication>();
   const [delivery, setDelivery] = useState<string>('unknown');
+  const [receipt, setReceipt] = useState<DeliveryDetails | null>(null);
+  const [salesStopped, setSalesStopped] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const [selected, setSelected] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -113,6 +123,11 @@ export function WebsiteDestination({
         if (!abort.signal.aborted) {
           const value = result.data ?? { enabled: false, version: 0 };
           setDelivery(result.deliveryStatus ?? 'unknown');
+          setReceipt(result.deliveryDetails ?? null);
+          setSalesStopped(
+            value.salesStopped === true &&
+              value.presentation?.previewOnly !== true,
+          );
           setStored(value);
           setSelected(value.enabled);
           setPresentation(
@@ -147,6 +162,7 @@ export function WebsiteDestination({
           const result = await response.json();
           if (!abort.signal.aborted)
             setDelivery(result.deliveryStatus ?? 'unknown');
+          setReceipt(result.deliveryDetails ?? null);
         }
       } catch {
         // Retain the last observed state until the next refresh.
@@ -174,6 +190,9 @@ export function WebsiteDestination({
           enabled,
           version: stored.version,
           branchId,
+          ...(site.code === 'ghestiroo' && kind !== 'ticket' && !selectionOnly
+            ? { salesStopped }
+            : {}),
           ...(kind === 'floating-tour' ? { periodKey } : {}),
           ...(kind !== 'ticket'
             ? {
@@ -209,6 +228,11 @@ export function WebsiteDestination({
   const unchanged =
     !stored ||
     (stored.enabled === selected &&
+      (site.code !== 'ghestiroo' ||
+        kind === 'ticket' ||
+        salesStopped ===
+          (stored.salesStopped === true &&
+            stored.presentation?.previewOnly !== true)) &&
       JSON.stringify(
         stored.presentation ?? {
           title: '',
@@ -227,7 +251,9 @@ export function WebsiteDestination({
           : delivery !== 'accepted'
             ? 'وضعیت اتصال نامشخص'
             : stored.enabled
-              ? 'انتشار فعال'
+              ? stored.presentation?.previewOnly
+                ? 'پیش‌نمایش تحویل شد'
+                : 'انتشار فعال'
               : 'منتشر نشده';
   return (
     <div
@@ -251,11 +277,16 @@ export function WebsiteDestination({
           type="checkbox"
           className="h-4 w-4 shrink-0 accent-primary"
           checked={selected}
-          disabled={!stored || busy || (!canPublish && !selected)}
+          disabled={
+            !stored ||
+            busy ||
+            (!canPublish && !stored.presentation?.previewOnly && !selected)
+          }
           onChange={async (e) => {
             if (!stored || busy) return;
             const enabled = e.target.checked;
-            if (enabled && !canPublish) return;
+            if (enabled && !canPublish && !stored.presentation?.previewOnly)
+              return;
             setSelected(enabled);
             await save(enabled, true);
           }}
@@ -275,6 +306,18 @@ export function WebsiteDestination({
             className={`h-1.5 w-1.5 shrink-0 rounded-full ${delivery !== 'accepted' ? 'bg-amber-500' : stored?.enabled ? 'bg-emerald-500' : 'bg-slate-300'}`}
           />
           {busy ? 'در حال ثبت…' : status}
+          {site.code === 'ghestiroo' &&
+            kind !== 'ticket' &&
+            receipt?.deliveredAt && (
+              <span
+                title={new Date(receipt.deliveredAt).toLocaleString('fa-IR', {
+                  timeZone: 'Asia/Tehran',
+                })}
+              >
+                {' · نسخه '}
+                {receipt.deliveredRevision}
+              </span>
+            )}
         </span>
         <div className="flex shrink-0 items-center gap-1">
           <Button
@@ -305,6 +348,47 @@ export function WebsiteDestination({
         >
           {kind !== 'ticket' ? (
             <>
+              {site.code === 'ghestiroo' && (
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={salesStopped}
+                    disabled={presentation.previewOnly === true}
+                    onChange={(e) => setSalesStopped(e.target.checked)}
+                  />{' '}
+                  توقف فروش
+                </label>
+              )}
+              {site.code === 'ghestiroo' && kind === 'tour' && (
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={presentation.previewOnly === true}
+                    onChange={(e) =>
+                      setPresentation((value) => ({
+                        ...value,
+                        previewOnly: e.target.checked,
+                      }))
+                    }
+                  />{' '}
+                  پیش‌نمایش عمومی تور
+                </label>
+              )}
+              {site.code === 'ghestiroo' && (
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={presentation.publishHotelProfiles === true}
+                    onChange={(e) =>
+                      setPresentation((value) => ({
+                        ...value,
+                        publishHotelProfiles: e.target.checked,
+                      }))
+                    }
+                  />{' '}
+                  اجازه انتشار پروفایل هتل‌های این تور
+                </label>
+              )}
               <label>
                 عنوان سایت
                 <input
@@ -358,7 +442,11 @@ export function WebsiteDestination({
                 type="button"
                 variant="primary"
                 className="h-8 min-h-0 px-3 py-0 text-xs"
-                disabled={unchanged || busy || (selected && !canPublish)}
+                disabled={
+                  unchanged ||
+                  busy ||
+                  (selected && !canPublish && !presentation.previewOnly)
+                }
                 onClick={() => void save()}
               >
                 {busy ? 'در حال ثبت…' : 'ذخیره'}

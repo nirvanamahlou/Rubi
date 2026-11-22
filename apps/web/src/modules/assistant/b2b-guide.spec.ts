@@ -86,3 +86,9 @@ describe('B2B assistant guidance', () => {
     );
   });
 });
+
+it('routes explicit agency registration to the registration workflow', () => {
+  expect(
+    resolveB2bQuestion('چطور آژانس همکار جدید در مشتریان B2B ثبت کنم؟', false),
+  ).toMatchObject({ kind: 'guide', topic: { id: 'registration' } });
+});

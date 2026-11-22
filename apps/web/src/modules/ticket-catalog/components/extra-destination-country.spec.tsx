@@ -11,6 +11,7 @@ const fixture = vi.hoisted(() => ({
   pickers: [] as {
     id: string;
     countryId?: string;
+    allowAnyCityCountry?: boolean;
     value?: Reference;
     onSelect: (value: Reference | undefined) => void;
   }[],
@@ -55,7 +56,7 @@ const city: Reference = {
   id: 'extra',
   kind: 'city',
   name: 'Extra city',
-  countryId: 'country-b',
+  countryId: 'country-c',
   active: true,
 };
 function render(initial: ProductInput) {
@@ -77,7 +78,7 @@ beforeEach(() => {
   fixture.pickers = [];
 });
 it.each(['outbound', 'return'] as const)(
-  'binds %s extra cities to the primary country and resets them on country change',
+  'allows %s sales routes to use cities abroad and retains them when the primary country changes',
   (role) => {
     const initial: ProductInput = {
       ...emptyInput(),
@@ -103,25 +104,29 @@ it.each(['outbound', 'return'] as const)(
     render(initial);
     const side = role === 'return' ? 'origin' : 'destination';
     expect(
+      fixture.pickers.find((p) => p.id === 'sale-destination-0'),
+    ).toMatchObject({
+      allowAnyCityCountry: true,
+      value: city,
+    });
+    expect(
       fixture.pickers.find((p) => p.id === 'sale-destination-0')?.countryId,
+    ).toBeUndefined();
+    expect(
+      fixture.pickers.find((p) => p.id === `schedule-${side}-city`)?.countryId,
     ).toBe('country-b');
-    expect(fixture.pickers.some((p) => p.id === 'sale-country-0')).toBe(false);
     fixture.pickers
       .find((p) => p.id === `schedule-${side}-country`)!
       .onSelect(countries[2]);
     render(initial);
     expect(
       fixture.pickers.find((p) => p.id === 'sale-destination-0'),
-    ).toMatchObject({ countryId: 'country-c', value: undefined });
+    ).toMatchObject({ allowAnyCityCountry: true, value: city });
     const input = fixture.cells.find((value): value is ProductInput =>
       Boolean(value && typeof value === 'object' && 'segments' in value),
     )!;
     expect(input.totalCapacity).toBe(25);
-    expect(input.saleRoutes?.[0]).toEqual(
-      role === 'return'
-        ? { originId: '', destinationId: 'home' }
-        : { originId: 'home', destinationId: '' },
-    );
+    expect(input.saleRoutes).toEqual(initial.saleRoutes);
   },
 );
 it('keeps the added city on the same label/control grid and excludes its container from that grid', () => {

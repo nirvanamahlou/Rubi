@@ -2,6 +2,36 @@
 
 Resolve ordinary Persian sales comparisons on the server using Tehran calendar boundaries and verified Sales evidence. Keep the existing completed-day report limit. Local synthetic acceptance only.
 
+
+## NORA-REMAINING-GUIDE-DOCS-1122 — PC-C
+
+All 109 remaining guide topics across eight domains use linked Markdown. Round-trip structural checks preserve the original instructional copy and resolver data. Authenticated loopback browser acceptance verified an answer, the chat panel destination, exact document heading and fragment, and navigation from the document into each panel.
+
+| Domain | Verified topic |
+| --- | --- |
+| B2B | Agency registration |
+| Tours | Create a tour |
+| Flight pricing | Tier pricing |
+| Reservation reports | Build a report |
+| Finance delivery | Issue a delivery permit |
+| Master Data | Currency reference and Finance section |
+| Service purchases | Save hotel service purchases |
+| Documents | Upload a file |
+
+The browser used a synthetic native IAM account and an isolated database. No contracts, requests, uploads or financial actions were submitted. No production deployment or RAG activation.
+
+## NORA-B2C-GUIDE-DOCS-1122 — PC-C
+
+All 12 B2C topics are generated from linked Markdown. Previous topic content matches develop. Authenticated browser testing verified the registration answer, exact guide anchor and navigation to Customers. Explicit individual-customer guidance resolves from other panels.
+
+## NORA-CALL-CENTER-GUIDE-DOCS-1122 — PC-C
+
+The 22 Call Center topics now use linked Markdown as their source. The generated catalogue retains the original topic IDs, text and panel destinations. Nora links to the corresponding section. The Call Center panel and record reader are unchanged. Authenticated browser testing confirmed the answer, the exact guide anchor, related sections and navigation to the Call Center panel. Structural comparison preserved all 22 original topic payloads.
+
+## NORA-GUIDE-DOCS-1122 — PC-C
+
+Contract and Workbench guide content moved into versioned Markdown and deterministic generated catalogues. The chat uses local replies for migrated topics, with a protected guide route and links to owning panels. Record readers and Call Center UI are preserved. RAG is disabled. Authenticated local browser acceptance passed with a synthetic IAM account and isolated database. The contract and hourly leave replies linked to the correct document sections and panels. The combined leave reply was retested after removing duplicate approval text.
+
 ## 2026-11-22 — DETAIL-CODE-SUGGESTIONS-1122 — PC-D
 
 When defining personnel, corporate customer and individual customer details, Accounting suggests the first unused code across all ledgers and accepts a valid manual code on creation. Preview is read-only. The save transaction validates the eight-digit type series and prevents duplicate issuance. PostgreSQL coverage verifies cross-ledger contention, legacy occupancy and manual gaps. See [FIN-CODING-001](tasks/FIN-CODING-001.md).
@@ -13,6 +43,10 @@ The Accounting fiscal-year list is a read-only view of the selected company’s 
 ## 2026-11-21 — ORGANIZATION-DETAIL-TITLE-1121 — PC-D
 
 The corporate customer title picker opens the existing company form and lists active organization customers for the ledger branch. Save and select links the Customer profile to the eight-digit series-three detail. Web regressions and an isolated PostgreSQL round trip cover the picker action, the native company profile and branch and kind validation. No schema change.
+
+## 2026-11-22 — PERSONNEL-DETAIL-TITLES-1122 — PC-D
+
+The personnel detail title picker supports manual person and site references, with a fixed site position. Accounting validates and persists the reference in the selected ledger and retains series-two accounting detail numbering.
 
 ## 2026-11-21 — CUSTOMER-DETAIL-TITLE-1121 — PC-D
 
@@ -60,6 +94,9 @@ Eight predefined typed detail title lookups and create/edit dialogs, seven-digit
 ## 2026-11-17 — Nora Sales evidence correction (PC-C)
 
 NORA-SALES-EVIDENCE-1117: reproduced Persian calendar/Tehran-boundary and contract-currency row-count defects. Added deterministic period resolution, same-snapshot authorized reconciliation and typed financial fact binding with model-chosen layout.180 service tests pass; real Groq/Germany plus native-session-scoped PostgreSQL passes in three model calls and two reads, matching independent count/currency oracles. No migration or operational writes. Exact-head CI, Nora-only activation and authenticated browser acceptance remain pending. See [task](tasks/NORA-SALES-EVIDENCE-1117.md).
+## PASSENGER-IDENTITY-PREFLIGHT-1117 — PC-A — VALIDATING
+
+Read-only ERP identity preflight before website review/payment, safe inline passenger errors, and payment-start recheck added. Existing same-national-ID profile sync and passport uniqueness retained. Synthetic tests pass; final build/PR/release gates pending. No data migration or payment replay. Order22 remains pending identity correction. See [task](tasks/PASSENGER-IDENTITY-PREFLIGHT-1117.md).
 
 ## NORA-GROQ-QUOTA-GROUPS-1117 — PC-C — VALIDATING
 
@@ -2581,6 +2618,10 @@ Migration افزایشی است و هنوز روی دیتابیس محلی یا 
 ## 2026-09-23 — HEADER-DATE-CLOCK-0923 — READY_FOR_REVIEW
 
 ساعت جاری کنار تاریخ سربرگ با timezone و نوع ارقام تنظیم‌شده سامانه و بدون نمایش ثانیه اضافه شد و در مرز هر دقیقه تازه می‌شود. ۸ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۲ مسیر موفق‌اند؛ Web روی `3100` و API روی `4191` با پاسخ سلامت `200` اجرا شدند. API، داده، Schema/Migration و Dependency/Lockfile تغییر نکردند.
+
+## 2026-11-22 — PACKAGE-GENERATOR-AZAR-CI-1122 — PC-D
+
+Updated the English catalogues and country-picker test for the Azar package templates introduced in PR #1861.
 
 ## 2026-09-23 — PACKAGE-GENERATOR-TEMPLATE-REFRESH-0923 — READY_FOR_REVIEW
 
@@ -10503,3 +10544,13 @@ Floating Excel imports treat NULL price cells as absent. Preview proposes up to 
 ## 2026-11-22 — TICKET-VOUCHER-1122 — PC-A
 
 Sales passenger-document modal now renders hotel vouchers and their pending notice only when the saved contract snapshot contains a hotel selection or HOTEL service. Ticket-only contracts omit both, including stale voucherIssued state. Existing floating-contract exemption, ticket controls, branding flags and financial document authorization remain unchanged. Eight component tests, scoped ESLint and Web typecheck pass. No API/schema/migration/dependency/data/deployment change. User authorizes develop merge; all final-head hosted checks must pass first.
+
+### Package generator Azar templates (2026-11-22)
+Antalya Iran Airtour and Kuala Lumpur plus Singapore XLSX formats now import to editable poster profiles. Validated the four supplied files with PNG and PDF exports.
+
+## اتصال تور قسطی‌رو (PC-D)
+
+اتصال موجود قسطی‌رو بستهٔ تاریخ‌دار یا دورهٔ شناور را با تأیید مستقل مقصد در
+کاتالوگ امضاشده تحویل می‌دهد. تنظیم‌های پیش‌نمایش، توقف فروش و اجازهٔ انتشار
+پروفایل هتل برای همان مقصد ذخیره می‌شوند. دریافت، ذخیره و نمایش در قسطی‌رو
+از مسیر نسخه‌بندی‌شده بررسی می‌شود. دریافت سفارش تور در اتصال قسطی‌رو غیرفعال است.
