@@ -1,4 +1,5 @@
 import catalog from './workbench-guides.json' with { type: 'json' };
+import callCenter from './call-center-guides.json' with { type: 'json' };
 import { ServiceError } from './errors.mjs';
 import { boundedAgentJson } from './agent-provider.mjs';
 import { dataAgentConfiguration } from './agent-config.mjs';
@@ -11,7 +12,9 @@ export function validateWorkbenchGuide(value) {
       (k) => !['version', 'topicId', 'goal'].includes(k),
     ) ||
     value.version !== 1 ||
-    !catalog.topics.some((t) => t.id === value.topicId) ||
+    ![...catalog.topics, ...callCenter.topics].some(
+      (t) => t.id === value.topicId,
+    ) ||
     !['steps', 'troubleshoot', 'follow-up'].includes(value.goal)
   )
     throw new ServiceError(400, 'INVALID_GUIDE_INPUT');
@@ -21,17 +24,47 @@ export function validateWorkbenchGuide(value) {
 export function createWorkbenchGuideSelector({
   apiKey,
   transport,
+  openaiTransport,
   fetcher = fetch,
   now = Date.now,
 } = {}) {
   let unavailableUntil = 0;
-  return async (input, signal, { beforeRetry } = {}) => {
+  return async (
+    input,
+    signal,
+    { beforeRetry, consumptionExempt = false } = {},
+  ) => {
     const safe = validateWorkbenchGuide(input);
     const fallback = () => ({ ...safe, selection: 'internal' });
     if ((!apiKey && !transport) || (!transport && now() < unavailableUntil))
       return fallback();
     try {
-      const response = await (transport?.fetch ?? fetcher)(
+      const attemptBudget = {
+        attempts: 0,
+        retryTokens: 0,
+        ...(consumptionExempt ? { maxAttempts: Number.MAX_SAFE_INTEGER } : {}),
+      };
+      const fetchWithFailover = async (url, init, options) => {
+        const response = await (transport?.fetch ?? fetcher)(
+          url,
+          init,
+          options,
+        );
+        if (response.status !== 429 || !consumptionExempt || !openaiTransport)
+          return response;
+        await response.body?.cancel();
+        if (beforeRetry) await beforeRetry();
+        if (signal.aborted) throw new ServiceError(503, 'AGENT_TIMEOUT');
+        const body = JSON.parse(init.body);
+        body.model = 'gpt-4.1';
+        delete body.reasoning_effort;
+        return openaiTransport.fetch(
+          'https://api.openai.com/v1/chat/completions',
+          { ...init, body: JSON.stringify(body) },
+          options,
+        );
+      };
+      const response = await fetchWithFailover(
         'https://api.groq.com/openai/v1/chat/completions',
         {
           method: 'POST',
@@ -78,7 +111,7 @@ export function createWorkbenchGuideSelector({
             ],
           }),
         },
-        { beforeRetry },
+        { beforeRetry, attemptBudget },
       );
       if (!response.ok) {
         if (response.status === 429) {
@@ -126,5 +159,7 @@ export function workbenchGuideConfiguration(
   // Reuse the existing Germany-only startup admission; never add a direct fallback.
   if (env.ASSISTANT_AGENT_ENABLED !== 'true') return {};
   dataAgentConfiguration(env, { transport, openaiTransport });
-  return transport ? { transport } : { apiKey: env.GROQ_API_KEY };
+  return transport
+    ? { transport, openaiTransport }
+    : { apiKey: env.GROQ_API_KEY };
 }

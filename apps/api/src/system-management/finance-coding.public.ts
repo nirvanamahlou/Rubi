@@ -5,10 +5,19 @@ import {
   financeCodingProfileForValue,
   type FinanceCodingProfile,
 } from '@nora/contracts';
-import type { Prisma } from '@nora/database';
+import { Prisma } from '@nora/database';
 
 const globalKey = 'GLOBAL';
 const periodKey = 'ALL';
+
+/** Public read projection for global code availability checks. */
+export function issuedFinanceCodesInRange(first: string, last: string) {
+  return Prisma.sql`
+    SELECT "issuedValue" AS code
+    FROM system_issued_numbers
+    WHERE "issuedValue" BETWEEN ${first} AND ${last}
+  `;
+}
 
 async function lockProfile(
   tx: Prisma.TransactionClient,
@@ -24,6 +33,10 @@ export async function issueFinanceCode(
   actorUserId: string,
   idempotencyKey: string,
   occupied: (codes: readonly string[]) => Promise<ReadonlySet<string>>,
+  options: {
+    requestedCode?: string;
+    firstAvailable?: () => Promise<string | null>;
+  } = {},
 ) {
   await lockProfile(tx, profile);
   const scheme = await tx.systemNumberingScheme.upsert({
@@ -55,6 +68,49 @@ export async function issueFinanceCode(
   const where = { schemeId_periodKey: { schemeId: scheme.id, periodKey } };
   const last =
     (await tx.systemNumberingSequence.findUnique({ where }))?.lastValue ?? 0n;
+  const requested = options.requestedCode;
+  let code: string | null;
+  if (requested) {
+    await assertFinanceCodeUnissued(tx, requested);
+    if ((await occupied([requested])).has(requested))
+      throw new ConflictException(
+        'این کد تفصیلی در یکی از دفترهای شرکت‌ها استفاده شده است.',
+      );
+    code = requested;
+  } else {
+    code = options.firstAvailable
+      ? await options.firstAvailable()
+      : await nextSequentialCode(tx, profile, last, occupied);
+  }
+  if (!code)
+    throw new ConflictException('بازه کد این نوع تفصیلی تکمیل شده است.');
+
+  const sequenceValue = BigInt(code.slice(1));
+  if (!requested && sequenceValue > last)
+    await tx.systemNumberingSequence.upsert({
+      where,
+      create: { schemeId: scheme.id, periodKey, lastValue: sequenceValue },
+      update: { lastValue: sequenceValue, version: { increment: 1 } },
+    });
+  await tx.systemIssuedNumber.create({
+    data: {
+      schemeId: scheme.id,
+      idempotencyKey,
+      issuedValue: code,
+      sequenceValue,
+      periodKey,
+      actorUserId,
+    },
+  });
+  return code;
+}
+
+async function nextSequentialCode(
+  tx: Prisma.TransactionClient,
+  profile: FinanceCodingProfile,
+  last: bigint,
+  occupied: (codes: readonly string[]) => Promise<ReadonlySet<string>>,
+) {
   const batchSize = 64n;
   for (
     let start = last + 1n;
@@ -81,26 +137,9 @@ export async function issueFinanceCode(
       ).map((row) => row.issuedValue),
     ]);
     const code = candidates.find((candidate) => !unavailable.has(candidate));
-    if (!code) continue;
-    const sequenceValue = BigInt(code.slice(1));
-    await tx.systemNumberingSequence.upsert({
-      where,
-      create: { schemeId: scheme.id, periodKey, lastValue: sequenceValue },
-      update: { lastValue: sequenceValue, version: { increment: 1 } },
-    });
-    await tx.systemIssuedNumber.create({
-      data: {
-        schemeId: scheme.id,
-        idempotencyKey,
-        issuedValue: code,
-        sequenceValue,
-        periodKey,
-        actorUserId,
-      },
-    });
-    return code;
+    if (code) return code;
   }
-  throw new ConflictException('بازه کد این نوع تفصیلی تکمیل شده است.');
+  return null;
 }
 
 /** Protect already issued values from unrelated manual edits through Accounting. */

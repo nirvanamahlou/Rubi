@@ -93,7 +93,7 @@ export function renderB2bGuide(topic: Topic) {
   return [
     topic.title,
     topic.path.join(' ← '),
-    'پیش‌نیاز ' + topic.prerequisite,
+    'پیش‌نیاز:' + ' ' + topic.prerequisite,
     topic.text,
     'اقدام بعدی ' + topic.next,
   ].join('\n\n');

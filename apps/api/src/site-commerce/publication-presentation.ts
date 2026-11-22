@@ -14,6 +14,7 @@ export type PreviewHotelRate = {
   amountIrr: string;
   breakdown?: {
     hotel: PreviewRates;
+    hotels?: Record<string, PreviewRates>;
     adultFlightIrr: string;
     childFlightIrr: string;
   };
@@ -40,6 +41,21 @@ function previewHotelRate(value: unknown): PreviewHotelRate | null {
   )
     throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
   const breakdown = rate.breakdown;
+  const hotels = breakdown?.hotels;
+  if (
+    hotels !== undefined &&
+    (!hotels ||
+      typeof hotels !== 'object' ||
+      Array.isArray(hotels) ||
+      !Object.keys(hotels).length ||
+      Object.entries(hotels).some(
+        ([id, prices]) =>
+          !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id) ||
+          !prices ||
+          previewRateKinds.some((kind) => !isAmount(prices[kind])),
+      ))
+  )
+    throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
   if (
     breakdown !== undefined &&
     (!breakdown?.hotel ||
@@ -60,6 +76,18 @@ function previewHotelRate(value: unknown): PreviewHotelRate | null {
             hotel: Object.fromEntries(
               previewRateKinds.map((kind) => [kind, breakdown.hotel[kind]]),
             ) as PreviewRates,
+            ...(hotels
+              ? {
+                  hotels: Object.fromEntries(
+                    Object.entries(hotels).map(([id, prices]) => [
+                      id,
+                      Object.fromEntries(
+                        previewRateKinds.map((kind) => [kind, prices[kind]]),
+                      ) as PreviewRates,
+                    ]),
+                  ),
+                }
+              : {}),
           },
         }
       : {}),
