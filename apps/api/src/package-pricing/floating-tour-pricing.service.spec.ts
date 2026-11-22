@@ -178,6 +178,42 @@ function fixture() {
   };
 }
 beforeEach(() => vi.clearAllMocks());
+it('requires hotel resolution before issuing a commit digest for the same workbook', async () => {
+  const f = fixture();
+  const id = '12345678-1234-4234-8234-123456789abc';
+  f.directory.hotelRatePackChoices.mockResolvedValue({
+    data: [{ id, name: 'Hotel One', englishName: 'Hotel One' }],
+    meta: { total: 1 },
+  });
+  const bytes = workbook('2026-08-01', 'Hotel Onne');
+  const unresolved = await f.service.preview('tour', bytes, options, actor);
+  expect(unresolved.hotelMatches?.[0]?.candidates).toEqual([
+    { id, name: 'Hotel One' },
+  ]);
+  expect(unresolved.digest).toBe('');
+  const selected = { ...options, hotelSelections: { '2:2': id } };
+  const preview = await f.service.preview('tour', bytes, selected, actor);
+  expect(preview.rows[0]?.stays[0]?.hotelId).toBe(id);
+  await expect(
+    f.service.commit(
+      'tour',
+      bytes,
+      options,
+      preview.expectedVersion,
+      preview.digest,
+      actor,
+    ),
+  ).rejects.toThrow();
+  await f.service.commit(
+    'tour',
+    bytes,
+    selected,
+    preview.expectedVersion,
+    preview.digest,
+    actor,
+  );
+  expect(f.getState()?.payload.dated[0]?.stays[0]?.hotelId).toBe(id);
+});
 it('downloads a bounded combined template when combined mode is enabled in the form', async () => {
   const f = fixture();
   const template = readFloatingWorkbook(
