@@ -30,7 +30,6 @@ import {
 import { useRouter } from 'next/navigation';
 import type { AccountingBookV1, AccountingSnapshotV1 } from '@nora/contracts';
 import Link from '@/i18n/link';
-import { AccountingFiscalDefault } from './accounting-fiscal-default';
 import { AccountingDate } from './accounting-date';
 import { AccountingButton as Button } from './accounting-operations';
 import { Input } from '@/components/ui/form-controls';
@@ -540,7 +539,7 @@ export function AccountingBaseList({
   refresh,
   run,
 }: {
-  kind: AccountingListKind;
+  kind: Exclude<AccountingListKind, 'fiscal-years'>;
   snapshot: AccountingSnapshotV1 | null;
   books: AccountingBookV1[];
   busy: boolean;
@@ -600,40 +599,10 @@ export function AccountingBaseList({
             },
             { key: 'active', label: 'وضعیت', type: 'boolean' },
           ]
-        : kind === 'voucher-types'
-          ? [
-              { key: 'title', label: 'عنوان', type: 'text' },
-              { key: 'isDefault', label: 'پیش‌فرض', type: 'boolean' },
-            ]
-          : kind === 'fiscal-years'
-            ? [{ key: 'title', label: 'عنوان', type: 'text' }]
-            : fields
-                .filter((field) =>
-                  [
-                    'code',
-                    'title',
-                    'titleEn',
-                    'description',
-                    'active',
-                  ].includes(field.key),
-                )
-                .sort(
-                  (a, b) =>
-                    [
-                      'code',
-                      'title',
-                      'titleEn',
-                      'description',
-                      'active',
-                    ].indexOf(a.key) -
-                    [
-                      'code',
-                      'title',
-                      'titleEn',
-                      'description',
-                      'active',
-                    ].indexOf(b.key),
-                );
+        : [
+            { key: 'title', label: 'عنوان', type: 'text' },
+            { key: 'isDefault', label: 'پیش‌فرض', type: 'boolean' },
+          ];
   const filtered = filterRecords(
     records,
     {
@@ -996,11 +965,7 @@ export function AccountingBaseList({
       style={{ direction: 'rtl' }}
       aria-label={definition.title}
       data-accounting-list
-      data-source-grid-list={
-        kind === 'fiscal-years' || kind === 'coding-standards'
-          ? 'true'
-          : undefined
-      }
+      data-source-grid-list={kind === 'coding-standards' ? 'true' : undefined}
       className={`overflow-hidden border bg-surface ${compactList ? 'flex min-h-[70vh] flex-col rounded-sm [&_table]:text-xs [&_th]:border-e [&_th]:px-1 [&_th]:py-1 [&_td]:border-e [&_td]:px-2 [&_td]:py-1 [&_thead]:bg-sky-100/60 [&_thead_input]:h-7 [&_thead_select]:h-7 [&_thead_div]:rounded-sm' : 'rounded-2xl shadow-sm'}`}
     >
       <Button
@@ -1097,7 +1062,7 @@ export function AccountingBaseList({
           }
         >
           <option value="all">{definition.allTitle}</option>
-          {kind !== 'fiscal-years' && kind !== 'coding-standards' && (
+          {kind !== 'coding-standards' && (
             <>
               <option key="true" value="true">
                 فقط فعال‌ها
@@ -1239,13 +1204,7 @@ export function AccountingBaseList({
           </div>
           <GroupEditor
             group={draft}
-            fields={
-              kind === 'fiscal-years'
-                ? fields.filter(
-                    (field) => !['code', 'active'].includes(field.key),
-                  )
-                : fields
-            }
+            fields={fields}
             limit={nodeCount(draft) >= 32}
             onChange={setDraft}
           />
@@ -1483,7 +1442,7 @@ export function AccountingBaseList({
                         router.push(
                           `${definitionRoute(kind)}?bookId=${record.id}`,
                         )
-                    : kind === 'fiscal-years' || kind === 'coding-standards'
+                    : kind === 'coding-standards'
                       ? () =>
                           router.push(
                             `${definitionRoute(kind)}?bookId=${snapshot?.book.id ?? ''}&recordId=${record.id}`,
@@ -1514,18 +1473,6 @@ export function AccountingBaseList({
                   .filter((column) => column.key !== 'active')
                   .map(({ key: field, type }) => (
                     <td key={field} className="max-w-80 px-4 py-4">
-                      {kind === 'fiscal-years' &&
-                        field === 'title' &&
-                        snapshot && (
-                          <div className="mb-2">
-                            <AccountingFiscalDefault
-                              book={snapshot}
-                              yearId={record.id}
-                              busy={locked}
-                              run={run}
-                            />
-                          </div>
-                        )}
                       <span className="line-clamp-2">
                         {type === 'boolean' ? (
                           record.values[field] === 'true' ? (

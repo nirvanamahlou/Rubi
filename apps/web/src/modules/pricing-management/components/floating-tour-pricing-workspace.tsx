@@ -251,6 +251,7 @@ export function FloatingTourPricingWorkspace() {
   async function run(commit = false) {
     if (!session || !file || !id || busy || !validNights || !validFlights)
       return;
+    if (commit && !preview?.digest) return;
     setBusy(true);
     setError('');
     setMessage('');
@@ -295,6 +296,7 @@ export function FloatingTourPricingWorkspace() {
             setId(e.target.value);
             setFlightDrafts({});
             setFile(null);
+            setOptions((current) => ({ ...current, hotelSelections: {} }));
             setError('');
             setCatalog(null);
             setPeriod('');
@@ -518,6 +520,7 @@ export function FloatingTourPricingWorkspace() {
               disabled={busy || !canManage || !validNights}
               onChange={(e) => {
                 setFile(e.target.files?.[0] ?? null);
+                setOptions((current) => ({ ...current, hotelSelections: {} }));
                 setPreview(null);
                 setMessage('');
               }}
@@ -539,7 +542,49 @@ export function FloatingTourPricingWorkspace() {
         )}
         {message && <p role="status">{message}</p>}
       </Card>
-      {preview && (
+      {preview?.hotelMatches?.length ? (
+        <Card className="space-y-3 p-4">
+          <h2>تطبیق نام هتل‌ها</h2>
+          {preview.hotelMatches.map((match) => (
+            <label key={match.key} className="block space-y-1">
+              <span>{excelMessage(`Row ${match.row}: ${match.name}`)}</span>
+              <NativeSearchSelect
+                disabled={busy || !canManage || !match.candidates.length}
+                value={options.hotelSelections?.[match.key] ?? ''}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setOptions((current) => {
+                    const hotelSelections = { ...current.hotelSelections };
+                    if (value) hotelSelections[match.key] = value;
+                    else delete hotelSelections[match.key];
+                    return { ...current, hotelSelections };
+                  });
+                }}
+              >
+                <option value="">انتخاب هتل</option>
+                {match.candidates.map((hotel) => (
+                  <option key={hotel.id} value={hotel.id}>
+                    {hotel.name}
+                  </option>
+                ))}
+              </NativeSearchSelect>
+            </label>
+          ))}
+          <Button
+            disabled={
+              busy ||
+              !canManage ||
+              !preview.hotelMatches.every(
+                (match) => options.hotelSelections?.[match.key],
+              )
+            }
+            onClick={() => void run()}
+          >
+            پیش‌نمایش قیمت فروش
+          </Button>
+        </Card>
+      ) : null}
+      {preview?.digest && (
         <Card className="space-y-4 p-4">
           <h2>پیش‌نمایش ورود قیمت</h2>
           <p>

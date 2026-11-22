@@ -10,6 +10,10 @@ Reserve the tour pricing workspace preview editor and translations. Use branch-s
 
 Reserve the floating pricing tour list projection, picker and focused regression. Show route, branch, duration and identity for distinct same-name definitions. No schema or deployment change.
 
+## FLOATING-EXCEL-PRECISION-1122 — PC-A — READY_FOR_CI
+
+Reserve floating tour Excel amount parsing and its focused API tests. The Niyayesh Seir importer and ERP price composition were checked together, along with 31 rows of the supplied workbook using test hotel references. No migration, dependency or deployment changes.
+
 ## ORGANIZATION-DETAIL-TITLE-1121 — PC-D — COMPLETED
 
 Reserve the legal customer branch of the Accounting detail editor, Customer owner lookup/validation, English action label, focused regressions and task status. Reuse the native company dialog and Customer API. No migration or shared contract change.
@@ -12838,6 +12842,10 @@ PR1776 catalogue sync: add the same new HR error translation to its required app
 
 PR1776 concurrent producer integration: PR1782 delivered the same CI repairs while this run was validating. Retain its stronger fixture assertions for actor/branch and its canonical six English translations, and synchronize the API mirror to that exact wording. Both product scopes remain untouched; final merged-head CI must run again.
 
+## NORA-PRIVILEGED-FAILOVER-1122 — PC-C — READY_FOR_CI
+
+Owner requests no product consumption quotas for native danial/demo identities and provider failover Groq/OpenAI for their questions. Base bd301dda3; branch codex/pc-c-nora-provider-failover-1122. Reserve assistant agent-config/data-agent/server/groq-key-pool, a new failover helper and focused tests, own task/status notes. Reuse operator UUID exemption list; never trust client names/headers. Preserve ordinary-user quotas, native authentication/current-scope revalidation, output/evidence/tool validation, wire-size and finite request/turn/query safety bounds. Remove cumulative token/transport-attempt consumption quotas only in trusted exempt request context, audit actual provider usage and fail over only provider quota errors. No migration/dependency/public contract or permission grant changes. Existing Nora source scopes on other branches remain frozen; do not edit peer worktrees.
+
 ## NORA-DATA-AGENT-V1 — PC-C — IN_PROGRESS — 2026-11-14
 
 COMPUTER_ID=PC-C; branch codex/pc-c-nora-data-agent-v1 from origin/develop 5a9c72ae7. Owner explicitly authorizes the approved data-agent plan: Groq may receive authorized Sales results (names/contract numbers; no phones, identity documents, card data or credentials). Reserve services/assistant agent/provider/config/transport, additive apps/api/src/sales/assistant-agent source boundary and apps/api/src/assistant-read composition, additive Web v3 proxy/composer wiring and tests. Existing UI preserved. Other system follows this contract after handoff; do not concurrently edit these scopes. Shared locks: sole Dependency/Lockfile Owner PC-C for pgsql-ast-parser and pg plus types, API manifest/pnpm-lock.yaml; sole Migration Owner PC-C for additive nora_agent read views only, no existing row changes or Prisma model changes. Earlier published migration leases released; no current competing dependency lease found. Reserve bounded docs/DECISIONS, DATA_MODEL, PROJECT_STATUS and this assignment. Producer Sales public agent v1; consumer independent assistant v3; v1/v2 remain compatible. Feature disabled by default. Local-only acceptance after isolated database proofs; no production deployment or automatic merge. Stage/push only this work unit.
@@ -13284,9 +13292,21 @@ Reserve the Nora customer guide routing, normalized customer query and focused t
 
 Reserve read-only Master Data and ticket reference session recovery and focused tests for the B2B and flight pricing production acceptance. Preserve the existing authentication and authorization contracts.
 
+## FLOATING-IMPORT-MATCHING-1122 — PC-A
+
+Reserve floating import parser, preview service, and upload form. Add optional per-cell hotel selections and preview suggestions to the existing API. Keep the catalog scope and validate selections before commit. No migration or dependency change.
+
 ## TICKET-VOUCHER-1122 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-ticket-voucher-1122 from develop29c6c57b7. User requests hiding hotel voucher output for ticket-only contracts and explicitly authorizes develop merge. Reserve SalesTravelDocuments, its component regression and append-only task/status notes. No active overlapping writer found. Gate voucher output and pending notice on saved hotel selection/service facts; retain floating-contract behavior, ticket downloads and financial authorization. No API, schema, migration, dependency, operational data or deployment changes. Final-head hosted gates required before merge.
+
+## FISCAL-YEAR-LIST-1122 — PC-D — COMPLETED
+
+Reserve the Accounting fiscal-year list route, removal of its actions from the shared list UI, the fiscal boundary setup link, scoped Web tests and translations, and task/status notes. Resolve the company through fiscal context and read its allocated periods through the existing authorized ledger snapshot. Ledger commands, permissions and data contracts are outside this unit.
+
+## DETAIL-CODE-SUGGESTIONS-1122 — PC-D — COMPLETED
+
+Reserve the Accounting detail editor and year-independent suggestion endpoint, the System Management issued-code public projection and transaction allocator, their additive Contracts capability flag, and focused Web/API regressions. The Accounting producer serves the same code format and ledger access to the Web consumer. Existing detail IDs, issued codes and bank numbering remain compatible. No migration or data backfill.
 
 ### PACKAGE-GENERATOR-AZAR-1122 (PC-B)
 Scoped XLSX support and poster profiles for Antalya Iran Airtour and Kuala Lumpur plus Singapore. Reuse package-generator renderer; no API, schema or dependency changes.

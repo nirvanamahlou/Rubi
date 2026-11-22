@@ -1,4 +1,5 @@
 import { createAgentProvider } from './agent-provider.mjs';
+import { quotaFailover } from './provider-failover.mjs';
 export function dataAgentConfiguration(
   env = process.env,
   { transport, openaiTransport } = {},
@@ -27,8 +28,13 @@ export function dataAgentConfiguration(
   return {
     enabled: true,
     provider,
-    selectProvider: (request) =>
-      isSimpleAgentRequest(request) ? provider : openai,
+    selectProvider: (request, { consumptionExempt = false } = {}) => {
+      const simple = isSimpleAgentRequest(request);
+      const preferred = simple ? provider : openai;
+      return consumptionExempt
+        ? quotaFailover(preferred, simple ? openai : provider)
+        : preferred;
+    },
   };
 }
 
