@@ -1,3 +1,7 @@
+## 2026-11-22 — DETAIL-CODE-SUGGESTIONS-1122 — PC-D
+
+When defining personnel, corporate customer and individual customer details, Accounting suggests the first unused code across all ledgers and accepts a valid manual code on creation. Preview is read-only. The save transaction validates the eight-digit type series and prevents duplicate issuance. PostgreSQL coverage verifies cross-ledger contention, legacy occupancy and manual gaps. See [FIN-CODING-001](tasks/FIN-CODING-001.md).
+
 ## 2026-11-22 — FISCAL-YEAR-LIST-1122 — PC-D
 
 The Accounting fiscal-year list is a read-only view of the selected company’s ledger allocations. It shows allocated years and dates through the authorized Accounting snapshot, keeps the company default as a label, and excludes definitions without an allocation. The missing-year prompt directs users to general ledger setup.
@@ -10456,6 +10460,8 @@ The floating package pricing picker and URL preselection require an explicitly f
 
 Floating package price imports report Excel row numbers for validation errors and preview warnings.
 
+Floating tour Excel prices accept numeric precision artifacts while retaining monetary scale validation. Unavailable optional rates can be blank or use the Niyayesh Seir placeholders, and the EXTRA column may be omitted. Explicit zero remains a price. Adult airfare is added to DBL, SGL and EXTRA. Effective child airfare is added to CHD W BED and foreign-currency child no bed. Toman child no bed and infant retain their supplied rates, and commission is stored separately. The website consumes the final prices published by ERP.
+
 Dated floating price imports attach outbound and inbound flight details to Excel-derived periods and include the schedule in the opt-in website catalog. Monthly and older catalog rows remain compatible.
 
 Niyayesh floating checkout consumes dated periods with matching room references and an approved rial rate. ERP freezes the selected itinerary and price before bank payment, then creates the native contract from the bank-verified quote without allocating charter seats. Monthly periods remain available to existing catalog clients.
@@ -10485,6 +10491,7 @@ Nora guides B2B workflows and reads authorized status and filtered directory met
 Nora customer acceptance follow-up: explicit B2B questions use the organization guide, and B2C lookups use the supported minimum page size and existing customer query normalization.
 
 B2B directory reads and flight pricing references recover an expired access session once through the existing authenticated refresh flow.
+
 ## 2026-11-22 — FLOATING-IMPORT-MATCHING-1122
 
 Floating Excel imports treat NULL price cells as absent. Preview proposes up to three similar catalog hotel names per unresolved cell and accepts explicit selections with the same file. Commit validates the choices within the existing catalog scope and requires a fresh valid preview digest.
@@ -10496,3 +10503,6 @@ Sales passenger-document modal now renders hotel vouchers and their pending noti
 ## 2026-11-22 — LOAD-EDIT-FIELDS-1122
 
 Published load editing resolves saved city, country, airport, carrier, aircraft and cabin references before initializing the form. The Ticket Catalog now stores the optional aircraft type per published flight through an additive foreign key. Existing offers without this metadata keep their prior browser-based aircraft fallback.
+
+### Package generator Azar templates (2026-11-22)
+Antalya Iran Airtour and Kuala Lumpur plus Singapore XLSX formats now import to editable poster profiles. Validated the four supplied files with PNG and PDF exports.

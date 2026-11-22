@@ -12,6 +12,7 @@ import { MasterDataService } from '../src/master-data/master-data.service';
 import { detailOwners } from '../src/finance/accounting/detail-owners';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
+  allowsManualFinanceCode,
   financeCodingProfiles,
   type AccountingConfigurationV1,
   type AuthenticatedActor,
@@ -431,12 +432,28 @@ describe.skipIf(!url)('FIN-CODING-001 on isolated PostgreSQL', () => {
         title: 'Synthetic next',
         ...(await source(otherBook, profile.prefix)),
       };
+      const manual = allowsManualFinanceCode(profile);
+      if (manual) {
+        for (const [bookId, type] of [
+          [firstBook, first.typeId],
+          [otherBook, second.typeId],
+        ] as const)
+          await expect(
+            accounting.detailCodeSuggestion(bookId, type, actor),
+          ).resolves.toEqual({ code: profile.firstCode });
+        expect(
+          await db.systemIssuedNumber.findUnique({
+            where: { issuedValue: profile.firstCode },
+          }),
+        ).toBeNull();
+      }
       const key = randomUUID();
       for (const illegal of [
         profile.prefix + '0000000',
         '10000001',
         profile.prefix + '001',
-        profile.firstCode,
+        profile.prefix + '00000001',
+        ...(manual ? [] : [profile.firstCode]),
       ]) {
         await expect(
           run(firstBook, 'save-detail', { ...first, code: illegal }),
@@ -478,6 +495,70 @@ describe.skipIf(!url)('FIN-CODING-001 on isolated PostgreSQL', () => {
         idempotencyKey: 'accounting-detail:' + saved.id,
       });
     }
+  });
+
+  it('keeps the earliest free staff code when higher codes are entered manually and prevents cross-ledger duplicates', async () => {
+    const profile = financeCodingProfiles[0];
+    const firstType = await typeId(firstBook, profile.typeCode);
+    const otherType = await typeId(otherBook, profile.typeCode);
+    const first = { typeId: firstType, title: 'Synthetic staff' };
+    const other = {
+      typeId: otherType,
+      title: 'Synthetic staff in another ledger',
+    };
+    await expect(
+      accounting.detailCodeSuggestion(otherBook, firstType, actor),
+    ).rejects.toMatchObject({ status: 404 });
+    await expect(
+      accounting.detailCodeSuggestion(firstBook, firstType, {
+        ...actor,
+        permissions: ['finance.read', 'finance.journal.read'],
+      }),
+    ).rejects.toMatchObject({ status: 403 });
+    await expect(
+      run(firstBook, 'save-detail', { ...first, code: '۲۰۰۰۰۰۰۹' }),
+    ).resolves.toMatchObject({ code: '20000009' });
+    await expect(
+      accounting.detailCodeSuggestion(otherBook, otherType, actor),
+    ).resolves.toEqual({ code: '20000004' });
+
+    const sameCode = await Promise.allSettled([
+      run(firstBook, 'save-detail', { ...first, code: '20000004' }),
+      run(otherBook, 'save-detail', { ...other, code: '20000004' }),
+    ]);
+    expect(
+      sameCode.filter((result) => result.status === 'fulfilled'),
+    ).toHaveLength(1);
+    expect(
+      sameCode.find((result) => result.status === 'rejected'),
+    ).toMatchObject({
+      reason: { status: 409 },
+    });
+
+    const legacy = await run<Detail>(otherBook, 'save-detail', {
+      typeId: legacyTypeId,
+      title: 'Synthetic inactive legacy detail',
+      code: '20000005',
+      active: false,
+    });
+    await expect(
+      run(firstBook, 'save-detail', { ...first, code: legacy.code }),
+    ).rejects.toMatchObject({ status: 409 });
+    await expect(
+      accounting.detailCodeSuggestion(firstBook, firstType, actor),
+    ).resolves.toEqual({ code: '20000006' });
+    await expect(run(firstBook, 'save-detail', first)).resolves.toMatchObject({
+      code: '20000006',
+    });
+    await run(
+      otherBook,
+      'delete-base-record',
+      { entity: 'detail', id: legacy.id },
+      legacy.version,
+    );
+    await expect(
+      accounting.detailCodeSuggestion(firstBook, firstType, actor),
+    ).resolves.toEqual({ code: '20000005' });
   });
 
   it('skips occupied legacy values, preserves issued and legacy codes, and does not recycle deleted codes', async () => {
@@ -763,5 +844,33 @@ describe.skipIf(!url)('FIN-CODING-001 on isolated PostgreSQL', () => {
       title: 'Synthetic Buyer',
       customerId: person.id,
     });
+  });
+
+  it('accepts manual codes on both linked customer types without renumbering the saved detail on edit', async () => {
+    for (const profile of [
+      financeCodingProfiles[1],
+      financeCodingProfiles[2],
+    ]) {
+      const type = await typeId(firstBook, profile.typeCode);
+      const input = {
+        typeId: type,
+        title: 'Synthetic customer',
+        ...(await source(firstBook, profile.prefix)),
+        code: profile.prefix + '0000010',
+      };
+      const detail = await run<Detail>(firstBook, 'save-detail', input);
+      expect(detail.code).toBe(input.code);
+      await expect(
+        accounting.detailCodeSuggestion(firstBook, type, actor),
+      ).resolves.toEqual({ code: profile.prefix + '0000005' });
+      await expect(
+        run(
+          firstBook,
+          'save-detail',
+          { ...input, id: detail.id, code: profile.prefix + '0000011' },
+          detail.version,
+        ),
+      ).rejects.toMatchObject({ status: 422 });
+    }
   });
 });

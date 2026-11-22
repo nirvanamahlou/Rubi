@@ -181,8 +181,13 @@ export function readFloatingWorkbook(bytes: Uint8Array): FloatingCell[][] {
   }
   return Array.from({ length: rows.length }, (_, index) => rows[index] ?? []);
 }
-const hasPrice = (cell?: FloatingCell) =>
-  Boolean(cell?.value.trim() && !/^null$/i.test(cell.value.trim()));
+const moneyAmountPattern = /^(?:0|[1-9]\d{0,14})(?:\.\d{1,4})?$/;
+const unavailablePricePattern = /^(?:null|n\/a|na|#n\/a|[-–—])$/i;
+
+const hasPrice = (cell?: FloatingCell) => {
+  const value = cell?.value.trim();
+  return Boolean(value && !unavailablePricePattern.test(value));
+};
 
 export function floatingMoney(cell?: FloatingCell): FloatingTourMoney[] {
   if (!cell || !hasPrice(cell)) return [];
@@ -204,12 +209,16 @@ export function floatingMoney(cell?: FloatingCell): FloatingTourMoney[] {
     if (currencies.length > 1)
       return fail('استفاده هم‌زمان از چند ارز خارجی در یک ردیف مجاز نیست.');
     const currency = currencies[0] ?? 'IRR';
-    const amount = part.replace(
+    let amount = part.replace(
       /USD|EUR|TRY|IRR|IRT|دلار|یورو|لیر|تومان|ریال|[$€₺]/gi,
       '',
     );
-    if (!/^(?:0|[1-9]\d{0,14})(?:\.\d{1,4})?$/.test(amount))
-      return fail('مبلغ قیمت معتبر نیست.');
+    if (cell.numeric && /^(?:0|[1-9]\d{0,10})\.\d{5,}$/.test(amount)) {
+      // Excel can serialize binary noise beyond its 15 significant digits.
+      // With at most 11 integer digits, this preserves all four price decimals.
+      amount = String(Number(Number(amount).toPrecision(15)));
+    }
+    if (!moneyAmountPattern.test(amount)) return fail('مبلغ قیمت معتبر نیست.');
     const rial = currency === 'IRR' && !/IRR|ریال/i.test(hints) ? 10n : 1n;
     result.set(
       currency,
@@ -242,9 +251,8 @@ export function floatingPrices(
     }
   };
   const adult = moneyAt('flight per person');
-  const child = cells['flight child w bed']?.value
-    ? moneyAt('flight child w bed')
-    : adult;
+  const childRate = moneyAt('flight child w bed');
+  const child = childRate.length ? childRate : adult;
   const groups: [FloatingTourGroup, string][] = [
     ['double', 'dbl'],
     ['single', 'sgl'],
@@ -448,7 +456,6 @@ export function parseFloatingRows(
     'infant',
     'flight per person',
     'flight child w bed',
-    'extra',
   ])
     if (!headers.includes(h)) return fail(`Missing Excel column: ${h}`);
   if (new Set(headers.filter(Boolean)).size !== headers.filter(Boolean).length)

@@ -1,3 +1,7 @@
+## NORA-CALL-CATALOG-1122 — PC-C — ACTIVE
+
+Reserve the Nora guide catalogues, shared guide reader, scoped tests and coverage notes. Preserve the Call Center UI and producer contracts.
+
 ## PREVIEW-PER-HOTEL-1122 — PC-A — READY_FOR_CI
 
 Reserve the website preview editor, publication presentation validator, catalogue projection and focused tests. Assign rates by the selected departure's hotel IDs and retain historical shared previews. Owner authorizes develop merge. No schema or deploy change.
@@ -9,6 +13,10 @@ Reserve the tour pricing workspace preview editor and translations. Use branch-s
 ## FLOATING-TOUR-PICKER-1122 — PC-A — READY_FOR_CI
 
 Reserve the floating pricing tour list projection, picker and focused regression. Show route, branch, duration and identity for distinct same-name definitions. No schema or deployment change.
+
+## FLOATING-EXCEL-PRECISION-1122 — PC-A — READY_FOR_CI
+
+Reserve floating tour Excel amount parsing and its focused API tests. The Niyayesh Seir importer and ERP price composition were checked together, along with 31 rows of the supplied workbook using test hotel references. No migration, dependency or deployment changes.
 
 ## ORGANIZATION-DETAIL-TITLE-1121 — PC-D — COMPLETED
 
@@ -13303,3 +13311,11 @@ Reserve the Accounting fiscal-year list route, removal of its actions from the s
 ## LOAD-EDIT-FIELDS-1122 — PC-A
 
 Reserve Ticket Catalog load editor hydration and an optional aircraft-type reference on the published offer API and storage. Add one nullable foreign key migration, compatible with legacy offers and existing API clients. No operational deployment.
+
+## DETAIL-CODE-SUGGESTIONS-1122 — PC-D — COMPLETED
+
+Reserve the Accounting detail editor and year-independent suggestion endpoint, the System Management issued-code public projection and transaction allocator, their additive Contracts capability flag, and focused Web/API regressions. The Accounting producer serves the same code format and ledger access to the Web consumer. Existing detail IDs, issued codes and bank numbering remain compatible. No migration or data backfill.
+
+### PACKAGE-GENERATOR-AZAR-1122 (PC-B)
+
+Scoped XLSX support and poster profiles for Antalya Iran Airtour and Kuala Lumpur plus Singapore. Reuse package-generator renderer; no API, schema or dependency changes.

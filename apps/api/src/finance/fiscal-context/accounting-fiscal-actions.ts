@@ -38,7 +38,12 @@ export function fiscalYearIndependentRequest(
   if (
     method === 'GET' &&
     (/^\/finance\/source-contracts\/[^/]+\/read$/.test(path) ||
-      /^\/finance\/accounting\/books\/[^/]+\/journals\/[^/]+\/read$/.test(path))
+      /^\/finance\/accounting\/books\/[^/]+\/journals\/[^/]+\/read$/.test(
+        path,
+      ) ||
+      /^\/finance\/accounting\/books\/[^/]+\/detail-code-suggestion$/.test(
+        path,
+      ))
   )
     return true;
   if (action && accountingFiscalMetadataActions.has(action)) return true;

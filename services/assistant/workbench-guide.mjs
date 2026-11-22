@@ -1,4 +1,5 @@
 import catalog from './workbench-guides.json' with { type: 'json' };
+import callCenter from './call-center-guides.json' with { type: 'json' };
 import { ServiceError } from './errors.mjs';
 import { boundedAgentJson } from './agent-provider.mjs';
 import { dataAgentConfiguration } from './agent-config.mjs';
@@ -11,7 +12,9 @@ export function validateWorkbenchGuide(value) {
       (k) => !['version', 'topicId', 'goal'].includes(k),
     ) ||
     value.version !== 1 ||
-    !catalog.topics.some((t) => t.id === value.topicId) ||
+    ![...catalog.topics, ...callCenter.topics].some(
+      (t) => t.id === value.topicId,
+    ) ||
     !['steps', 'troubleshoot', 'follow-up'].includes(value.goal)
   )
     throw new ServiceError(400, 'INVALID_GUIDE_INPUT');
