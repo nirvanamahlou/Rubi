@@ -1,6 +1,7 @@
 'use client';
 import { AccountingDetailOwnerDialog } from './accounting-detail-owner-dialog';
 import {
+  allowsManualFinanceCode,
   detailOwnerKind,
   financeCodingProfile,
   financeCodingProfiles,
@@ -133,6 +134,22 @@ export function AccountingDetailEditor({
   ) => setDraft((old) => ({ ...old, [key]: value }));
   const type = types.find((row) => row.id === draft.typeId);
   const codingProfile = financeCodingProfile(type?.code);
+  const editableCodingProfile =
+    !isType &&
+    !selected &&
+    codingProfile &&
+    allowsManualFinanceCode(codingProfile)
+      ? codingProfile
+      : undefined;
+  const codeSuggestion = useQuery({
+    queryKey: ['accounting', 'detail-code-suggestion', book?.book.id, type?.id],
+    queryFn: () => accountingApi.detailCodeSuggestion(book!.book.id, type!.id),
+    enabled: !!book && !!editableCodingProfile,
+  });
+  const invalidManualFinanceCode =
+    !!editableCodingProfile &&
+    !!draft.code &&
+    financeCodingProfileForValue(draft.code) !== editableCodingProfile;
   const [ownerSearch, setOwnerSearch] = useState('');
   const sourceKind = !isType ? detailOwnerKind(type?.title ?? '') : undefined;
   const customerKind =
@@ -346,7 +363,16 @@ export function AccountingDetailEditor({
         id={`detail-${key}`}
         required={required}
         disabled={disabled}
-        readOnly={key === 'code' && Boolean(codingProfile)}
+        readOnly={key === 'code' && !!codingProfile && !editableCodingProfile}
+        {...(key === 'code' && editableCodingProfile
+          ? {
+              placeholder: codeSuggestion.data?.code ?? '',
+              'aria-invalid': invalidManualFinanceCode || undefined,
+              'aria-describedby': invalidManualFinanceCode
+                ? 'detail-code-format-error'
+                : undefined,
+            }
+          : {})}
         {...(key === 'classificationNumberLength'
           ? {
               inputMode: 'numeric' as const,
@@ -361,12 +387,20 @@ export function AccountingDetailEditor({
               maxLength: 20,
               pattern:
                 key === 'code' && codingProfile
-                  ? codingProfile.prefix + '[0-9]{7}'
+                  ? codingProfile.prefix +
+                    (editableCodingProfile ? '(?!0000000)' : '') +
+                    '[0-9]{7}'
                   : '[0-9]+',
             }
           : {})}
         onBlur={() => {
-          if (key === 'code' && manualCode && width && draft.code) {
+          if (
+            key === 'code' &&
+            !codingProfile &&
+            manualCode &&
+            width &&
+            draft.code
+          ) {
             const padded = paddedDetailCode(draft.code, width);
             if (padded) update('code', padded);
           }
@@ -445,7 +479,7 @@ export function AccountingDetailEditor({
         }
         onSubmit={(event) => {
           event.preventDefault();
-          if (!book) return;
+          if (!book || invalidManualFinanceCode) return;
           setInvalidGeneratedCode(false);
           const after = accountingSaveDisposition(event);
           const attributes = {
@@ -467,7 +501,8 @@ export function AccountingDetailEditor({
               ...(!isType
                 ? {
                     code:
-                      suggesting || (codingProfile && !selected)
+                      suggesting ||
+                      (codingProfile && !editableCodingProfile && !selected)
                         ? ''
                         : draft.code,
                   }
@@ -624,7 +659,28 @@ export function AccountingDetailEditor({
                     قالب کد تفصیلی دریافتی معتبر نیست.
                   </p>
                 )}
-                {codingProfile && !draft.code && (
+                {editableCodingProfile && invalidManualFinanceCode && (
+                  <p
+                    id="detail-code-format-error"
+                    role="alert"
+                    className="text-xs text-destructive"
+                  >
+                    کد تفصیلی باید ۸ رقم، با پیش‌شماره نوع تفصیلی و شماره
+                    بزرگ‌تر از صفر باشد.
+                  </p>
+                )}
+                {editableCodingProfile && !draft.code && (
+                  <p role="status" className="text-xs text-muted-foreground">
+                    {codeSuggestion.isPending
+                      ? 'در حال دریافت کد پیشنهادی…'
+                      : codeSuggestion.isError
+                        ? 'دریافت کد پیشنهادی ناموفق بود.'
+                        : codeSuggestion.data?.code
+                          ? 'برای دریافت خودکار کد پیشنهادی، این کادر را خالی بگذارید.'
+                          : 'بازه کد این نوع تفصیلی تکمیل شده است.'}
+                  </p>
+                )}
+                {codingProfile && !editableCodingProfile && !draft.code && (
                   <p className="text-xs text-muted-foreground">
                     کد پس از ذخیره اختصاص داده می‌شود.
                   </p>

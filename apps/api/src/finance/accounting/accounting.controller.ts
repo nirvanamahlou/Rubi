@@ -44,6 +44,17 @@ export class AccountingController {
   snapshot(@Param('bookId') id: string, @Req() request: AuthenticatedRequest) {
     return this.accounting.snapshot(id, request.actor);
   }
+  @Get('books/:bookId/detail-code-suggestion')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('finance.read', 'finance.account.manage')
+  detailCodeSuggestion(
+    @Param('bookId') bookId: string,
+    @Query('typeId') typeId: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.accounting.detailCodeSuggestion(bookId, typeId, request.actor);
+  }
+
   @Get('books/:bookId/workflows')
   @Header('Cache-Control', 'private, no-store')
   workflows(@Param('bookId') id: string, @Req() request: AuthenticatedRequest) {

@@ -14,6 +14,12 @@ import {
   PORTAL_SECTION_PERMISSIONS,
 } from './manual-access';
 
+export const HR_ADMIN_USERNAMES: readonly string[] = [
+  'nirvana',
+  'nima',
+  'danial',
+];
+
 export const IAM_PERMISSION_CONTRACT_VERSION = 15 as const;
 export const IAM_STEP_UP_CONTRACT_VERSION = 1 as const;
 

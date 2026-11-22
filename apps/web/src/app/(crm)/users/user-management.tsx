@@ -5,6 +5,7 @@ import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   MANUAL_ACCESS_SECTIONS,
+  HR_ADMIN_USERNAMES,
   manualSectionForScreen,
   USER_ACCESS_SCREENS,
   USER_ACCESS_DENY_CONTROLS,
@@ -1108,7 +1109,7 @@ export function UserManagement() {
                     ref={manualAccessEditor}
                     key={selected.id}
                     userId={selected.id}
-                    canAssignHr={['demo', 'nima'].includes(
+                    canAssignHr={HR_ADMIN_USERNAMES.includes(
                       selected.username.toLowerCase(),
                     )}
                     canManage={canManage}
