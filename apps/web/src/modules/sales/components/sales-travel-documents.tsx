@@ -18,6 +18,36 @@ import { TravelDocument } from '@/modules/reservations/components/travel-documen
 import { ReservationTickets } from '@/modules/reservations/components/reservation-tickets';
 type Intake = ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
 
+export function SalesHotelVoucher({
+  intake,
+  unbranded,
+  contractId,
+}: {
+  intake: Intake;
+  unbranded: boolean;
+  contractId: string;
+}) {
+  const hasHotel =
+    !!intake.snapshot.hotelSelection ||
+    intake.snapshot.serviceSelections.some(
+      (service) => service.kind === 'HOTEL',
+    );
+  if (!hasHotel) return null;
+  if (intake.workflow.voucherIssued) {
+    return (
+      <TravelDocument
+        intake={intake}
+        voucher
+        unbranded={unbranded}
+        salesContractId={contractId}
+      />
+    );
+  }
+  return !isFloatingSalesContract(intake.snapshot.serviceSelections) ? (
+    <p>واچر هنوز صادر نشده است.</p>
+  ) : null;
+}
+
 export function SalesContractTermsDownload() {
   return (
     <a
@@ -137,18 +167,11 @@ export function SalesTravelDocuments({
               {!intake.workflow.branding && (
                 <p>سربرگ باید در رزرواسیون ثبت شود.</p>
               )}
-              {intake.workflow.voucherIssued ? (
-                <TravelDocument
-                  intake={intake}
-                  voucher
-                  unbranded={unbranded}
-                  salesContractId={contractId}
-                />
-              ) : (
-                !isFloatingSalesContract(intake.snapshot.serviceSelections) && (
-                  <p>واچر هنوز صادر نشده است.</p>
-                )
-              )}
+              <SalesHotelVoucher
+                intake={intake}
+                unbranded={unbranded}
+                contractId={contractId}
+              />
             </>
           )}
         </DialogContent>
