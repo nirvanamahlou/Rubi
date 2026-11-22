@@ -1,10 +1,14 @@
-## FLOATING-EXCEL-PRECISION-1122 — PC-A
+## WEBSITE-TOUR-PRICE-SYNC-1122 — PC-A — READY_FOR_CI
 
-Reserve floating tour Excel amount parsing and its focused API tests. Compare passenger fare composition with the Niyayesh Seir importer and preserve the existing catalog amounts and API contract. No migration, dependency or deployment changes.
+Reserve the tour pricing workspace preview editor and translations. Use branch-scoped website publication CAS and the existing signed dispatch path. Owner authorizes develop merge and Avina deployment. No schema or purchase-rate changes.
 
 ## FLOATING-TOUR-PICKER-1122 — PC-A — READY_FOR_CI
 
 Reserve the floating pricing tour list projection, picker and focused regression. Show route, branch, duration and identity for distinct same-name definitions. No schema or deployment change.
+
+## FLOATING-EXCEL-PRECISION-1122 — PC-A — READY_FOR_CI
+
+Reserve floating tour Excel amount parsing and its focused API tests. The Niyayesh Seir importer and ERP price composition were checked together, along with 31 rows of the supplied workbook using test hotel references. No migration, dependency or deployment changes.
 
 ## ORGANIZATION-DETAIL-TITLE-1121 — PC-D — COMPLETED
 
