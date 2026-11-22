@@ -1,3 +1,19 @@
+## NORA-REMAINING-GUIDE-DOCS-1122 — PC-C — ACTIVE
+
+Reserve only Nora catalogue sources and consumers, document compiler, guide page, scoped tests and status. Move remaining guides from merged develop content. Preserve producer panels, permissions and authenticated record reads. Stacked on #1871. No dependency, schema or deployment work.
+
+## NORA-B2C-GUIDE-DOCS-1122 — PC-C — ACTIVE
+
+Migrate the versioned B2C help catalogue and wire its guide page and Composer link. Preserve all live customer reads and panel UI. Stacked on Call Center document PR #1870.
+
+## NORA-CALL-CENTER-GUIDE-DOCS-1122 — PC-C — ACTIVE
+
+Transfer the approved 22 Call Center help topics from merged PR #1859 to linked Markdown. Reserve the guide document, generator, authenticated guide page and coverage records. Preserve panel UI per docs/tasks/CALL-CENTER-UI-PRESERVATION.md and existing read paths. Stacked on pilot PR #1869.
+
+## NORA-GUIDE-DOCS-1122 — PC-C — ACTIVE
+
+PC-C confirmed by the owner. Pilot from develop a496d9231. Reserve new guide Markdown, build/check script, authenticated guide page, Sales and Workbench assistant catalogue adapters and bounded Composer guide link, tests, CI check and status notes. PC-C continues its guide reader ownership from merged PR1859. Preserve Call Center UI and live read paths. No migration, dependency or provider change.
+
 ## NORA-CALL-CATALOG-1122 — PC-C — ACTIVE
 
 Reserve the Nora guide catalogues, shared guide reader, scoped tests and coverage notes. Preserve the Call Center UI and producer contracts.

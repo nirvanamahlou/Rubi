@@ -66,6 +66,8 @@ jobs:
           node --version
           test "$(pnpm --version)" = "11.19.0"
 
+      - name: Verify assistant guide catalogues
+        run: node scripts/build-assistant-guides.mjs --check
       - name: Verify multi-computer CI policy
         run: node --test .github/tests/ci-policy.test.mjs
 
