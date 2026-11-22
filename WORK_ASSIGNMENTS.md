@@ -1,3 +1,7 @@
+## PREVIEW-PER-HOTEL-1122 — PC-A — READY_FOR_CI
+
+Reserve the website preview editor, publication presentation validator, catalogue projection and focused tests. Assign rates by the selected departure's hotel IDs and retain historical shared previews. Owner authorizes develop merge. No schema or deploy change.
+
 ## WEBSITE-TOUR-PRICE-SYNC-1122 — PC-A — READY_FOR_CI
 
 Reserve the tour pricing workspace preview editor and translations. Use branch-scoped website publication CAS and the existing signed dispatch path. Owner authorizes develop merge and Avina deployment. No schema or purchase-rate changes.
