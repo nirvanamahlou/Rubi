@@ -150,6 +150,24 @@ function senderFixture() {
   };
 }
 describe('Automatic exhausted-ticket website stop', () => {
+  it('keeps floating ticket prices visible but never advertises reservable stock', async () => {
+    const f = fixture(20);
+    f.service.flight.mockResolvedValue({
+      id: 'offer',
+      supplyType: 'FLOATING',
+      remainingCapacity: 20,
+      standaloneSalePrice: { amount: '1200000', currencyCode: 'IRR' },
+    });
+    expect((await f.service.catalog('nss', actor)).data[0]).toMatchObject({
+      enabled: true,
+      salesStopped: true,
+      previewOnly: true,
+      flight: {
+        standaloneSalePrice: { amount: '1200000', currencyCode: 'IRR' },
+      },
+    });
+    expect(f.row.salesStopped).toBe(false);
+  });
   for (const capacity of [0, -1])
     it('projects an effective stop at capacity ' + capacity, async () => {
       const f = fixture(capacity);

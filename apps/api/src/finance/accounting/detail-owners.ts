@@ -15,7 +15,7 @@ type Book = { id: string; branchId: string; baseCurrency: string };
 const attrs = (x: unknown) => v.attributes(x);
 export function ownerKind(input: unknown) {
   const kind = String(input);
-  if (!accountingDetailOwners.some((x) => x.kind === kind))
+  if (kind !== 'STAFF' && !accountingDetailOwners.some((x) => x.kind === kind))
     v.invalid('نوع عنوان تفصیلی معتبر نیست.');
   return kind as AccountingDetailOwnerKind;
 }
@@ -52,7 +52,16 @@ export async function detailOwners(
     where: {
       bookId: book.id,
       kind: configKind(kind),
-      ...(id ? { id } : { title: { contains: search, mode: 'insensitive' } }),
+      ...(id
+        ? { id }
+        : kind === 'STAFF' && search
+          ? {
+              OR: [
+                { title: { contains: search, mode: 'insensitive' } },
+                { code: { contains: search, mode: 'insensitive' } },
+              ],
+            }
+          : { title: { contains: search, mode: 'insensitive' } }),
     },
     orderBy: [{ code: 'asc' }, { id: 'asc' }],
     ...(kind === 'CASH' ? {} : { skip: (page - 1) * 30, take: 31 }),
@@ -207,13 +216,31 @@ export async function saveDetailOwner(
   )
     throw new ConflictException('عنوان هم‌زمان تغییر کرده است.');
   const code = v.text(p.code, 40, true),
-    title = v.text(p.title, 160, true),
     titleEn = v.text(p.titleEn, 160),
     active = p.active !== false,
     input = attrs(p.attributes);
   const data: Record<string, string | boolean> = {
     notes: kind === 'FISCAL_YEAR' ? '[]' : v.text(input.notes, 2000),
   };
+  let title: string;
+  if (kind === 'STAFF') {
+    const staffKind = input.staffKind;
+    if (staffKind !== 'person' && staffKind !== 'site')
+      v.invalid('شخص یا سایت را انتخاب کنید.');
+    const firstName = v.text(
+      input.firstName,
+      staffKind === 'person' ? 79 : 160,
+      true,
+    );
+    const lastName =
+      staffKind === 'person' ? v.text(input.lastName, 80, true) : '';
+    const position =
+      staffKind === 'site' ? 'سایت' : v.text(input.position, 120, true);
+    Object.assign(data, { staffKind, firstName, lastName, position });
+    title = lastName ? firstName + ' ' + lastName : firstName;
+  } else {
+    title = v.text(p.title, 160, true);
+  }
   if (kind === 'BRANCH') {
     if (input.isMain !== undefined && typeof input.isMain !== 'boolean')
       v.invalid('وضعیت شعبه اصلی معتبر نیست.');
@@ -379,14 +406,14 @@ export async function saveDetailOwner(
 export async function resolveDetailOwner(
   tx: Tx,
   book: Book,
-  title: string,
+  type: { title: string; code: string },
   p: Record<string, unknown>,
   existing: {
     sourceAccountId?: string | null;
     sourceConfigurationId?: string | null;
   } | null,
 ) {
-  const kind = detailOwnerKind(title);
+  const kind = detailOwnerKind(type.title, type.code);
   if (!kind) {
     if (p.sourceAccountId || p.sourceConfigurationId)
       v.rule('این نوع تفصیلی عنوان مرجع ندارد.');

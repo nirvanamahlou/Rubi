@@ -6,6 +6,8 @@ import {
   accountingDetailOwners,
   detailOwnerKind,
   type AccountingSnapshotV1,
+  type AccountingDetailOwnerKind,
+  type AccountingDetailOwnerV1,
 } from '@nora/contracts';
 import { AccountingDetailOwnerDialog } from './accounting-detail-owner-dialog';
 import { LedgerPersonDialog } from './ledger-person-dialog';
@@ -46,7 +48,10 @@ const book = {
   details: [],
   configurations: [],
 } as unknown as AccountingSnapshotV1;
-function render(kind: (typeof accountingDetailOwners)[number]['kind']) {
+function render(
+  kind: AccountingDetailOwnerKind,
+  initial?: AccountingDetailOwnerV1,
+) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -54,6 +59,7 @@ function render(kind: (typeof accountingDetailOwners)[number]['kind']) {
     <QueryClientProvider client={client}>
       <AccountingDetailOwnerDialog
         kind={kind}
+        initial={initial}
         book={book}
         run={vi.fn()}
         onSelected={vi.fn()}
@@ -76,6 +82,33 @@ describe('dedicated detail owner forms', () => {
       }
     },
   );
+  it('shows person inputs for a new staff title and a fixed position for a site', () => {
+    const person = render('STAFF');
+    expect(person).toContain('نام خانوادگی');
+    expect(person).toContain('name="staff-kind"');
+    expect(person).toContain('ذخیره و انتخاب');
+    const site = render('STAFF', {
+      id: 'staff-site',
+      kind: 'STAFF',
+      code: 'S01',
+      title: 'Synthetic site',
+      titleEn: '',
+      active: true,
+      version: 1,
+      currency: null,
+      configurationId: 'staff-site',
+      accountId: null,
+      attributes: {
+        staffKind: 'site',
+        firstName: 'Synthetic site',
+        position: 'Wrong',
+      },
+    });
+    expect(site).not.toContain('staff-last-name');
+    expect(site.match(/<input[^>]*id="staff-position"[^>]*>/)?.[0]).toMatch(
+      /readonly=""[^>]*value="سایت"/i,
+    );
+  });
   it('binds a branch to the current enterprise with a read-only enterprise name', () => {
     const html = render('BRANCH');
     expect(html).toContain('شرکت آزمایشی');

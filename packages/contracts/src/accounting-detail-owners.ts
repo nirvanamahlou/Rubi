@@ -1,3 +1,5 @@
+import { financeCodingProfile } from './finance-coding';
+
 export const accountingDetailOwners = [
   { kind: 'PETTY_CASH', title: 'تنخواه' },
   { kind: 'CASH', title: 'صندوق' },
@@ -9,10 +11,12 @@ export const accountingDetailOwners = [
   { kind: 'BRANCH', title: 'شعبه' },
 ] as const;
 export type AccountingDetailOwnerKind =
-  (typeof accountingDetailOwners)[number]['kind'];
+  (typeof accountingDetailOwners)[number]['kind'] | 'STAFF';
 export function detailOwnerKind(
   title: string,
+  typeCode?: string,
 ): AccountingDetailOwnerKind | undefined {
+  if (financeCodingProfile(typeCode)?.prefix === '2') return 'STAFF';
   const key = (s: string) =>
     s
       .replaceAll('ي', 'ی')

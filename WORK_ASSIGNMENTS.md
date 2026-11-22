@@ -1,6 +1,7 @@
 ## NORA-REMAINING-GUIDE-DOCS-1122 — PC-C — ACTIVE
 
 Reserve only Nora catalogue sources and consumers, document compiler, guide page, scoped tests and status. Move remaining guides from merged develop content. Preserve producer panels, permissions and authenticated record reads. Stacked on #1871. No dependency, schema or deployment work.
+
 ## NORA-B2C-GUIDE-DOCS-1122 — PC-C — ACTIVE
 
 Migrate the versioned B2C help catalogue and wire its guide page and Composer link. Preserve all live customer reads and panel UI. Stacked on Call Center document PR #1870.
@@ -12,9 +13,14 @@ Transfer the approved 22 Call Center help topics from merged PR #1859 to linked 
 ## NORA-GUIDE-DOCS-1122 — PC-C — ACTIVE
 
 PC-C confirmed by the owner. Pilot from develop a496d9231. Reserve new guide Markdown, build/check script, authenticated guide page, Sales and Workbench assistant catalogue adapters and bounded Composer guide link, tests, CI check and status notes. PC-C continues its guide reader ownership from merged PR1859. Preserve Call Center UI and live read paths. No migration, dependency or provider change.
+
 ## NORA-CALL-CATALOG-1122 — PC-C — ACTIVE
 
 Reserve the Nora guide catalogues, shared guide reader, scoped tests and coverage notes. Preserve the Call Center UI and producer contracts.
+
+## PASSENGER-IDENTITY-PREFLIGHT-1117 — PC-A — ACTIVE
+
+Owner request: read-only passenger identity and passport validation before website review and payment. Scope is Customers, SiteCommerce and the website checkout. No migration or dependency changes.
 
 ## PREVIEW-PER-HOTEL-1122 — PC-A — READY_FOR_CI
 
@@ -3581,6 +3587,10 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
   و build تولیدی ۴۶ مسیر موفق‌اند؛ ادغام و فعال‌سازی Web3100 مجاز است.
 - هر چهار Gate CI پاس شدند؛ PR #246 با Merge Commit `88d26ebc` وارد `develop` شد.
   Web3100 با Build ID `60YeidM5vzsZuojUx7D85` فعال و API4190 سالم است؛ رزرو آزاد شد.
+
+## PERSONNEL-DETAIL-TITLES-1122 — PC-D — READY_FOR_CI
+
+Reserve personnel detail title picker, person/site reference forms and their existing Accounting reference command, translations, and focused tests. Uses the existing ledger-scoped configuration and detail links.
 
 ## FINANCE-004-ACCOUNTING-SECONDARY-NAV — PC-A — COMPLETE / MERGED
 
@@ -13337,3 +13347,10 @@ Scoped XLSX support and poster profiles for Antalya Iran Airtour and Kuala Lumpu
 ## CROSS-COUNTRY-TICKET-DESTINATIONS-1122 — PC-A — READY_FOR_CI
 
 Allow extra sales destinations across countries in the flight schedule. Shared capacity and endpoint filters are covered by focused tests.
+
+## GHESTIROO-TOURS-1122 — PC-D
+
+Reserve the Ghestiroo destination policy and its signed tour delivery on
+`codex/pc-d-ghestiroo-tours-1122` from develop. The producer extends the existing
+v1 snapshot for the Ghestiroo consumer and keeps its tour order intake disabled.
+Other destinations retain their product policy, credentials and checkout.

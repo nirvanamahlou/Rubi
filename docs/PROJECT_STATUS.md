@@ -39,6 +39,10 @@ The Accounting fiscal-year list is a read-only view of the selected company’s 
 
 The corporate customer title picker opens the existing company form and lists active organization customers for the ledger branch. Save and select links the Customer profile to the eight-digit series-three detail. Web regressions and an isolated PostgreSQL round trip cover the picker action, the native company profile and branch and kind validation. No schema change.
 
+## 2026-11-22 — PERSONNEL-DETAIL-TITLES-1122 — PC-D
+
+The personnel detail title picker supports manual person and site references, with a fixed site position. Accounting validates and persists the reference in the selected ledger and retains series-two accounting detail numbering.
+
 ## 2026-11-21 — CUSTOMER-DETAIL-TITLE-1121 — PC-D
 
 Added the compact individual customer title form and linked the native person Customer record to Accounting details in series four. The existing Customer API and eight-digit allocator are reused. See [CUSTOMER-DETAIL-TITLE-1121](tasks/CUSTOMER-DETAIL-TITLE-1121.md).
@@ -85,6 +89,9 @@ Eight predefined typed detail title lookups and create/edit dialogs, seven-digit
 ## 2026-11-17 — Nora Sales evidence correction (PC-C)
 
 NORA-SALES-EVIDENCE-1117: reproduced Persian calendar/Tehran-boundary and contract-currency row-count defects. Added deterministic period resolution, same-snapshot authorized reconciliation and typed financial fact binding with model-chosen layout.180 service tests pass; real Groq/Germany plus native-session-scoped PostgreSQL passes in three model calls and two reads, matching independent count/currency oracles. No migration or operational writes. Exact-head CI, Nora-only activation and authenticated browser acceptance remain pending. See [task](tasks/NORA-SALES-EVIDENCE-1117.md).
+## PASSENGER-IDENTITY-PREFLIGHT-1117 — PC-A — VALIDATING
+
+Read-only ERP identity preflight before website review/payment, safe inline passenger errors, and payment-start recheck added. Existing same-national-ID profile sync and passport uniqueness retained. Synthetic tests pass; final build/PR/release gates pending. No data migration or payment replay. Order22 remains pending identity correction. See [task](tasks/PASSENGER-IDENTITY-PREFLIGHT-1117.md).
 
 ## NORA-GROQ-QUOTA-GROUPS-1117 — PC-C — VALIDATING
 
@@ -10535,3 +10542,10 @@ Sales passenger-document modal now renders hotel vouchers and their pending noti
 
 ### Package generator Azar templates (2026-11-22)
 Antalya Iran Airtour and Kuala Lumpur plus Singapore XLSX formats now import to editable poster profiles. Validated the four supplied files with PNG and PDF exports.
+
+## اتصال تور قسطی‌رو (PC-D)
+
+اتصال موجود قسطی‌رو بستهٔ تاریخ‌دار یا دورهٔ شناور را با تأیید مستقل مقصد در
+کاتالوگ امضاشده تحویل می‌دهد. تنظیم‌های پیش‌نمایش، توقف فروش و اجازهٔ انتشار
+پروفایل هتل برای همان مقصد ذخیره می‌شوند. دریافت، ذخیره و نمایش در قسطی‌رو
+از مسیر نسخه‌بندی‌شده بررسی می‌شود. دریافت سفارش تور در اتصال قسطی‌رو غیرفعال است.
