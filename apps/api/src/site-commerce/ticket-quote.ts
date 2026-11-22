@@ -11,6 +11,8 @@ import {
   type TicketStandaloneSalePriceV1,
 } from '@nora/contracts';
 
+import { assertWebsiteBookable } from './price-only-policy';
+
 export type WebsiteFlightQuote = {
   amount: string;
   currencyCode: string;
@@ -59,6 +61,8 @@ export function websiteFlightQuotes(
   counts?: AgeCounts,
   includeBreakdown = false,
 ): WebsiteFlightQuote[] {
+  for (const offer of [outbound, ...(returning ? [returning] : [])])
+    assertWebsiteBookable('ticket', offer.supplyType);
   const totalFor = (fare: TicketStandaloneSalePriceV1, consumed: number) =>
     counts
       ? ageFareTotal(fare, counts, consumed)
