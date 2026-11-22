@@ -1,6 +1,6 @@
-## CROSS-COUNTRY-TICKET-DESTINATIONS-1122 — PC-A — READY_FOR_CI
+## NORA-CALL-CATALOG-1122 — PC-C — ACTIVE
 
-Scope: flight schedule additional sales destination picker and targeted tests. Search all active cities for extra routes and preserve shared flight capacity and country filters on actual flight endpoints. Owner authorizes develop merge.
+Reserve the Nora guide catalogues, shared guide reader, scoped tests and coverage notes. Preserve the Call Center UI and producer contracts.
 
 ## PREVIEW-PER-HOTEL-1122 — PC-A — READY_FOR_CI
 
@@ -13307,3 +13307,15 @@ COMPUTER_ID=PC-A; branch codex/pc-a-ticket-voucher-1122 from develop29c6c57b7. U
 ## FISCAL-YEAR-LIST-1122 — PC-D — COMPLETED
 
 Reserve the Accounting fiscal-year list route, removal of its actions from the shared list UI, the fiscal boundary setup link, scoped Web tests and translations, and task/status notes. Resolve the company through fiscal context and read its allocated periods through the existing authorized ledger snapshot. Ledger commands, permissions and data contracts are outside this unit.
+
+## DETAIL-CODE-SUGGESTIONS-1122 — PC-D — COMPLETED
+
+Reserve the Accounting detail editor and year-independent suggestion endpoint, the System Management issued-code public projection and transaction allocator, their additive Contracts capability flag, and focused Web/API regressions. The Accounting producer serves the same code format and ledger access to the Web consumer. Existing detail IDs, issued codes and bank numbering remain compatible. No migration or data backfill.
+
+### PACKAGE-GENERATOR-AZAR-1122 (PC-B)
+Scoped XLSX support and poster profiles for Antalya Iran Airtour and Kuala Lumpur plus Singapore. Reuse package-generator renderer; no API, schema or dependency changes.
+
+## CROSS-COUNTRY-TICKET-DESTINATIONS-1122 — PC-A — READY_FOR_CI
+
+Allow extra sales destinations across countries in the flight schedule. Shared capacity and endpoint filters are covered by focused tests.
+

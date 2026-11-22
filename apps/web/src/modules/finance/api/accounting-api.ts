@@ -18,6 +18,10 @@ export const accountingApi = {
       body: JSON.stringify(payload),
     }),
   snapshot: (id: string) => apiRequest<AccountingSnapshotV1>(`${base}/${id}`),
+  detailCodeSuggestion: (bookId: string, typeId: string) =>
+    apiRequest<{ code: string | null }>(
+      `${base}/${bookId}/detail-code-suggestion?${new URLSearchParams({ typeId })}`,
+    ),
   journals: (id: string, query: Record<string, string>) =>
     apiRequest<{
       items: AccountingJournalV1[];
