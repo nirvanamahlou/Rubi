@@ -58,6 +58,7 @@ export interface FloatingTourFlightInput extends Omit<
 }
 
 export interface FloatingTourImportOptions {
+  hotelSelections?: Record<string, string>;
   flightPattern?: FloatingTourFlightPattern | undefined;
   /** Ordered stay nights; cities are resolved from the Excel hotel references. */
   destinationNights?: number[] | undefined;
@@ -77,6 +78,12 @@ export interface FloatingTourSaleSet {
   } | null;
 }
 export interface FloatingTourImportPreview {
+  hotelMatches?: {
+    key: string;
+    row: number;
+    name: string;
+    candidates: { id: string; name: string }[];
+  }[];
   exchangeRates: Record<string, string>;
   packageVersion: number;
   expectedVersion: number;

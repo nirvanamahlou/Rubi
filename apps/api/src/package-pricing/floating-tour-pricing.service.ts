@@ -26,6 +26,7 @@ import { buildFloatingTourTemplate } from './floating-tour-template';
 import {
   parseFloatingRows,
   readFloatingWorkbook,
+  resolveFloatingHotelCells,
   type FloatingHotelReference,
 } from './floating-tour-import';
 import { floatingWebsitePeriods } from './floating-tour-publication';
@@ -50,6 +51,9 @@ const flightLeg = Joi.object({
   destinationAirport: airport.required(),
 });
 const optionsSchema = Joi.object({
+  hotelSelections: Joi.object()
+    .pattern(/^\d{1,5}:\d{1,2}$/, Joi.string().guid().required())
+    .max(10000),
   nights: Joi.number().integer().min(1).max(365).required(),
   mode: Joi.string().valid('DATED', 'MONTHLY').required(),
   calendar: Joi.string()
@@ -397,8 +401,25 @@ export class FloatingTourPricingService {
           throw new BadRequestException('تعداد هتل‌ها از سقف مجاز بیشتر است.');
       }
     }
+    const workbook = readFloatingWorkbook(bytes);
+    const hotelMatches = resolveFloatingHotelCells(
+      workbook,
+      hotels,
+      options.hotelSelections,
+    );
+    if (hotelMatches.length)
+      return {
+        hotelMatches,
+        exchangeRates: {},
+        packageVersion: row.version,
+        expectedVersion: current.version,
+        digest: '',
+        rows: [],
+        options,
+        warnings: [],
+      };
     const rows = parseFloatingRows(
-      readFloatingWorkbook(bytes),
+      workbook,
       options,
       definition,
       hotels,

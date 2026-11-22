@@ -274,7 +274,7 @@ export function createGroqKeyPool({
         if (!lease) return unavailable();
         const { key, index } = lease;
         try {
-          if (budget.attempts >= 8) {
+          if (budget.attempts >= (budget.maxAttempts ?? 8)) {
             emit(key, 'model-attempt-budget', attempt);
             throw new ServiceError(429, 'AGENT_MODEL_BUDGET_EXCEEDED');
           }
