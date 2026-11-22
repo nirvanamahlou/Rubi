@@ -21,6 +21,17 @@ type Breakdown = Record<(typeof flightFields)[number][0], string> & {
   hotels?: Record<string, HotelRates>;
 };
 type PreviewHotel = { id: string; name: string };
+const emptyRates: HotelRates = {
+  double: '',
+  single: '',
+  childWithBed: '',
+  extra: '',
+};
+const emptyBreakdown: Breakdown = {
+  adultFlightIrr: '',
+  childFlightIrr: '',
+  hotel: emptyRates,
+};
 type PublicationResult = {
   data: Publication | null;
   previewHotels?: PreviewHotel[];
@@ -62,10 +73,14 @@ export function WebsiteTourPreviewPrices({
   departureId,
   branchId,
   canEdit,
+  site = 'nss',
+  travelDates,
 }: {
   departureId: string;
   branchId: string;
   canEdit: boolean;
+  site?: 'nss' | 'ghestiroo';
+  travelDates?: { checkIn: string; checkOut: string };
 }) {
   const [publication, setPublication] = useState<Publication | null>(null);
   const [hotels, setHotels] = useState<PreviewHotel[]>([]);
@@ -73,10 +88,16 @@ export function WebsiteTourPreviewPrices({
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const endpoint = `${getPublicApiBaseUrl()}/sales/site-commerce/v1/nss/publications/tour/${encodeURIComponent(departureId)}`;
+  const endpoint =
+    getPublicApiBaseUrl() +
+    '/sales/site-commerce/v1/' +
+    site +
+    '/publications/tour/' +
+    encodeURIComponent(departureId);
   const readUrl = `${endpoint}?${new URLSearchParams({ branchId })}`;
   const presentation = publication?.presentation;
   const rate = presentation?.previewHotelRate;
+  const dates = rate ?? (site === 'ghestiroo' ? travelDates : undefined);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -97,8 +118,10 @@ export function WebsiteTourPreviewPrices({
         const breakdown =
           result.data?.presentation?.previewHotelRate?.breakdown;
         setHotels(options);
+        const initial =
+          breakdown ?? (site === 'ghestiroo' ? emptyBreakdown : undefined);
         setDraft(
-          breakdown && { ...breakdown, hotels: hotelDraft(breakdown, options) },
+          initial && { ...initial, hotels: hotelDraft(initial, options) },
         );
       })
       .catch(() => {
@@ -106,7 +129,7 @@ export function WebsiteTourPreviewPrices({
           setError('وضعیت انتشار سایت دریافت نشد.');
       });
     return () => controller.abort();
-  }, [readUrl]);
+  }, [readUrl, site]);
 
   const valid =
     draft &&
@@ -131,7 +154,7 @@ export function WebsiteTourPreviewPrices({
     if (
       !publication ||
       !presentation?.previewOnly ||
-      !rate ||
+      !dates ||
       !draft ||
       !valid ||
       !dirty ||
@@ -157,7 +180,18 @@ export function WebsiteTourPreviewPrices({
           version: publication.version,
           presentation: {
             ...presentation,
-            previewHotelRate: { ...rate, breakdown: draft },
+            previewHotelRate: {
+              checkIn: dates.checkIn,
+              checkOut: dates.checkOut,
+              amountIrr:
+                rate?.amountIrr ?? draft.hotels![hotels[0]!.id]!.double,
+              breakdown: rate
+                ? draft
+                : {
+                    ...draft,
+                    hotel: draft.hotels?.[hotels[0]!.id] ?? draft.hotel,
+                  },
+            },
           },
         }),
       });
@@ -180,15 +214,17 @@ export function WebsiteTourPreviewPrices({
     }
   }
 
-  if (!presentation?.previewOnly || !rate || !draft)
+  if (!presentation?.previewOnly || !dates || !draft)
     return error ? <p role="alert">{error}</p> : null;
 
   return (
     <Card className="space-y-4 p-5">
-      <h2 className="text-lg font-black">قیمت نمایشی تور در سایت نیایش سیر</h2>
+      <h2 className="text-lg font-black">
+        قیمت نمایشی تور در سایت {site === 'ghestiroo' ? 'قسطی‌رو' : 'نیایش سیر'}
+      </h2>
       <p className="text-sm text-muted-foreground">
         <span dir="ltr">
-          {rate.checkIn} — {rate.checkOut}
+          {dates.checkIn} — {dates.checkOut}
         </span>
         {' · '}ریال
       </p>

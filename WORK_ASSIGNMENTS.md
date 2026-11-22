@@ -13319,3 +13319,9 @@ Scoped XLSX support and poster profiles for Antalya Iran Airtour and Kuala Lumpu
 
 Allow extra sales destinations across countries in the flight schedule. Shared capacity and endpoint filters are covered by focused tests.
 
+## GHESTIROO-TOURS-1122 — PC-D
+
+Reserve the Ghestiroo destination policy and its signed tour delivery on
+`codex/pc-d-ghestiroo-tours-1122` from develop. The producer extends the existing
+v1 snapshot for the Ghestiroo consumer and keeps its tour order intake disabled.
+Other destinations retain their product policy, credentials and checkout.

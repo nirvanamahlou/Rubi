@@ -10502,3 +10502,9 @@ Sales passenger-document modal now renders hotel vouchers and their pending noti
 
 ### Package generator Azar templates (2026-11-22)
 Antalya Iran Airtour and Kuala Lumpur plus Singapore XLSX formats now import to editable poster profiles. Validated the four supplied files with PNG and PDF exports.
+## اتصال تور قسطی‌رو (PC-D)
+
+اتصال موجود قسطی‌رو بستهٔ تاریخ‌دار یا دورهٔ شناور را با تأیید مستقل مقصد در
+کاتالوگ امضاشده تحویل می‌دهد. تنظیم‌های پیش‌نمایش، توقف فروش و اجازهٔ انتشار
+پروفایل هتل برای همان مقصد ذخیره می‌شوند. دریافت، ذخیره و نمایش در قسطی‌رو
+از مسیر نسخه‌بندی‌شده بررسی می‌شود. دریافت سفارش تور در اتصال قسطی‌رو غیرفعال است.
