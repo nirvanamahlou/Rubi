@@ -3,13 +3,14 @@ import { agencyClient } from '../organizations/api/agency-client';
 import { loadOrganizationMetrics } from '../organizations/model/organization-metrics';
 import { cooperationLabel } from '../organizations/model/presentation';
 import copy from './b2b-guide-catalog.json';
-import { normalizeQuestion } from './question-text';
+import { matchesQuestion, normalizeQuestion } from './question-text';
 
-export const b2bGuideLink = { href: '/organizations', label: copy.label };
-const topics = copy.topics.map((topic) => ({
+export const b2bGuideLink = { href: copy.href, label: copy.label };
+export const b2bGuideTopics = copy.topics.map((topic) => ({
   ...topic,
   match: new RegExp(topic.pattern, 'i'),
 }));
+const topics = b2bGuideTopics;
 type Topic = (typeof topics)[number];
 
 export function resolveB2bQuestion(
@@ -28,10 +29,13 @@ export function resolveB2bQuestion(
   )
     return;
   const explicit =
-    /b2b|آژانس همکار|مشتری سازمانی|پرونده آژانس|اعتبار آژانس|توافق همکاری/.test(
+    /b2b|آژانس ها|آژانس|ثبت آژانس|آژانس همکار|مشتری سازمانی|پرونده آژانس|اعتبار آژانس|توافق همکاری/.test(
       text,
     );
-  if (!explicit && !(onPanel && topics.some(({ match }) => match.test(text))))
+  if (
+    !explicit &&
+    !(onPanel && topics.some(({ match }) => matchesQuestion(text, match)))
+  )
     return;
   const how = /چطور|چگونه|چرا|کجا|نحوه|یعنی|راهنما/.test(text);
   if (
@@ -52,21 +56,47 @@ export function resolveB2bQuestion(
     return { kind: 'status' as const, code };
   }
   const exact = topics.find((topic) => normalizeQuestion(topic.title) === text);
+  const actionTopics = [
+    [/حذف/, 'delete'],
+    [/بارگذاری|فایل امضادار|مدرک/, 'documents'],
+    [/اکسل|excel/, 'excel'],
+    [/ذخیره.*نامشخص|ثبت نامطمئن|ثبت ناقص/, 'uncertain-save'],
+    [
+      /فهرست خالی|پیدا نمیشه|پیدا نمی شه|پیدا نمی شود|مجوز مشاهده/,
+      'empty-list',
+    ],
+    [/اسناد فروش/, 'sales-history'],
+    [/ثبت مشتری سازمانی|مشتری سازمانی.*ثبت/, 'registration'],
+    [/اعتبار|سقف اعتبار/, 'credit'],
+    [/نرخ توافقی|نرخ های توافقی/, 'rates'],
+    [
+      /ویرایش امضادار|امضادار.*ویرایش|امضادار.*اضافه|افزودن امضادار/,
+      'signatories',
+    ],
+    [/فعالیت/, 'activity'],
+    [/پرداخت|تسویه|صورتحساب/, 'finance'],
+  ] as const;
+  const preferred = actionTopics.find(([pattern]) =>
+    matchesQuestion(text, pattern),
+  )?.[1];
+  const candidates = topics.filter((item) => matchesQuestion(text, item.match));
   const topic =
     exact ??
-    topics.find(
-      (item) =>
-        item.id === 'documents' &&
-        /بارگذاری|مدرک امضادار/.test(text) &&
-        item.match.test(text),
-    ) ??
-    [...topics.slice(1), topics[0]!].find(({ match }) => match.test(text)) ??
+    topics.find((item) => item.id === preferred) ??
+    candidates.find((item) => item.id !== 'metrics' && item.id !== 'profile') ??
+    candidates[0] ??
     topics[0]!;
   return { kind: 'guide' as const, topic };
 }
 
 export function renderB2bGuide(topic: Topic) {
-  return [copy.label + ' ← ' + topic.title, topic.text].join('\n\n');
+  return [
+    topic.title,
+    topic.path.join(' ← '),
+    'پیش‌نیاز ' + topic.prerequisite,
+    topic.text,
+    'اقدام بعدی ' + topic.next,
+  ].join('\n\n');
 }
 
 export function b2bDirectoryContext() {

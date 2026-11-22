@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { agencyClient } from '../organizations/api/agency-client';
-import { readB2bGuide, resolveB2bQuestion } from './b2b-guide';
+import {
+  b2bGuideTopics,
+  readB2bGuide,
+  renderB2bGuide,
+  resolveB2bQuestion,
+} from './b2b-guide';
 
 const context = {
   search: 'نمونه',
@@ -22,6 +27,17 @@ const organization = {
 } as const;
 
 describe('B2B assistant guidance', () => {
+  it.each(b2bGuideTopics)(
+    'routes catalogue example for $id and renders local guidance',
+    (topic) => {
+      const result = resolveB2bQuestion(topic.example, true);
+      expect(result).toMatchObject({ kind: 'guide', topic: { id: topic.id } });
+      const answer = renderB2bGuide(topic);
+      expect(topic.href).toBe('/organizations');
+      expect(answer).toContain(topic.next);
+      expect(answer).toContain('پیش‌نیاز');
+    },
+  );
   it.each([
     ['چرا عدد فهرست B2B فرق دارد', 'metrics'],
     ['فرم ثبت آژانس کجاست', 'registration'],
@@ -29,7 +45,7 @@ describe('B2B assistant guidance', () => {
     ['شماره تماس آژانس را کجا ببینم', 'profile'],
     ['نرخ آژانس کجاست', 'agreement'],
     ['اعتبار موقت کی تمام می شود', 'credit'],
-    ['گزارش فعالیت کجاست', 'finance'],
+    ['گزارش فعالیت کجاست', 'activity'],
     ['مدرک امضادار را کجا بارگذاری کنم', 'documents'],
     ['ورود از Excel کجاست', 'excel'],
   ])('routes %s and remembers a topic', (q, id) => {

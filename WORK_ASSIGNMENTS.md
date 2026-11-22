@@ -1,3 +1,7 @@
+## NORA-COMPREHENSIVE-B2B-1122 — PC-C — ACTIVE
+
+Reserve the Nora B2B catalogue, resolver, focused tests and coverage notes. Reuse native organization reads and permissions. Branch codex/pc-c-nora-comprehensive-b2b-1122.
+
 ## FLOATING-TOUR-PICKER-1122 — PC-A — READY_FOR_CI
 
 Reserve the floating pricing tour list projection, picker and focused regression. Show route, branch, duration and identity for distinct same-name definitions. No schema or deployment change.
