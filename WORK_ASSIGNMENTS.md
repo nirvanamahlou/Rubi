@@ -1,3 +1,7 @@
+## FISCAL-YEAR-LIST-1122 — PC-D — COMPLETED
+
+Reserve the Accounting fiscal-year list route, removal of its actions from the shared list UI, the fiscal boundary setup link, scoped Web tests and translations, and task/status notes. Resolve the company through fiscal context and read its allocated periods through the existing authorized ledger snapshot. Ledger commands, permissions and data contracts are outside this unit.
+
 ## WEBSITE-TOUR-PRICE-SYNC-1122 — PC-A — READY_FOR_CI
 
 Reserve the tour pricing workspace preview editor and translations. Use branch-scoped website publication CAS and the existing signed dispatch path. Owner authorizes develop merge and Avina deployment. No schema or purchase-rate changes.
