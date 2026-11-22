@@ -6,6 +6,7 @@ import {
   floatingPrices,
   parseFloatingRows,
   readFloatingWorkbook,
+  resolveFloatingHotelCells,
   type FloatingCell,
 } from './floating-tour-import';
 import type { TourPackageInputV1 } from '@nora/contracts';
@@ -60,6 +61,39 @@ const tour = {
 } satisfies TourPackageInputV1;
 const hotels = [{ id: 'h1', name: 'Hotel One', cityId: 'city' }];
 const options = { nights: 7, mode: 'DATED' as const };
+it('treats NULL price cells as absent and preserves explicitly free prices', () => {
+  const [row] = parseFloatingRows(
+    book({ SGL: ' Null ', 'CHD W BED': 'NULL', infant: '0' }),
+    options,
+    tour,
+    hotels,
+  );
+  expect(row?.prices.single).toBeUndefined();
+  expect(row?.prices.childBed).toBeUndefined();
+  expect(row?.prices.infant).toEqual([{ currency: 'IRR', amount: '0' }]);
+});
+
+it('suggests up to three names and uses only an explicitly selected candidate', () => {
+  const refs = [
+    ...hotels,
+    { id: 'h2', name: 'Hotel Two', cityId: 'city' },
+    { id: 'h3', name: 'Other Resort', cityId: 'city' },
+    { id: 'h4', name: 'Beach Palace', cityId: 'city' },
+  ];
+  const workbook = book({ hotel_name: 'Hotel Onne' });
+  const [match] = resolveFloatingHotelCells(workbook, refs, {
+    '2:2': 'invalid',
+  });
+  expect(match).toMatchObject({ row: 2, name: 'Hotel Onne' });
+  expect(match?.candidates).toHaveLength(3);
+  expect(match?.candidates[0]?.id).toBe('h1');
+  expect(resolveFloatingHotelCells(workbook, refs, { '2:2': 'h1' })).toEqual(
+    [],
+  );
+  expect(
+    parseFloatingRows(workbook, options, tour, refs)[0]?.stays[0],
+  ).toMatchObject({ hotelId: 'h1', hotelName: 'Hotel One' });
+});
 it('reports invalid Excel rows together and preserves their original numbers', () => {
   const workbook = [
     book()[0]!,

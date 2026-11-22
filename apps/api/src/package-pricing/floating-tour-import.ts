@@ -7,6 +7,7 @@ import {
   type FloatingTourGroup,
   type FloatingTourSaleRow,
   type FloatingTourImportOptions,
+  type FloatingTourImportPreview,
   type FloatingTourStay,
   type TourPackageInputV1,
 } from '@nora/contracts';
@@ -39,6 +40,7 @@ const digits = (s: string) =>
     ),
   );
 export type FloatingCell = {
+  selectedHotelId?: string;
   value: string;
   format: string;
   numeric: boolean;
@@ -179,8 +181,11 @@ export function readFloatingWorkbook(bytes: Uint8Array): FloatingCell[][] {
   }
   return Array.from({ length: rows.length }, (_, index) => rows[index] ?? []);
 }
+const hasPrice = (cell?: FloatingCell) =>
+  Boolean(cell?.value.trim() && !/^null$/i.test(cell.value.trim()));
+
 export function floatingMoney(cell?: FloatingCell): FloatingTourMoney[] {
-  if (!cell?.value.trim()) return [];
+  if (!cell || !hasPrice(cell)) return [];
   const source = digits(cell.value)
     .replace(/[,،٬\s]/g, '')
     .replace(/٫/g, '.');
@@ -316,6 +321,98 @@ export interface FloatingHotelReference {
   englishName?: string;
   cityId: string;
 }
+const hotelNames = (hotel: FloatingHotelReference) =>
+  [hotel.name, hotel.englishName ?? ''].filter(Boolean).map(floatingHotelKey);
+
+function matchHotels(
+  cell: FloatingCell | undefined,
+  hotels: FloatingHotelReference[],
+) {
+  const name = floatingHotelKey(cell?.value ?? '');
+  return hotels.filter((hotel) =>
+    cell?.selectedHotelId
+      ? hotel.id === cell.selectedHotelId
+      : name && hotelNames(hotel).includes(name),
+  );
+}
+
+const hotelNamePairs = (value: string) =>
+  new Set(
+    Array.from({ length: Math.max(0, value.length - 1) }, (_, i) =>
+      value.slice(i, i + 2),
+    ),
+  );
+
+export function resolveFloatingHotelCells(
+  workbook: FloatingCell[][],
+  hotels: FloatingHotelReference[],
+  selections: Record<string, string> = {},
+): NonNullable<FloatingTourImportPreview['hotelMatches']> {
+  const columns = (workbook[0] ?? []).flatMap((cell, index) =>
+    /^hotel_name(?:_[12])?$/i.test(cell?.value.trim() ?? '') ? [index] : [],
+  );
+  const issues: NonNullable<FloatingTourImportPreview['hotelMatches']> = [];
+  const suggestions = new Map<string, (typeof issues)[number]['candidates']>();
+  const exactCounts = new Map<string, number>();
+  const directory = hotels.map((hotel) => ({
+    id: hotel.id,
+    name: hotel.englishName || hotel.name,
+    names: [...new Set(hotelNames(hotel))].map((name) => {
+      exactCounts.set(name, (exactCounts.get(name) ?? 0) + 1);
+      return { name, pairs: hotelNamePairs(name) };
+    }),
+  }));
+  for (let index = 1; index < workbook.length; index++) {
+    const cells = workbook[index]!;
+    if (!cells.some((cell) => cell?.value)) continue;
+    for (const column of columns) {
+      const cell = cells[column];
+      const row = index + 1;
+      const key = `${row}:${column + 1}`;
+      const name = cell?.value.trim() ?? '';
+      const normalized = floatingHotelKey(name);
+      if (normalized && exactCounts.get(normalized) === 1) continue;
+      let candidates = suggestions.get(normalized);
+      if (!candidates) {
+        const pairs = hotelNamePairs(normalized);
+        candidates = directory
+          .map((hotel) => ({
+            id: hotel.id,
+            name: hotel.name,
+            score: Math.max(
+              0,
+              ...hotel.names.map(({ name, pairs: reference }) => {
+                if (name === normalized) return 1;
+                let overlap = 0;
+                for (const pair of reference) if (pairs.has(pair)) overlap++;
+                return (2 * overlap) / (pairs.size + reference.size || 1);
+              }),
+            ),
+          }))
+          .sort(
+            (a, b) =>
+              b.score - a.score ||
+              a.name.localeCompare(b.name) ||
+              a.id.localeCompare(b.id),
+          )
+          .slice(0, 3)
+          .map(({ id, name }) => ({ id, name }));
+        suggestions.set(normalized, candidates);
+      }
+      const selected = selections[key];
+      if (selected && candidates.some(({ id }) => id === selected)) {
+        cells[column] = {
+          value: '',
+          format: '',
+          numeric: false,
+          ...cell,
+          selectedHotelId: selected,
+        };
+      } else issues.push({ key, row, name, candidates });
+    }
+  }
+  return issues;
+}
 export function parseFloatingRows(
   workbook: FloatingCell[][],
   options: FloatingTourImportOptions,
@@ -363,7 +460,7 @@ export function parseFloatingRows(
       .some((row) =>
         ['dbl', 'sgl', 'extra', 'chd w bed', 'child no bed', 'infant'].some(
           (key) =>
-            row[headers.indexOf(key)]?.value &&
+            hasPrice(row[headers.indexOf(key)]) &&
             row[headers.indexOf(key)]?.mergedRows,
         ),
       )
@@ -385,14 +482,8 @@ export function parseFloatingRows(
     if (!source.some((c) => c?.value)) continue;
     try {
       const fields = Object.fromEntries(headers.map((h, i) => [h, source[i]]));
-      const name = floatingHotelKey(fields.hotel_name?.value ?? '');
-      const matches = hotels.filter((hotel) =>
-        [hotel.name, hotel.englishName ?? ''].some(
-          (n) => floatingHotelKey(n) === name,
-        ),
-      );
-      if (!name || matches.length !== 1)
-        return fail('نام هتل یافت نشد یا مبهم است.');
+      const matches = matchHotels(fields.hotel_name, hotels);
+      if (matches.length !== 1) return fail('نام هتل یافت نشد یا مبهم است.');
       const hotel = matches[0]!;
       const date =
         options.mode === 'DATED'
@@ -562,7 +653,7 @@ function parseMergedFloatingRows(
     try {
       const ranges = priceColumns
         .map((column) =>
-          source[column]?.value ? source[column]?.mergedRows : undefined,
+          hasPrice(source[column]) ? source[column]?.mergedRows : undefined,
         )
         .filter((range) => range !== undefined);
       const range = ranges[0];
@@ -701,13 +792,8 @@ function parseDedicatedFloatingRows(
           `Row ${i + 1}: مجموع شب‌های دو هتل باید با تعداد شب بازه برابر باشد.`,
         );
       const selected = [1, 2].map((n) => {
-        const name = floatingHotelKey(fields[`hotel_name_${n}`]?.value ?? '');
-        const found = hotels.filter((h) =>
-          [h.name, h.englishName ?? ''].some(
-            (value) => floatingHotelKey(value) === name,
-          ),
-        );
-        if (!name || found.length !== 1)
+        const found = matchHotels(fields[`hotel_name_${n}`], hotels);
+        if (found.length !== 1)
           return fail(`Row ${i + 1}: نام هتل یافت نشد یا مبهم است.`);
         return found[0]!;
       });
