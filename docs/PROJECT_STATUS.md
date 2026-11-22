@@ -10520,3 +10520,7 @@ Antalya Iran Airtour and Kuala Lumpur plus Singapore XLSX formats now import to 
 کاتالوگ امضاشده تحویل می‌دهد. تنظیم‌های پیش‌نمایش، توقف فروش و اجازهٔ انتشار
 پروفایل هتل برای همان مقصد ذخیره می‌شوند. دریافت، ذخیره و نمایش در قسطی‌رو
 از مسیر نسخه‌بندی‌شده بررسی می‌شود. دریافت سفارش تور در اتصال قسطی‌رو غیرفعال است.
+
+## 2026-11-22 — NSS regular tour checkout rates
+
+For regular tour purchases on NSS, ERP converts published room totals with the currently effective approved buy rates. Checkout repeats the same projection and freezes its room prices on the capacity hold. Rooms with missing rates cannot be booked. Illustrative offers and floating-sale restrictions remain in effect. Existing bank verification and document delivery use their existing authorization paths.

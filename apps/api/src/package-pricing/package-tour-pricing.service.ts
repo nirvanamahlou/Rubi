@@ -318,6 +318,7 @@ export class PackageTourPricingService {
     actor: AuthenticatedActor,
     branchId?: string,
     includePassengerRates = false,
+    websiteRialPrices = false,
   ): Promise<{
     data: PackagePublishedSaleV1[];
     passengerRates?: PassengerRate[];
@@ -540,7 +541,43 @@ export class PackageTourPricingService {
         if (rate) passengerRates.push(rate);
       }
     }
-    return includePassengerRates ? { data, passengerRates } : { data };
+    const rooms = websiteRialPrices ? await this.websiteRialRooms(data) : data;
+    return includePassengerRates
+      ? { data: rooms, passengerRates }
+      : { data: rooms };
+  }
+
+  private async websiteRialRooms(rooms: PackagePublishedSaleV1[]) {
+    if (
+      !rooms.some((room) =>
+        room.prices.some((part) => part.currencyCode !== 'IRR'),
+      )
+    )
+      return rooms;
+    const rates = await this.buyRates();
+    return rooms.flatMap((room) => {
+      if (
+        room.prices.some(
+          (part) =>
+            !rates[part.currencyCode] &&
+            !new Prisma.Decimal(part.amount).isZero(),
+        )
+      )
+        return [];
+      const total = room.prices.reduce(
+        (sum, part) =>
+          sum.add(packageAmountToRial(part.amount, part.currencyCode, rates)),
+        new Prisma.Decimal(0),
+      );
+      return total.gt(0)
+        ? [
+            {
+              ...room,
+              prices: [{ currencyCode: 'IRR', amount: total.toFixed(0) }],
+            },
+          ]
+        : [];
+    });
   }
 
   async get(

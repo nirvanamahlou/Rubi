@@ -13338,3 +13338,7 @@ Reserve the Ghestiroo destination policy and its signed tour delivery on
 `codex/pc-d-ghestiroo-tours-1122` from develop. The producer extends the existing
 v1 snapshot for the Ghestiroo consumer and keeps its tour order intake disabled.
 Other destinations retain their product policy, credentials and checkout.
+
+## NSS-TOUR-FX-1122 — PC-A
+
+Reserve the NSS-only regular-tour catalog and checkout hold pricing projections, focused tests and status notes. Use ERP approved effective BUY-to-IRR rates and preserve pinned checkout prices, preview and capacity gates, and other sites' prices.

@@ -711,6 +711,7 @@ export class SiteCommerceService {
                         scoped,
                         scoped.branchIds[0],
                         true,
+                        site === 'nss',
                       );
                   return {
                     tour,
