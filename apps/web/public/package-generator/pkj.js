@@ -53,7 +53,9 @@ function parse(bytes,options={}){
  const sourceHint=norm((options.fileName||'')+' '+name),thailand=['پوکت','تایلند','بانکوک','پاتایا','phuket','thailand','bangkok','pattaya','hkt','bkk'].some(key=>sourceHint.includes(key));
  const headerRow=rows.find(r=>rowCells(r).some(([,c])=>['نامهتل','هتل','hotel','hotelname','hkt'].includes(norm(c.value))));if(!headerRow)throw Error('ستون نام هتل در شیت انتخاب‌شده پیدا نشد.');
  const headers=rowCells(headerRow).map(([ref,c])=>({col:ref.replace(/\d/g,''),label:String(c.value),key:norm(c.value)}));const find=f=>headers.find(h=>f(h.key))?.col;
- const cols={hotel:find(k=>['نامهتل','هتل','hotel','hotelname','hkt'].includes(k)),room:find(k=>['roomtype','نوعاتاق'].includes(k)),city:find(k=>['شهر','city','loc','location'].includes(k)),stars:find(k=>['درجه','ستاره','stars','star'].includes(k)),service:find(k=>['خدمات','service','board'].includes(k)),double:find(k=>(k.includes('دوتخت')||k.includes('دونفره')))||find(k=>k==='dbl'),single:find(k=>(k.includes('یکتخت')||k.includes('تکتخت')))||find(k=>['sgl','sng'].includes(k)),extra:find(k=>['extra','extraperson','نفراضافه','اضافه'].includes(k)),child:find(k=>k.includes('کودک')&&(k.includes('12')||k.includes('۱۲')))||find(k=>k.includes('کودک')&&k.includes('باتخت'))||find(k=>['cwb','chdwb','chdwbed','chwbed'].includes(k)),small:find(k=>k.includes('کودک')&&!k.includes('12')&&!k.includes('۱۲')&&!k.includes('باتخت'))||find(k=>['chdnobed','cnb','chdwithoutbed'].includes(k))};
+ const cols={hotel:find(k=>['نامهتل','هتل','hotel','hotelname','hkt'].includes(k)),room:find(k=>['roomtype','نوعاتاق'].includes(k)),city:find(k=>['شهر','city','loc','location'].includes(k)),stars:find(k=>['درجه','ستاره','stars','star'].includes(k)),service:find(k=>['خدمات','service','board'].includes(k)),double:find(k=>(k.includes('دوتخت')||k.includes('دونفره')))||find(k=>k==='dbl'),single:find(k=>(k.includes('یکتخت')||k.includes('تکتخت')))||find(k=>['sgl','sng'].includes(k)),extra:find(k=>['extra','extraperson','نفراضافه','اضافه'].includes(k)),child:find(k=>k.includes('کودک')&&(k.includes('12')||k.includes('۱۲')))||find(k=>k.includes('کودک')&&k.includes('باتخت'))||find(k=>['cwb','chdwb','chdwbed','chwbed'].includes(k)),small:find(k=>k.includes('کودک')&&!k.includes('12')&&!k.includes('۱۲')&&!k.includes('باتخت'))||find(k=>['chdnobed','chdnb','cnb','chdwithoutbed'].includes(k))};
+ const airtourAntalya=!!cols.city&&!!cols.room&&/آنتالیا|antalya/.test(sourceHint)&&/ایرانایرتور|iranairtour/.test(sourceHint);
+ const kualaSingapore=!!cols.small&&!cols.room&&/کوالا|kuala/.test(sourceHint)&&/سنگاپور|singapore/.test(sourceHint);
  const istanbul=/استانبول|istanbul/i.test(options.fileName||'')&&!!cols.room;
  if(istanbul&&!cols.service)cols.service=cols.room;
  if(thailand){
@@ -74,12 +76,26 @@ function parse(bytes,options={}){
    if(thailand&&!merge){for(let next=r+1;next<=Math.min(r+3,rows.at(-1));next++){const nextHotel=cells.get(cols.hotel+next),hasPrice=priceKeys.some(k=>{const value=cells.get(cols[k]+next);return value&&(value.value!==''||value.formula);});if(!nextHotel||typeof nextHotel.value!=='string'||!nextHotel.value.trim()||hasPrice)break;end=next;}}
    if(end-r>10)throw Error('ادغام ردیف‌های هتل پشتیبانی نمی‌شود.');
   const hotels=[];for(let hr=r;hr<=end;hr++){const hotel={};for(const key of ['hotel','room','city','stars','service'])hotel[key]=String(read(cols[key],hr).value).trim();if(thailandCity){const bkk=String(read(thailandCity,hr).value).trim();if(bkk)hotel.hotel=[hotel.hotel,bkk].filter(Boolean).join(' + ');}if(cols.service&&cols.service===cols.stars){const combined=hotel.stars.match(/^(.+?[*★])\s*\/\s*(.+)$/);if(combined){hotel.stars=combined[1].trim();hotel.service=combined[2].trim();}else hotel.service='';}if(hotel.hotel)hotels.push(hotel);}
+   if(kualaSingapore&&hotels.length===1){
+   const h=hotels[0],names=h.hotel.split(/\r?\n/).map(value=>value.trim()).filter(Boolean);
+   if(names.length===2){
+    const stars=h.stars.split(/\r?\n/);
+    hotels.splice(0,1,...names.map((hotel,i)=>({...h,hotel,stars:stars[i]?.trim()||'',city:i===0?'کوالالامپور':'سنگاپور'})));
+   }
+  }
   const prices=Object.fromEntries(priceKeys.map(k=>[k,read(cols[k],r)]));if(hotels.length)groups.push({hotels,prices,sourceRow:r});last=end;
  }
  if(errors.length)throw Error('اکسل را محاسبه و ذخیره کن و دوباره وارد کن. سلول‌های نیازمند بررسی در '+name+': '+[...new Set(errors)].slice(0,8).join('، '));
  if(!groups.length)throw Error('ردیف هتل و قیمت نهایی پیدا نشد.');if(groups.length>300)throw Error('حداکثر ۳۰۰ گزینه پشتیبانی می‌شود.');
  const footer=rows.filter(r=>r>last||r<headerRow).flatMap(r=>rowCells(r).filter(([,c])=>!c.error&&typeof c.value==='string'&&c.value.trim()).map(([ref,c])=>({text:c.value.trim(),ref,header:r<headerRow})));
- const summary=PackageSummary.read(cells,rows,headerRow,last,merges),cards=summary.cards,notes=[],adjustments=[],dateRegex=/[0-9۰-۹]+\s*(فروردین|اردیبهشت|خرداد|تیر|مرداد|شهریور|مهر|آبان|آذر|دی|بهمن|اسفند)/;
+ const sidebar=new Map();
+ if(airtourAntalya){
+  const lastTableColumn=headers.filter(h=>Object.values(cols).includes(h.col)).at(-1).col;
+  const columnIndex=col=>Array.from(col).reduce((n,c)=>n*26+c.charCodeAt(0)-64,0);
+  for(const [ref,cell] of cells)if(columnIndex(ref.replace(/\d/g,''))>columnIndex(lastTableColumn))sidebar.set(ref,cell);
+ }
+ const summary=airtourAntalya?PackageSummary.read(sidebar,rows,0,0,merges):PackageSummary.read(cells,rows,headerRow,last,merges);
+ const cards=summary.cards,notes=[],adjustments=[],dateRegex=/[0-9۰-۹]+\s*(فروردین|اردیبهشت|خرداد|تیر|مرداد|شهریور|مهر|آبان|آذر|دی|بهمن|اسفند)/;
  const flightRates=[];
  if(thailand)for(const r of rows.filter(r=>r>last)){
   const entries=rowCells(r).map(([ref,c])=>({ref,...c}));
@@ -103,7 +119,7 @@ function parse(bytes,options={}){
  }
  const filename=options.fileName||'';if(!date)date=(name+' '+filename).match(dateRegex)?.[0]||'';
  const detect=norm(filename+' '+name+' '+stays),combined=groups.some(g=>g.hotels.length>1),malaysia=detect.includes('کوالا')||detect.includes('kuala');
-  const template=istanbul?(cols.extra?'istanbul-3':'istanbul-4'):malaysia?(detect.includes('لنگکاوی')||detect.includes('langkawi')?'malaysia-langkawi':detect.includes('سنگاپور')||detect.includes('singapore')?'malaysia-singapore':detect.includes('پنانگ')||detect.includes('penang')?'malaysia-penang':'malaysia-kuala'):thailand?(detect.includes('بانکوک')||detect.includes('bangkok')||detect.includes('bkk')?'thailand-bangkok-phuket':detect.includes('پاتایا')||detect.includes('pattaya')?'thailand-pattaya':'thailand-phuket'):combined?'combined':detect.includes('bodrum')||detect.includes('بدروم')?'bodrum':detect.includes('کوش')||detect.includes('kus')?'kus':detect.includes('آنتالیا')||detect.includes('antalya')?'antalya':'';
+  const template=airtourAntalya?'antalya-airtour':kualaSingapore?'malaysia-singapore-azar':istanbul?(cols.extra?'istanbul-3':'istanbul-4'):malaysia?(detect.includes('لنگکاوی')||detect.includes('langkawi')?'malaysia-langkawi':detect.includes('سنگاپور')||detect.includes('singapore')?'malaysia-singapore':detect.includes('پنانگ')||detect.includes('penang')?'malaysia-penang':'malaysia-kuala'):thailand?(detect.includes('بانکوک')||detect.includes('bangkok')||detect.includes('bkk')?'thailand-bangkok-phuket':detect.includes('پاتایا')||detect.includes('pattaya')?'thailand-pattaya':'thailand-phuket'):combined?'combined':detect.includes('bodrum')||detect.includes('بدروم')?'bodrum':detect.includes('کوش')||detect.includes('kus')?'kus':detect.includes('آنتالیا')||detect.includes('antalya')?'antalya':'';
   if(combined&&!thailand&&!malaysia){const cities=[...new Set(groups.flatMap(g=>g.hotels.map(h=>h.city)).filter(Boolean))];title=cities.length?cities.join(' + '):'کوش آداسی + ازمیر';}
  if(!title)title=istanbul?'استانبول':malaysia?'مالزی':template==='thailand-bangkok-phuket'?'بانکوک + پوکت':template==='thailand-pattaya'?'پاتایا':template==='thailand-phuket'?'پوکت':template==='bodrum'?'بدروم':template==='kus'?'کوش آداسی':template==='antalya'?'آنتالیا':'';
  if(istanbul){
@@ -143,6 +159,47 @@ function parse(bytes,options={}){
   for(const card of Object.values(cards))if(!card.unit)card.unit='تومان';
   for(const g of groups){for(const h of g.hotels){h.hotel=h.hotel.replace(/\s*\+\s*/g,' + ').replace(/\s+/g,' ').trim();if(!cols.service)h.service='';}for(const k of priceKeys){const c=g.prices[k];if(c.value==='N/A')c.value='—';if(!c.currency&&!c.error&&!c.missing&&c.value!==''&&c.value!=='—')c.currency='$';}}
  }
+ if(airtourAntalya){
+  title='آنتالیا';
+  // The file name and outbound schedule identify the departure even when a sidebar caption is stale.
+  date=filename.match(dateRegex)?.[0]||date;
+  const sidebarText=[...sidebar.values()].map(c=>String(c.value));
+  const stay=sidebarText.map(t=>t.match(/[0-9۰-۹]+\s*شب\s*و\s*[0-9۰-۹]+\s*روز/)).find(Boolean);
+  const nights=filename.match(/([0-9۰-۹]+)\s*شب/);
+  duration=stay?.[0]||(nights?nights[1]+' شب':'');
+  for(const key of ['adult','small','commission'])if(cards[key]&&!cards[key].unit)cards[key].unit='تومان';
+  const flights=[];
+  for(const r of rows){
+   const values=rowCells(r).filter(([ref])=>sidebar.has(ref)).map(([,c])=>c.value);
+   const label=values.find(v=>typeof v==='string'&&/^(?:ساعت\s*)?(رفت|برگشت)\s*[:：]?\s*$/.test(v.trim()));
+   if(!label)continue;
+   const day=values.find(v=>typeof v==='string'&&dateRegex.test(v));
+   const time=values.find(v=>typeof v==='string'&&/^[0-9۰-۹]{1,2}:[0-9۰-۹]{2}/.test(v.trim())||typeof v==='number'&&v>=0&&v<1);
+   const minutes=typeof time==='number'?Math.round(time*1440)%1440:null;
+   const clock=minutes===null?String(time??''):String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');
+   flights.push([label.trim(),day,clock].filter(Boolean).join(' · '));
+  }
+  adjustments.unshift(...flights);
+  services='پرواز رفت و برگشت ایران ایرتور، اقامت در هتل با خدمات درج‌شده، ترانسفر فرودگاهی، راهنمای فارسی‌زبان و بیمه مسافرتی';
+  for(const group of groups)for(const key of priceKeys){
+   const cell=group.prices[key];
+   if(typeof cell.value==='number'&&!cell.currency)cell.currency='€';
+  }
+ }
+ if(kualaSingapore){
+  title='کوالالامپور + سنگاپور';
+  const nights=[...stays.matchAll(/([0-9۰-۹]+)\s*شب/g)].map(match=>Number(match[1].replace(/[۰-۹]/g,c=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(c))));
+  if(nights.length){const total=nights.reduce((sum,n)=>sum+n,0);duration=total+' شب و '+(total+1)+' روز';}
+  const dateList=footer.map(item=>item.text.match(/([0-9۰-۹]+(?:\s*[-–،,]\s*[0-9۰-۹]+)+)\s*(آذر)/)).find(Boolean);
+  if(dateList)date=dateList[1].split(/\s*[-–،,]\s*/).join('، ')+' '+dateList[2];
+  services='ترانسفر فرودگاهی، اقامت در هتل، گشت نیم‌روزی، سیم‌کارت، بیمه مسافرتی و تور لیدر فارسی‌زبان';
+  for(const item of footer){
+   const match=item.text.match(/^TKT?\s+(ADL|CHD)\s*[:：]?\s*([\d۰-۹.,٬]+)\s*$/i);
+   if(!match)continue;
+   const child=match[1].toUpperCase()==='CHD';
+   cards[child?'childFlight':'adult']={value:PackageSummary.money(match[2]),unit:'تومان',label:child?'هزینه پرواز کودک':'هزینه پرواز بزرگسال',ref:item.ref,automatic:true};
+  }
+ }
  if(thailand){
   for(const g of groups)for(const k of priceKeys){const c=g.prices[k];if(!c.currency&&!c.error&&!c.missing&&c.value!==''&&c.value!=='—')c.currency='$';if(typeof c.value==='number')c.decimals=0;}
   date=date.match(/فروردین|اردیبهشت|خرداد|تیر|مرداد|شهریور|مهر|آبان|آذر|دی|بهمن|اسفند/)?.[0]||date;
@@ -150,7 +207,7 @@ function parse(bytes,options={}){
  const errorCells=Array.from(cells).filter(([,c])=>c.error);
  const errorWarnings=errorCells.length?['سلول‌های خطادار اکسل با «—» نمایش داده می‌شوند: '+errorCells.slice(0,8).map(([ref,c])=>ref+' ('+c.errorValue+')').join('، ')+(errorCells.length>8?'، …':'')]:[];
  const currencies=[...new Set(groups.flatMap(g=>priceKeys.map(k=>g.prices[k].currency)).filter(Boolean))];
- return {groups,priceKeys,hasRoom:!!cols.room&&!istanbul&&!thailand,hasCity:!!cols.city,cards,flightRates,notes:istanbul?'':notes.join('\n'),adjustments:adjustments.join('\n'),services,date,duration,stays,title,template,sheetName:name,sheetNames:sheets.map(s=>s.name),currencies,warnings:[...errorWarnings,...summary.warnings.filter(w=>!malaysia&&!thailand||!w.startsWith('واحد «')),...(malaysia?['مدت اقامت و خدمات سفر در اکسل درج نشده‌اند؛ متن پیش‌فرض قالب قابل ویرایش است.']:[]),...(Array.from(cells.values()).some(c=>c.formula)?['نتیجهٔ ذخیره‌شدهٔ فرمول‌ها خوانده شد؛ برنامه محاسبهٔ مجدد انجام نمی‌دهد.']:[])]};
+ return {groups,priceKeys,hasRoom:!!cols.room&&!istanbul&&!thailand,hasCity:!!cols.city,cards,flightRates,notes:istanbul||airtourAntalya||kualaSingapore?'':notes.join('\n'),adjustments:adjustments.join('\n'),services,date,duration,stays,title,template,sheetName:name,sheetNames:sheets.map(s=>s.name),currencies,warnings:[...errorWarnings,...summary.warnings.filter(w=>!malaysia&&!thailand||!w.startsWith('واحد «')),...(malaysia&&!kualaSingapore?['مدت اقامت و خدمات سفر در اکسل درج نشده‌اند؛ متن پیش‌فرض قالب قابل ویرایش است.']:[]),...(Array.from(cells.values()).some(c=>c.formula)?['نتیجهٔ ذخیره‌شدهٔ فرمول‌ها خوانده شد؛ برنامه محاسبهٔ مجدد انجام نمی‌دهد.']:[])]};
 }
 root.PKJ={parse,list:bytes=>metadata(bytes).map(s=>s.name),choose:names=>choose(names.map(name=>({name}))),norm,thailandSaleColumns};
 })(globalThis);
