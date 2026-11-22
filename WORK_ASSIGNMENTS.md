@@ -13319,3 +13319,7 @@ Reserve the Accounting detail editor and year-independent suggestion endpoint, t
 ### PACKAGE-GENERATOR-AZAR-1122 (PC-B)
 
 Scoped XLSX support and poster profiles for Antalya Iran Airtour and Kuala Lumpur plus Singapore. Reuse package-generator renderer; no API, schema or dependency changes.
+
+## CROSS-COUNTRY-TICKET-DESTINATIONS-1122 — PC-A — READY_FOR_CI
+
+Allow extra sales destinations across countries in the flight schedule. Shared capacity and endpoint filters are covered by focused tests.

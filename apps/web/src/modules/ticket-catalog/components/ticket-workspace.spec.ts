@@ -57,7 +57,7 @@ describe('ticket workspace entry points', () => {
     expect(source).toContain('publishedLoadGroups(');
     expect(source).toContain('onClick={() => editPublishedLoad([offer])}');
     expect(source).toContain(
-      "setForm({ mode: 'edit', product, products: grouped, offers })",
+      "current ?? { mode: 'edit', product, products: grouped, offers }",
     );
     expect(source).not.toContain('ویرایش کل جدول');
     expect(source).not.toContain('حذف کل جدول');
