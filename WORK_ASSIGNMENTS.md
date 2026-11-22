@@ -13299,3 +13299,7 @@ COMPUTER_ID=PC-A; branch codex/pc-a-ticket-voucher-1122 from develop29c6c57b7. U
 ## FISCAL-YEAR-LIST-1122 — PC-D — COMPLETED
 
 Reserve the Accounting fiscal-year list route, removal of its actions from the shared list UI, the fiscal boundary setup link, scoped Web tests and translations, and task/status notes. Resolve the company through fiscal context and read its allocated periods through the existing authorized ledger snapshot. Ledger commands, permissions and data contracts are outside this unit.
+
+## LOAD-EDIT-FIELDS-1122 — PC-A
+
+Reserve Ticket Catalog load editor hydration and an optional aircraft-type reference on the published offer API and storage. Add one nullable foreign key migration, compatible with legacy offers and existing API clients. No operational deployment.

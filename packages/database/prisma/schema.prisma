@@ -2087,6 +2087,7 @@ model MasterAirline {
 }
 
 model MasterAircraftType {
+  ticketOffers        TicketPublishedOffer[]
   isUnderReview       Boolean                @default(false)
   id                  String                 @id @default(uuid()) @db.Uuid
   code                String                 @unique @db.VarChar(32)
@@ -4505,6 +4506,8 @@ model TourDepartureLifecycleRevision {
 }
 
 model TicketPublishedOffer {
+  aircraftTypeId              String?                             @db.Uuid
+  aircraftType                MasterAircraftType?                 @relation(fields: [aircraftTypeId], references: [id], onDelete: Restrict)
   saleRoutes                  TicketOfferSaleRoute[]
   originAirportId             String?                             @db.Uuid
   destinationAirportId        String?                             @db.Uuid

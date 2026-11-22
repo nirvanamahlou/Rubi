@@ -179,20 +179,27 @@ export async function getActiveCityReference(
 export async function getAirportReference(
   id: string,
 ): Promise<Reference | undefined> {
+  return getTicketReference('airports', id);
+}
+
+export async function getTicketReference(
+  resource: PublishedResource,
+  id: string,
+): Promise<Reference | undefined> {
   const base = getPublicApiBaseUrl();
   if (!base || !id) return undefined;
   const response = await localizedFetch(
-    `${base}/master-data/selections/ticket-catalog/airports/${encodeURIComponent(id)}`,
+    `${base}/master-data/selections/ticket-catalog/${resource}/${encodeURIComponent(id)}`,
     { credentials: 'include', headers: { accept: 'application/json' } },
   );
+  if (response.status === 404) return undefined;
   if (!response.ok)
     throw new ReferenceApiError(
       referenceState(response.status),
       'دریافت مرجع اطلاعات پایه ممکن نشد.',
     );
   const body = (await response.json()) as { data?: MasterDataRecord };
-  if (body.data?.id !== id || body.data.resource !== 'airports')
-    return undefined;
+  if (body.data?.id !== id || body.data.resource !== resource) return undefined;
   return asReference(body.data);
 }
 export function asReference(record: MasterDataRecord): Reference | undefined {

@@ -141,6 +141,7 @@ export function flightScheduleDefaults(
     );
     return {
       date: departure.date,
+      scheduledReturnDate: item.scheduledReturnDate,
       time: {
         departure: departure.time,
         arrival: arrival.time,
@@ -156,14 +157,14 @@ export function flightScheduleDefaults(
     .sort((a, b) => a.date.localeCompare(b.date));
   const weekdays = new Map<number, WeekdayStay>();
   for (const outboundLeg of outboundLegs) {
-    const returningLeg = returnLegs.find(
-      (candidate) => candidate.date >= outboundLeg.date,
-    );
-    const stayDays = returningLeg
+    const returnDate =
+      outboundLeg.scheduledReturnDate ??
+      returnLegs.find((candidate) => candidate.date >= outboundLeg.date)?.date;
+    const stayDays = returnDate
       ? Math.max(
           1,
           Math.round(
-            (Date.parse(`${returningLeg.date}T00:00:00Z`) -
+            (Date.parse(`${returnDate}T00:00:00Z`) -
               Date.parse(`${outboundLeg.date}T00:00:00Z`)) /
               86_400_000,
           ),
