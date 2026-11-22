@@ -124,6 +124,7 @@ export {
   ticketOfferRoutes,
 } from './ticket-sale-routes';
 export interface TicketOfferV1 {
+  aircraftTypeId?: string | null;
   /** Additional commercial routes sharing this exact offer/inventory. */
   saleRoutes?: readonly TicketSaleRouteV1[];
   /** Explicit planned return day from the registered schedule, never inferred from Min/Max. */

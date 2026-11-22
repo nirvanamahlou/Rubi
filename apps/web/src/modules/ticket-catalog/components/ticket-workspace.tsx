@@ -59,6 +59,7 @@ import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
 import { toursApi } from '../api/tours';
 import { getActiveCityReference } from '../api/references';
+import { loadEditReferences } from '../model/load-edit-references';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 
@@ -118,6 +119,9 @@ export function flightOfferInput(
   );
   const cabinClassCode = flightCabinCode(cabin);
   return {
+    ...(definition.segments.length === 1
+      ? { aircraftTypeId: firstSegment.aircraftId || null }
+      : {}),
     originAirportId: firstSegment.originAirportId || null,
     destinationAirportId: lastSegment.destinationAirportId || null,
     saleRoutes: definition.saleRoutes ?? [],
@@ -923,7 +927,9 @@ function TicketCatalogWorkspace() {
       );
     }
   }
-  const editPublishedLoad = (visibleOffers: readonly TicketOfferV1[]) => {
+  const [loadingLoadEditor, setLoadingLoadEditor] = useState(false);
+  const editPublishedLoad = async (visibleOffers: readonly TicketOfferV1[]) => {
+    if (loadingLoadEditor) return;
     const offers = publishedLoadGroups(
       visibleOffers,
       publishedOffers,
@@ -934,40 +940,61 @@ function TicketCatalogWorkspace() {
       setPublishedProblem('ردیفی برای ویرایش در این جدول وجود ندارد.');
       return;
     }
-    const selected = displayedProducts.find(
-      (item) => item.id === `offer:${offer.id}`,
-    );
-    const selectedSegment = selected?.definition.segments[0];
-    const grouped = offers.flatMap((item) => {
-      const product = displayedProducts.find(
-        (candidate) => candidate.id === `offer:${item.id}`,
+    setLoadingLoadEditor(true);
+    try {
+      const loaded = await loadEditReferences(offers, references);
+      setReferences((current) => {
+        const combined = new Map(
+          current.map((ref) => [`${ref.kind}:${ref.id}`, ref]),
+        );
+        for (const ref of loaded) combined.set(`${ref.kind}:${ref.id}`, ref);
+        return [...combined.values()];
+      });
+      const editProducts = catalogProductsFromOffers(products, offers, loaded);
+      const selected = editProducts.find(
+        (item) => item.id === `offer:${offer.id}`,
       );
-      if (!product || !selectedSegment) return [];
-      const segment = product.definition.segments[0]!;
-      const sameDirection =
-        segment.originCityId === selectedSegment.originCityId &&
-        segment.destinationCityId === selectedSegment.destinationCityId;
-      return [
-        {
-          ...product,
-          definition: {
-            ...product.definition,
-            journeyRole: sameDirection
-              ? ('outbound' as const)
-              : ('return' as const),
+      const selectedSegment = selected?.definition.segments[0];
+      const grouped = offers.flatMap((item) => {
+        const product = editProducts.find(
+          (candidate) => candidate.id === `offer:${item.id}`,
+        );
+        if (!product || !selectedSegment) return [];
+        const segment = product.definition.segments[0]!;
+        const sameDirection =
+          segment.originCityId === selectedSegment.originCityId &&
+          segment.destinationCityId === selectedSegment.destinationCityId;
+        return [
+          {
+            ...product,
+            definition: {
+              ...product.definition,
+              journeyRole: sameDirection
+                ? ('outbound' as const)
+                : ('return' as const),
+            },
           },
-        },
-      ];
-    });
-    const product = grouped.find((item) => item.id === `offer:${offer.id}`);
-    if (!product || grouped.length !== offers.length) {
+        ];
+      });
+      const product = grouped.find((item) => item.id === `offer:${offer.id}`);
+      if (!product || grouped.length !== offers.length) {
+        setPublishedProblem(
+          'اطلاعات فرم این لود آماده نیست؛ فهرست را به‌روزرسانی کنید.',
+        );
+        return;
+      }
+      setOfferForm(null);
+      setForm(
+        (current) =>
+          current ?? { mode: 'edit', product, products: grouped, offers },
+      );
+    } catch {
       setPublishedProblem(
         'اطلاعات فرم این لود آماده نیست؛ فهرست را به‌روزرسانی کنید.',
       );
-      return;
+    } finally {
+      setLoadingLoadEditor(false);
     }
-    setOfferForm(null);
-    setForm({ mode: 'edit', product, products: grouped, offers });
   };
   const renderOfferActions = (offer: TicketOfferV1) => (
     <div className="flex flex-wrap gap-2">
@@ -982,6 +1009,7 @@ function TicketCatalogWorkspace() {
         size="sm"
         variant="outline"
         onClick={() => editPublishedLoad([offer])}
+        disabled={loadingLoadEditor}
       >
         ویرایش لود
       </Button>

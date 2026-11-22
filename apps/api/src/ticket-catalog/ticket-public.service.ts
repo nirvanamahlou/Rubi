@@ -109,6 +109,7 @@ function offerFields(
 }
 const routeSelect = { originId: true, destinationId: true } as const;
 const createSchema = Joi.object({
+  aircraftTypeId: uuid.allow(null).optional(),
   saleRoutes: Joi.array()
     .items(
       Joi.object({
@@ -359,7 +360,15 @@ export class TicketPublicService {
         throw new BadRequestException('اطلاعات بلیت معتبر نیست.');
     }
   }
-  private async validateAirports(value: TicketOfferCreateV1) {
+  private async validateFlightReferences(value: TicketOfferCreateV1) {
+    if (value.aircraftTypeId) {
+      const aircraft = await this.master?.detail(
+        'aircraft-types',
+        value.aircraftTypeId,
+      );
+      if (aircraft?.data.status !== 'active')
+        throw new BadRequestException('اطلاعات بلیت معتبر نیست.');
+    }
     for (const id of [value.originAirportId, value.destinationAirportId]) {
       if (!id) continue;
       if (!this.master)
@@ -849,6 +858,7 @@ export class TicketPublicService {
         );
         return {
           ...this.offerView(row),
+          aircraftTypeId: row.aircraftTypeId ?? null,
           ...(row.createKey?.startsWith('ticket-catalog:')
             ? {
                 catalogProductId: row.createKey.slice('ticket-catalog:'.length),
@@ -1008,7 +1018,7 @@ export class TicketPublicService {
       throw new BadRequestException('کلید درخواست معتبر لازم است.');
     const value = validateTicketOffer(input);
     await this.validateManifest(value);
-    await this.validateAirports(value);
+    await this.validateFlightReferences(value);
     await this.validateSaleRoutes(value);
     const fingerprint = createHash('sha256')
       .update(JSON.stringify({ branchId, ...value }))
@@ -1080,6 +1090,7 @@ export class TicketPublicService {
         (value.businessBaggageKg == null
           ? null
           : new Prisma.Decimal(value.businessBaggageKg).toString()) &&
+      (row.aircraftTypeId ?? null) === (value.aircraftTypeId ?? null) &&
       (row.originAirportId ?? null) === (value.originAirportId ?? null) &&
       (row.destinationAirportId ?? null) ===
         (value.destinationAirportId ?? null) &&
@@ -1720,7 +1731,7 @@ export class TicketPublicService {
       throw new BadRequestException('شناسه یا نسخه بلیط معتبر نیست.');
     const value = validateTicketOffer(input.offer);
     await this.validateManifest(value);
-    await this.validateAirports(value);
+    await this.validateFlightReferences(value);
     await this.validateSaleRoutes(value);
     return this.database.client.$transaction(async (tx) => {
       await tx.$queryRaw(
@@ -1769,7 +1780,7 @@ export class TicketPublicService {
     await Promise.all(
       validated.flatMap(({ offer }) => [
         this.validateManifest(offer),
-        this.validateAirports(offer),
+        this.validateFlightReferences(offer),
         this.validateSaleRoutes(offer),
       ]),
     );
@@ -1846,7 +1857,7 @@ export class TicketPublicService {
     await Promise.all(
       validated.flatMap((offer) => [
         this.validateManifest(offer),
-        this.validateAirports(offer),
+        this.validateFlightReferences(offer),
         this.validateSaleRoutes(offer),
       ]),
     );

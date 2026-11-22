@@ -88,6 +88,8 @@ export function catalogProductsFromOffers(
       : emptyInput();
     const first = definition.segments[0]!;
     const last = definition.segments.at(-1)!;
+    if (offer.aircraftTypeId && definition.segments.length === 1)
+      first.aircraftId = offer.aircraftTypeId;
     if (offer.originAirportId) first.originAirportId = offer.originAirportId;
     if (offer.destinationAirportId)
       last.destinationAirportId = offer.destinationAirportId;
@@ -100,6 +102,8 @@ export function catalogProductsFromOffers(
       day: '2-digit',
     }).format(new Date(offer.departureAt));
     definition.totalCapacity = offer.totalCapacity;
+    definition.scheduledReturnDate =
+      offer.scheduledReturnDate ?? cached?.definition.scheduledReturnDate;
     definition.saleRoutes = offer.saleRoutes ?? [];
     if (offer.supplyType) {
       definition.supplyType =
@@ -118,7 +122,12 @@ export function catalogProductsFromOffers(
     definition.manifestTemplateId = offer.manifestTemplateId ?? null;
     definition.display = {
       operator: offer.carrierName,
-      vehicle: cached?.definition.display?.vehicle || '',
+      vehicle:
+        references.find(
+          (ref) => ref.kind === 'aircraft' && ref.id === first.aircraftId,
+        )?.name ??
+        cached?.definition.display?.vehicle ??
+        '',
       origin:
         references.find((r) => r.kind === 'city' && r.id === offer.originId)
           ?.name || '',
