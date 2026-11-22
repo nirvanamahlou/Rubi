@@ -2,7 +2,6 @@
 
 Reserve Assistant financial-period resolution, verified sales evidence integration and focused tests. No schema, dependency or deployment change.
 
-
 ## NORA-REMAINING-GUIDE-DOCS-1122 — PC-C — ACTIVE
 
 Reserve only Nora catalogue sources and consumers, document compiler, guide page, scoped tests and status. Move remaining guides from merged develop content. Preserve producer panels, permissions and authenticated record reads. Stacked on #1871. No dependency, schema or deployment work.
