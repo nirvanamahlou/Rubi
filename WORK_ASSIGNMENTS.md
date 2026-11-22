@@ -13275,3 +13275,7 @@ Reserve the Nora customer guide routing, normalized customer query and focused t
 ## NORA-PANEL-SESSION — PC-C
 
 Reserve read-only Master Data and ticket reference session recovery and focused tests for the B2B and flight pricing production acceptance. Preserve the existing authentication and authorization contracts.
+
+## NORA-PRIVILEGED-FAILOVER-1122 — PC-C — READY_FOR_CI
+
+Owner requests no product consumption quotas for native danial/demo identities and provider failover Groq/OpenAI for their questions. Base bd301dda3; branch codex/pc-c-nora-provider-failover-1122. Reserve assistant agent-config/data-agent/server/groq-key-pool, a new failover helper and focused tests, own task/status notes. Reuse operator UUID exemption list; never trust client names/headers. Preserve ordinary-user quotas, native authentication/current-scope revalidation, output/evidence/tool validation, wire-size and finite request/turn/query safety bounds. Remove cumulative token/transport-attempt consumption quotas only in trusted exempt request context, audit actual provider usage and fail over only provider quota errors. No migration/dependency/public contract or permission grant changes. Existing Nora source scopes on other branches remain frozen; do not edit peer worktrees.

@@ -211,6 +211,7 @@ export function createAssistantServer({
           );
           const result = await selectWorkbenchGuide(input, deadline.signal, {
             beforeRetry: () => authenticate(cookie, deadline.signal, actorId),
+            consumptionExempt: exemptUsers.has(actorId.toLowerCase()),
           });
           await authenticate(cookie, deadline.signal, actorId);
           outcome = 'SUCCESS';
@@ -226,6 +227,7 @@ export function createAssistantServer({
           const result = await dataAgent(message, {
             cookie,
             signal: deadline.signal,
+            consumptionExempt: exemptUsers.has(actorId.toLowerCase()),
           });
           await authenticate(cookie, deadline.signal, actorId);
           outcome = 'SUCCESS';

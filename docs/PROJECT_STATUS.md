@@ -10477,3 +10477,7 @@ Nora guides B2B workflows and reads authorized status and filtered directory met
 Nora customer acceptance follow-up: explicit B2B questions use the organization guide, and B2C lookups use the supported minimum page size and existing customer query normalization.
 
 B2B directory reads and flight pricing references recover an expired access session once through the existing authenticated refresh flow.
+
+## NORA-PRIVILEGED-FAILOVER-1122 — PC-C
+
+Trusted native danial/demo exemptions verified; hybrid provider quota failover implemented in both directions, including guide selection. Ordinary quotas and all evidence/access/deadline/finite execution guards preserved.213 service tests pass. No migration/dependency/billing or credential changes. Exact-head hosted CI and guarded native-only activation remain required. See docs/tasks/NORA-PRIVILEGED-FAILOVER-1122.md.
