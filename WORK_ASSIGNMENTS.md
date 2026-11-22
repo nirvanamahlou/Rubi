@@ -1,3 +1,7 @@
+## CROSS-COUNTRY-TICKET-DESTINATIONS-1122 — PC-A — READY_FOR_CI
+
+Scope: flight schedule additional sales destination picker and targeted tests. Search all active cities for extra routes and preserve shared flight capacity and country filters on actual flight endpoints. Owner authorizes develop merge.
+
 ## PREVIEW-PER-HOTEL-1122 — PC-A — READY_FOR_CI
 
 Reserve the website preview editor, publication presentation validator, catalogue projection and focused tests. Assign rates by the selected departure's hotel IDs and retain historical shared previews. Owner authorizes develop merge. No schema or deploy change.

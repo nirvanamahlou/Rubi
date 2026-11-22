@@ -25,6 +25,7 @@ export function ReferencePicker({
   value,
   onSelect,
   countryId,
+  allowAnyCityCountry = false,
   cityId,
   readOnly = false,
   required = false,
@@ -35,6 +36,7 @@ export function ReferencePicker({
   value: Reference | undefined;
   onSelect: (value: Reference | undefined) => void;
   countryId?: string;
+  allowAnyCityCountry?: boolean;
   cityId?: string;
   readOnly?: boolean;
   required?: boolean;
@@ -42,7 +44,8 @@ export function ReferencePicker({
   const [open, setOpen] = useState(false),
     [search, setSearch] = useState(''),
     [attempt, setAttempt] = useState(0);
-  const needsCountry = resource === 'cities' || resource === 'airports';
+  const needsCountry =
+    resource === 'airports' || (resource === 'cities' && !allowAnyCityCountry);
   const enabled = !readOnly && (!needsCountry || Boolean(countryId));
   const key = JSON.stringify([resource, search, countryId, cityId, attempt]);
   const [result, setResult] = useState<{
