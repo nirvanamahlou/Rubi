@@ -367,12 +367,27 @@ export class SiteCommerceService {
             delivery.deliveredRevision === delivery.revision
           ? 'accepted'
           : 'pending';
-    return {
-      deliveryStatus,
-      data: await this.db.client.websitePublication.findFirst({
-        where: { siteCode: site, kind, resourceId, branchId, periodKey },
-      }),
-    };
+    const data = await this.db.client.websitePublication.findFirst({
+      where: { siteCode: site, kind, resourceId, branchId, periodKey },
+    });
+    if (
+      kind === 'tour' &&
+      data?.presentation &&
+      websitePresentation(data.presentation).previewOnly
+    ) {
+      const departure = await this.tours.pricingDeparture(resourceId, [
+        branchId,
+      ]);
+      const ids = [...new Set(departure.package.hotelIds)];
+      const profiles = await this.references.publishedHotelProfiles(ids);
+      const names = new Map(profiles.map((hotel) => [hotel.id, hotel.name]));
+      return {
+        deliveryStatus,
+        data,
+        previewHotels: ids.map((id) => ({ id, name: names.get(id) ?? id })),
+      };
+    }
+    return { deliveryStatus, data };
   }
 
   async publish(
@@ -459,6 +474,16 @@ export class SiteCommerceService {
       const departure = await this.tours.pricingDeparture(resourceId, [
         branchId,
       ]);
+      const hotelRates = incoming?.previewHotelRate?.breakdown?.hotels;
+      if (hotelRates) {
+        const expected = new Set(departure.package.hotelIds);
+        const supplied = Object.keys(hotelRates);
+        if (
+          supplied.length !== expected.size ||
+          supplied.some((id) => !expected.has(id))
+        )
+          throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
+      }
       if (
         previewOnly &&
         previewHotelRate &&
@@ -723,8 +748,12 @@ export class SiteCommerceService {
               previewRate.checkOut <= tour.endsOn
             ) {
               product.passengerRates = tour.package.hotelIds.flatMap(
-                (hotelId) =>
-                  previewRateKinds.flatMap((kind) => {
+                (hotelId) => {
+                  const hotelRates = breakdown.hotels
+                    ? breakdown.hotels[hotelId]
+                    : breakdown.hotel;
+                  if (!hotelRates) return [];
+                  return previewRateKinds.flatMap((kind) => {
                     const rate = passengerRate(
                       {
                         kind,
@@ -733,7 +762,7 @@ export class SiteCommerceService {
                         checkIn: previewRate.checkIn,
                         checkOut: previewRate.checkOut,
                       },
-                      [{ currencyCode: 'IRR', amount: breakdown.hotel[kind] }],
+                      [{ currencyCode: 'IRR', amount: hotelRates[kind] }],
                       [
                         {
                           currencyCode: 'IRR',
@@ -745,7 +774,8 @@ export class SiteCommerceService {
                       ],
                     );
                     return rate ? [rate] : [];
-                  }),
+                  });
+                },
               );
             }
           }
