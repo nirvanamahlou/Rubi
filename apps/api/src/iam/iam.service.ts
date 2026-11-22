@@ -26,6 +26,8 @@ import {
   canUseMasterDataResource,
   hasAccessControl,
   IAM_PERMISSION_CODES,
+  HR_PERMISSION_CODES,
+  HR_ADMIN_USERNAMES,
   MANUAL_ACCESS_ROLE_PREFIX,
   CALL_CENTER_SCOPED_ACCESS,
   hasScopedCallCenterAccess,
@@ -525,7 +527,7 @@ export class IamService implements IamStepUpPort {
       include: this.userAccessInclude(),
     });
     if (!user) throw new UnauthorizedException('دسترسی معتبر نیست.');
-    if (!this.permissionCodes(user).includes('hr.manage'))
+    if (!authenticatedPermissionCodes(user.roles).includes('hr.manage'))
       throw new ForbiddenException('مجوز منابع انسانی وجود ندارد.');
     const configuredBranches = [
       process.env.HR_RADAN_BRANCH_ID,
@@ -2820,25 +2822,31 @@ export class IamService implements IamStepUpPort {
     }>;
   }): IamPermissionCode[] {
     const permissions = authenticatedPermissionCodes(user.roles);
-    if (['demo', 'nima'].includes(user.username.toLowerCase()))
-      return permissions;
-    const workspacePermissions = new Set([
-      'hr.read',
-      'hr.manage',
-      'hr.approve',
-      'hr.sensitive',
-      'hr.audit',
-      'hr.team',
-      'hr.self',
-    ]);
+    if (HR_ADMIN_USERNAMES.includes(user.username.toLowerCase())) {
+      const hrScreens = USER_ACCESS_SCREENS.filter(
+        ({ group }) => group === 'hr',
+      );
+      const denialPrefix = denyPermission('hr.');
+      return [
+        ...new Set<IamPermissionCode>([
+          ...permissions.filter((code) => !code.startsWith(denialPrefix)),
+          ...HR_PERMISSION_CODES,
+          'documents.hr.read',
+          ...hrScreens.map(({ id }) => screenPermission(id)),
+        ]),
+      ];
+    }
     return [
       ...permissions.filter(
         (code) =>
-          !workspacePermissions.has(code) && !code.startsWith('ui.screen.hr.'),
+          (!code.startsWith('hr.') || code.startsWith('hr.connections.')) &&
+          code !== 'documents.hr.read' &&
+          !code.startsWith('ui.screen.hr.'),
       ),
       denyPermission('hr.home'),
     ];
   }
+
   private loginResponse(user: {
     id: string;
     username: string;
