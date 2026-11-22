@@ -1,6 +1,11 @@
-import catalog from '../../../../../services/assistant/workbench-guides.json';
+import callCenterCatalog from '../../../../../services/assistant/call-center-guides.json';
+import workbenchCatalog from '../../../../../services/assistant/workbench-guides.json';
 import { containsQuestionPhrase, normalizeQuestion } from './question-text';
 
+const catalog = {
+  ...workbenchCatalog,
+  topics: [...workbenchCatalog.topics, ...callCenterCatalog.topics],
+};
 export const workbenchGuideCatalog = catalog;
 export type WorkbenchGuideTopic = (typeof catalog.topics)[number];
 export type WorkbenchGuideGoal = 'steps' | 'troubleshoot' | 'follow-up';
@@ -23,6 +28,7 @@ export function resolveWorkbenchGuide(
   const text = normalize(message);
   const callCenter =
     tab === 'call-center' ||
+    /کال ?سنتر/.test(text) ||
     /کال سنتر|صف رسیدگی|تماس بدون نتیجه|تماس های بدون نتیجه|تماس مجدد|پرونده مخاطب|ضبط مکالمه|فایل صوتی تماس|ضبط تماس|تماس ضبط شده|بررسی پیگیری|مدیر ایجادکننده|واحد مسئول مخاطب|تماس امروز/.test(
       text,
     );
@@ -68,6 +74,11 @@ export function resolveWorkbenchGuide(
       score: Math.max(
         0,
         leaveIntent === topic.id ? 80 : 0,
+        callCenter &&
+          topic.id === 'call-center-anonymous' &&
+          /شماره مخفی|شماره نامعلوم|اسم را ندارم/.test(text)
+          ? 80
+          : 0,
         ...[topic.title, ...topic.aliases].map((alias) =>
           containsQuestionPhrase(text, alias)
             ? topic.id === 'home'
@@ -145,7 +156,7 @@ export function renderWorkbenchGuide(
       : []),
     `محدودیت:\n${topic.limitations.join('\n')}`,
     `اقدام بعدی: ${topic.next}`,
-    `منبع راهنما: ${topic.title} — نسخه ${catalog.version}`,
+    `منبع راهنما: ${topic.title} — نسخه `,
   ].join('\n\n');
 }
 
@@ -156,6 +167,10 @@ export async function loadWorkbenchGuide(
   signal: AbortSignal,
   fetcher: typeof fetch = fetch,
 ) {
+  if (topic.tab === 'call-center') {
+    signal.throwIfAborted();
+    return renderWorkbenchGuide(topic, goal);
+  }
   try {
     const response = await fetcher('/api/assistant/workbench-guide', {
       method: 'POST',
