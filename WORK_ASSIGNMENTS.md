@@ -12838,9 +12838,11 @@ PR1776 catalogue sync: add the same new HR error translation to its required app
 
 PR1776 concurrent producer integration: PR1782 delivered the same CI repairs while this run was validating. Retain its stronger fixture assertions for actor/branch and its canonical six English translations, and synchronize the API mirror to that exact wording. Both product scopes remain untouched; final merged-head CI must run again.
 
-## NORA-PRIVILEGED-FAILOVER-1122 — PC-C — READY_FOR_CI
+## NORA-PRIVILEGED-FAILOVER-1122 — PC-C — DONE
 
 Owner requests no product consumption quotas for native danial/demo identities and provider failover Groq/OpenAI for their questions. Base bd301dda3; branch codex/pc-c-nora-provider-failover-1122. Reserve assistant agent-config/data-agent/server/groq-key-pool, a new failover helper and focused tests, own task/status notes. Reuse operator UUID exemption list; never trust client names/headers. Preserve ordinary-user quotas, native authentication/current-scope revalidation, output/evidence/tool validation, wire-size and finite request/turn/query safety bounds. Remove cumulative token/transport-attempt consumption quotas only in trusted exempt request context, audit actual provider usage and fail over only provider quota errors. No migration/dependency/public contract or permission grant changes. Existing Nora source scopes on other branches remain frozen; do not edit peer worktrees.
+
+Publication completed: PR1852 merged after all9 exact-head CI checks;213 isolated production-candidate tests passed. Native source activation verified healthy with unchanged credentials, environment, core service identities and database. Encrypted rollback backup verified. Source leases released. See own task publication receipt.
 
 ## NORA-DATA-AGENT-V1 — PC-C — IN_PROGRESS — 2026-11-14
 

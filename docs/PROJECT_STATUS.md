@@ -144,7 +144,7 @@ PR1768 UI is active in ERP with PR1769 Persian/source presentation preserved. Pu
 
 ## NORA-PRIVILEGED-FAILOVER-1122 — PC-C
 
-Trusted native danial/demo exemptions verified; hybrid provider quota failover implemented in both directions, including guide selection. Ordinary quotas and all evidence/access/deadline/finite execution guards preserved.213 service tests pass. No migration/dependency/billing or credential changes. Exact-head hosted CI and guarded native-only activation remain required. See docs/tasks/NORA-PRIVILEGED-FAILOVER-1122.md.
+Trusted native danial/demo exemptions verified; hybrid provider quota failover implemented in both directions, including guide selection. Ordinary quotas and all evidence/access/deadline/finite execution guards preserved.213 service tests pass. No migration/dependency/billing or credential changes. PR1852 merged after all9 exact-head hosted checks;213 production-candidate tests passed. Guarded native-only activation completed and health/authentication/source hashes verified; encrypted rollback backup retained. See docs/tasks/NORA-PRIVILEGED-FAILOVER-1122.md.
 
 ## NORA-COUNT-BREAKDOWN-1116 — PC-C — READY_FOR_CI
 
