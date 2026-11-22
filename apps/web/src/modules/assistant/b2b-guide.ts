@@ -54,6 +54,10 @@ export function resolveB2bQuestion(
   const exact = topics.find((topic) => normalizeQuestion(topic.title) === text);
   const topic =
     exact ??
+    (how &&
+    /ثبت.*(?:آژانس|مشتری سازمانی)|(?:آژانس|مشتری سازمانی).*ثبت/.test(text)
+      ? topics.find((item) => item.id === 'registration')
+      : undefined) ??
     topics.find(
       (item) =>
         item.id === 'documents' &&

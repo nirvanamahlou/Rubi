@@ -1,5 +1,10 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 
+import {
+  buildLinkedPanelGuides,
+  linkedPanelDomains,
+} from './build-linked-panel-guides.mjs';
+
 const directory = new URL('../docs/assistant/guides/', import.meta.url);
 const outputs = {
   sales: '../apps/web/src/modules/assistant/contract-guide.generated.json',
@@ -15,6 +20,7 @@ const sections = new Map();
 for (const file of readdirSync(directory).sort()) {
   if (!file.endsWith('.md')) continue;
   const domain = file.slice(0, -3);
+  if (linkedPanelDomains.includes(domain)) continue;
   if (!Object.hasOwn(outputs, domain))
     throw new Error('Unknown guide: ' + file);
   const text = readFileSync(new URL(file, directory), 'utf8').replace(
@@ -114,3 +120,5 @@ for (const [domain, output] of Object.entries(outputs)) {
     writeFileSync(target, JSON.stringify(data, null, 2) + '\n');
   }
 }
+
+buildLinkedPanelGuides(directory, process.argv.includes('--check'));

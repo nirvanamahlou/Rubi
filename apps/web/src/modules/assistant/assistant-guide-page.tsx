@@ -3,22 +3,17 @@
 import { useEffect } from 'react';
 import Link from '@/i18n/link';
 import { useAccessActor, useRouteAccess } from '@/modules/iam/access-context';
-import b2c from './customer-guide-catalog.json';
-import sales from './contract-guide.generated.json';
-import callCenter from '../../../../../services/assistant/call-center-guides.json';
-import workbench from '../../../../../services/assistant/workbench-guides.json';
-
-const catalogues = {
-  b2c: { title: 'راهنمای مشتریان حقیقی', topics: b2c },
-  sales: { title: 'راهنمای قراردادهای فروش', topics: sales.topics },
-  'call-center': { title: 'راهنمای کال‌سنتر', topics: callCenter.topics },
-  workbench: { title: 'راهنمای میزکار من', topics: workbench.topics },
-};
+import {
+  assistantGuideCatalogues as catalogues,
+  assistantGuideSection,
+  isAssistantGuideModule,
+  type AssistantGuideModule,
+} from './assistant-guide-registry';
 
 export function AssistantGuidePage({
   module,
 }: {
-  module: keyof typeof catalogues;
+  module: AssistantGuideModule;
 }) {
   const actor = useAccessActor();
   const canOpen = useRouteAccess();
@@ -29,7 +24,10 @@ export function AssistantGuidePage({
   }, [actor, canOpen, module]);
   if (!actor) return null;
   const catalogue = catalogues[module];
-  const topics = catalogue.topics.filter((topic) => canOpen(topic.href));
+  const topics = catalogue.topics.flatMap(({ id }) => {
+    const section = assistantGuideSection(module, id);
+    return section && canOpen(section.href) ? [section] : [];
+  });
   return (
     <main className="mx-auto max-w-4xl space-y-6 p-6" dir="rtl">
       <h1 className="text-2xl font-bold">{catalogue.title}</h1>
@@ -40,9 +38,11 @@ export function AssistantGuidePage({
           key={topic.id}
         >
           <h2 className="text-lg font-semibold">{topic.title}</h2>
-          <p>{('route' in topic ? topic.route : topic.path).join(' ← ')}</p>
+          {(topic.route || topic.path) && (
+            <p>{(topic.route ?? topic.path)?.join(' ← ')}</p>
+          )}
           <ul className="list-disc ps-6">
-            {topic.conditions.map((condition) => (
+            {topic.conditions?.map((condition) => (
               <li key={condition}>{condition}</li>
             ))}
           </ul>
@@ -56,16 +56,8 @@ export function AssistantGuidePage({
           </Link>
           {topic.related.map((ref) => {
             const [domain, id] = ref.split('/');
-            if (
-              domain !== 'sales' &&
-              domain !== 'workbench' &&
-              domain !== 'call-center' &&
-              domain !== 'b2c'
-            )
-              return null;
-            const related = catalogues[domain].topics.find(
-              (item) => item.id === id,
-            );
+            if (!domain || !isAssistantGuideModule(domain)) return null;
+            const related = assistantGuideSection(domain, id);
             return related && canOpen(related.href) ? (
               <Link
                 className="block underline"

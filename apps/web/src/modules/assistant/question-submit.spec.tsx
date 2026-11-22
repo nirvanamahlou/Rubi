@@ -248,18 +248,15 @@ describe('actual Composer submit routing and transport', () => {
       render().filter((node) => node.props['data-role'] === 'user'),
     ).toHaveLength(2);
   });
-  it('switches from Sales data to identifier-only Workbench guidance and uses its internal fallback on 429', async () => {
+  it('switches from Sales data to local linked Workbench guidance without a provider call', async () => {
     await send('تعداد قراردادها را بگو');
-    h.fetcher.mockResolvedValueOnce(Response.json({}, { status: 429 }));
     await send('چطور مرخصی ساعتی ثبت کنم؟');
-    expect(h.fetcher.mock.calls[1]![0]).toBe('/api/assistant/workbench-guide');
-    expect(JSON.parse(h.fetcher.mock.calls[1]![1].body)).toEqual({
-      version: 1,
-      topicId: 'leave-hourly',
-      goal: 'steps',
-    });
+    expect(h.fetcher).toHaveBeenCalledTimes(1);
     expect(chat().at(-1)).toContain('مرخصی');
     expect(chat().at(-1)).not.toContain('شواهد تازه');
+    const links = render().map((node) => node.props.href);
+    expect(links).toContain('/assistant-guides/workbench#leave-hourly');
+    expect(links).toContain('/workbench?tab=requests');
   });
   it('does not reuse data context after an authorization denial', async () => {
     await send('تعداد قراردادها را بگو');

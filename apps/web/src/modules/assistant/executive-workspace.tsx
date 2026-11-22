@@ -1,5 +1,7 @@
 'use client';
 
+import { documentGuideLink } from './assistant-guide-registry';
+
 import {
   purchaseGuideLink,
   readPurchaseGuide,
@@ -636,10 +638,7 @@ function AssistantComposerContent({
           renderTourGuide(tourQuestion.topic, tourQuestion.followUp),
           undefined,
           undefined,
-          {
-            href,
-            label,
-          },
+          documentGuideLink({ href, label }, 'tour', tourQuestion.topic),
         );
       } else if (tourQuestion.kind === 'clarify') {
         replyLocally(tourQuestion.text, undefined, undefined, {
@@ -693,7 +692,11 @@ function AssistantComposerContent({
           renderPurchaseGuide(purchaseQuestion.topic),
           undefined,
           undefined,
-          purchaseGuideLink,
+          documentGuideLink(
+            purchaseGuideLink,
+            'purchase',
+            purchaseQuestion.topic.id,
+          ),
         );
       } else {
         if (!purchaseQuestion.code) purchaseTopic.current = 'status';
@@ -799,7 +802,7 @@ function AssistantComposerContent({
           ),
           undefined,
           undefined,
-          link,
+          documentGuideLink(link, 'finance-delivery', deliveryQuestion.topic),
         );
       } else if (deliveryQuestion.kind === 'clarify') {
         replyLocally(financeDeliveryCopy.identify, undefined, undefined, link);
@@ -839,7 +842,11 @@ function AssistantComposerContent({
           renderFlightPricingGuide(flightPricingIntent.topic),
           undefined,
           undefined,
-          flightPricingTopicLink(flightPricingIntent.topic),
+          documentGuideLink(
+            flightPricingTopicLink(flightPricingIntent.topic),
+            'flight-pricing',
+            flightPricingIntent.topic.id,
+          ),
         );
       } else {
         const controller = new AbortController();
@@ -881,7 +888,11 @@ function AssistantComposerContent({
           renderMasterDataGuide(masterDataIntent.topics),
           undefined,
           undefined,
-          link,
+          documentGuideLink(
+            link,
+            'master-data',
+            masterDataIntent.topics[0]?.id,
+          ),
         );
       } else {
         const controller = new AbortController();
@@ -925,7 +936,7 @@ function AssistantComposerContent({
           renderB2bGuide(b2bIntent.topic),
           undefined,
           undefined,
-          b2bGuideLink,
+          documentGuideLink(b2bGuideLink, 'b2b', b2bIntent.topic.id),
         );
       } else {
         const controller = new AbortController();
@@ -969,7 +980,7 @@ function AssistantComposerContent({
           ),
           undefined,
           undefined,
-          link,
+          documentGuideLink(link, 'reservation-report', reportQuestion.topic),
         );
       } else if (reportQuestion.kind === 'clarify') {
         replyLocally(reportQuestion.text, undefined, undefined, link);
@@ -1024,10 +1035,11 @@ function AssistantComposerContent({
           ),
           undefined,
           undefined,
-          {
-            href: '/documents',
-            label: 'اسناد و فایل‌ها',
-          },
+          documentGuideLink(
+            { href: '/documents', label: 'اسناد و فایل‌ها' },
+            'documents',
+            documentQuestion.topic.id,
+          ),
         );
       } else if (documentQuestion.kind === 'clarify') {
         replyLocally(documentQuestion.text);

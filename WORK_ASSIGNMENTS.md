@@ -1,3 +1,6 @@
+## NORA-REMAINING-GUIDE-DOCS-1122 — PC-C — ACTIVE
+
+Reserve only Nora catalogue sources and consumers, document compiler, guide page, scoped tests and status. Move remaining guides from merged develop content. Preserve producer panels, permissions and authenticated record reads. Stacked on #1871. No dependency, schema or deployment work.
 ## NORA-B2C-GUIDE-DOCS-1122 — PC-C — ACTIVE
 
 Migrate the versioned B2C help catalogue and wire its guide page and Composer link. Preserve all live customer reads and panel UI. Stacked on Call Center document PR #1870.

@@ -1,3 +1,20 @@
+## NORA-REMAINING-GUIDE-DOCS-1122 — PC-C
+
+All 109 remaining guide topics across eight domains use linked Markdown. Round-trip structural checks preserve the original instructional copy and resolver data. Authenticated loopback browser acceptance verified an answer, the chat panel destination, exact document heading and fragment, and navigation from the document into each panel.
+
+| Domain | Verified topic |
+| --- | --- |
+| B2B | Agency registration |
+| Tours | Create a tour |
+| Flight pricing | Tier pricing |
+| Reservation reports | Build a report |
+| Finance delivery | Issue a delivery permit |
+| Master Data | Currency reference and Finance section |
+| Service purchases | Save hotel service purchases |
+| Documents | Upload a file |
+
+The browser used a synthetic native IAM account and an isolated database. No contracts, requests, uploads or financial actions were submitted. No production deployment or RAG activation.
+
 ## NORA-B2C-GUIDE-DOCS-1122 — PC-C
 
 All 12 B2C topics are generated from linked Markdown. Previous topic content matches develop. Authenticated browser testing verified the registration answer, exact guide anchor and navigation to Customers. Explicit individual-customer guidance resolves from other panels.

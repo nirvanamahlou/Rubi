@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 
+import { isAssistantGuideModule } from '@/modules/assistant/assistant-guide-registry';
 import { AssistantGuidePage } from '@/modules/assistant/assistant-guide-page';
 
 export default async function Page({
@@ -8,12 +9,6 @@ export default async function Page({
   params: Promise<{ module: string }>;
 }) {
   const { module } = await params;
-  if (
-    module !== 'sales' &&
-    module !== 'workbench' &&
-    module !== 'call-center' &&
-    module !== 'b2c'
-  )
-    notFound();
+  if (!isAssistantGuideModule(module)) notFound();
   return <AssistantGuidePage module={module} />;
 }
