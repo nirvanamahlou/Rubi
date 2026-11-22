@@ -8,6 +8,7 @@ export default async function Page({
   params: Promise<{ module: string }>;
 }) {
   const { module } = await params;
-  if (module !== 'sales' && module !== 'workbench') notFound();
+  if (module !== 'sales' && module !== 'workbench' && module !== 'call-center')
+    notFound();
   return <AssistantGuidePage module={module} />;
 }

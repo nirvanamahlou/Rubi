@@ -4,6 +4,7 @@ const directory = new URL('../docs/assistant/guides/', import.meta.url);
 const outputs = {
   sales: '../apps/web/src/modules/assistant/contract-guide.generated.json',
   workbench: '../services/assistant/workbench-guides.json',
+  'call-center': '../services/assistant/call-center-guides.json',
 };
 const workbenchTabs =
   /^(today|requests|messages|files|notes|stars|calendar|activity|performance|daily-packages|account)$/;
@@ -47,8 +48,13 @@ for (const file of readdirSync(directory).sort()) {
       const validHref =
         domain === 'sales'
           ? ['/sales', '/sales/contracts/new'].includes(metadata.href)
-          : workbenchTabs.test(metadata.tab) &&
-            metadata.href === '/workbench?tab=' + metadata.tab;
+          : domain === 'call-center'
+            ? metadata.tab === 'call-center' &&
+              /^\/customer-affairs\/call-center(?:#cc-follow-up-queue)?$/.test(
+                metadata.href,
+              )
+            : workbenchTabs.test(metadata.tab) &&
+              metadata.href === '/workbench?tab=' + metadata.tab;
       if (
         metadata.id !== anchor ||
         sections.has(id) ||

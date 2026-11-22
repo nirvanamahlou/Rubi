@@ -1,3 +1,7 @@
+## NORA-CALL-CENTER-GUIDE-DOCS-1122 — PC-C
+
+The 22 Call Center topics now use linked Markdown as their source. The generated catalogue retains the original topic IDs, text and panel destinations. Nora links to the corresponding section. The Call Center panel and record reader are unchanged. Authenticated browser testing confirmed the answer, the exact guide anchor, related sections and navigation to the Call Center panel. Structural comparison preserved all 22 original topic payloads.
+
 ## NORA-GUIDE-DOCS-1122 — PC-C
 
 Contract and Workbench guide content moved into versioned Markdown and deterministic generated catalogues. The chat uses local replies for migrated topics, with a protected guide route and links to owning panels. Record readers and Call Center UI are preserved. RAG is disabled. Authenticated local browser acceptance passed with a synthetic IAM account and isolated database. The contract and hourly leave replies linked to the correct document sections and panels. The combined leave reply was retested after removing duplicate approval text.

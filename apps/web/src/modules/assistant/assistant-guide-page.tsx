@@ -4,10 +4,12 @@ import { useEffect } from 'react';
 import Link from '@/i18n/link';
 import { useAccessActor, useRouteAccess } from '@/modules/iam/access-context';
 import sales from './contract-guide.generated.json';
+import callCenter from '../../../../../services/assistant/call-center-guides.json';
 import workbench from '../../../../../services/assistant/workbench-guides.json';
 
 const catalogues = {
   sales: { title: 'راهنمای قراردادهای فروش', topics: sales.topics },
+  'call-center': { title: 'راهنمای کال‌سنتر', topics: callCenter.topics },
   workbench: { title: 'راهنمای میزکار من', topics: workbench.topics },
 };
 
@@ -52,7 +54,12 @@ export function AssistantGuidePage({
           </Link>
           {topic.related.map((ref) => {
             const [domain, id] = ref.split('/');
-            if (domain !== 'sales' && domain !== 'workbench') return null;
+            if (
+              domain !== 'sales' &&
+              domain !== 'workbench' &&
+              domain !== 'call-center'
+            )
+              return null;
             const related = catalogues[domain].topics.find(
               (item) => item.id === id,
             );
