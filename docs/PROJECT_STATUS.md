@@ -10503,3 +10503,6 @@ Floating Excel imports treat NULL price cells as absent. Preview proposes up to 
 ## 2026-11-22 — TICKET-VOUCHER-1122 — PC-A
 
 Sales passenger-document modal now renders hotel vouchers and their pending notice only when the saved contract snapshot contains a hotel selection or HOTEL service. Ticket-only contracts omit both, including stale voucherIssued state. Existing floating-contract exemption, ticket controls, branding flags and financial document authorization remain unchanged. Eight component tests, scoped ESLint and Web typecheck pass. No API/schema/migration/dependency/data/deployment change. User authorizes develop merge; all final-head hosted checks must pass first.
+
+### Package generator Azar templates (2026-11-22)
+Antalya Iran Airtour and Kuala Lumpur plus Singapore XLSX formats now import to editable poster profiles. Validated the four supplied files with PNG and PDF exports.

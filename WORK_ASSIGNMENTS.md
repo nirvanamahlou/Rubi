@@ -3564,6 +3564,10 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 - هر چهار Gate CI پاس شدند؛ PR #246 با Merge Commit `88d26ebc` وارد `develop` شد.
   Web3100 با Build ID `60YeidM5vzsZuojUx7D85` فعال و API4190 سالم است؛ رزرو آزاد شد.
 
+## PERSONNEL-DETAIL-TITLES-1122 — PC-D — READY_FOR_CI
+
+Reserve personnel detail title picker, person/site reference forms and their existing Accounting reference command, translations, and focused tests. Uses the existing ledger-scoped configuration and detail links.
+
 ## FINANCE-004-ACCOUNTING-SECONDARY-NAV — PC-A — COMPLETE / MERGED
 
 - درخواست مالک محصول در 2026-09-13: افزودن منوی داخلی جمع‌شونده برای صفحه «حسابداری»
@@ -13312,6 +13316,5 @@ Reserve the Accounting fiscal-year list route, removal of its actions from the s
 
 Reserve the Accounting detail editor and year-independent suggestion endpoint, the System Management issued-code public projection and transaction allocator, their additive Contracts capability flag, and focused Web/API regressions. The Accounting producer serves the same code format and ledger access to the Web consumer. Existing detail IDs, issued codes and bank numbering remain compatible. No migration or data backfill.
 
-## PERSONNEL-DETAIL-TITLES-1122 — PC-D — READY_FOR_CI
-
-Reserve personnel detail title picker, person/site reference forms and their existing Accounting reference command, translations, and focused tests. Uses the existing ledger-scoped configuration and detail links.
+### PACKAGE-GENERATOR-AZAR-1122 (PC-B)
+Scoped XLSX support and poster profiles for Antalya Iran Airtour and Kuala Lumpur plus Singapore. Reuse package-generator renderer; no API, schema or dependency changes.
