@@ -64,10 +64,10 @@ describe('package generator workspace', () => {
     expect(html).toContain('<option value="turkey" selected>ترکیه</option>');
     expect(html).toContain('<option value="thailand">تایلند</option>');
     expect(app).toContain(
-      "turkey:['combined','kus','antalya','bodrum','nss','istanbul-3','istanbul-4']",
+      "turkey:['combined','kus','antalya','antalya-airtour','bodrum','nss','istanbul-3','istanbul-4']",
     );
     expect(app).toContain(
-      "malaysia:['malaysia-kuala','malaysia-penang','malaysia-singapore','malaysia-langkawi']",
+      "malaysia:['malaysia-kuala','malaysia-penang','malaysia-singapore','malaysia-singapore-azar','malaysia-langkawi']",
     );
     expect(app).toContain(
       "thailand:['thailand-phuket','thailand-bangkok-phuket','thailand-pattaya']",

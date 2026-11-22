@@ -2578,6 +2578,10 @@ Migration افزایشی است و هنوز روی دیتابیس محلی یا 
 
 ساعت جاری کنار تاریخ سربرگ با timezone و نوع ارقام تنظیم‌شده سامانه و بدون نمایش ثانیه اضافه شد و در مرز هر دقیقه تازه می‌شود. ۸ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۲ مسیر موفق‌اند؛ Web روی `3100` و API روی `4191` با پاسخ سلامت `200` اجرا شدند. API، داده، Schema/Migration و Dependency/Lockfile تغییر نکردند.
 
+## 2026-11-22 — PACKAGE-GENERATOR-AZAR-CI-1122 — PC-D
+
+Updated the English catalogues and country-picker test for the Azar package templates introduced in PR #1861.
+
 ## 2026-09-23 — PACKAGE-GENERATOR-TEMPLATE-REFRESH-0923 — READY_FOR_REVIEW
 
 هفت قالب اصلاح‌شدهٔ مالزی و تایلند با فایل‌های ارسالی مالک جایگزین شدند: کوالالامپور، کوالالامپور+پنانگ، کوالالامپور+سنگاپور، کوالالامپور+لنگکاوی، پوکت، پاتایا و بانکوک+پوکت. مختصات ویرایش و پیش‌نمایش برای ابعاد جدید تنظیم شد و هندسهٔ سه قالب تایلند نیز کامل شد. ۱۱ تست هدفمند، lint، typecheck، Build تولیدی Web با ۵۲ مسیر و QA مرورگر هر هفت قالب موفق‌اند. API، قرارداد مشترک، Migration، Dependency/Lockfile و داده عملیاتی تغییر نکردند.
@@ -10502,6 +10506,7 @@ Sales passenger-document modal now renders hotel vouchers and their pending noti
 
 ### Package generator Azar templates (2026-11-22)
 Antalya Iran Airtour and Kuala Lumpur plus Singapore XLSX formats now import to editable poster profiles. Validated the four supplied files with PNG and PDF exports.
+
 ## اتصال تور قسطی‌رو (PC-D)
 
 اتصال موجود قسطی‌رو بستهٔ تاریخ‌دار یا دورهٔ شناور را با تأیید مستقل مقصد در
