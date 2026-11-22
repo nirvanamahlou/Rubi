@@ -3,6 +3,9 @@
 window.PackageCards=(()=>{
  const models={},customValues={};let serial=0;
  const geometry={
+  'antalya-airtour':{band:[158,1010,850,80],panel:[158,242,850,753],gap:8,rowGap:8,radius:12,color:'#6e8cae',tableColor:'#d6e1ee'},
+  'malaysia-singapore-azar':{band:[158,1010,850,80],panel:[158,242,850,753],gap:8,rowGap:8,radius:12,color:'#6e8cae',tableColor:'#d6e1ee'},
+
   combined:{band:[227,1035,873,90],panel:[209,265,893,764],gap:10,rowGap:10,radius:17,color:'#6c9fda',tableColor:'#858585'},
   kus:{band:[238,1016,867,97],panel:[237,251,868,756],gap:8,rowGap:10,radius:18,color:'#739cff',tableColor:'#a9a9a9'},
   antalya:{band:[213,1118,886,97],panel:[203,224,895,887],gap:9,rowGap:10,radius:14,color:'#243e85',tableColor:'#122961'},

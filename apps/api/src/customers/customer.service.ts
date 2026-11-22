@@ -1063,6 +1063,59 @@ export class CustomerService {
   }
 
   /** Website passenger entry: same national-ID profile, supplied identity fields only. */
+  async checkWebsitePassenger(
+    input: CustomerMutationRequest,
+    actor: AuthenticatedActor,
+    requestedBranch: string,
+  ) {
+    this.salesEntryActor(actor);
+    const branch = branchOf(actor, requestedBranch);
+    if (input.kind !== 'person' || (!input.nationalId && !input.passportNumber))
+      throw new BadRequestException();
+    const national = input.nationalId
+      ? this.nationalIdProtector.protect(input.nationalId)
+      : undefined;
+    const passport = input.passportNumber
+      ? this.nationalIdProtector.protectPassportNumber(input.passportNumber)
+      : undefined;
+    prepareMutation(
+      { ...input, roles: ['customer', 'passenger'] },
+      true,
+      national,
+      passport,
+      true,
+      true,
+    );
+    const candidates = await this.repository.websiteIdentityCandidates(
+      national?.nationalIdFingerprint,
+      passport?.passportNumberFingerprint,
+    );
+    const existing =
+      national &&
+      candidates.find(
+        (row) => row.nationalIdFingerprint === national.nationalIdFingerprint,
+      );
+    if (
+      existing &&
+      (existing.ownerBranchId !== branch ||
+        !existing.isActive ||
+        existing.mergedIntoId ||
+        existing.kind !== 'PERSON')
+    )
+      return { valid: false, code: 'IDENTITY_REVIEW_REQUIRED' };
+    const passportOwner =
+      passport &&
+      candidates.find(
+        (row) =>
+          row.passportNumberFingerprint === passport.passportNumberFingerprint,
+      );
+    if (passportOwner && passportOwner.id !== existing?.id)
+      return { valid: false, code: 'CUSTOMER_PASSPORT_NUMBER_EXISTS' };
+    // The existing website sync owns updates to the same national-ID profile.
+    // Do not reintroduce the retired strict name/DOB registration lookup here.
+    return { valid: true };
+  }
+
   async syncWebsitePassenger(
     input: CustomerMutationRequest,
     actor: AuthenticatedActor,

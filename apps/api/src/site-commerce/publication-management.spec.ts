@@ -66,6 +66,7 @@ function setup() {
           branchId: 'branch-a',
           salePriceTargetId: 'target',
         }),
+        findFirst: vi.fn().mockResolvedValue(null),
       },
     },
   };
@@ -73,7 +74,13 @@ function setup() {
     documentSupply: vi.fn().mockResolvedValue({}),
     websiteOffer: vi.fn().mockResolvedValue({}),
   };
-  const tours = { pricingDeparture: vi.fn().mockResolvedValue({}) };
+  const tours = {
+    pricingDeparture: vi.fn().mockResolvedValue({
+      startsOn: '2029-11-20',
+      endsOn: '2029-11-27',
+      package: { hotelIds: [] },
+    }),
+  };
   const floating = {
     websiteProduct: vi.fn().mockResolvedValue({
       package: { id: 'floating', name: 'Floating', details: { version: 1 } },
@@ -110,6 +117,54 @@ function setup() {
 }
 afterEach(() => vi.unstubAllEnvs());
 describe('website destination management', () => {
+  it('requires an explicit destination action to authorize each Ghestiroo tour', async () => {
+    const f = setup();
+    const row = {
+      id: 'legacy',
+      kind: 'tour',
+      resourceId: 'tour-a',
+      version: 1,
+      enabled: true,
+      presentation: null,
+    };
+    f.publication.findMany.mockResolvedValueOnce([row]);
+    const siteActor = { ...actor, userId: 'ghestiroo-service' };
+    await expect(
+      f.service.catalog('ghestiroo', siteActor, true),
+    ).resolves.toMatchObject({
+      data: [{ id: 'legacy', kind: 'tour', enabled: false }],
+    });
+    const result = await f.service.publish(
+      'ghestiroo',
+      'tour',
+      'tour-a',
+      {
+        enabled: true,
+        version: 0,
+        branchId: 'branch-a',
+        presentation: {
+          title: 'Tour',
+          description: '',
+          commissionPercent: '0',
+          previewOnly: true,
+          publishHotelProfiles: true,
+        },
+      },
+      actor,
+    );
+    expect(result.data).toMatchObject({
+      siteCode: 'ghestiroo',
+      resourceId: 'tour-a',
+      enabled: true,
+      salesStopped: true,
+      presentation: {
+        previewOnly: true,
+        publishHotelProfiles: true,
+        operatorApproved: true,
+      },
+    });
+    expect(f.publication.create).toHaveBeenCalledTimes(1);
+  });
   it('publishes a priced ticket only to Ghestiroo', async () => {
     const f = setup();
     const result = await f.service.publish(
@@ -137,7 +192,11 @@ describe('website destination management', () => {
     ).resolves.toMatchObject({ version: 1, data: [] });
     expect(f.publication.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { siteCode: 'ghestiroo', branchId: 'branch-a', kind: 'ticket' },
+        where: {
+          siteCode: 'ghestiroo',
+          branchId: 'branch-a',
+          kind: { in: ['ticket', 'tour'] },
+        },
       }),
     );
     await expect(
@@ -211,6 +270,8 @@ describe('website destination management', () => {
       periodKey: row.periodKey,
       enabled: true,
       floatingTour: { version: 2 },
+      previewOnly: true,
+      salesStopped: true,
     });
     expect(result.data[0]).not.toHaveProperty('tour');
     const { BadRequestException } = await import('@nestjs/common');
