@@ -99,6 +99,7 @@ export type WebsitePresentation = {
   description: string;
   commissionPercent: string;
   previewOnly?: boolean;
+  publishHotelProfiles?: boolean;
   previewHotelRate?: PreviewHotelRate | null;
 };
 export function websitePresentation(value: unknown): WebsitePresentation {
@@ -113,7 +114,9 @@ export function websitePresentation(value: unknown): WebsitePresentation {
     typeof v.commissionPercent !== 'string' ||
     !/^\d{1,3}(\.\d{1,4})?$/.test(v.commissionPercent) ||
     Number(v.commissionPercent) > 100 ||
-    (v.previewOnly !== undefined && typeof v.previewOnly !== 'boolean')
+    (v.previewOnly !== undefined && typeof v.previewOnly !== 'boolean') ||
+    (v.publishHotelProfiles !== undefined &&
+      typeof v.publishHotelProfiles !== 'boolean')
   )
     throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
   return {
@@ -125,6 +128,9 @@ export function websitePresentation(value: unknown): WebsitePresentation {
       : {}),
     ...(typeof v.previewOnly === 'boolean'
       ? { previewOnly: v.previewOnly }
+      : {}),
+    ...(typeof v.publishHotelProfiles === 'boolean'
+      ? { publishHotelProfiles: v.publishHotelProfiles }
       : {}),
   };
 }
