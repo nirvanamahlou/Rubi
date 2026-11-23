@@ -112,6 +112,7 @@ import {
 import {
   normalizeContractQuestion,
   resolveContractGuide,
+  formatContractGuide,
 } from './contract-guides';
 import { currencySymbol } from '@/lib/currency-symbol';
 
@@ -611,6 +612,44 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    if (decision.guideTopicId === 'travel-document-workflow') {
+      pending.current?.abort();
+      const section = contractGuideCatalog.topics.find(
+        ({ id }) => id === decision.guideTopicId,
+      );
+      if (!section) {
+        replyLocally(t(c.internalGuideUnavailable));
+        return;
+      }
+      guideTopic.current = section.id;
+      contractId.current = undefined;
+      tourTopic.current = undefined;
+      documentTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      replyLocally(
+        formatContractGuide(section),
+        undefined,
+        undefined,
+        documentGuideLink(
+          {
+            href: section.href,
+            label: english ? 'Open panel' : 'باز کردن پنل',
+          },
+          'sales',
+          section.id,
+        ),
+        {
+          kind: 'guide',
+          domain: 'sales',
+          question:
+            previousAnswer.current?.topicId === section.id
+              ? previousAnswer.current.question
+              : message,
+          topicId: section.id,
+        },
+      );
+      return;
+    }
     const previousTour = tourTopic.current;
     const tourQuestion = resolveTourGuideQuestion(
       message,
