@@ -68,7 +68,7 @@ import {
   stableFingerprint,
 } from './site-commerce.policy';
 
-type ProfileSite = 'jahan-bastan' | 'ghestiroo';
+type ProfileSite = 'jahan-bastan' | 'ghestiroo' | 'nss';
 
 function ghestirooCountryCode(
   value: unknown,
@@ -128,7 +128,7 @@ export class SiteCommerceService {
     id: string,
     actor: AuthenticatedActor,
   ) {
-    if (site !== 'jahan-bastan' && site !== 'ghestiroo')
+    if (site !== 'jahan-bastan' && site !== 'ghestiroo' && site !== 'nss')
       throw new BadRequestException();
     this.publicationBranch(site, actor);
     if (!actor.permissions.includes('master_data.read'))
@@ -284,9 +284,7 @@ export class SiteCommerceService {
       throw new BadRequestException(
         typeof receipt?.detail === 'string'
           ? receipt.detail
-          : site === 'ghestiroo'
-            ? 'ثبت در قسطی‌رو تأیید نشد.'
-            : 'ثبت در جهان باستان تأیید نشد.',
+          : 'سایت مقصد ثبت اطلاعات را تأیید نکرد.',
       );
     const slug = encodeURIComponent(receipt.slug);
     return {

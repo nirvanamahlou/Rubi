@@ -29,6 +29,12 @@ const siteLabels = {
     view: 'مشاهده در قسطی‌رو',
     error: 'ثبت در قسطی‌رو انجام نشد.',
   },
+  nss: {
+    name: 'نیایش سیر',
+    publish: 'ثبت در نیایش سیر',
+    view: 'مشاهده در نیایش سیر',
+    error: 'ثبت در نیایش سیر انجام نشد.',
+  },
 } as const;
 type ProfileSite = keyof typeof siteLabels;
 
@@ -104,6 +110,9 @@ export function HotelPublication({
     <div className="grid gap-3 text-start text-sm">
       <ProfileDestination id={id} resource={resource} site="jahan-bastan" />
       <ProfileDestination id={id} resource={resource} site="ghestiroo" />
+      {resource === 'hotels' && (
+        <ProfileDestination id={id} resource={resource} site="nss" />
+      )}
       {!manage && resource === 'hotels' && (
         <Link
           className="flex items-center gap-2 border-t border-border pt-3 font-medium text-primary hover:underline"

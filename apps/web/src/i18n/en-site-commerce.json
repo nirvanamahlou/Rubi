@@ -94,5 +94,9 @@
   "ثبت در قسطی‌رو": "Publish to Ghestiroo",
   "مشاهده در قسطی‌رو": "View on Ghestiroo",
   "ثبت در قسطی‌رو انجام نشد.": "Publication to Ghestiroo failed.",
-  "ثبت در قسطی‌رو تأیید نشد.": "Ghestiroo did not confirm publication."
+  "ثبت در قسطی‌رو تأیید نشد.": "Ghestiroo did not confirm publication.",
+  "ثبت در نیایش سیر": "Publish to Niyayesh Seir",
+  "مشاهده در نیایش سیر": "View on Niyayesh Seir",
+  "ثبت در نیایش سیر انجام نشد.": "Publication to Niyayesh Seir failed.",
+  "سایت مقصد ثبت اطلاعات را تأیید نکرد.": "The destination site did not confirm publication."
 }
