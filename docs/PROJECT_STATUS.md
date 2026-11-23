@@ -10564,3 +10564,9 @@ Antalya Iran Airtour and Kuala Lumpur plus Singapore XLSX formats now import to 
 کاتالوگ امضاشده تحویل می‌دهد. تنظیم‌های پیش‌نمایش، توقف فروش و اجازهٔ انتشار
 پروفایل هتل برای همان مقصد ذخیره می‌شوند. دریافت، ذخیره و نمایش در قسطی‌رو
 از مسیر نسخه‌بندی‌شده بررسی می‌شود. دریافت سفارش تور در اتصال قسطی‌رو غیرفعال است.
+
+## 2026-11-23 — ACCOUNTING-NAV-CONTRAST-1123 — PC-D
+
+The compact General Ledger menu uses legible labels and icons, distinct group and list colors, an inline marker for the current page, and a visible keyboard focus outline in both themes. The existing menu structure, dimensions, and destinations are preserved.
+
+Chromium verified selected and unselected rows, group and list toggles, keyboard focus and responsive widths. The visible label contrast on the fiscal-year route measured at least 5.10:1 in light mode and 6.05:1 in dark mode.
