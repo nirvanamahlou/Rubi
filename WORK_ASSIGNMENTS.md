@@ -13412,3 +13412,7 @@ Reserve the site-commerce profile sender and Integrations profile publication co
 ## MASTER-DATA-STALE-EDIT-1123 — PC-D — READY_FOR_CI
 
 Reserve the Master Data Web client, focused client tests, and linked geography edit path. Recover hotel, city, and country saves from a stale version by retrying a nonconflicting patch against the latest record. Preserve optimistic locking for competing changes. No migration or dependency change.
+
+CALL-CENTER-TODAY-FILTER-STYLE-1116 — PC-C: reserve only without-outcome-dialog.module.css button selector scope and own status notes on codex/pc-c-call-center-today-filter-style-1116. User authorizes matching today KPI filter option appearance to existing contact filters. Shared combobox owns option visuals and selection. No API, dependency or migration change.
+
+CALL-CENTER-TODAY-FILTER-STYLE-1116 follow-up reserves WithoutOutcomeDialog initial focus. Explicit user request: today dropdowns stay closed on modal open. Focus the accessible title before keyboard navigation; retain select focus and click behavior.

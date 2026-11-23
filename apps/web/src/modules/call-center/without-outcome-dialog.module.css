@@ -23,18 +23,18 @@
 .actions {
   flex-direction: column;
 }
-.dialog button {
+.dialog button:not([role='option']) {
   border: 1px solid var(--border, #dce5ef);
   border-radius: 8px;
   padding: 7px 12px;
   color: var(--foreground);
   background: var(--surface, #fff);
 }
-.dialog button:disabled {
+.dialog button:not([role='option']):disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
-.dialog button:focus-visible {
+.dialog button:not([role='option']):focus-visible {
   outline: 2px solid #1875e5;
   outline-offset: 2px;
 }
