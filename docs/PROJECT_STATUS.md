@@ -203,6 +203,10 @@ PR1768 UI is active in ERP with PR1769 Persian/source presentation preserved. Pu
 
 OpenAI Responses write access and Sol function continuation verified. All 217 service tests passed locally and in the isolated server candidate. All 30 synthetic acceptance scenarios passed across the matrix and targeted reruns. Both models encountered transient socket failures. Median duration across 16 paired successful model scenarios: 19.5 seconds Sol, 9.9 seconds GPT-4.1. Persian month default verified from fixed Tehran boundaries without model calls. PR1879 requires final CI and guarded activation.
 
+## NORA-BUDGET-MESSAGE-1123 — PC-C
+
+Production diagnostics for the November 23 incident showed eight successful GPT-4.1 calls before the request failed. The affected actor matched a configured consumption exemption. The Web proxy now keeps Agent analysis-budget exhaustion distinct from admission and provider rate limits without forwarding private upstream error details.
+
 ## NORA-PRIVILEGED-FAILOVER-1122 — PC-C
 
 Trusted native danial/demo exemptions verified; hybrid provider quota failover implemented in both directions, including guide selection. Ordinary quotas and all evidence/access/deadline/finite execution guards preserved.213 service tests pass. No migration/dependency/billing or credential changes. Exact-head hosted CI and guarded native-only activation remain required. See docs/tasks/NORA-PRIVILEGED-FAILOVER-1122.md.

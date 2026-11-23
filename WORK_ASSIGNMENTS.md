@@ -12,6 +12,10 @@ Reserve the Nora Sales guide source and generated catalogue, document-workflow i
 
 ## NORA-CALENDAR-1122 — PC-C — READY_FOR_REVIEW
 
+## NORA-BUDGET-MESSAGE-1123 — PC-C — ACTIVE
+
+Reserve Nora Web v3 error mapping, conversation copy and scoped tests. Preserve Agent execution and account/provider quotas. No migration or dependency changes.
+
 Reserve Assistant financial-period resolution, verified sales evidence integration and focused tests. No schema, dependency or deployment change.
 
 ## NORA-REMAINING-GUIDE-DOCS-1122 — PC-C — ACTIVE
