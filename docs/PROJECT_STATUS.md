@@ -1,6 +1,6 @@
-## NORA-ANSWER-REVEAL-1123 — PC-C
+## Visa service website publication
 
-Nora chat presents completed responses progressively while retaining full text, table semantics, reading order and reduced-motion support. The renderer regression suite passes.
+Avina stores one main visa photo and up to six gallery photos. The Visa Services row action sends the saved public profile to Jahan Bastan, Ghestiroo, or Niyayesh Seir using the signed publication API. The payload includes document names and excludes guidance attachments and supplier references.
 
 ## Nora composite guide follow-up checks
 
@@ -221,6 +221,10 @@ Production diagnostics for the November 23 incident showed eight successful GPT-
 ## NORA-PRIVILEGED-FAILOVER-1122 — PC-C
 
 Trusted native danial/demo exemptions verified; hybrid provider quota failover implemented in both directions, including guide selection. Ordinary quotas and all evidence/access/deadline/finite execution guards preserved.213 service tests pass. No migration/dependency/billing or credential changes. Exact-head hosted CI and guarded native-only activation remain required. See docs/tasks/NORA-PRIVILEGED-FAILOVER-1122.md.
+
+## NORA-ANSWER-REVEAL-1123 — PC-C
+
+Nora chat presents completed responses progressively while retaining full text, table semantics, reading order and reduced-motion support. The renderer regression suite passes.
 
 ## NORA-COUNT-BREAKDOWN-1116 — PC-C — READY_FOR_CI
 
@@ -10623,3 +10627,7 @@ CALL-CENTER-TODAY-FILTER-STYLE-1116: today's dialog initially focuses its title 
 ## Automatic hotel identification
 
 New hotels receive an HTL identifier on save using the established city prefix and a persistent global sequence. Excel inserts share the allocator. Existing identification codes remain available for publication and existing records keep their identifiers.
+
+## DASHBOARD-AVAILABILITY-NOTES — PC-C
+
+Archived dashboard widget availability reasons and expected data in docs/DASHBOARD-DATA-GAPS.md, ordered by the dashboard navigation. Removed long availability and coverage notes from cards and charts. Compact unavailable and empty states, chart units and genuine zeros remain. Dashboard suite: 62 passed, one existing skip.

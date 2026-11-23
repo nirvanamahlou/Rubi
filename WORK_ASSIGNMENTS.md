@@ -1,3 +1,7 @@
+## VISA-SITE-PUBLICATION-1123 — PC-D — ACTIVE
+
+Own Visa Services image fields and additive Prisma migration, signed website delivery, the Avina publication action, and focused tests. Coordinate the receiving endpoints with Jahan Bastan, Ghestiroo and Niyayesh Seir.
+
 ## NORA-RAG-REQUIRED-FOLLOW-UP-1123 — PC-C — ACTIVE
 
 ## NORA-ANSWER-REVEAL-1123 — PC-C — ACTIVE
@@ -13432,3 +13436,7 @@ CALL-CENTER-TODAY-FILTER-STYLE-1116 follow-up reserves WithoutOutcomeDialog init
 ## AUTOMATIC-HOTEL-IDENTIFICATION-1123 — PC-D — READY_FOR_CI
 
 Reserve the Master Data hotel creation and Excel-create paths, the create form, focused tests, and one additive PostgreSQL sequence migration. Reuse established city prefixes and serialize code allocation with explicit hotel code writes. Historical hotel codes and internal import identities are retained. The requested release is limited to the Avina API and Web.
+
+## DASHBOARD-AVAILABILITY-NOTES — PC-C — ACTIVE
+
+Reserve Dashboard availability display, its existing tests and the requested audit Markdown. Presentation only; source contracts, metrics and permissions remain unchanged.
