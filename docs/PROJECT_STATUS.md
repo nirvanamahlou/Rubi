@@ -1,3 +1,6 @@
+## Nora composite guide follow-up checks
+
+Capacity-change recovery and final registration-result steps are mandatory for the applicable Sales checklist questions. The selector restores the canonical step when a valid model checklist omits it. In five synthetic scenarios compared against direct guidance using the configured model, every displayed answer retained question-specific steps and the same approved links. The capacity and registration-result answers had 10 and 11 steps instead of 16. Four calls returned validated checklists and one used the complete guide after provider HTTP 400. Both paths supported the next action in one exchange in all five cases. The production flag stays disabled under the rollout criterion.
 ## Master Data stale edit recovery
 
 A version conflict during a hotel, city, or country save loads the latest record and retries once with the recorded form changes. A competing edit on the same field, changed city geography, or replaced logo retains conflict protection.

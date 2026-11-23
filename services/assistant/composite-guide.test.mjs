@@ -60,3 +60,44 @@ test('a disabled flag or a missing required step uses the document fallback', as
     validateCompositeGuide({ version: 2, question: question + ' قرارداد 123' }),
   );
 });
+
+test('fills omitted capacity recovery and registration-result steps from the guide', async () => {
+  const selected = { flight: [2, 3, 4], hotel: [1, 2, 3, 4], review: [1, 3] };
+  const cases = [
+    [
+      'اگر ظرفیت بلیت عوض شد چطور اصلاح کنم؟',
+      { ...selected, flight: [2, 3, 4, 5] },
+    ],
+    [
+      'بعد از ثبت از کجا شماره و نتیجه ثبت را ببینم؟',
+      { ...selected, review: [1, 3, 4] },
+    ],
+  ];
+  for (const [detail, expected] of cases) {
+    const question =
+      'قبل از ارسال قرارداد پرواز و هتل به رزرواسیون چه چیزهایی را بررسی کنم و ' +
+      detail;
+    let required;
+    const selector = createCompositeGuideSelector({
+      compositeEnabled: true,
+      transport: {
+        fetch: async (_url, request) => {
+          required = JSON.parse(
+            JSON.parse(request.body).messages[1].content,
+          ).required;
+          return Response.json({
+            choices: [{ message: { content: JSON.stringify(selected) } }],
+          });
+        },
+      },
+    });
+    assert.deepEqual(
+      await selector(
+        validateCompositeGuide({ version: 2, question }),
+        new AbortController().signal,
+      ),
+      { version: 2, selected: expected },
+    );
+    assert.deepEqual(required, expected);
+  }
+});
