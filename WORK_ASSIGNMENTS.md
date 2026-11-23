@@ -1,5 +1,9 @@
 ## NORA-RAG-REQUIRED-FOLLOW-UP-1123 — PC-C — ACTIVE
 
+## NORA-ANSWER-REVEAL-1123 — PC-C — ACTIVE
+
+Reserve the Nora response renderer, its animation stylesheet and focused tests, with one prop at the existing Composer response call site. No routing, provider, schema or dependency changes.
+
 Reserve the Sales composite guide selector, focused regression tests, and pilot comparison record. Preserve the Web links, provider transport, runtime flag and all producer panels. No migration or dependency changes.
 
 ## NORA-COMPOSITE-GUIDES-1123 — PC-C — ACTIVE
