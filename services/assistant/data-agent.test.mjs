@@ -592,7 +592,51 @@ test('SQL rejection permits bounded repair and truncation becomes an explicit li
   assert.equal(queries, 2);
   assert.match(response.limitations.join(' '), /limited/);
 });
-test('step, query, token and cancellation budgets fail closed', async () => {
+test('reads the reported hotel ranking in native scope and uses current evidence', async () => {
+  const h = harness([], (url) =>
+    !url.endsWith('/hotel-ranking')
+      ? undefined
+      : Response.json({
+          version: 1,
+          contextId,
+          resultId: result.resultId,
+          observedAt: result.observedAt,
+          rows: [{ hotel: 'Example Hotel', country: 'کشور نمونه', count: 2 }],
+          truncated: false,
+          missing: 0,
+        }),
+  );
+  const response = await h.agent(
+    {
+      ...message,
+      message: 'پرفروش ترین هتل های یک ماه اخیر به تفکیک کشور ها بنویس',
+    },
+    { cookie: 'nora_access=x', signal: signal() },
+  );
+  assert.equal(response.status, 'ANSWER');
+  assert.match(response.text, /Example Hotel/);
+  assert.equal(h.payloads.length, 0);
+  assert.deepEqual(
+    h.calls.map(({ url }) => url.split('/').at(-1)),
+    ['catalog', 'hotel-ranking', 'catalog'],
+  );
+  assert.equal(JSON.parse(h.calls[1].options.body).contextId, contextId);
+});
+test('releases a verified answer after the eighth model turn', async () => {
+  const h = harness([
+    plan,
+    describe,
+    ...Array.from({ length: 6 }, (_, i) => ({ ...query, id: `query_${i}` })),
+    finish,
+  ]);
+  const response = await h.agent(message, {
+    cookie: 'nora_access=x',
+    signal: signal(),
+  });
+  assert.equal(response.status, 'ANSWER');
+  assert.equal(h.payloads.length, 9);
+});
+test('query, token and cancellation budgets fail closed', async () => {
   const repeated = [
     plan,
     describe,
@@ -603,7 +647,7 @@ test('step, query, token and cancellation budgets fail closed', async () => {
       cookie: 'nora_access=x',
       signal: signal(),
     }),
-    /AGENT_STEP_BUDGET_EXCEEDED/,
+    /AGENT_QUERY_BUDGET_EXCEEDED/,
   );
   await assert.rejects(
     harness([{ ...plan, tokens: 40001 }]).agent(message, {
