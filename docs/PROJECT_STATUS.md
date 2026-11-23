@@ -1,3 +1,7 @@
+## NORA-REMOVE-QUICK-ACTIONS-1123 — PC-C
+
+Removed the three quick-action buttons from the shared Nora chat composer. The message input and existing report/evidence paths remain available.
+
 ## NORA-CALENDAR-1122 — PC-C
 
 Resolve ordinary Persian sales comparisons on the server using Tehran calendar boundaries and verified Sales evidence. Keep the existing completed-day report limit. Local synthetic acceptance only.

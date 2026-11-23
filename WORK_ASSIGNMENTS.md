@@ -1,3 +1,7 @@
+## NORA-REMOVE-QUICK-ACTIONS-1123 — PC-C — ACTIVE
+
+Reserve the shared Nora composer quick-action row, its dedicated styles and labels, and the corresponding render regression. Existing report APIs and chat evidence are out of scope.
+
 ## NORA-CALENDAR-1122 — PC-C — READY_FOR_REVIEW
 
 Reserve Assistant financial-period resolution, verified sales evidence integration and focused tests. No schema, dependency or deployment change.
