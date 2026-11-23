@@ -108,7 +108,7 @@ function ConversationSession({
       if (controller.signal.aborted) return;
       const answer =
         result.status === 'REPLY'
-          ? result.text
+          ? t(c.internalSourceFallback)
           : result.status === 'CLARIFY'
             ? c.conversationClarification[result.field][english ? 1 : 0]
             : t(c.conversationEvidence);

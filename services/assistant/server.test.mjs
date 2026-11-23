@@ -1,3 +1,4 @@
+import { internalSourceFallback } from './source-policy.mjs';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { test } from 'node:test';
@@ -1294,7 +1295,7 @@ test('plain model replies reauthenticate before release and never fetch or audit
   assert.deepEqual(await response.json(), {
     version: 1,
     status: 'REPLY',
-    text: 'Synthetic reply',
+    text: internalSourceFallback,
   });
   assert.ok(h.calls.every((call) => call.path === '/api/v1/iam/auth/access'));
   assert.ok(!JSON.stringify(h.audit).includes('private generic message'));

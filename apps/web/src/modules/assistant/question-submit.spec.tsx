@@ -1,3 +1,4 @@
+import { assistantCopy } from '@/i18n/assistant-copy';
 import type * as ReactModule from 'react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -192,7 +193,9 @@ describe('actual Composer submit routing and transport', () => {
         text: 'سلام، پاسخ آزمایشی',
       }),
     );
-    await vi.waitFor(() => expect(chat()).toEqual(['سلام، پاسخ آزمایشی']));
+    await vi.waitFor(() =>
+      expect(chat()).toEqual([assistantCopy.internalSourceFallback[0]]),
+    );
     expect(render().some((node) => node.props.role === 'status')).toBe(false);
   });
   it('shows the user message and pending indicator before HTTP finishes, without duplicate history or erasing the next draft', async () => {
@@ -274,6 +277,30 @@ describe('actual Composer submit routing and transport', () => {
     expect(chat().at(-1)).toContain(
       'صدور و تحویل بلیت پرواز و واچر هتل در روبی',
     );
+  });
+  it.each(['REPLY', 'CLARIFY'])(
+    'does not display unsourced v3 %s text',
+    async (status) => {
+      h.fetcher.mockResolvedValueOnce(
+        Response.json({
+          version: 3,
+          status,
+          text: 'Generic workflow with invented approval rules',
+          plan: [],
+          sources: [],
+          limitations: ['Invented additional condition'],
+          requestId: '12345678-1234-4234-8234-123456789abd',
+        }),
+      );
+      await send('تعداد قراردادها را بگو');
+      expect(h.fetcher).toHaveBeenCalledOnce();
+      expect(chat()).toEqual([assistantCopy.internalSourceFallback[0]]);
+    },
+  );
+  it('keeps unsupported workflow questions local', async () => {
+    await send('چطور فرایند ناشناخته را انجام بدهم؟');
+    expect(h.fetcher).not.toHaveBeenCalled();
+    expect(chat().at(-1)).toBe(assistantCopy.internalSourceFallback[0]);
   });
   it('does not reuse data context after an authorization denial', async () => {
     await send('تعداد قراردادها را بگو');
