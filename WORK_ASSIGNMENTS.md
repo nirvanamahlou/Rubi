@@ -1,3 +1,7 @@
+## NSS-CITY-PUBLICATION-1123 — PC-D — ACTIVE
+
+Own the signed city publication payload and native destination link for Niyayesh Seir. Preserve the publication contracts for other sites and coordinate the receiver fix.
+
 ## COUNTRY-FLAG-PERSISTENCE-1123 — PC-D — ACTIVE
 
 Own country flag saves through the Geography workspace and the focused regression. Reuse the existing document upload endpoint and keep the data model unchanged.

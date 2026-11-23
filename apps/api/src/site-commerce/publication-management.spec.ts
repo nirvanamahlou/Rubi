@@ -147,6 +147,44 @@ describe('site profile publication', () => {
   } as AuthenticatedActor;
   const secret = 'ghestiroo-profile-test-key-32-bytes';
 
+  it('sends a city and its parent identity to Niyayesh Seir and links to the destination', async () => {
+    const f = setup();
+    vi.stubEnv('NSS_CATALOG_WEBHOOK_SECRET', secret);
+    f.references.detail
+      .mockResolvedValueOnce({
+        data: {
+          name: 'آتن',
+          attributes: { countryId: 'greece-id', englishName: 'Athens' },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          id: 'greece-id',
+          name: 'یونان',
+          attributes: { englishName: 'Greece' },
+        },
+      });
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ slug: 'athens' }));
+    vi.stubGlobal('fetch', fetcher);
+    await expect(
+      f.service.publishGeography('nss', 'cities', 'athens-id', publisher),
+    ).resolves.toEqual({ url: 'https://niyayeshseir.ir/destinations/athens' });
+    const [url, request] = fetcher.mock.calls[0]!;
+    expect(url).toBe('https://niyayeshseir.ir/api/v1/erp/geography-profile');
+    expect(JSON.parse(String(request?.body))).toEqual({
+      site: 'nss',
+      kind: 'cities',
+      id: 'athens-id',
+      name: 'آتن',
+      countryId: 'greece-id',
+      countryName: 'یونان',
+      countryEnglishName: 'Greece',
+      cityEnglishName: 'Athens',
+    });
+  });
+
   it.each(['jahan-bastan', 'ghestiroo', 'nss'] as const)(
     'publishes the saved public visa profile to %s',
     async (site) => {
