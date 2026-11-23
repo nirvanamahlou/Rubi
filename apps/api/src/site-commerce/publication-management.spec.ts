@@ -147,6 +147,40 @@ describe('site profile publication', () => {
   } as AuthenticatedActor;
   const secret = 'ghestiroo-profile-test-key-32-bytes';
 
+  it('opens the public path returned by the geography recipient', async () => {
+    const f = setup();
+    vi.stubEnv('GHESTIROO_CATALOG_WEBHOOK_SECRET', secret);
+    f.references.detail.mockResolvedValue({
+      data: { name: 'آتن', attributes: { countryName: 'یونان' } },
+    });
+    const receipt = { slug: 'legacy-id', urlPath: '/destinations/athens--2' };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Response.json(receipt)),
+    );
+    await expect(
+      f.service.publishGeography('ghestiroo', 'cities', 'athens-id', publisher),
+    ).resolves.toEqual({ url: 'https://ghestiroo.ir/destinations/athens--2' });
+
+    for (const urlPath of [
+      'https://ghestiroo.ir/destinations/athens',
+      '//another-site.example/destinations/athens',
+      '/destinations/../login',
+      '/destinations/%2f%2fother.example',
+      '/\\another-site.example/destinations/',
+    ]) {
+      receipt.urlPath = urlPath;
+      await expect(
+        f.service.publishGeography(
+          'ghestiroo',
+          'cities',
+          'athens-id',
+          publisher,
+        ),
+      ).rejects.toThrow();
+    }
+  });
+
   it('sends a city and its parent identity to Niyayesh Seir and links to the destination', async () => {
     const f = setup();
     vi.stubEnv('NSS_CATALOG_WEBHOOK_SECRET', secret);
