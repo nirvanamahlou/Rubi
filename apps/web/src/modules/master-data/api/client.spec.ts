@@ -564,6 +564,60 @@ describe('master data browser client', () => {
     expect(form.get('version')).toBe('3');
   });
 
+  it('saves a country flag via multipart using the country version returned by the record save', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const existing = {
+      id: '11111111-1111-4111-8111-111111111111',
+      resource: 'countries',
+      code: 'TR',
+      name: 'ترکیه',
+      status: 'active',
+      attributes: {},
+      version: 3,
+      createdAt: '2026-09-05T00:00:00.000Z',
+      updatedAt: '2026-09-05T00:00:00.000Z',
+    } as const;
+    const attached = {
+      ...existing,
+      version: 5,
+      attributes: { logoFileReference: '22222222-2222-4222-8222-222222222222' },
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: { ...existing, version: 4 } }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: attached }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+    const file = new File(['flag'], 'flag.png', { type: 'image/png' });
+
+    await expect(
+      masterDataApi.persistWithLogo({
+        resource: 'countries',
+        existing,
+        values: { name: existing.name, logoFileReference: '' },
+        logoChange: { kind: 'replace', file },
+        title: 'کشور ترکیه',
+      }),
+    ).resolves.toEqual({ data: attached });
+    const [[recordUrl, recordRequest], [logoUrl, logoRequest]] =
+      fetchMock.mock.calls;
+    expect(recordUrl).toContain(`/master-data/countries/${existing.id}`);
+    expect(recordRequest.method).toBe('PATCH');
+    expect(JSON.parse(recordRequest.body)).toEqual({
+      values: { name: existing.name },
+      version: 3,
+    });
+    expect(logoUrl).toBe(recordUrl + '/logo');
+    expect(logoRequest.method).toBe('POST');
+    expect(logoRequest.body.get('file')).toBe(file);
+    expect(logoRequest.body.get('version')).toBe('4');
+  });
+
   it('keeps the saved record and reports an actionable upload failure', async () => {
     const created = {
       id: '11111111-1111-4111-8111-111111111111',

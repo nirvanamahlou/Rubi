@@ -701,7 +701,7 @@ export function MasterDataGeographyWorkspace() {
   ) {
     const target = formResource ?? resource;
     const targetDefinition = getMasterDataDefinition(target);
-    if (target === 'rail-terminals') {
+    if (target === 'countries' || target === 'rail-terminals') {
       const requestedStatus =
         values.status === 'inactive' ? 'inactive' : 'active';
       const mutationValues = { ...values };
@@ -721,7 +721,10 @@ export function MasterDataGeographyWorkspace() {
         await load();
         return;
       }
-      if (response.data.status !== requestedStatus) {
+      if (
+        target === 'rail-terminals' &&
+        response.data.status !== requestedStatus
+      ) {
         try {
           await masterDataApi.setStatus(
             target,

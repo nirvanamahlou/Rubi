@@ -60,6 +60,16 @@ describe('Master Data view and geography follow-up regressions', () => {
     });
   });
 
+  it('routes country flags through the document upload and keeps the country open on attachment failure', () => {
+    const persist = geographySource().split('async function persist(')[1];
+    expect(persist).toMatch(
+      /target === 'countries' \|\| target === 'rail-terminals'[\s\S]*masterDataApi\.persistWithLogo\([\s\S]*\.\.\.\(logoChange \? \{ logoChange \} : \{\}\)/,
+    );
+    expect(persist).toMatch(
+      /if \(response\.warning\) \{\s*setSelected\(response\.data\);\s*setFormMode\('edit'\);/,
+    );
+  });
+
   it('creates a province with locked country context beside city creation', () => {
     const source = geographySource();
     expect(source).toMatch(
