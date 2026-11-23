@@ -13374,3 +13374,7 @@ Reserve the Ghestiroo destination policy and its signed tour delivery on
 `codex/pc-d-ghestiroo-tours-1122` from develop. The producer extends the existing
 v1 snapshot for the Ghestiroo consumer and keeps its tour order intake disabled.
 Other destinations retain their product policy, credentials and checkout.
+
+## TICKET-CONTRACT-PERSON-PRICE-1123 — PC-A
+
+Reserve ticket checkout quote projection and single-passenger legacy PDF fallback. Preserve paid amounts and use the verified fare breakdown.

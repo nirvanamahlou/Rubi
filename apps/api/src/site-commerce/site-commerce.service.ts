@@ -45,7 +45,11 @@ import { MasterDataService } from '../master-data/master-data.service';
 import { TravelWorkflowService } from '../reservations/travel-workflow.service';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import { ReservationTicketDocumentsService } from '../reservations/reservation-ticket-documents';
-import { salesContractFlights, isFloatingSalesContract } from '@nora/contracts';
+import {
+  salesContractFlights,
+  isFloatingSalesContract,
+  PASSENGER_FLIGHT_PRICES,
+} from '@nora/contracts';
 import {
   passengerAgeCategory,
   validateSalesContract,
@@ -1206,13 +1210,20 @@ export class SiteCommerceService {
     const created = await this.sales.create(
       {
         ...input,
-        services: input.services.map((s) => ({
+        services: input.services.map((s, index) => ({
           ...s,
           metadata: {
             ...s.metadata,
             catalogSalePriceTargetId: ticketTargetId ?? null,
             sourceSite: site,
             externalOrderId: externalId,
+            ...(index === 0 && checkout?.flightPrices
+              ? {
+                  [PASSENGER_FLIGHT_PRICES]: JSON.stringify(
+                    checkout.flightPrices,
+                  ),
+                }
+              : {}),
           },
         })),
       },

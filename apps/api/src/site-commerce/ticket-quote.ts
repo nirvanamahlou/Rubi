@@ -7,6 +7,7 @@ import { ConflictException } from '@nestjs/common';
 import { Prisma } from '@nora/database';
 import {
   eligibleTicketReturn,
+  type PassengerFlightPrices,
   type TicketOfferV1,
   type TicketStandaloneSalePriceV1,
 } from '@nora/contracts';
@@ -22,6 +23,44 @@ export type WebsiteFlightQuote = {
     currencyCode: string;
   };
 };
+
+export function websitePassengerFlightPrices(
+  quotes: readonly WebsiteFlightQuote[],
+  passengers: readonly { customerId: string; category: string }[],
+): PassengerFlightPrices | undefined {
+  const combined = quotes[0]?.pricingBreakdown?.coverage === 'round_trip';
+  const priced = combined ? quotes.slice(0, 1) : quotes;
+  if (!priced.length || priced.some((quote) => !quote.pricingBreakdown))
+    return undefined;
+  const sums = passengers.map(() => new Map<string, Prisma.Decimal>());
+  for (const quote of priced) {
+    const breakdown = quote.pricingBreakdown!;
+    const rows = [...breakdown.passengers];
+    if (rows.length !== passengers.length) return undefined;
+    for (const [index, passenger] of passengers.entries()) {
+      const match = rows.findIndex(
+        (row) => row.category === passenger.category,
+      );
+      if (match === -1) return undefined;
+      const [row] = rows.splice(match, 1);
+      const currency = breakdown.currencyCode;
+      const totals = sums[index]!;
+      totals.set(
+        currency,
+        (totals.get(currency) ?? new Prisma.Decimal(0)).add(row!.amount),
+      );
+    }
+  }
+  return Object.fromEntries(
+    passengers.map(({ customerId }, index) => [
+      customerId,
+      [...sums[index]!].map(([currencyCode, amount]) => ({
+        currencyCode,
+        amount: amount.toFixed(2),
+      })),
+    ]),
+  );
+}
 
 export function websiteFareTotal(
   fare: TicketStandaloneSalePriceV1,
