@@ -1,5 +1,9 @@
 export type AssistantText = readonly [string, string];
 export const assistantCopy = {
+  internalGuideUnavailable: [
+    'راهنمای داخلی این گردش‌کار در دسترس نیست.',
+    'The internal guide for this workflow is unavailable.',
+  ],
   termNonCancelled: [
     'قراردادهای لغونشده در پنل',
     'Non-cancelled panel contracts',

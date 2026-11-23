@@ -258,6 +258,23 @@ describe('actual Composer submit routing and transport', () => {
     expect(links).toContain('/assistant-guides/workbench#leave-hourly');
     expect(links).toContain('/workbench?tab=requests');
   });
+  it('uses internal travel document guidance after a Sales data answer', async () => {
+    await send('تعداد قراردادها را بگو');
+    await send('رویه سند زدن بلیط هواپیما و هتل به چه صورت انجام میشود');
+    expect(h.fetcher).toHaveBeenCalledTimes(1);
+    expect(chat().at(-1)).toContain(
+      'صدور و تحویل بلیت پرواز و واچر هتل در روبی',
+    );
+    expect(chat().at(-1)).toContain('وضعیت مجوز تحویل مدارک');
+    const links = render().map((node) => node.props.href);
+    expect(links).toContain('/assistant-guides/sales#travel-document-workflow');
+    expect(links).toContain('/sales');
+    await send('مرحله بعد چیه؟');
+    expect(h.fetcher).toHaveBeenCalledTimes(1);
+    expect(chat().at(-1)).toContain(
+      'صدور و تحویل بلیت پرواز و واچر هتل در روبی',
+    );
+  });
   it('does not reuse data context after an authorization denial', async () => {
     await send('تعداد قراردادها را بگو');
     h.fetcher.mockResolvedValueOnce(Response.json({}, { status: 403 }));

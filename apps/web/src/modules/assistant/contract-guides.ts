@@ -36,7 +36,9 @@ export function contractGuidePath(route: readonly string[]): string {
   return '\u2066' + route.join(' ← ') + '\u2069';
 }
 
-export function formatContractGuide(guide: ContractGuide): string {
+export function formatContractGuide(
+  guide: Pick<ContractGuide, 'route' | 'title' | 'steps'>,
+): string {
   return [
     contractGuidePath(guide.route),
     '',

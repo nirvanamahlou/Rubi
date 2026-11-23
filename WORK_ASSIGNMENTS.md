@@ -1,3 +1,7 @@
+## NORA-TRAVEL-DOCUMENT-GUIDANCE-1123 — PC-C — ACTIVE
+
+Reserve the Nora Sales guide source and generated catalogue, document-workflow intent, bounded Composer dispatch, focused tests and status. Use existing Sales, Reservations and Finance delivery policy. No producer, provider, schema or deployment change.
+
 ## NORA-CALENDAR-1122 — PC-C — READY_FOR_REVIEW
 
 Reserve Assistant financial-period resolution, verified sales evidence integration and focused tests. No schema, dependency or deployment change.
@@ -12882,6 +12886,10 @@ PR1776 catalogue sync: add the same new HR error translation to its required app
 
 PR1776 concurrent producer integration: PR1782 delivered the same CI repairs while this run was validating. Retain its stronger fixture assertions for actor/branch and its canonical six English translations, and synchronize the API mirror to that exact wording. Both product scopes remain untouched; final merged-head CI must run again.
 
+## NORA-SOL-1123 — PC-C — READY_FOR_CI
+
+Isolated work item for Nora OpenAI Responses adapter, agent and guide integration, endpoint and acceptance tests. 217 service tests and 30 synthetic live scenarios passed (network-disrupted cases rerun). No migration or dependency changes. PR1879 awaits CI and guarded activation.
+
 ## NORA-PRIVILEGED-FAILOVER-1122 — PC-C — READY_FOR_CI
 
 Owner requests no product consumption quotas for native danial/demo identities and provider failover Groq/OpenAI for their questions. Base bd301dda3; branch codex/pc-c-nora-provider-failover-1122. Reserve assistant agent-config/data-agent/server/groq-key-pool, a new failover helper and focused tests, own task/status notes. Reuse operator UUID exemption list; never trust client names/headers. Preserve ordinary-user quotas, native authentication/current-scope revalidation, output/evidence/tool validation, wire-size and finite request/turn/query safety bounds. Remove cumulative token/transport-attempt consumption quotas only in trusted exempt request context, audit actual provider usage and fail over only provider quota errors. No migration/dependency/public contract or permission grant changes. Existing Nora source scopes on other branches remain frozen; do not edit peer worktrees.
@@ -13371,6 +13379,8 @@ Reserve the Ghestiroo destination policy and its signed tour delivery on
 v1 snapshot for the Ghestiroo consumer and keeps its tour order intake disabled.
 Other destinations retain their product policy, credentials and checkout.
 
-## NORA-SOL-1123 — PC-C — LIVE_GATE_PENDING
+## ACCOUNTING-NAV-CONTRAST-1123 — PC-D — COMPLETED
 
-Isolated branch codex/pc-c-nora-sol-1123 from develop a45b0e5ea. Reserve Nora OpenAI adapter, agent and guide integration, provider-pool endpoint, targeted tests and status. No migration or dependency changes.
+Reserve the General Ledger navigation styles in `accounting-navigation-workspace.module.css` and this task's status entries. Accounting ownership stays with PC-B. Keep the menu dimensions, labels, hierarchy, destinations, and controls. No migration or deployment.
+
+Verified the fiscal-year route in Chromium with synthetic company context at desktop and mobile widths, in light and dark themes. Navigation tests, Web lint and typecheck pass. The reservation is released with this candidate.
