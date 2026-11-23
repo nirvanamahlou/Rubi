@@ -122,3 +122,24 @@ for (const [domain, output] of Object.entries(outputs)) {
 }
 
 buildLinkedPanelGuides(directory, process.argv.includes('--check'));
+
+const compositeSales = catalogues
+  .get('sales')
+  .filter(({ id }) => ['flight', 'hotel', 'review'].includes(id))
+  .map(({ id, title, steps }) => ({ id, title, steps }));
+const compositeTarget = new URL(
+  '../services/assistant/composite-sales-guides.generated.json',
+  import.meta.url,
+);
+if (process.argv.includes('--check')) {
+  if (
+    JSON.stringify(JSON.parse(readFileSync(compositeTarget, 'utf8'))) !==
+    JSON.stringify(compositeSales)
+  )
+    throw new Error('Stale composite Sales guide catalogue');
+} else {
+  writeFileSync(
+    compositeTarget,
+    JSON.stringify(compositeSales, null, 2) + '\n',
+  );
+}

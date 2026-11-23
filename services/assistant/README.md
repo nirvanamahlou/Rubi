@@ -167,3 +167,5 @@ ASSISTANT_RATE_LIMIT_EXEMPT_USER_IDS accepts a private comma-separated immutable
 ## Persian contractual-sales period evidence
 
 Explicit plain Persian sales-window questions use runtime calendar resolution and a bounded, same-snapshot reconciliation through the existing authorized Sales query endpoint after model-authored SQL. Unique contracts differ from currency rows. Typed financial facts preserve Groq's choice of table/list/prose while preventing invented dates/counts or discount semantics. This is not accounting revenue or the native active-panel population. See [scope and acceptance](../../docs/tasks/NORA-SALES-EVIDENCE-1117.md).
+
+The same authenticated guide endpoint accepts version 2 and a bounded Sales pre-send checklist question. Setting `ASSISTANT_GUIDE_RAG_ENABLED=true` in the assistant service permits one call through its configured Germany transport. The provider receives the question and three approved Sales sections, and can return only validated step indexes. The web uses the canonical steps and links. A disabled flag, missing transport or invalid result uses the full internal sections. Leave follow-up guidance remains deterministic.

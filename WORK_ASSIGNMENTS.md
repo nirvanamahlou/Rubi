@@ -1,3 +1,7 @@
+## NORA-COMPOSITE-GUIDES-1123 — PC-C — ACTIVE
+
+Reserve the Nora Composer composite guide dispatch, scoped Sales and Workbench retrieval, focused tests and status. Base develop ac92b6e91. Preserve producer routes and authenticated record reads.
+
 ## NORA-TRAVEL-DOCUMENT-GUIDANCE-1123 — PC-C — ACTIVE
 
 Reserve the Nora Sales guide source and generated catalogue, document-workflow intent, bounded Composer dispatch, focused tests and status. Use existing Sales, Reservations and Finance delivery policy. No producer, provider, schema or deployment change.

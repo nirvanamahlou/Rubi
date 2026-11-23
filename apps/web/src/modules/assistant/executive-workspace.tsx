@@ -1,5 +1,10 @@
 'use client';
 
+import {
+  retrieveCompositeGuides,
+  selectCompositeChecklist,
+} from './composite-guide';
+
 import { documentGuideLink } from './assistant-guide-registry';
 
 import {
@@ -612,6 +617,51 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    const composite =
+      guidanceAllowed && !decision.guideTopicId
+        ? retrieveCompositeGuides(message, decision.domain)
+        : [];
+    if (composite.length && !pathname?.startsWith('/sales/contracts/new')) {
+      pending.current?.abort();
+      const controller = new AbortController();
+      pending.current = controller;
+      const selected =
+        decision.domain === 'sales'
+          ? await selectCompositeChecklist(message, controller.signal)
+          : null;
+      if (controller.signal.aborted) return;
+      for (const section of composite) {
+        const indices = selected?.[section.id];
+        const steps =
+          Array.isArray(indices) &&
+          indices.length &&
+          indices.every(
+            (index, i) =>
+              Number.isInteger(index) &&
+              index >= 0 &&
+              index < section.steps.length &&
+              (i === 0 || indices[i - 1]! < index),
+          )
+            ? indices.map((index) => section.steps[index]!)
+            : section.steps;
+        const conditions = 'conditions' in section ? section.conditions : [];
+        replyLocally(
+          [
+            section.title,
+            ...steps.map((step, i) => `${i + 1}. ${step}`),
+            ...conditions,
+          ].join('\n'),
+          undefined,
+          undefined,
+          {
+            href: section.href,
+            label: english ? 'Open panel' : 'باز کردن پنل',
+            guideHref: section.guideHref,
+          },
+        );
+      }
+      return;
+    }
     if (decision.guideTopicId === 'travel-document-workflow') {
       pending.current?.abort();
       const section = contractGuideCatalog.topics.find(

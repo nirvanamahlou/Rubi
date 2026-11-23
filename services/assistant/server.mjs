@@ -1,3 +1,7 @@
+import {
+  createCompositeGuideSelector,
+  validateCompositeGuide,
+} from './composite-guide.mjs';
 import { groqConfigurations } from './groq-runtime.mjs';
 import {
   createWorkbenchGuideSelector,
@@ -67,6 +71,7 @@ export function createAssistantServer({
     audit,
   });
   const windows = new Map();
+  const selectCompositeGuide = createCompositeGuideSelector(workbenchGuide);
   const selectWorkbenchGuide = createWorkbenchGuideSelector(workbenchGuide);
   let inFlight = 0;
   function withinLimit(key, limit) {
@@ -204,15 +209,19 @@ export function createAssistantServer({
           counted = true;
         }
         if (guideRequest) {
-          const input = await readMessage(
-            request,
-            deadline.signal,
-            validateWorkbenchGuide,
+          const input = await readMessage(request, deadline.signal, (value) =>
+            value?.version === 2
+              ? validateCompositeGuide(value)
+              : validateWorkbenchGuide(value),
           );
-          const result = await selectWorkbenchGuide(input, deadline.signal, {
-            beforeRetry: () => authenticate(cookie, deadline.signal, actorId),
-            consumptionExempt: exemptUsers.has(actorId.toLowerCase()),
-          });
+          const result =
+            input.version === 2
+              ? await selectCompositeGuide(input, deadline.signal)
+              : await selectWorkbenchGuide(input, deadline.signal, {
+                  beforeRetry: () =>
+                    authenticate(cookie, deadline.signal, actorId),
+                  consumptionExempt: exemptUsers.has(actorId.toLowerCase()),
+                });
           await authenticate(cookie, deadline.signal, actorId);
           outcome = 'SUCCESS';
           send(200, result);
