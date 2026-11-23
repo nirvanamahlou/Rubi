@@ -1,3 +1,7 @@
+## NORA-TRAVEL-DOCUMENT-GUIDANCE-1123 — PC-C
+
+Nora routes procedural ticket and hotel voucher questions to the linked internal Sales guide, even after a report answer. The guide uses the approved Reservations and Finance delivery workflow.
+
 ## NORA-CALENDAR-1122 — PC-C
 
 Resolve ordinary Persian sales comparisons on the server using Tehran calendar boundaries and verified Sales evidence. Keep the existing completed-day report limit. Local synthetic acceptance only.

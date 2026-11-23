@@ -1,3 +1,7 @@
+## NORA-TRAVEL-DOCUMENT-GUIDANCE-1123 — PC-C — ACTIVE
+
+Reserve the Nora Sales guide source and generated catalogue, document-workflow intent, bounded Composer dispatch, focused tests and status. Use existing Sales, Reservations and Finance delivery policy. No producer, provider, schema or deployment change.
+
 ## NORA-CALENDAR-1122 — PC-C — READY_FOR_REVIEW
 
 Reserve Assistant financial-period resolution, verified sales evidence integration and focused tests. No schema, dependency or deployment change.
