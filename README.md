@@ -9,8 +9,7 @@ Nora یک CRM ماژولار برای شرکت خدمات مسافرتی و هو
 Modular Monolith در یک pnpm/Turborepo monorepo پیاده‌سازی می‌شود. رابط کاربری فارسی و
 RTL است و نام‌گذاری کد، API و دیتابیس انگلیسی باقی می‌ماند.
 
-Technical Bootstrap شامل Web، API، Worker، Prisma Client و زیرساخت توسعه محلی است؛
-هنوز هیچ ماژول تجاری، مدل دیتابیس تجاری، Migration یا Seed وجود ندارد.
+در مرحلهٔ راه‌اندازی اولیه، زیرساخت Web، API، Worker و Prisma Client اضافه شد. وضعیت فعلی ماژول‌های تجاری در [گزارش پروژه](PROJECT_STATUS.md) آمده است.
 
 ## پیش‌نیازها
 
