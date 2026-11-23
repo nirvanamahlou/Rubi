@@ -383,6 +383,8 @@ export class WebsiteCheckoutHoldsService {
                   tour.id,
                   scoped,
                   branchId,
+                  false,
+                  site === 'nss',
                 ),
                 selected: PackagePublishedSaleV1[] = [];
               const used: number[] = [];

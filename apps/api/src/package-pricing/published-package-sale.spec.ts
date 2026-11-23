@@ -72,6 +72,33 @@ function fixture() {
   };
 }
 describe('published package sale projection', () => {
+  it('converts current ERP rates into whole rials for website quotes only', async () => {
+    const { service, findMany } = fixture();
+    const [draft] = await findMany();
+    draft.publications[0].roomPrices[0].currencyAmounts.push(
+      { currencyCode: 'USD', sale: '2.50' },
+      { currencyCode: 'IRR', sale: '100' },
+    );
+    const rates = vi
+      .spyOn(service, 'buyRates')
+      .mockResolvedValueOnce({ IRR: '1', EUR: '600000', USD: '550000' })
+      .mockResolvedValueOnce({ IRR: '1', EUR: '610000', USD: '550000' })
+      .mockResolvedValueOnce({ IRR: '1', EUR: '610000' });
+    const lookup = () =>
+      service.saleCatalog('tour', actor, 'branch', false, true);
+    expect((await lookup()).data[0]?.prices).toEqual([
+      { currencyCode: 'IRR', amount: '75445100' },
+    ]);
+    expect((await lookup()).data[0]?.prices).toEqual([
+      { currencyCode: 'IRR', amount: '76679600' },
+    ]);
+    expect((await lookup()).data).toEqual([]);
+    expect(
+      (await service.saleCatalog('tour', actor)).data[0]?.prices[0]
+        ?.currencyCode,
+    ).toBe('EUR');
+    expect(rates).toHaveBeenCalledTimes(3);
+  });
   it('adds published airfare once at contract time, keeping hotel rows and historical combined prices intact', async () => {
     const { service, findMany, tourCostGrid } = fixture();
     const rows = await findMany();
