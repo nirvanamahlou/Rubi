@@ -189,8 +189,8 @@ describe('site profile publication', () => {
       ]);
       const [url, request] = fetcher.mock.calls[0]!;
       expect(url).toBe(config.origin + '/api/v1/erp/visa-profile');
-      const body = String(request.body);
-      const headers = new Headers(request.headers);
+      const body = String(request?.body);
+      const headers = new Headers(request?.headers);
       expect(headers.get('x-erp-signature')).toBe(
         createHmac('sha256', secret)
           .update(headers.get('x-erp-timestamp') + '.' + body)
