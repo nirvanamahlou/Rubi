@@ -84,6 +84,10 @@ export const assistantCopy = {
   conversationMessage: ['پیام', 'Message'],
   conversationSend: ['ارسال', 'Send'],
   conversationClear: ['پاک‌کردن گفت‌وگو', 'Clear conversation'],
+  conversationAnalysisLimit: [
+    'تحلیل این سؤال در یک درخواست کامل نشد. سؤال را به بخش‌های کوچک‌تر تقسیم کنید یا بازه و معیار را مشخص‌تر بنویسید.',
+    'This analysis did not finish in one request. Split the question into smaller parts or specify the date range and metric.',
+  ],
   conversationUnavailable: [
     'گفت‌وگو در دسترس نیست؛ گزارش‌های آماده همچنان قابل استفاده‌اند.',
     'Conversation is unavailable. The fixed reports remain available.',

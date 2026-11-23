@@ -1,3 +1,6 @@
+## NORA-BUDGET-MESSAGE-1123 — PC-C
+
+Production diagnostics for the November 23 incident showed eight successful GPT-4.1 calls before the request failed. The affected actor matched a configured consumption exemption. The Web proxy now keeps Agent analysis-budget exhaustion distinct from admission and provider rate limits without forwarding private upstream error details.
 ## NORA-CALENDAR-1122 — PC-C
 
 Resolve ordinary Persian sales comparisons on the server using Tehran calendar boundaries and verified Sales evidence. Keep the existing completed-day report limit. Local synthetic acceptance only.

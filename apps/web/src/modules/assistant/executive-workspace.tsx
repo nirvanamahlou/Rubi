@@ -1452,7 +1452,9 @@ function AssistantComposerContent({
           )
             ? 'disabled'
             : response.status === 429
-              ? 'rate'
+              ? body?.error?.code === 'ANALYSIS_LIMIT_REACHED'
+                ? 'analysis-limit'
+                : 'rate'
               : 'unavailable',
         );
       }
@@ -1711,7 +1713,9 @@ function AssistantComposerContent({
                     ? c.chatDisabled
                     : chatError === 'rate'
                       ? c.states['rate-limited']
-                      : c.conversationUnavailable,
+                      : chatError === 'analysis-limit'
+                        ? c.conversationAnalysisLimit
+                        : c.conversationUnavailable,
                 )}
               </p>
             )}

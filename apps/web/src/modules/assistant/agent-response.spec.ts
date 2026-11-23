@@ -65,6 +65,35 @@ describe('v3 assistant consumer boundary', () => {
       }).success,
     ).toBe(false);
   });
+  it.each([
+    ['AGENT_STEP_BUDGET_EXCEEDED', 'ANALYSIS_LIMIT_REACHED'],
+    ['AGENT_QUERY_BUDGET_EXCEEDED', 'ANALYSIS_LIMIT_REACHED'],
+    ['AGENT_TOKEN_BUDGET_EXCEEDED', 'ANALYSIS_LIMIT_REACHED'],
+    ['AGENT_PROVIDER_RATE_LIMITED', 'RATE_LIMITED'],
+    ['RATE_LIMITED', 'RATE_LIMITED'],
+  ])('maps private v3 error %s to %s', async (code, publicCode) => {
+    const request = new Request(
+      'http://localhost/api/assistant/v3/conversation',
+      {
+        method: 'POST',
+        headers: {
+          origin: 'http://localhost',
+          cookie: 'nora_access=synthetic',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ version: 1, message: 'فروش؟', history: [] }),
+      },
+    );
+    const response = await proxyAssistantConversation(
+      request,
+      'http://127.0.0.1:4300',
+      async () =>
+        Response.json({ error: { code, detail: 'private' } }, { status: 429 }),
+      true,
+    );
+    expect(response.status).toBe(429);
+    expect(await response.json()).toEqual({ error: { code: publicCode } });
+  });
   it('uses the v3 path and isolates the extended deadline to this proxy', async () => {
     let target = '';
     const request = new Request(
