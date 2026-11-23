@@ -236,13 +236,25 @@ export class SiteCommerceService {
             kind === 'countries' ? data.name : data.attributes.countryName,
           )
         : undefined;
+    const countryId = data.attributes.countryId;
+    const parent =
+      site === 'nss' && kind === 'cities' && typeof countryId === 'string'
+        ? (await this.references.detail('countries', countryId)).data
+        : undefined;
     return this.sendProfile(site, secret, '/geography-profile', {
       site,
       kind,
       id,
       name: data.name,
       flag,
-      countryName: data.attributes.countryName || undefined,
+      countryName: parent?.name || data.attributes.countryName || undefined,
+      ...(parent
+        ? {
+            countryId: parent.id,
+            countryEnglishName: parent.attributes.englishName || undefined,
+            cityEnglishName: data.attributes.englishName || undefined,
+          }
+        : {}),
       ...(geographyCountryCode ? { countryCode: geographyCountryCode } : {}),
     });
   }
@@ -351,6 +363,8 @@ export class SiteCommerceService {
     const slug = encodeURIComponent(receipt.slug);
     if (site === 'nss' && payload.kind === 'countries')
       return { url: origin + '/tours/country/' + slug };
+    if (site === 'nss' && payload.kind === 'cities')
+      return { url: origin + '/destinations/' + slug };
     return {
       url:
         origin +

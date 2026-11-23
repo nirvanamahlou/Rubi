@@ -1,3 +1,7 @@
+## Niyayesh Seir city publication
+
+City publication sends the stable parent country reference and available English names to Niyayesh Seir. The receipt links directly to the native destination page.
+
 ## Country flag saves
 
 Geography saves country records through the existing logo upload and attachment flow. It sends only country fields during the record save and attaches the selected flag using the returned record version.
