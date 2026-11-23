@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { getPublicApiBaseUrl } from '@/lib/environment';
 import { masterDataApi } from '../api/client';
 
 export function hotelImageUrls(value: string): string[] {
@@ -12,9 +13,11 @@ export function hotelImageUrls(value: string): string[] {
 export function HotelImageStrip({
   main,
   gallery,
+  subject = 'هتل',
 }: {
   main: string;
   gallery: string;
+  subject?: string;
 }) {
   const images = [
     ...hotelImageUrls(main).slice(0, 1),
@@ -23,35 +26,46 @@ export function HotelImageStrip({
   if (!images.length)
     return (
       <p className="text-sm text-muted-foreground">
-        هنوز عکسی برای هتل ثبت نشده است.
+        {subject === 'هتل'
+          ? 'هنوز عکسی برای هتل ثبت نشده است.'
+          : 'هنوز عکسی ثبت نشده است.'}
       </p>
     );
   return (
     <div className="flex gap-3 overflow-x-auto pb-2">
-      {images.map((url, index) => (
-        <a
-          key={url + index}
-          href={
-            url.includes('/master-data/hotel-images/')
-              ? `${url}?download=1`
-              : url
-          }
-          download={`hotel-${index + 1}.webp`}
-          target="_blank"
-          rel="noreferrer"
-          className="shrink-0"
-          aria-label={`دانلود عکس ${index + 1} هتل`}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={url}
-            alt={
-              index === 0 && main ? 'عکس اصلی هتل' : `عکس گالری ${index + 1}`
+      {images.map((value, index) => {
+        const url =
+          value.startsWith('/api/v1/master-data/hotel-images/') &&
+          getPublicApiBaseUrl()
+            ? getPublicApiBaseUrl() + value.slice('/api/v1'.length)
+            : value;
+        return (
+          <a
+            key={url + index}
+            href={
+              url.includes('/master-data/hotel-images/')
+                ? `${url}?download=1`
+                : url
             }
-            className="h-24 w-32 rounded-lg border object-cover"
-          />
-        </a>
-      ))}
+            download={`photo-${index + 1}.webp`}
+            target="_blank"
+            rel="noreferrer"
+            className="shrink-0"
+            aria-label={`دانلود عکس ${index + 1} ${subject}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={url}
+              alt={
+                index === 0 && main
+                  ? `عکس اصلی ${subject}`
+                  : `عکس گالری ${index + 1}`
+              }
+              className="h-24 w-32 rounded-lg border object-cover"
+            />
+          </a>
+        );
+      })}
     </div>
   );
 }
@@ -62,12 +76,14 @@ export function HotelImageUpload({
   disabled,
   onChange,
   onBusy,
+  idPrefix = 'live-hotels',
 }: {
   main: string;
   gallery: string;
   disabled: boolean;
   onChange: (key: string, value: string) => void;
   onBusy: (busy: boolean) => void;
+  idPrefix?: string;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -109,7 +125,7 @@ export function HotelImageUpload({
         عکس اصلی
         <input
           type="file"
-          id="live-hotels-sourceMainImage"
+          id={`${idPrefix}-sourceMainImage`}
           accept="image/png,image/jpeg,image/webp,.jfif"
           disabled={disabled || busy}
           onChange={(event) => {
@@ -132,7 +148,7 @@ export function HotelImageUpload({
         گالری · حداکثر ۶ عکس
         <input
           type="file"
-          id="live-hotels-sourceGalleryImages"
+          id={`${idPrefix}-sourceGalleryImages`}
           multiple
           accept="image/png,image/jpeg,image/webp,.jfif"
           disabled={disabled || busy || galleryUrls.length >= 6}
@@ -145,7 +161,11 @@ export function HotelImageUpload({
       <p className="text-xs text-muted-foreground">
         عکس‌ها با فرمت WebP ذخیره می‌شوند. حداکثر حجم هر عکس ۱۰ مگابایت.
       </p>
-      <HotelImageStrip main={main} gallery={gallery} />
+      <HotelImageStrip
+        main={main}
+        gallery={gallery}
+        subject={idPrefix === 'visa-services' ? 'ویزا' : 'هتل'}
+      />
       <div className="flex flex-wrap gap-2">
         {galleryUrls.map((url, index) => (
           <button

@@ -1,3 +1,7 @@
+## VISA-SITE-PUBLICATION-1123 — PC-D — ACTIVE
+
+Own Visa Services image fields and additive Prisma migration, signed website delivery, the Avina publication action, and focused tests. Coordinate the receiving endpoints with Jahan Bastan, Ghestiroo and Niyayesh Seir.
+
 ## NORA-RAG-REQUIRED-FOLLOW-UP-1123 — PC-C — ACTIVE
 
 Reserve the Sales composite guide selector, focused regression tests, and pilot comparison record. Preserve the Web links, provider transport, runtime flag and all producer panels. No migration or dependency changes.

@@ -80,6 +80,7 @@ import {
   visaValidityLabel,
 } from '../model/travel-reference-form';
 import { MasterDataDeleteButton } from './master-data-delete-button';
+import { HotelPublicationAction } from '../../integrations/components/hotel-publication';
 import { MasterDataLogoCell } from './master-data-logo-cell';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { MasterDataFilterBar } from './master-data-filter-bar';
@@ -676,6 +677,13 @@ export function MasterDataTravelServicesWorkspace() {
 
   const actions = (record: MasterDataRecord) => (
     <div className="flex flex-wrap justify-center gap-2">
+      {resource === 'visa-services' && (
+        <HotelPublicationAction
+          id={record.id}
+          name={record.name}
+          resource="visa-services"
+        />
+      )}
       <Button
         aria-label={`مشاهده ${record.name}`}
         onClick={() => openProfile(record)}

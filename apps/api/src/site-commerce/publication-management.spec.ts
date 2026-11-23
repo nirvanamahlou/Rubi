@@ -3,6 +3,7 @@ import type { AuthenticatedActor } from '@nora/contracts';
 import { createHmac } from 'node:crypto';
 import { Readable } from 'node:stream';
 import { SiteCommerceService } from './site-commerce.service';
+import { commerceSites } from './commerce-sites';
 // Dependencies are injected below; unit publication tests must not start the application graph.
 vi.mock('../sales/sales.service', () => ({ SalesService: class {} }));
 vi.mock('../sales/sales-output.service', () => ({
@@ -145,6 +146,93 @@ describe('site profile publication', () => {
     ],
   } as AuthenticatedActor;
   const secret = 'ghestiroo-profile-test-key-32-bytes';
+
+  it.each(['jahan-bastan', 'ghestiroo', 'nss'] as const)(
+    'publishes the saved public visa profile to %s',
+    async (site) => {
+      const f = setup();
+      const config = commerceSites[site];
+      vi.stubEnv(config.signingKey, secret);
+      const sourcePath =
+        '/api/v1/master-data/hotel-images/' + 'a'.repeat(64) + '.webp';
+      f.references.detail.mockImplementation(async (resource: string) => ({
+        data:
+          resource === 'countries'
+            ? { name: 'ترکیه', attributes: { iso2Code: 'TR' } }
+            : {
+                id: 'visa-1',
+                code: 'VISA-1',
+                name: 'ویزای ترکیه',
+                status: 'inactive',
+                attributes: {
+                  countryId: 'country-1',
+                  visaType: 'توریستی',
+                  referenceValidityMode: 'PASSPORT_EXPIRY',
+                  requiredDocumentNames: '["پاسپورت"]',
+                  englishName: 'Turkey visa',
+                  description: 'شرایط ویزا',
+                  displayOrder: 2,
+                  sourceMainImage: sourcePath,
+                  sourceGalleryImages: sourcePath,
+                  guidanceFileReference: 'private-document',
+                  supplierId: 'private-supplier',
+                },
+              },
+      }));
+      const receipt = {
+        slug: 'visa-1',
+        code: 'VISA-1',
+        urlPath: '/visas/visa-1',
+      };
+      const fetcher = vi
+        .fn<typeof fetch>()
+        .mockImplementation(async () => Response.json(receipt));
+      vi.stubGlobal('fetch', fetcher);
+      await expect(
+        f.service.publishVisaProfile(site, 'visa-1', publisher),
+      ).resolves.toEqual({ url: config.origin + receipt.urlPath });
+      expect(f.references.detail.mock.calls).toEqual([
+        ['visa-services', 'visa-1'],
+        ['countries', 'country-1'],
+      ]);
+      const [url, request] = fetcher.mock.calls[0]!;
+      expect(url).toBe(config.origin + '/api/v1/erp/visa-profile');
+      const body = String(request?.body);
+      const headers = new Headers(request?.headers);
+      expect(headers.get('x-erp-signature')).toBe(
+        createHmac('sha256', secret)
+          .update(headers.get('x-erp-timestamp') + '.' + body)
+          .digest('hex'),
+      );
+      expect(JSON.parse(body)).toEqual({
+        site,
+        kind: 'visa-profile',
+        id: 'visa-1',
+        code: 'VISA-1',
+        name: 'ویزای ترکیه',
+        englishName: 'Turkey visa',
+        countryName: 'ترکیه',
+        countryCode: 'TR',
+        visaType: 'توریستی',
+        referenceValidityDays: null,
+        referenceValidityMode: 'PASSPORT_EXPIRY',
+        description: 'شرایط ویزا',
+        requiredDocuments: ['پاسپورت'],
+        displayOrder: 2,
+        active: false,
+        sourceMainImage: 'https://avinaofficial.ir' + sourcePath,
+        sourceGalleryImages: ['https://avinaofficial.ir' + sourcePath],
+      });
+      receipt.urlPath = '//another-site.example/visas/visa-1';
+      await expect(
+        f.service.publishVisaProfile(site, 'visa-1', publisher),
+      ).rejects.toThrow();
+      await expect(
+        f.service.publishVisaProfile(site, 'visa-1', actor),
+      ).rejects.toThrow();
+      expect(fetcher).toHaveBeenCalledTimes(2);
+    },
+  );
 
   it('signs Ghestiroo hotel profiles with their country code and preserves the Jahan payload', async () => {
     const f = setup();

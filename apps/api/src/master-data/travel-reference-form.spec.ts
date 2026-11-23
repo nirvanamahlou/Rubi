@@ -76,6 +76,52 @@ const visa = {
 };
 
 describe('travel reference form persistence contract', () => {
+  it('persists the main visa image and six gallery images by storage path', async () => {
+    const { service, create } = setup();
+    const gallery = Array.from(
+      { length: 6 },
+      (_, index) =>
+        '/api/v1/master-data/hotel-images/' +
+        String(index).repeat(64) +
+        '.webp',
+    );
+    const main = 'https://avinaofficial.ir' + gallery[0];
+    await service.create(
+      'visa-services',
+      {
+        ...visa,
+        sourceMainImage: main,
+        sourceGalleryImages: gallery.join('|'),
+      },
+      actor,
+    );
+    expect(create.mock.calls[0]?.[1]).toMatchObject({
+      sourceMainImage: gallery[0],
+      sourceGalleryImages: gallery.join('|'),
+    });
+    await expect(
+      service.create(
+        'visa-services',
+        {
+          ...visa,
+          sourceGalleryImages: [...gallery, main].join('|'),
+        },
+        actor,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      service.create(
+        'visa-services',
+        {
+          ...visa,
+          sourceMainImage: 'https://other.example/private',
+        },
+        actor,
+      ),
+    ).rejects.toThrow();
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
   it('creates a capacity range and status together using the existing repository transaction', async () => {
     const { service, create } = setup();
     const result = await service.create(

@@ -671,6 +671,8 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'name',
     'englishName',
     'countryId',
+    'sourceMainImage',
+    'sourceGalleryImages',
     'visaType',
     'referenceValidityDays',
     'referenceValidityMode',

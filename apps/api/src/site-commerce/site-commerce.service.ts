@@ -282,6 +282,55 @@ export class SiteCommerceService {
     );
   }
 
+  async publishVisaProfile(
+    site: string,
+    id: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (site !== 'jahan-bastan' && site !== 'ghestiroo' && site !== 'nss')
+      throw new BadRequestException();
+    this.publicationBranch(site, actor, undefined, 'master_data.update');
+    if (!actor.permissions.includes('master_data.read'))
+      throw new ForbiddenException();
+    const secret = process.env[commerceSites[site].signingKey];
+    if (!secret || secret.length < 32)
+      throw new BadRequestException('اتصال سایت پیکربندی نشده است.');
+    const { data } = await this.references.detail('visa-services', id);
+    const fields = data.attributes;
+    const { data: country } = await this.references.detail(
+      'countries',
+      String(fields.countryId),
+    );
+    const publicImage = (path: string) =>
+      new URL(path, 'https://avinaofficial.ir').href;
+    return this.sendProfile(site, secret, '/visa-profile', {
+      site,
+      kind: 'visa-profile',
+      id: data.id,
+      code: data.code,
+      name: data.name,
+      englishName: fields.englishName || null,
+      countryName: country.name,
+      countryCode:
+        ghestirooCountryCode(country.attributes.iso2Code, country.name) ?? null,
+      visaType: fields.visaType,
+      referenceValidityDays: fields.referenceValidityDays ?? null,
+      referenceValidityMode: fields.referenceValidityMode ?? 'DAYS',
+      description: fields.description || null,
+      requiredDocuments: JSON.parse(
+        String(fields.requiredDocumentNames ?? '[]'),
+      ),
+      displayOrder: fields.displayOrder ?? 0,
+      active: data.status === 'active',
+      sourceMainImage: fields.sourceMainImage
+        ? publicImage(String(fields.sourceMainImage))
+        : null,
+      sourceGalleryImages: fields.sourceGalleryImages
+        ? String(fields.sourceGalleryImages).split('|').map(publicImage)
+        : [],
+    });
+  }
+
   private async sendProfile(
     site: ProfileSite,
     secret: string,
@@ -308,6 +357,8 @@ export class SiteCommerceService {
     const receipt = (await response.json().catch(() => null)) as {
       slug?: unknown;
       identificationCode?: unknown;
+      code?: unknown;
+      urlPath?: unknown;
       detail?: unknown;
     } | null;
     if (
@@ -321,6 +372,17 @@ export class SiteCommerceService {
           ? receipt.detail
           : 'سایت مقصد ثبت اطلاعات را تأیید نکرد.',
       );
+    if (payload.kind === 'visa-profile') {
+      const path = typeof receipt.urlPath === 'string' ? receipt.urlPath : '';
+      const url = /^\/[^/\\]/.test(path) ? URL.parse(path, origin) : null;
+      if (
+        receipt.code !== payload.code ||
+        !url ||
+        url.origin !== new URL(origin).origin
+      )
+        throw new BadRequestException('سایت مقصد ثبت اطلاعات را تأیید نکرد.');
+      return { url: url.href };
+    }
     const slug = encodeURIComponent(receipt.slug);
     if (site === 'nss' && payload.kind === 'countries')
       return { url: origin + '/tours/country/' + slug };

@@ -2860,6 +2860,8 @@ model MasterVisaService {
   guidanceFileReference String?         @db.Uuid
   requiredDocumentNames String[]        @default([])
   description           String?         @db.VarChar(1000)
+  sourceMainImage       String?         @db.VarChar(2000)
+  sourceGalleryImages   String?         @db.VarChar(2000)
   displayOrder          Int             @default(0)
   isActive              Boolean         @default(true)
   version               Int             @default(1)
