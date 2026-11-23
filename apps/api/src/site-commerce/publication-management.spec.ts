@@ -253,6 +253,60 @@ describe('site profile publication', () => {
     await f.service.publishGeography('ghestiroo', 'cities', 'city', publisher);
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
+
+  it.each([
+    ['MA', 'مالزی', 'MY'],
+    ['SL', 'Slovenia', 'SI'],
+    ['MA', 'Morocco', 'MA'],
+    ['SL', 'Sierra Leone', 'SL'],
+  ])(
+    'maps the Ghestiroo country code %s for %s to %s',
+    async (code, name, expected) => {
+      const f = setup();
+      vi.stubEnv('GHESTIROO_CATALOG_WEBHOOK_SECRET', secret);
+      f.references.detail
+        .mockResolvedValueOnce({
+          data: {
+            name: 'Hotel',
+            attributes: { identificationCode: 'HTL-01', countryId: 'country' },
+          },
+        })
+        .mockResolvedValueOnce({
+          data: { name, attributes: { iso2Code: code } },
+        })
+        .mockResolvedValueOnce({
+          data: {
+            name: 'City',
+            attributes: { countryName: name, countryCode: code },
+          },
+        })
+        .mockResolvedValueOnce({
+          data: { name, attributes: { iso2Code: code } },
+        });
+      const fetcher = vi.fn(async (_url: string, request: RequestInit) => {
+        expect(JSON.parse(String(request.body)).countryCode).toBe(expected);
+        return Response.json({
+          identificationCode: 'HTL-01',
+          slug: 'destination',
+        });
+      });
+      vi.stubGlobal('fetch', fetcher);
+      await f.service.publishHotelProfile('ghestiroo', 'hotel', publisher);
+      await f.service.publishGeography(
+        'ghestiroo',
+        'cities',
+        'city',
+        publisher,
+      );
+      await f.service.publishGeography(
+        'ghestiroo',
+        'countries',
+        'country',
+        publisher,
+      );
+      expect(fetcher).toHaveBeenCalledTimes(3);
+    },
+  );
 });
 
 describe('website destination management', () => {

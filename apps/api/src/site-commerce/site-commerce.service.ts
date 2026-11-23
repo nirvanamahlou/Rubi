@@ -70,10 +70,18 @@ import {
 
 type ProfileSite = 'jahan-bastan' | 'ghestiroo';
 
-function countryCode(value: unknown): string | undefined {
+function ghestirooCountryCode(
+  value: unknown,
+  countryName: unknown,
+): string | undefined {
   const code = String(value ?? '')
     .trim()
     .toUpperCase();
+  const name = String(countryName ?? '')
+    .trim()
+    .toUpperCase();
+  if (code === 'MA' && ['مالزی', 'MALAYSIA'].includes(name)) return 'MY';
+  if (code === 'SL' && ['اسلوونی', 'SLOVENIA'].includes(name)) return 'SI';
   return /^[A-Z]{2}$/.test(code) ? code : undefined;
 }
 
@@ -160,7 +168,10 @@ export class SiteCommerceService {
         'countries',
         String(fields.countryId),
       );
-      hotelCountryCode = countryCode(country.data.attributes.iso2Code);
+      hotelCountryCode = ghestirooCountryCode(
+        country.data.attributes.iso2Code,
+        country.data.name,
+      );
     }
     return this.sendProfile(site, secret, '/hotel-profile', {
       site,
@@ -218,10 +229,11 @@ export class SiteCommerceService {
     }
     const geographyCountryCode =
       site === 'ghestiroo'
-        ? countryCode(
+        ? ghestirooCountryCode(
             kind === 'countries'
               ? data.attributes.iso2Code
               : data.attributes.countryCode,
+            kind === 'countries' ? data.name : data.attributes.countryName,
           )
         : undefined;
     return this.sendProfile(site, secret, '/geography-profile', {
