@@ -6,7 +6,7 @@
 
 ## داشبورد و فهرست B2B
 
-<!-- nora-guide {"id":"metrics","href":"/organizations","pattern":"نتایج فیلتر|شاخص|داشبورد|فهرست|جست|فیلتر|مرتب|تکمیل هویت|شعبه","related":[]} -->
+<!-- nora-guide {"source":"apps/web/src/modules/organizations/components/organizations-workspace.tsx","related":[],"next":"نوع همکاری و فیلتر جاری را بررسی کنید.","href":"/organizations","roles":"مشترک","pattern":"نتایج فیلتر|شاخص|داشبورد|فهرست|جست|فیلتر|مرتب|تکمیل هویت|شعبه","id":"metrics","path":["مشتریان B2B"],"example":"چرا کارت آژانس ها با فهرست فرق داره؟","prerequisite":"دسترسی به پرونده یا فهرست B2B و مجوز اقدام مربوط"} -->
 
 ### مراحل
 
@@ -16,7 +16,7 @@
 
 ## ثبت و اصلاح هویت
 
-<!-- nora-guide {"id":"registration","href":"/organizations","pattern":"فرم ثبت|ثبت آژانس|ثبت مشتری سازمانی|هویت|ویرایش|لوگو|شخصیت","related":["b2b/profile","b2b/agreement"]} -->
+<!-- nora-guide {"source":"apps/web/src/modules/organizations/components/organizations-workspace.tsx","related":["b2b/profile","b2b/agreement"],"next":"نوع همکاری و فیلدهای الزامی فرم را بررسی کنید.","href":"/organizations","roles":"مشترک","pattern":"فرم ثبت|ثبت آژانس|ثبت مشتری سازمانی|هویت|ویرایش|لوگو|شخصیت","id":"registration","path":["مشتریان B2B","بازکردن فرم ثبت"],"example":"چطور مشتری سازمانی حقوقی ثبت کنم؟","prerequisite":"دسترسی به پرونده یا فهرست B2B و مجوز اقدام مربوط"} -->
 
 ### مراحل
 
@@ -31,7 +31,7 @@
 
 ## حذف سازمان یا مخاطب
 
-<!-- nora-guide {"id":"delete","href":"/organizations","pattern":"حذف دائمی|پاک کردن|حذف مخاطب|حذف سازمان","related":[]} -->
+<!-- nora-guide {"source":"apps/web/src/modules/organizations/components/organization-delete-dialog.tsx","related":[],"next":"پیام وابستگی یا مجوز همان ردیف را بررسی کنید.","href":"/organizations","roles":"مشترک","pattern":"حذف دائمی|پاک کردن|حذف مخاطب|حذف سازمان","id":"delete","path":["مشتریان B2B","حذف دائمی"],"example":"چرا دکمه حذف مخاطب آژانس دیده نمیشه؟","prerequisite":"دسترسی به پرونده یا فهرست B2B و مجوز اقدام مربوط"} -->
 
 ### مراحل
 
@@ -41,7 +41,7 @@
 
 ## پرونده و ارتباطات
 
-<!-- nora-guide {"id":"profile","href":"/organizations","pattern":"پرونده|پروفایل|مخاطب|نشانی|امضادار|کاربران|ارتباطات|شماره تماس","related":[]} -->
+<!-- nora-guide {"source":"apps/web/src/modules/organizations/components/corporate-profile.tsx","related":[],"next":"پروندهٔ صحیح و نمای مربوط به ارتباطات را باز کنید.","href":"/organizations","roles":"مشترک","pattern":"پرونده|پروفایل|مخاطب|نشانی|امضادار|کاربران|ارتباطات|شماره تماس","id":"profile","path":["مشتریان B2B","پرونده سازمان"],"example":"نشانی مشتری سازمانی رو از کجا ببینم؟","prerequisite":"دسترسی به پرونده یا فهرست B2B و مجوز اقدام مربوط"} -->
 
 ### مراحل
 
@@ -51,7 +51,7 @@
 
 ## توافق همکاری و نرخ آژانس
 
-<!-- nora-guide {"id":"agreement","href":"/organizations","pattern":"توافق|گردش همکاری|نرخ آژانس|نرخ توافقی","related":[]} -->
+<!-- nora-guide {"source":"apps/web/src/modules/organizations/components/agreement-workflow-panel.tsx","related":[],"next":"وضعیت گردش و گزینه‌های مجاز را در پرونده بررسی کنید.","href":"/organizations","roles":"آژانس همکار","pattern":"توافق|گردش همکاری|نرخ آژانس|نرخ توافقی","id":"agreement","path":["مشتریان B2B","قرارداد و شرایط تجاری"],"example":"گردش توافق همکاری آژانس کجاست؟","prerequisite":"پرونده آژانس همکار و مجوز اقدام مربوط"} -->
 
 ### مراحل
 
@@ -61,7 +61,7 @@
 
 ## اعتبار و اعتبار موقت
 
-<!-- nora-guide {"id":"credit","href":"/organizations","pattern":"اعتبار|سقف|انقضا|مانده","related":["b2b/finance"]} -->
+<!-- nora-guide {"source":"apps/web/src/modules/organizations/components/corporate-profile.tsx","related":["b2b/finance"],"next":"ارز و تاریخ اثر اعتبار را در نمای مربوط بررسی کنید.","href":"/organizations","roles":"مشترک","pattern":"اعتبار|سقف|انقضا|مانده","id":"credit","path":["مشتریان B2B","قرارداد و شرایط تجاری","اعتبار و تضمین"],"example":"اعتبار موقت آژانس از کجا بررسی میشه؟","prerequisite":"دسترسی به پرونده یا فهرست B2B و مجوز اقدام مربوط"} -->
 
 ### مراحل
 
@@ -75,7 +75,7 @@
 
 ## سوابق تجاری، مالی و فعالیت
 
-<!-- nora-guide {"id":"finance","href":"/organizations","pattern":"مالی|فعالیت|خلاصه تجاری|اسناد فروش|پرداخت|سوابق|گزارش","related":[]} -->
+<!-- nora-guide {"source":"apps/web/src/modules/organizations/components/partner-finance-panel.tsx","related":[],"next":"پس از انتخاب شعبه و بازه، سابقهٔ مجاز را بررسی کنید.","href":"/organizations","roles":"مشترک","pattern":"مالی|فعالیت|خلاصه تجاری|اسناد فروش|پرداخت|سوابق|گزارش","id":"finance","path":["مشتریان B2B","مالی و تسویه"],"example":"پرداخت های مشتری سازمانی رو از کجا ببینم؟","prerequisite":"دسترسی به پرونده یا فهرست B2B و مجوز اقدام مربوط"} -->
 
 ### مراحل
 
@@ -85,7 +85,7 @@
 
 ## مدارک سازمان و امضادار
 
-<!-- nora-guide {"id":"documents","href":"/organizations","pattern":"مدرک|بارگذاری|اسناد سازمان|فایل امضادار","related":[]} -->
+<!-- nora-guide {"source":"apps/web/src/modules/organizations/components/organization-documents-panel.tsx","related":[],"next":"وضعیت پرونده و نتیجهٔ بارگذاری مدرک را جدا بررسی کنید.","href":"/organizations","roles":"مشترک","pattern":"مدرک|بارگذاری|اسناد سازمان|فایل امضادار","id":"documents","path":["مشتریان B2B","پرونده سازمان"],"example":"فایل امضادار بارگذاری نشد چیکار کنم؟","prerequisite":"دسترسی به پرونده یا فهرست B2B و مجوز اقدام مربوط"} -->
 
 ### مراحل
 
@@ -95,8 +95,74 @@
 
 ## ورود و خروج Excel
 
-<!-- nora-guide {"id":"excel","href":"/organizations","pattern":"اکسل|excel|قالب|ورود فایل|خروجی|وارداتی","related":[]} -->
+<!-- nora-guide {"source":"apps/web/src/modules/organizations/components/organization-excel-dialog.tsx","related":[],"next":"نتیجهٔ ردیف‌ها را با فهرست تطبیق دهید.","href":"/organizations","roles":"مشترک","pattern":"اکسل|excel|قالب|ورود فایل|خروجی|وارداتی","id":"excel","path":["مشتریان B2B"],"example":"فقط بعضی ردیف های اکسل B2B ثبت شدن","prerequisite":"دسترسی به پرونده یا فهرست B2B و مجوز اقدام مربوط"} -->
 
 ### مراحل
 
 1. ورود از Excel را باز کنید، قالب همان پنل را بگیرید و پیش‌نمایش را برای ردیف ناقص یا تکراری بررسی کنید. پس از تأیید، نتیجه ردیف‌ها را بخوانید. در ورود جزئی یا قطع ارتباط، ابتدا موارد ثبت‌شده را تطبیق دهید. خروجی Excel از فیلتر جاری و نوع همکاری استفاده می‌کند و به مجوز خروجی وابسته است.
+
+
+<a id="rates"></a>
+
+## نرخ‌های توافقی
+
+<!-- nora-guide {"source":"apps/web/src/modules/organizations/components/agency-rates-panel.tsx","related":[],"next":"مرجع و اطلاعات نرخ را در فرم مجاز بررسی کنید.","href":"/organizations","roles":"آژانس همکار","pattern":"نرخ توافقی|نرخ های توافقی","id":"rates","path":["مشتریان B2B","قرارداد و شرایط تجاری","نرخ‌های توافقی"],"example":"نرخ توافقی آژانس رو چطور ویرایش کنم؟","prerequisite":"پرونده آژانس همکار و مجوز اقدام مربوط"} -->
+
+### مراحل
+
+1. در پرونده آژانس، نرخ‌های توافقی را باز کنید. مرجع فعال، ارز و تاریخ اثر را در فرم بررسی کنید. اگر گزینه‌ای دیده نمی‌شود، نوع پرونده، وضعیت مرجع و دسترسی را بررسی کنید.
+
+
+<a id="uncertain-save"></a>
+
+## نتیجه نامشخص ثبت
+
+<!-- nora-guide {"source":"apps/web/src/modules/organizations/components/organizations-workspace.tsx","related":[],"next":"پیش از تکرار ثبت، پرونده را در فهرست جست‌وجو کنید.","href":"/organizations","roles":"مشترک","pattern":"ذخیره.*نامشخص|ثبت نامطمئن|ثبت ناقص","id":"uncertain-save","path":["مشتریان B2B","بازکردن فرم ثبت"],"example":"ذخیره آژانس نامشخص موند دوباره ثبت کنم؟","prerequisite":"دسترسی به پرونده یا فهرست B2B و مجوز اقدام مربوط"} -->
+
+### مراحل
+
+1. پیش از ثبت دوباره با کد پرونده در فهرست جست‌وجو کنید. اگر پرونده ثبت شده است، همان را باز کنید و فیلد یا فایل باقی‌مانده را تکمیل کنید.
+
+
+<a id="sales-history"></a>
+
+## اسناد فروش
+
+<!-- nora-guide {"source":"apps/web/src/modules/organizations/components/organization-sales-documents.tsx","related":[],"next":"سابقهٔ مجاز همان پرونده را باز کنید.","href":"/organizations","roles":"مشترک","pattern":"اسناد فروش","id":"sales-history","path":["مشتریان B2B","اسناد فروش"],"example":"اسناد فروش این سازمان رو از کجا ببینم؟","prerequisite":"دسترسی به پرونده یا فهرست B2B و مجوز اقدام مربوط"} -->
+
+### مراحل
+
+1. پرونده و شعبهٔ اطلاعات تجاری را انتخاب کنید و اسناد فروش را باز کنید. برای جزئیات، ردیف مجاز همان سابقه را در پنل باز کنید.
+
+
+<a id="activity"></a>
+
+## گزارش فعالیت‌ها
+
+<!-- nora-guide {"source":"apps/web/src/modules/organizations/components/organization-activity-panel.tsx","related":[],"next":"پیام نتیجه و بازهٔ گزارش را بررسی کنید.","href":"/organizations","roles":"مشترک","pattern":"فعالیت","id":"activity","path":["مشتریان B2B","گزارش فعالیت‌ها"],"example":"گزارش فعالیت مشتری سازمانی کجاست؟","prerequisite":"دسترسی به پرونده یا فهرست B2B و مجوز اقدام مربوط"} -->
+
+### مراحل
+
+1. نمای گزارش فعالیت‌ها را از پرونده باز کنید. بازه و پیام بخش را بررسی کنید. اگر دریافت گزارش خطا دارد یا دسترسی محدود است، همان وضعیت را از پنل پیگیری کنید.
+
+
+<a id="empty-list"></a>
+
+## فهرست خالی یا دسترسی محدود
+
+<!-- nora-guide {"source":"apps/web/src/modules/organizations/components/organizations-workspace.tsx","related":[],"next":"نوع همکاری، فیلتر و پیام صفحه را بررسی کنید.","href":"/organizations","roles":"مشترک","pattern":"فهرست خالی|پیدا نمیشه|پیدا نمی شه|پیدا نمی شود|مجوز مشاهده","id":"empty-list","path":["مشتریان B2B"],"example":"چرا آژانس پیدا نمیشه؟","prerequisite":"دسترسی به پرونده یا فهرست B2B و مجوز اقدام مربوط"} -->
+
+### مراحل
+
+1. با نوع همکاری، جست‌وجو و وضعیت شروع کنید. فهرست خالی یعنی در همین محدوده ردیفی نمایش داده نشده است. اگر پیام نبود مجوز می‌بینید، دسترسی حساب را بررسی کنید. در خطای دریافت دوباره تلاش کنید و در انقضای نشست دوباره وارد شوید.
+
+
+<a id="signatories"></a>
+
+## امضاداران
+
+<!-- nora-guide {"source":"apps/web/src/modules/organizations/components/organization-signatories-panel.tsx","related":[],"next":"تب امضاداران و اقدام مجاز همان ردیف را باز کنید.","href":"/organizations","roles":"مشترک","pattern":"امضادار","id":"signatories","path":["مشتریان B2B","پرونده سازمان","امضاداران"],"example":"امضادار مشتری سازمانی رو از کجا اضافه کنم؟","prerequisite":"دسترسی به پرونده یا فهرست B2B و مجوز اقدام مربوط"} -->
+
+### مراحل
+
+1. تب امضاداران پرونده را باز کنید. برای افزودن یا ویرایش از اقدام نمایش‌داده‌شده استفاده کنید و اطلاعات لازم همان فرم را کامل کنید.

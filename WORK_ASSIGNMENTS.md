@@ -13352,6 +13352,10 @@ Reserve Ticket Catalog load editor hydration and an optional aircraft-type refer
 
 Reserve the Accounting detail editor and year-independent suggestion endpoint, the System Management issued-code public projection and transaction allocator, their additive Contracts capability flag, and focused Web/API regressions. The Accounting producer serves the same code format and ledger access to the Web consumer. Existing detail IDs, issued codes and bank numbering remain compatible. No migration or data backfill.
 
+## NORA-COMPREHENSIVE-B2B-1122 — PC-C — ACTIVE
+
+Reserve the Nora B2B catalogue, resolver, focused tests and coverage notes. Reuse native organization reads and permissions. Branch codex/pc-c-nora-comprehensive-b2b-1122.
+
 ### PACKAGE-GENERATOR-AZAR-1122 (PC-B)
 
 Scoped XLSX support and poster profiles for Antalya Iran Airtour and Kuala Lumpur plus Singapore. Reuse package-generator renderer; no API, schema or dependency changes.
