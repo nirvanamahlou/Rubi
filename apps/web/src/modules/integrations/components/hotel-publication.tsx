@@ -17,8 +17,18 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 
 type PublicationResource = 'hotels' | 'countries' | 'cities';
 const siteLabels = {
-  'jahan-bastan': 'جهان باستان',
-  ghestiroo: 'قسطی‌رو',
+  'jahan-bastan': {
+    name: 'جهان باستان',
+    publish: 'ثبت در جهان باستان',
+    view: 'مشاهده در جهان باستان',
+    error: 'ثبت در جهان باستان انجام نشد.',
+  },
+  ghestiroo: {
+    name: 'قسطی‌رو',
+    publish: 'ثبت در قسطی‌رو',
+    view: 'مشاهده در قسطی‌رو',
+    error: 'ثبت در قسطی‌رو انجام نشد.',
+  },
 } as const;
 type ProfileSite = keyof typeof siteLabels;
 
@@ -116,7 +126,7 @@ function ProfileDestination({
   resource: PublicationResource;
   site: ProfileSite;
 }) {
-  const label = siteLabels[site];
+  const labels = siteLabels[site];
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [url, setUrl] = useState('');
@@ -147,9 +157,7 @@ function ProfileDestination({
       const result = await response.json();
       if (!response.ok)
         throw new Error(
-          result.error?.message ||
-            result.message ||
-            `ثبت در ${label} انجام نشد.`,
+          result.error?.message || result.message || labels.error,
         );
       setUrl(result.url);
       setMessage('اطلاعات ثبت شد.');
@@ -168,13 +176,13 @@ function ProfileDestination({
           <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
             <Globe2 aria-hidden="true" className="size-[18px]" />
           </span>
-          <strong>{label}</strong>
+          <strong>{labels.name}</strong>
         </div>
         <button
           type="button"
           onClick={publish}
           disabled={busy}
-          aria-label={`ثبت در ${label}`}
+          aria-label={labels.publish}
           className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg bg-primary px-3 font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
         >
           {busy ? (
@@ -198,7 +206,7 @@ function ProfileDestination({
           className="inline-flex items-center gap-2 font-medium text-primary hover:underline"
           href={url}
         >
-          مشاهده در {label}
+          {labels.view}
           <ArrowUpRight aria-hidden="true" className="size-4" />
         </a>
       )}
