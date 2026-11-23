@@ -39,16 +39,14 @@ describe('authorized hotel ranking', () => {
         ]),
       },
       reservationIntake: {
-        findMany: vi
-          .fn()
-          .mockResolvedValue([
-            {
-              contractId: 'cancelled',
-              workflowRevisions: [
-                { state: { supplierStatus: 'CANCELLED' }, createdAt: end },
-              ],
-            },
-          ]),
+        findMany: vi.fn().mockResolvedValue([
+          {
+            contractId: 'cancelled',
+            workflowRevisions: [
+              { state: { supplierStatus: 'CANCELLED' }, createdAt: end },
+            ],
+          },
+        ]),
       },
     };
     const db = {
