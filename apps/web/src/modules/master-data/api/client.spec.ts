@@ -604,8 +604,9 @@ describe('master data browser client', () => {
         title: 'کشور ترکیه',
       }),
     ).resolves.toEqual({ data: attached });
-    const [[recordUrl, recordRequest], [logoUrl, logoRequest]] =
-      fetchMock.mock.calls;
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const [recordUrl, recordRequest] = fetchMock.mock.calls[0]!;
+    const [logoUrl, logoRequest] = fetchMock.mock.calls[1]!;
     expect(recordUrl).toContain(`/master-data/countries/${existing.id}`);
     expect(recordRequest.method).toBe('PATCH');
     expect(JSON.parse(recordRequest.body)).toEqual({
