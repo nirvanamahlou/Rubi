@@ -1,3 +1,7 @@
+## NORA-RAG-REQUIRED-FOLLOW-UP-1123 — PC-C — ACTIVE
+
+Reserve the Sales composite guide selector, focused regression tests, and pilot comparison record. Preserve the Web links, provider transport, runtime flag and all producer panels. No migration or dependency changes.
+
 ## NORA-COMPOSITE-GUIDES-1123 — PC-C — ACTIVE
 
 Reserve the Nora Composer composite guide dispatch, scoped Sales and Workbench retrieval, focused tests and status. Base develop ac92b6e91. Preserve producer routes and authenticated record reads.

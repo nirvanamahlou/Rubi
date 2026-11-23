@@ -8,6 +8,27 @@ const requiredSteps = {
   review: [1, 3],
 };
 
+function checklistRequirements(question) {
+  const normalized = question
+    .normalize('NFKC')
+    .replace(/[يى]/g, 'ی')
+    .replace(/ك/g, 'ک')
+    .replace(/[\s\u200c\u200d]+/g, ' ');
+  return {
+    ...requiredSteps,
+    flight: /ظرفیت (?:بلی[تط]|پرواز)|(?:بلی[تط]|پرواز).{0,16}ظرفیت/.test(
+      normalized,
+    )
+      ? [...requiredSteps.flight, 5]
+      : requiredSteps.flight,
+    review:
+      /(?:شماره|نتیجه).{0,24}(?:ثبت|قرارداد)|(?:بعد|پس) از ثبت.{0,48}(?:شماره|نتیجه)/.test(
+        normalized,
+      )
+        ? [...requiredSteps.review, 4]
+        : requiredSteps.review,
+  };
+}
 export function validateCompositeGuide(input) {
   if (
     !input ||
@@ -30,6 +51,7 @@ export function createCompositeGuideSelector(config = {}) {
     const fallback = { version: 2, selected: null };
     if (!config.compositeEnabled || !config.transport) return fallback;
     const sections = sales;
+    const required = checklistRequirements(input.question);
     try {
       const response = await config.transport.fetch(
         'https://api.groq.com/openai/v1/chat/completions',
@@ -56,7 +78,7 @@ export function createCompositeGuideSelector(config = {}) {
                 content: JSON.stringify({
                   question: input.question,
                   sections,
-                  required: requiredSteps,
+                  required,
                 }),
               },
             ],
@@ -93,6 +115,12 @@ export function createCompositeGuideSelector(config = {}) {
         })
       )
         return fallback;
+      // A valid checklist still needs the steps required by this particular question.
+      for (const { id } of sections) {
+        selected[id] = [...new Set([...selected[id], ...required[id]])].sort(
+          (a, b) => a - b,
+        );
+      }
       return { version: 2, selected };
     } catch (error) {
       if (signal.aborted) throw error;
