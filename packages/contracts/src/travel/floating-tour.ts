@@ -17,6 +17,7 @@ export interface FloatingTourStay {
   nights: number;
 }
 export interface FloatingTourSaleRow {
+  salesStopped?: boolean;
   sourceRows: number[];
   startsOn: string | null;
   endsOn: string | null;
@@ -25,6 +26,31 @@ export interface FloatingTourSaleRow {
   prices: Partial<Record<FloatingTourGroup, FloatingTourMoney[]>>;
   commission: FloatingTourMoney[];
   flightSchedule?: FloatingTourFlightSchedule;
+}
+
+export function floatingTourPeriodKey(
+  row: Pick<FloatingTourSaleRow, 'startsOn' | 'nights'>,
+  monthly?: Pick<
+    NonNullable<FloatingTourSaleSet['monthly']>,
+    'calendar' | 'months'
+  > | null,
+) {
+  return monthly
+    ? `monthly:${monthly.calendar}:${[...monthly.months].sort((a, b) => a - b).join('-')}:${row.nights}`
+    : `dated:${row.startsOn}:${row.nights}`;
+}
+
+export interface FloatingTourPeriodChangeV1 {
+  expectedVersion: number;
+  periodKey: string;
+  action: 'STOP' | 'RESUME' | 'DELETE' | 'ADJUST' | 'EDIT';
+  adjustment?: {
+    mode: 'PERCENT' | 'FIXED';
+    direction: 'INCREASE' | 'DECREASE';
+    amount: string;
+    currency?: FloatingTourMoney['currency'];
+  };
+  rows?: { index: number; prices: FloatingTourSaleRow['prices'] }[];
 }
 
 export interface FloatingTourFlightLeg {

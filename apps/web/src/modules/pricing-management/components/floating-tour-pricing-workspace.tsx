@@ -15,6 +15,7 @@ import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { useAccessPermissions } from '@/modules/iam/access-context';
 import { packagePricingApi } from '../api/client';
 import { floatingFlightClock } from '@/modules/sales/model/floating-flight-times';
+import { FloatingRegisteredPeriods } from './floating-registered-periods';
 import {
   FloatingPackageFlights,
   packageFlightInput,
@@ -626,22 +627,16 @@ export function FloatingTourPricingWorkspace() {
               </option>
             ))}
           </NativeSearchSelect>
-          <Rows
-            rows={catalog.dated.filter(
-              (row) => !period || `${row.startsOn}/${row.nights}` === period,
-            )}
-          />
-          {catalog.monthly && (
-            <>
-              <h3>
-                ویژه ماه ·{' '}
-                {catalog.monthly.calendar === 'PERSIAN' ? 'شمسی' : 'میلادی'} ·{' '}
-                {catalog.monthly.months
-                  .map((m) => monthNames[catalog.monthly!.calendar][m - 1])
-                  .join('، ')}
-              </h3>
-              <Rows rows={catalog.monthly.rows} />
-            </>
+          {session && (
+            <FloatingRegisteredPeriods
+              catalog={catalog}
+              tourId={id}
+              session={session}
+              canManage={canManage}
+              busy={busy}
+              periodFilter={period}
+              onChange={setCatalog}
+            />
           )}
         </>
       )}
