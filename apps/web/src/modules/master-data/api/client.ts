@@ -34,6 +34,7 @@ export class MasterDataApiError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    readonly code?: string,
   ) {
     super(message);
   }
@@ -197,7 +198,7 @@ async function request<T>(
     return request<T>(path, init, true);
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as {
-      error?: { message?: string };
+      error?: { message?: string; code?: string };
       message?: string;
     } | null;
     throw new MasterDataApiError(
@@ -205,12 +206,21 @@ async function request<T>(
         envelope?.message ??
         'عملیات اطلاعات پایه ناموفق بود.',
       response.status,
+      envelope?.error?.code,
     );
   }
   const payload = (await response.json()) as T;
   if (typeof window !== 'undefined' && method !== 'GET' && method !== 'HEAD')
     window.dispatchEvent(new Event(MASTER_DATA_CHANGED_EVENT));
   return payload;
+}
+
+function profileValue(record: MasterDataRecord, key: string) {
+  const value =
+    key === 'name' || key === 'code' || key === 'status'
+      ? record[key]
+      : record.attributes[key];
+  return String(value ?? '').trim();
 }
 
 async function documentsRequest<T>(
@@ -579,10 +589,12 @@ export const masterDataApi = {
     const baseValues = { ...input.values };
     delete baseValues.logoFileReference;
     const base = input.existing
-      ? await masterDataApi.update(input.resource, input.existing.id, {
-          values: baseValues,
-          version: input.existing.version,
-        })
+      ? await masterDataApi.updateFromSnapshot(
+          input.resource,
+          input.existing,
+          baseValues,
+          Boolean(input.logoChange),
+        )
       : await masterDataApi.create(input.resource, { values: baseValues });
     if (!input.logoChange) return base;
 
@@ -676,6 +688,58 @@ export const masterDataApi = {
       `/${resource}/${encodeURIComponent(id)}`,
       { method: 'PATCH', body: JSON.stringify(body) },
     );
+  },
+  async updateFromSnapshot(
+    resource: MasterDataResource,
+    existing: MasterDataRecord,
+    values: Record<string, string>,
+    changesLogo = false,
+  ): Promise<{ data: MasterDataRecord }> {
+    const { id } = existing;
+    try {
+      return await masterDataApi.update(resource, id, {
+        values,
+        version: existing.version,
+      });
+    } catch (error) {
+      if (
+        !(error instanceof MasterDataApiError) ||
+        error.status !== 409 ||
+        error.code !== 'CONCURRENT_MODIFICATION' ||
+        !['hotels', 'countries', 'cities'].includes(resource)
+      )
+        throw error;
+      const latest = await masterDataApi.detail(resource, id);
+      if (latest.data.version === existing.version) throw error;
+      // A retry only carries edits the user made in the original form.
+      const changed = Object.entries(values).filter(
+        ([key, value]) => value.trim() !== profileValue(existing, key),
+      );
+      const changedOnServer = (key: string) =>
+        profileValue(latest.data, key) !== profileValue(existing, key);
+      const cityLocation = ['countryId', 'regionId'];
+      if (
+        changed.some(
+          ([key, value]) =>
+            changedOnServer(key) &&
+            profileValue(latest.data, key) !== value.trim(),
+        ) ||
+        (changesLogo && changedOnServer('logoFileReference')) ||
+        (resource === 'cities' &&
+          changed.some(([key]) => cityLocation.includes(key)) &&
+          cityLocation.some(changedOnServer))
+      )
+        throw error;
+      const pending = changed.filter(
+        ([key, value]) => profileValue(latest.data, key) !== value.trim(),
+      );
+      return pending.length
+        ? masterDataApi.update(resource, id, {
+            values: Object.fromEntries(pending),
+            version: latest.data.version,
+          })
+        : latest;
+    }
   },
   remove(resource: MasterDataResource, id: string, version: number) {
     return request<MasterDataDeleteResponse>(
