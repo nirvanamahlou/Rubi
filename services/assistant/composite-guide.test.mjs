@@ -10,7 +10,7 @@ const question =
 const input = validateCompositeGuide({ version: 2, question });
 
 test('synthetic Sales checklist has three canonical sources and validated excerpts', async () => {
-  const selected = { flight: [0], hotel: [0], review: [0] };
+  const selected = { flight: [2, 3, 4], hotel: [1, 2, 3, 4], review: [1, 3] };
   const selector = createCompositeGuideSelector({
     compositeEnabled: true,
     transport: {
@@ -33,7 +33,7 @@ test('synthetic Sales checklist has three canonical sources and validated excerp
   });
 });
 
-test('flag off and invalid model output use the document fallback', async () => {
+test('a disabled flag or a missing required step uses the document fallback', async () => {
   const expected = { version: 2, selected: null };
   const signal = new AbortController().signal;
   assert.deepEqual(
@@ -47,7 +47,9 @@ test('flag off and invalid model output use the document fallback', async () => 
         Response.json({
           choices: [
             {
-              message: { content: '{"flight":[100],"hotel":[0],"review":[0]}' },
+              message: {
+                content: '{"flight":[2,3,4],"hotel":[1,2,3],"review":[1,3]}',
+              },
             },
           ],
         }),
