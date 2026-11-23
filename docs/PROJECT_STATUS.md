@@ -1,3 +1,7 @@
+## Visa service website publication
+
+Avina stores one main visa photo and up to six gallery photos. The Visa Services row action sends the saved public profile to Jahan Bastan, Ghestiroo, or Niyayesh Seir using the signed publication API. The payload includes document names and excludes guidance attachments and supplier references.
+
 ## Nora composite guide follow-up checks
 
 Capacity-change recovery and final registration-result steps are mandatory for the applicable Sales checklist questions. The selector restores the canonical step when a valid model checklist omits it. In five synthetic scenarios compared against direct guidance using the configured model, every displayed answer retained question-specific steps and the same approved links. The capacity and registration-result answers had 10 and 11 steps instead of 16. Four calls returned validated checklists and one used the complete guide after provider HTTP 400. Both paths supported the next action in one exchange in all five cases. The production flag stays disabled under the rollout criterion.
