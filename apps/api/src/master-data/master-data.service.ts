@@ -1,4 +1,9 @@
 import type { Prisma } from '@nora/database';
+import {
+  isWebsiteProfile,
+  profileDeletionSites,
+  withdrawWebsiteProfile,
+} from '../site-commerce/profile-withdrawal';
 import type { DisplayLanguage } from '../common/i18n/language';
 import {
   validateBankBranchMetadata,
@@ -42,6 +47,7 @@ import {
   type MasterDataListQuery,
   type MasterDataResource,
   type MasterDataDeleteResponse,
+  type MasterDataRecord,
 } from '@nora/contracts';
 
 import { assertGenericCurrencyRateMutationAllowed } from './currency-rate.policy';
@@ -1231,6 +1237,13 @@ export class MasterDataService {
     return { data: toMasterDataRecord(resource, row) };
   }
 
+  withProfilePublication<T>(
+    record: MasterDataRecord,
+    publish: () => Promise<T>,
+  ) {
+    return this.repository.withProfilePublication(record, publish);
+  }
+
   async voucherLeaders(brokerId: string) {
     const broker = await this.repository.find('brokers', brokerId);
     if (!broker?.isActive)
@@ -1638,12 +1651,31 @@ export class MasterDataService {
     return { data: toMasterDataRecord(resource, row) };
   }
 
+  async deletionSites(
+    resourceValue: string,
+    id: string,
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+  ) {
+    if (!actor.permissions.includes('master_data.delete'))
+      throw new ForbiddenException('مجوز حذف اطلاعات پایه وجود ندارد.');
+    const resource = resourceOf(resourceValue);
+    this.assertResourceControl(resource, actor);
+    branchOf(actor, requestedBranch);
+    if (!uuidPattern.test(id))
+      throw new BadRequestException('شناسه رکورد معتبر نیست.');
+    if (!isWebsiteProfile(resource)) return { data: [] };
+    const { data } = await this.detail(resource, id);
+    return { data: await profileDeletionSites(data) };
+  }
+
   async remove(
     resourceValue: string,
     id: string,
     version: number,
     actor: AuthenticatedActor,
     requestedBranch?: string,
+    siteCodes?: unknown,
   ): Promise<MasterDataDeleteResponse> {
     if (!actor.permissions.includes('master_data.delete'))
       throw new ForbiddenException('مجوز حذف اطلاعات پایه وجود ندارد.');
@@ -1661,6 +1693,12 @@ export class MasterDataService {
         version,
         actor.userId,
         actorBranchId,
+        ...(isWebsiteProfile(resource)
+          ? ([
+              (record: MasterDataRecord) =>
+                withdrawWebsiteProfile(record, siteCodes),
+            ] as const)
+          : []),
       );
     } catch (error) {
       if (isMasterDataDependencyError(error))

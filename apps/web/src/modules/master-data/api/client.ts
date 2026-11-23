@@ -741,10 +741,20 @@ export const masterDataApi = {
         : latest;
     }
   },
-  remove(resource: MasterDataResource, id: string, version: number) {
+  deletionSites(resource: MasterDataResource, id: string) {
+    return request<{ data: string[] }>(
+      `/${resource}/${encodeURIComponent(id)}/deletion-sites`,
+    );
+  },
+  remove(
+    resource: MasterDataResource,
+    id: string,
+    version: number,
+    siteCodes?: string[],
+  ) {
     return request<MasterDataDeleteResponse>(
       `/${resource}/${encodeURIComponent(id)}`,
-      { method: 'DELETE', body: JSON.stringify({ version }) },
+      { method: 'DELETE', body: JSON.stringify({ version, siteCodes }) },
     );
   },
   setStatus(

@@ -153,7 +153,7 @@ export class FloatingTourPricingService {
   }
   private async definition(id: string, actor: AuthenticatedActor) {
     const row = await this.db.client.tourPackage.findFirst({
-      where: { id, branchId: { in: actor.branchIds } },
+      where: { id, branchId: { in: actor.branchIds }, archivedAt: null },
     });
     if (!row) throw new NotFoundException('تور در شعبه مجاز یافت نشد.');
     const definition = row.definition as unknown as TourPackageInputV1;
@@ -169,6 +169,7 @@ export class FloatingTourPricingService {
     const rows = await this.db.client.tourPackage.findMany({
       where: {
         branchId: { in: actor.branchIds },
+        archivedAt: null,
         definition: { path: ['details', 'isFloating'], equals: true },
       },
       include: { floatingSaleCatalog: true },
@@ -269,7 +270,7 @@ export class FloatingTourPricingService {
   async list(actor: AuthenticatedActor) {
     this.authorize(actor);
     const rows = await this.db.client.tourPackage.findMany({
-      where: { branchId: { in: actor.branchIds } },
+      where: { branchId: { in: actor.branchIds }, archivedAt: null },
       orderBy: { createdAt: 'desc' },
       take: 500,
     });
@@ -567,7 +568,12 @@ export class FloatingTourPricingService {
     return this.db.client.$transaction(async (tx) => {
       // Definition lock fences a simultaneous edit or branch change while validating imports.
       const locked = await tx.tourPackage.updateMany({
-        where: { id, branchId: row.branchId, version: preview.packageVersion },
+        where: {
+          id,
+          branchId: row.branchId,
+          version: preview.packageVersion,
+          archivedAt: null,
+        },
         data: { version: preview.packageVersion },
       });
       if (locked.count !== 1)

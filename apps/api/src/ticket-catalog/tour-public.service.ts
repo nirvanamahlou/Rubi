@@ -20,6 +20,10 @@ import type {
   SalesContractCreateRequest,
 } from '@nora/contracts';
 import type { Prisma } from '@nora/database';
+import {
+  publishedSites,
+  removeSitePublication,
+} from '../site-commerce/site-deletion';
 import { DatabaseService } from '../database/database.service';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { validateTourDeparture, validateTourPackage } from './tour-policy';
@@ -171,7 +175,7 @@ export class TourPublicService {
   async packages(actor: AuthenticatedActor) {
     this.authorize(actor);
     const rows = await this.database.client.tourPackage.findMany({
-      where: { branchId: { in: actor.branchIds } },
+      where: { branchId: { in: actor.branchIds }, archivedAt: null },
       orderBy: { createdAt: 'desc' },
       take: 200,
     });
@@ -283,7 +287,11 @@ export class TourPublicService {
         );
     }
   }
-  async departures(actor: AuthenticatedActor, management = false) {
+  async departures(
+    actor: AuthenticatedActor,
+    management = false,
+    includePast = false,
+  ) {
     if (management) this.authorize(actor, true);
     else if (!canSelectForWorkflow(actor, 'sales')) this.authorize(actor);
     const rows = await this.database.client.tourDeparture.findMany({
@@ -291,10 +299,14 @@ export class TourPublicService {
         branchId: { in: actor.branchIds },
         isDeleted: false,
         ...(management ? {} : { isActive: true }),
-        endsOn: { gte: new Date(new Date().toISOString().slice(0, 10)) },
+        ...(management && includePast
+          ? {}
+          : {
+              endsOn: { gte: new Date(new Date().toISOString().slice(0, 10)) },
+            }),
       },
       include: included(),
-      orderBy: { startsOn: 'asc' },
+      orderBy: { startsOn: management && includePast ? 'desc' : 'asc' },
       take: 200,
     });
     return {
@@ -384,7 +396,7 @@ export class TourPublicService {
     const input = validateTourPackage(definition);
     // Authorize the existing row before resolving external references.
     const existing = await this.database.client.tourPackage.findFirst({
-      where: { id, branchId },
+      where: { id, branchId, archivedAt: null },
     });
     if (!existing) throw new NotFoundException('تور در شعبه مجاز یافت نشد.');
     if (existing.version !== expectedVersion)
@@ -395,7 +407,12 @@ export class TourPublicService {
     return this.database.client.$transaction(async (tx) => {
       // Lock the package before checking departures; creation takes the same lock.
       const changed = await tx.tourPackage.updateMany({
-        where: { id, branchId, version: Number(expectedVersion) },
+        where: {
+          id,
+          branchId,
+          version: Number(expectedVersion),
+          archivedAt: null,
+        },
         data: { version: { increment: 1 } },
       });
       if (changed.count !== 1)
@@ -452,6 +469,7 @@ export class TourPublicService {
     this.authorize(actor, true, branchId);
     const expectedVersion = (raw as { expectedVersion?: unknown } | null)
       ?.expectedVersion;
+    const siteCodes = (raw as { siteCodes?: unknown } | null)?.siteCodes;
     if (!branchId || !actor.branchIds.includes(branchId))
       throw new BadRequestException('شعبه لازم است.');
     if (!Number.isSafeInteger(expectedVersion) || Number(expectedVersion) < 1)
@@ -460,12 +478,17 @@ export class TourPublicService {
     return this.database.client.$transaction(async (tx) => {
       // Serialize deletion with departure creation and package revision.
       const locked = await tx.tourPackage.updateMany({
-        where: { id, branchId, version: Number(expectedVersion) },
+        where: {
+          id,
+          branchId,
+          version: Number(expectedVersion),
+          archivedAt: null,
+        },
         data: { version: { increment: 0 } },
       });
       if (locked.count !== 1) {
         const current = await tx.tourPackage.findFirst({
-          where: { id, branchId },
+          where: { id, branchId, archivedAt: null },
           select: { id: true },
         });
         if (!current) throw new NotFoundException('تور در شعبه مجاز یافت نشد.');
@@ -480,6 +503,22 @@ export class TourPublicService {
         throw new ConflictException(
           'این تور نوبت ثبت‌شده دارد و برای حفظ سوابق قابل حذف نیست.',
         );
+      await removeSitePublication(
+        tx,
+        { branchId, kind: 'floating-tour', resourceId: id },
+        siteCodes,
+      );
+      const catalog = await tx.floatingTourSaleCatalog.findUnique({
+        where: { packageId: id },
+        select: { packageId: true },
+      });
+      if (catalog) {
+        await tx.tourPackage.update({
+          where: { id },
+          data: { archivedAt: new Date(), version: { increment: 1 } },
+        });
+        return { data: { id, deleted: true as const } };
+      }
       const removed = await tx.tourPackage.deleteMany({
         where: { id, branchId, version: Number(expectedVersion) },
       });
@@ -489,6 +528,30 @@ export class TourPublicService {
         );
       return { data: { id, deleted: true as const } };
     });
+  }
+
+  async deletionSites(
+    id: string,
+    kind: string,
+    actor: AuthenticatedActor,
+    branchId?: string,
+  ) {
+    this.authorize(actor, true, branchId);
+    if (
+      !branchId ||
+      !actor.branchIds.includes(branchId) ||
+      (kind !== 'tour' && kind !== 'floating-tour')
+    )
+      throw new BadRequestException();
+    return {
+      data: (
+        await publishedSites(this.database.client, {
+          branchId,
+          kind,
+          resourceId: id,
+        })
+      ).map((row) => row.siteCode),
+    };
   }
 
   async createPackage(
@@ -546,13 +609,17 @@ export class TourPublicService {
       isActive?: unknown;
       expectedVersion?: unknown;
       isDeleted?: unknown;
+      siteCodes?: unknown;
     };
     if (
       !branchId ||
       !input ||
       typeof input !== 'object' ||
       Object.keys(input).some(
-        (key) => !['isActive', 'expectedVersion', 'isDeleted'].includes(key),
+        (key) =>
+          !['isActive', 'expectedVersion', 'isDeleted', 'siteCodes'].includes(
+            key,
+          ),
       ) ||
       typeof input.isActive !== 'boolean' ||
       !Number.isInteger(input.expectedVersion) ||
@@ -584,6 +651,12 @@ export class TourPublicService {
       });
       if (changed.count !== 1)
         throw new ConflictException('نسخه تغییر کرده است.');
+      if (isDeleted)
+        await removeSitePublication(
+          tx,
+          { branchId, kind: 'tour', resourceId: id },
+          input.siteCodes,
+        );
       await tx.tourDepartureLifecycleRevision.create({
         data: {
           departureId: id,
@@ -624,11 +697,11 @@ export class TourPublicService {
     const row = await this.database.client
       .$transaction(async (tx) => {
         await tx.tourPackage.updateMany({
-          where: { id: input.packageId, branchId },
+          where: { id: input.packageId, branchId, archivedAt: null },
           data: { version: { increment: 0 } },
         });
         const pack = await tx.tourPackage.findFirst({
-          where: { id: input.packageId, branchId },
+          where: { id: input.packageId, branchId, archivedAt: null },
         });
         if (!pack) throw new NotFoundException('تور یافت نشد.');
         if (pack.version !== input.packageVersion)

@@ -11,6 +11,10 @@ import type {
   FloatingTourWebsiteCandidate,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
+import {
+  PastTourPublicationConfirmation,
+  requiresPastTourConfirmation,
+} from '@/modules/site-commerce/past-tour-publication-confirmation';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { PageHeader, Alert, Skeleton } from '@/components/ui/surfaces';
 import { localizedFetch } from '@/i18n/localized-fetch';
@@ -97,6 +101,10 @@ export function WebsiteDestination({
   const [selected, setSelected] = useState(false);
   const [busy, setBusy] = useState(false);
   const saving = useRef(false);
+  const [pastConfirmation, setPastConfirmation] = useState<{
+    enabled: boolean;
+    selectionOnly: boolean;
+  } | null>(null);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
   const [presentation, setPresentation] = useState<Presentation>({
@@ -173,7 +181,11 @@ export function WebsiteDestination({
       abort.abort();
     };
   }, [delivery, path, branchId, periodKey]);
-  async function save(enabled = selected, selectionOnly = false) {
+  async function save(
+    enabled = selected,
+    selectionOnly = false,
+    confirmPastDeparture = false,
+  ) {
     if (!stored || busy || saving.current || (enabled && !canPublish)) return;
     saving.current = true;
     setBusy(true);
@@ -190,6 +202,7 @@ export function WebsiteDestination({
           enabled,
           version: stored.version,
           branchId,
+          ...(confirmPastDeparture ? { confirmPastDeparture: true } : {}),
           ...(site.code === 'ghestiroo' && kind !== 'ticket' && !selectionOnly
             ? { salesStopped }
             : {}),
@@ -208,6 +221,14 @@ export function WebsiteDestination({
         }),
       });
       const result = await response.json();
+      if (
+        requiresPastTourConfirmation(response.status, result) &&
+        !confirmPastDeparture
+      ) {
+        if (selectionOnly) setSelected(stored.enabled);
+        setPastConfirmation({ enabled, selectionOnly });
+        return;
+      }
       if (!response.ok)
         throw Error(
           result.error?.message ?? result.message ?? 'ثبت انتشار ناموفق بود.',
@@ -266,6 +287,20 @@ export function WebsiteDestination({
           : `min-w-0 rounded-xl border p-2.5 text-sm transition-colors ${selected ? 'border-primary/40 bg-primary/5' : 'border-border bg-surface'} ${editing ? 'col-span-2 sm:col-span-4' : ''}`
       }
     >
+      {pastConfirmation && (
+        <PastTourPublicationConfirmation
+          site={site.name}
+          onCancel={() => setPastConfirmation(null)}
+          onConfirm={() => {
+            setPastConfirmation(null);
+            void save(
+              pastConfirmation.enabled,
+              pastConfirmation.selectionOnly,
+              true,
+            );
+          }}
+        />
+      )}
       <label
         className={
           compact
@@ -521,7 +556,7 @@ export function SiteManagement({
         return { cities, countries };
       })(),
       integrationsApi.branches(),
-      toursApi.departures(true),
+      toursApi.departures(true, undefined, true),
       toursApi.managedOffers(),
       toursApi.salePriceTargets(),
       localizedFetch(

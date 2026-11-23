@@ -226,9 +226,19 @@ OpenAI Responses write access and Sol function continuation verified. All 217 se
 
 Production diagnostics for the November 23 incident showed eight successful GPT-4.1 calls before the request failed. The affected actor matched a configured consumption exemption. The Web proxy now keeps Agent analysis-budget exhaustion distinct from admission and provider rate limits without forwarding private upstream error details.
 
+## Nora ERP data coverage
+
+The Assistant Read service admits the existing Sales hotel-ranking POST when the data agent is enabled. The endpoint retains native Sales company, branch and contract scope. Adding a Sales controller route alone does not admit its POST through this service.
+
+ERP-wide data coverage is pending. Register module-owned read sources with explicit permissions, scope, returned columns and metric definitions. Reuse internal reporting producers where their authorization and data contracts match. Map administrative business-data reads to native IAM grants and immutable account IDs. Keep credentials and authentication storage outside the catalog. Verify administrative and limited roles independently.
+
 ## NORA-PRIVILEGED-FAILOVER-1122 — PC-C
 
 Trusted native danial/demo exemptions verified; hybrid provider quota failover implemented in both directions, including guide selection. Ordinary quotas and all evidence/access/deadline/finite execution guards preserved.213 service tests pass. No migration/dependency/billing or credential changes. Exact-head hosted CI and guarded native-only activation remain required. See docs/tasks/NORA-PRIVILEGED-FAILOVER-1122.md.
+
+## NORA-ANSWER-REVEAL-1123 — PC-C
+
+Nora chat presents completed responses progressively while retaining full text, table semantics, reading order and reduced-motion support. The renderer regression suite passes.
 
 ## NORA-COUNT-BREAKDOWN-1116 — PC-C — READY_FOR_CI
 

@@ -380,6 +380,7 @@ it('lists floating definitions for site managers and projects only the selected 
     expect.objectContaining({
       where: {
         branchId: { in: ['branch'] },
+        archivedAt: null,
         definition: { path: ['details', 'isFloating'], equals: true },
       },
     }),

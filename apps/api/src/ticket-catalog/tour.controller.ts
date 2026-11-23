@@ -32,9 +32,11 @@ export class TourController {
     @Req() req: AuthenticatedRequest,
     @Query('management', new DefaultValuePipe(false), new ParseBoolPipe())
     management = false,
+    @Query('includePast', new DefaultValuePipe(false), new ParseBoolPipe())
+    includePast = false,
   ) {
     return management
-      ? this.service.departures(req.actor, true)
+      ? this.service.departures(req.actor, true, includePast)
       : this.service.departures(req.actor);
   }
   @Delete('packages/:id') deletePackage(
@@ -44,6 +46,14 @@ export class TourController {
     @Headers('x-branch-id') branch?: string,
   ) {
     return this.service.deletePackage(id, body, req.actor, branch);
+  }
+  @Get('deletion-sites/:kind/:id') deletionSites(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('kind') kind: string,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch?: string,
+  ) {
+    return this.service.deletionSites(id, kind, req.actor, branch);
   }
   @Post('packages') createPackage(
     @Body() body: unknown,

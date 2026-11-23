@@ -62,6 +62,8 @@ function setup() {
   };
   const db = {
     client: {
+      $queryRaw: vi.fn().mockResolvedValue([{ id: 'resource' }]),
+      $transaction: <T>(callback: (tx: unknown) => T): T => callback(db.client),
       websitePublication: publication,
       websiteOrder: { findMany: vi.fn().mockResolvedValue([]) },
       websiteCatalogDelivery: {
@@ -90,15 +92,21 @@ function setup() {
       version: 2,
       dated: [
         {
-          startsOn: '2026-11-20',
+          startsOn: '2090-11-20',
           nights: 7,
+          stays: [],
           prices: { double: [{ currency: 'EUR', amount: '300' }] },
         },
       ],
       monthly: null,
     }),
   };
-  const references = { detail: vi.fn() };
+  const references = {
+    detail: vi.fn(),
+    publishedHotelProfiles: vi.fn().mockResolvedValue([]),
+    withProfilePublication: <T>(_record: unknown, callback: () => T): T =>
+      callback(),
+  };
   const logos = { preview: vi.fn() };
   const service = new SiteCommerceService(
     db as never,
@@ -325,6 +333,52 @@ describe('site profile publication', () => {
     expect(JSON.parse(jahan.body)).not.toHaveProperty('countryCode');
   });
 
+  it('sends stable destination identifiers and English aliases to Niayesh', async () => {
+    const f = setup();
+    vi.stubEnv('NSS_CATALOG_WEBHOOK_SECRET', secret);
+    f.references.detail
+      .mockResolvedValueOnce({
+        data: {
+          name: 'هتل نمونه',
+          attributes: {
+            identificationCode: 'HTL-AYT-001',
+            cityId: 'city-id',
+            countryId: 'country-id',
+            cityName: 'آنتالیا',
+            countryName: 'ترکیه',
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: { id: 'city-id', attributes: { englishName: 'Antalya' } },
+      })
+      .mockResolvedValueOnce({
+        data: { id: 'country-id', attributes: { englishName: 'Turkey' } },
+      });
+    const fetcher = vi.fn(async (_url: string, request: RequestInit) => {
+      expect(JSON.parse(String(request.body))).toMatchObject({
+        cityId: 'city-id',
+        countryId: 'country-id',
+        cityEnglishName: 'Antalya',
+        countryEnglishName: 'Turkey',
+        cityName: 'آنتالیا',
+        countryName: 'ترکیه',
+      });
+      return Response.json({
+        identificationCode: 'HTL-AYT-001',
+        slug: 'hotel-page',
+      });
+    });
+    vi.stubGlobal('fetch', fetcher);
+    await expect(
+      f.service.publishHotelProfile('nss', 'hotel', {
+        ...actor,
+        permissions: [...actor.permissions, 'master_data.read'],
+      }),
+    ).resolves.toEqual({ url: 'https://niyayeshseir.ir/hotels/hotel-page/' });
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
   it('publishes flag and city country codes only from an authorized branch', async () => {
     const f = setup();
     vi.stubEnv('GHESTIROO_CATALOG_WEBHOOK_SECRET', secret);
@@ -525,7 +579,7 @@ describe('website destination management', () => {
 
   it('publishes each floating period independently without requiring an inventory departure', async () => {
     const f = setup();
-    for (const periodKey of ['dated:2026-11-20:7', 'dated:2026-11-27:7']) {
+    for (const periodKey of ['dated:2090-11-20:7', 'dated:2090-11-27:7']) {
       const result = await f.service.publish(
         'nss',
         'floating-tour',
@@ -574,7 +628,7 @@ describe('website destination management', () => {
       kind: 'floating-tour',
       enabled: true,
       version: 1,
-      periodKey: 'dated:2026-11-20:7',
+      periodKey: 'dated:2090-11-20:7',
     };
     f.publication.findMany.mockResolvedValue([row] as never);
     const siteActor = { ...actor, userId: 'site' };
@@ -604,6 +658,46 @@ describe('website destination management', () => {
       periodKey: row.periodKey,
     });
   });
+  it.each(['nss', 'jahan-bastan', 'ghestiroo'])(
+    'requires explicit confirmation for past floating departures on %s',
+    async (site) => {
+      const f = setup();
+      f.floating.websiteProduct
+        .mockResolvedValueOnce({
+          dated: [{ startsOn: '2020-01-01' }],
+        } as never)
+        .mockResolvedValueOnce({
+          dated: [{ startsOn: '2020-01-01' }],
+        } as never);
+      const input = {
+        enabled: true,
+        version: 0,
+        branchId: 'branch-a',
+        periodKey: 'dated:2020-01-01:7',
+      };
+      await expect(
+        f.service.publish(site, 'floating-tour', 'resource', input, actor),
+      ).rejects.toMatchObject({
+        response: { code: 'PAST_TOUR_PUBLICATION_CONFIRMATION' },
+      });
+      expect(f.publication.create).not.toHaveBeenCalled();
+      await expect(
+        f.service.publish(
+          site,
+          'floating-tour',
+          'resource',
+          { ...input, confirmPastDeparture: true },
+          actor,
+        ),
+      ).resolves.toMatchObject({
+        data: {
+          siteCode: site,
+          enabled: true,
+          presentation: { pastDepartureDate: '2020-01-01' },
+        },
+      });
+    },
+  );
   it('retains disconnected destinations per resource and branch without dispatching', async () => {
     const f = setup();
     const result = await f.service.publish(

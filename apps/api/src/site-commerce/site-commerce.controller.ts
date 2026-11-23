@@ -75,6 +75,7 @@ export class SiteCommerceController {
       branchId?: string;
       presentation?: unknown;
       periodKey?: string;
+      confirmPastDeparture?: boolean;
     },
     @Req() req: AuthenticatedRequest,
   ) {

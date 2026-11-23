@@ -1691,6 +1691,7 @@ function AssistantComposerContent({
                       <AssistantResponseContent
                         text={item.content}
                         english={english}
+                        reveal
                       />
                     ) : (
                       item.content

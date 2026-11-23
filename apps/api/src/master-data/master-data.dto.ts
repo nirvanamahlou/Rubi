@@ -232,6 +232,11 @@ export class MasterDataDeleteDto {
   @Min(1)
   @Max(2147483646)
   version!: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  siteCodes?: string[];
 }
 
 export class MasterDataStatusDto {

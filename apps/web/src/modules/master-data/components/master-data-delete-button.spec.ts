@@ -18,10 +18,13 @@ describe('Master Data safe deletion UI', () => {
     expect(button).toContain('cancelButton.current?.focus()');
     expect(button).toContain('setTarget({ ...record })');
     expect(button.match(/masterDataApi.remove\(/g)).toHaveLength(1);
-    expect(button).toContain('target.resource, target.id, target.version');
+    expect(button).toContain(
+      'masterDataApi.deletionSites(record.resource, record.id)',
+    );
+    expect(button).toContain('sites.length !== selected.length');
   });
   it('prevents duplicate submissions and leaves failures visible without reloading as success', () => {
-    expect(button).toContain('if (inFlight.current) return;');
+    expect(button).toContain('if (inFlight.current || !sites');
     expect(button).toContain('inFlight.current = true;');
     expect(button).toContain('role="alert"');
     expect(button).toContain('mounted.current');

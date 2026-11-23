@@ -12,6 +12,10 @@ Own Visa Services image fields and additive Prisma migration, signed website del
 
 ## NORA-RAG-REQUIRED-FOLLOW-UP-1123 — PC-C — ACTIVE
 
+## NORA-ANSWER-REVEAL-1123 — PC-C — ACTIVE
+
+Reserve the Nora response renderer, its animation stylesheet and focused tests, with one prop at the existing Composer response call site. No routing, provider, schema or dependency changes.
+
 Reserve the Sales composite guide selector, focused regression tests, and pilot comparison record. Preserve the Web links, provider transport, runtime flag and all producer panels. No migration or dependency changes.
 
 ## NORA-COMPOSITE-GUIDES-1123 — PC-C — ACTIVE
@@ -23,6 +27,10 @@ Reserve the Nora Composer composite guide dispatch, scoped Sales and Workbench r
 Reserve the Nora Composer fallback, data-agent and legacy planner output policy, and focused tests. Base develop a45b0e5ea plus PR #1876. Preserve native data reads, document links and response contracts. No deployment, migration or dependency change.
 
 ## NORA-TRAVEL-DOCUMENT-GUIDANCE-1123 — PC-C — ACTIVE
+
+## NORA-ERP-READ-1123 — PC-C
+
+Base develop 6ebfcbb0b. Reserve the Assistant Read HTTP policy, focused regression and status for the existing Sales hotel-ranking read. Reuse the merged producer and intent. Further module producers and IAM grants have separate ownership. No migration, dependencies, access grants or runtime changes in this unit.
 
 ## NORA-HOTEL-RANKING-PHRASING-1123 — PC-C — ACTIVE
 
@@ -13424,6 +13432,14 @@ Verified the fiscal-year route in Chromium with synthetic company context at des
 ## NORA-REMOVE-QUICK-ACTIONS-1123 — PC-C — ACTIVE
 
 Reserve the shared Nora composer quick-action row, its dedicated styles and labels, and the corresponding render regression. Existing report APIs and chat evidence are out of scope.
+
+## SELECTED-SITE-WITHDRAWAL-1123 — PC-B — LOCAL VERIFICATION
+
+Scope: site confirmation on Avina ticket, tour and profile deletion, the signed
+withdrawal consumers, focused regression checks and the additive tour archive
+timestamp. Preserve published operations, historical prices, orders and
+contracts. Deployment order and compatibility are recorded in
+[Site withdrawal](docs/tasks/SELECTED-SITE-WITHDRAWAL-1123.md).
 
 ## GHESTIROO-PROFILES-1123 — PC-D
 

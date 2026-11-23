@@ -1,4 +1,3 @@
-import type { Prisma } from '@nora/database';
 import { persistPartnerDossier } from './partner-dossier.persistence';
 import { hasPartnerPhoneRole } from './partner-phone.persistence';
 import { columnFilterWhere } from './catalog-filters';
@@ -14,7 +13,7 @@ import type {
   MasterDataRecord,
   MasterDataResource,
 } from '@nora/contracts';
-import { AuditOutcome } from '@nora/database';
+import { AuditOutcome, Prisma } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import {
@@ -1330,6 +1329,32 @@ export class MasterDataRepository {
     return delegate(this.database.client, resource).findUnique(args);
   }
 
+  withProfilePublication<T>(
+    { resource, id, version }: MasterDataRecord,
+    publish: () => Promise<T>,
+  ) {
+    const table =
+      resource === 'hotels'
+        ? 'master_hotels'
+        : resource === 'cities'
+          ? 'master_cities'
+          : 'master_countries';
+    return this.database.client.$transaction(
+      async (tx) => {
+        const rows = await tx.$queryRaw<{ version: number }[]>(
+          Prisma.sql`SELECT "version" FROM ${Prisma.raw(table)}
+          WHERE "id" = ${id}::uuid FOR SHARE`,
+        );
+        if (!rows.length)
+          throw new NotFoundException('رکورد اطلاعات پایه یافت نشد.');
+        if (rows[0]?.version !== version)
+          throw new ConflictException('رکورد هم‌زمان تغییر کرده است.');
+        return publish();
+      },
+      { timeout: 56_000 },
+    );
+  }
+
   async codeExists(resource: MasterDataResource, code: string) {
     if (resource === 'exchange-rates') return false;
     return Boolean(
@@ -1577,52 +1602,63 @@ export class MasterDataRepository {
     expectedVersion: number,
     actorUserId: string,
     actorBranchId: string,
+    beforeCommit?: (record: MasterDataRecord) => Promise<void>,
   ) {
-    return this.database.client.$transaction(async (transaction) => {
-      const model = delegate(transaction, resource);
-      const before = await model.findUnique({ where: { id } });
-      if (!before) throw new NotFoundException('رکورد اطلاعات پایه یافت نشد.');
-      assertMasterDataDeletionAllowed(resource, before);
-      const conflict = () =>
-        new ConflictException({
-          code: 'CONCURRENT_MODIFICATION',
-          message:
-            'رکورد هم‌زمان تغییر کرده است؛ فهرست را تازه‌سازی و دوباره بررسی کنید.',
+    return this.database.client.$transaction(
+      async (transaction) => {
+        const model = delegate(transaction, resource);
+        const include = beforeCommit ? relations(resource) : undefined;
+        const before = await model.findUnique({
+          where: { id },
+          ...(include ? { include } : {}),
         });
-      if (before.version !== expectedVersion) throw conflict();
-      const claimed = await model.updateMany({
-        where: {
-          id,
-          version: expectedVersion,
-          ...(resource === 'exchange-rates' ? { status: 'DRAFT' } : {}),
-        },
-        data: { updatedByUserId: actorUserId, version: { increment: 1 } },
-      });
-      if (claimed.count !== 1) throw conflict();
-      await removeOwnedMasterDataLinks(transaction, resource, id);
-      const deleted = await model.deleteMany({
-        where: { id, version: expectedVersion + 1 },
-      });
-      if (deleted.count !== 1) throw conflict();
-      await transaction.masterDataAuditEvent.create({
-        data: {
-          actorUserId,
-          actorBranchId,
-          action: 'master_data.delete',
-          resource,
-          entityId: id,
-          outcome: AuditOutcome.SUCCESS,
-          beforeSnapshot: {
+        if (!before)
+          throw new NotFoundException('رکورد اطلاعات پایه یافت نشد.');
+        assertMasterDataDeletionAllowed(resource, before);
+        const conflict = () =>
+          new ConflictException({
+            code: 'CONCURRENT_MODIFICATION',
+            message:
+              'رکورد هم‌زمان تغییر کرده است؛ فهرست را تازه‌سازی و دوباره بررسی کنید.',
+          });
+        if (before.version !== expectedVersion) throw conflict();
+        const claimed = await model.updateMany({
+          where: {
             id,
-            version: before.version,
-            ...(resource === 'organization-contacts' &&
-            typeof before.organizationId === 'string'
-              ? { organizationId: before.organizationId }
-              : {}),
+            version: expectedVersion,
+            ...(resource === 'exchange-rates' ? { status: 'DRAFT' } : {}),
           },
-        },
-      });
-    });
+          data: { updatedByUserId: actorUserId, version: { increment: 1 } },
+        });
+        if (claimed.count !== 1) throw conflict();
+        await removeOwnedMasterDataLinks(transaction, resource, id);
+        const deleted = await model.deleteMany({
+          where: { id, version: expectedVersion + 1 },
+        });
+        if (deleted.count !== 1) throw conflict();
+        await transaction.masterDataAuditEvent.create({
+          data: {
+            actorUserId,
+            actorBranchId,
+            action: 'master_data.delete',
+            resource,
+            entityId: id,
+            outcome: AuditOutcome.SUCCESS,
+            beforeSnapshot: {
+              id,
+              version: before.version,
+              ...(resource === 'organization-contacts' &&
+              typeof before.organizationId === 'string'
+                ? { organizationId: before.organizationId }
+                : {}),
+            },
+          },
+        });
+        if (beforeCommit)
+          await beforeCommit(toMasterDataRecord(resource, before));
+      },
+      beforeCommit ? { timeout: 24_000 } : undefined,
+    );
   }
 
   async setStatus(

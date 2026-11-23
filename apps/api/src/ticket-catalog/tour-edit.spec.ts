@@ -89,7 +89,7 @@ describe('tour package editing', () => {
     expect(result.data.name).toBe('Updated tour');
     expect(result.data.version).toBe(2);
     expect(updateMany).toHaveBeenCalledWith({
-      where: { id, branchId: id, version: 1 },
+      where: { id, branchId: id, version: 1, archivedAt: null },
       data: { version: { increment: 1 } },
     });
   });

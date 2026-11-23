@@ -499,12 +499,13 @@ export function TourWorkspace({
           loading={loading}
           busy={busy || loading}
           onEdit={showEditor}
-          onDelete={(item) =>
+          onDelete={(item, sites) =>
             void run(async () => {
               await toursApi.deletePackage(
                 item.id,
                 item.version,
                 item.branchId,
+                sites,
               );
               setNotice('تور «' + item.name + '» حذف شد.');
             })
@@ -513,7 +514,7 @@ export function TourWorkspace({
           onRepeat={repeatTour}
           onPeriodStatus={
             canManagePeriods
-              ? (item, status) =>
+              ? (item, status, sites) =>
                   void run(async () => {
                     await toursApi.setDepartureStatus(
                       item.id,
@@ -521,6 +522,7 @@ export function TourWorkspace({
                       item.salesVersion ?? 1,
                       item.branchId,
                       status === 'DELETED' ? true : undefined,
+                      sites,
                     );
                     setNotice('وضعیت بازه به‌روز شد.');
                   })

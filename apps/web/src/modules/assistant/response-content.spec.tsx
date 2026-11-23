@@ -73,3 +73,30 @@ describe('safe assistant calculation tables', () => {
     expect(html).not.toContain('<script>');
   });
 });
+
+describe('progressive assistant replies', () => {
+  it.each([false, true])(
+    'preserves table direction and reveals text in reading order (English: %s)',
+    (english) => {
+      const html = renderToStaticMarkup(
+        <AssistantResponseContent
+          english={english}
+          reveal
+          text={
+            english
+              ? 'Sales total\n\n| Name | Count |\n| --- | --- |\n| Hotel | 3 |'
+              : 'مجموع فروش\n\n| نام | تعداد |\n| --- | --- |\n| هتل | ۳ |'
+          }
+        />,
+      );
+      expect(html).toContain(english ? 'dir="ltr"' : 'dir="rtl"');
+      expect(html).toContain('<table');
+      expect(html).toContain('<tbody>');
+      expect(
+        [...html.matchAll(/animation-delay:(\d+(?:\.\d+)?)ms/g)].map((match) =>
+          Number(match[1]),
+        ),
+      ).toEqual([0, 45, 90, 135, 180, 225]);
+    },
+  );
+});
