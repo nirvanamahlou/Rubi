@@ -745,10 +745,7 @@ export function MasterDataGeographyWorkspace() {
         `${targetDefinition.singularLabel} با موفقیت ${formMode === 'edit' ? 'ویرایش' : 'ایجاد'} شد.`,
       );
     } else if (formMode === 'edit' && selected) {
-      await masterDataApi.update(target, selected.id, {
-        values,
-        version: selected.version,
-      });
+      await masterDataApi.updateFromSnapshot(target, selected, values);
       setNotice(`${targetDefinition.singularLabel} با موفقیت ویرایش شد.`);
     } else {
       await masterDataApi.create(target, { values });

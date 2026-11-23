@@ -13408,3 +13408,6 @@ Reserve the shared Nora composer quick-action row, its dedicated styles and labe
 ## GHESTIROO-PROFILES-1123 — PC-D
 
 Reserve the site-commerce profile sender and Integrations profile publication controls for the user-authorized Ghestiroo hotel, city and country integration. Coordinate the additive Ghestiroo-only ISO alpha-2 country code with the Ghestiroo receiver and preserve the Jahan Bastan payload and branch checks. No schema or dependency changes.
+## MASTER-DATA-STALE-EDIT-1123 — PC-D — READY_FOR_CI
+
+Reserve the Master Data Web client, focused client tests, and linked geography edit path. Recover hotel, city, and country saves from a stale version by retrying a nonconflicting patch against the latest record. Preserve optimistic locking for competing changes. No migration or dependency change.

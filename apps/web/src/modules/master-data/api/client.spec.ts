@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { MasterDataApiError, masterDataApi } from './client';
+import type { MasterDataRecord } from '@nora/contracts';
 
 const originalBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -13,6 +14,126 @@ afterEach(() => {
 });
 
 describe('master data browser client', () => {
+  const hotel: MasterDataRecord = {
+    id: 'hotel-id',
+    resource: 'hotels',
+    code: 'H1',
+    name: 'Hotel',
+    status: 'active',
+    version: 2,
+    createdAt: '',
+    updatedAt: '',
+    attributes: { description: 'Prior description', address: 'Prior address' },
+  };
+
+  it('recovers a stale hotel edit without replacing fields edited by someone else', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const latest = {
+      ...hotel,
+      version: 3,
+      attributes: { ...hotel.attributes, address: 'New address' },
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ error: { code: 'CONCURRENT_MODIFICATION' } }),
+          { status: 409 },
+        ),
+      )
+      .mockResolvedValueOnce(Response.json({ data: latest }))
+      .mockResolvedValueOnce(
+        Response.json({ data: { ...latest, version: 4 } }),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(
+      masterDataApi.persistWithLogo({
+        resource: 'hotels',
+        existing: hotel,
+        values: {
+          name: 'Hotel',
+          description: 'My edit',
+          address: 'Prior address',
+        },
+        title: 'Hotel',
+      }),
+    ).resolves.toMatchObject({ data: { version: 4 } });
+    expect(fetchMock.mock.calls[1]![1]).toMatchObject({ cache: 'no-store' });
+    expect(fetchMock.mock.calls[2]![1]).toMatchObject({
+      method: 'PATCH',
+      body: JSON.stringify({ values: { description: 'My edit' }, version: 3 }),
+    });
+  });
+
+  it('keeps the conflict when another edit changed the same profile field', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ error: { code: 'CONCURRENT_MODIFICATION' } }),
+          { status: 409 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          data: {
+            ...hotel,
+            version: 3,
+            attributes: { ...hotel.attributes, description: 'Other edit' },
+          },
+        }),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(
+      masterDataApi.updateFromSnapshot('hotels', hotel, {
+        description: 'My edit',
+      }),
+    ).rejects.toMatchObject({ status: 409, code: 'CONCURRENT_MODIFICATION' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries a city name edit with the latest version and leaves its new region alone', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const city: MasterDataRecord = {
+      ...hotel,
+      id: 'city-id',
+      resource: 'cities',
+      name: 'City',
+      attributes: { countryId: 'country', regionId: 'region-a' },
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ error: { code: 'CONCURRENT_MODIFICATION' } }),
+          { status: 409 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          data: {
+            ...city,
+            version: 3,
+            attributes: { ...city.attributes, regionId: 'region-b' },
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({ data: { ...city, version: 4, name: 'New city name' } }),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    await masterDataApi.updateFromSnapshot('cities', city, {
+      name: 'New city name',
+      countryId: 'country',
+      regionId: 'region-a',
+    });
+    expect(fetchMock.mock.calls[2]![1]).toMatchObject({
+      method: 'PATCH',
+      body: JSON.stringify({ values: { name: 'New city name' }, version: 3 }),
+    });
+  });
+
   it('updates/deletes a rate through dedicated versioned commands rather than generic mutation', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     const fetchMock = vi
