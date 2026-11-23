@@ -12886,9 +12886,9 @@ PR1776 catalogue sync: add the same new HR error translation to its required app
 
 PR1776 concurrent producer integration: PR1782 delivered the same CI repairs while this run was validating. Retain its stronger fixture assertions for actor/branch and its canonical six English translations, and synchronize the API mirror to that exact wording. Both product scopes remain untouched; final merged-head CI must run again.
 
-## NORA-SOL-1123 — PC-C — READY_FOR_CI
+## NORA-SOL-1123 — PC-C — DONE
 
-Isolated work item for Nora OpenAI Responses adapter, agent and guide integration, endpoint and acceptance tests. 217 service tests and 30 synthetic live scenarios passed (network-disrupted cases rerun). No migration or dependency changes. PR1879 awaits CI and guarded activation.
+Isolated work item for Nora OpenAI Responses adapter, agent and guide integration, endpoint and acceptance tests. 217 service tests and 30 synthetic live scenarios passed (network-disrupted cases rerun). No migration or dependency changes. PR1879 passed all nine CI checks, merged to develop and was activated on production. Exact source and live tool admission verified. Source lease released.
 
 ## NORA-PRIVILEGED-FAILOVER-1122 — PC-C — READY_FOR_CI
 
