@@ -7,7 +7,8 @@ import {
   type FloatingTourPeriodChangeV1,
   type LoginResponse,
 } from '@nora/contracts';
-import { Button, Card, Input } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
+import { MoneyInput } from '@/components/ui/money-input';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { packagePricingApi } from '../api/client';
 
@@ -202,11 +203,7 @@ function PeriodCard({
         </label>
         <label className="space-y-1 text-sm">
           مقدار تغییر
-          <Input
-            inputMode="decimal"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value.replaceAll(',', ''))}
-          />
+          <MoneyInput value={amount} onValueChange={setAmount} />
         </label>
         {mode === 'FIXED' ? (
           <label className="space-y-1 text-sm">
@@ -280,14 +277,11 @@ function PeriodCard({
                           className="mb-2 block text-xs"
                         >
                           <bdi>{money.currency}</bdi>
-                          <Input
-                            dir="ltr"
-                            inputMode="decimal"
+                          <MoneyInput
                             aria-label={`${label} · ${row.stays.map((stay) => stay.hotelName).join(' / ')} · ${money.currency}`}
                             value={money.amount}
                             disabled={!canManage || pending || busy}
-                            onChange={(e) => {
-                              const value = e.target.value.replaceAll(',', '');
+                            onValueChange={(value) => {
                               if (!dirty) setEditVersion(catalog.version);
                               setDrafts((current) =>
                                 (dirty
