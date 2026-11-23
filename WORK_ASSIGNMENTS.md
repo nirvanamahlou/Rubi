@@ -12,6 +12,10 @@ Reserve the Nora Composer fallback, data-agent and legacy planner output policy,
 
 ## NORA-TRAVEL-DOCUMENT-GUIDANCE-1123 — PC-C — ACTIVE
 
+## NORA-ERP-READ-1123 — PC-C
+
+Base develop 6ebfcbb0b. Reserve the Assistant Read HTTP policy, focused regression and status for the existing Sales hotel-ranking read. Reuse the merged producer and intent. Further module producers and IAM grants have separate ownership. No migration, dependencies, access grants or runtime changes in this unit.
+
 ## NORA-HOTEL-RANKING-PHRASING-1123 — PC-C — ACTIVE
 
 Reserve Nora hotel-ranking intent in the Web and assistant service, focused regressions and status. Preserve existing authorized Sales report contract and scopes.
