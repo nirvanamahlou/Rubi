@@ -18,6 +18,7 @@ function renderInline(
         </Fragment>,
       );
     const value = match[1] ?? match[2] ?? match[3];
+    if (value === undefined) continue;
     nodes.push(
       match[3] === undefined ? (
         <strong key={`token-${match.index}`}>{revealText(value)}</strong>
