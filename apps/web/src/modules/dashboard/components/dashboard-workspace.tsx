@@ -113,11 +113,6 @@ import {
 } from '../model/registry';
 import { trendAxisLabelIndexes } from '../model/trend-axis';
 import { dashboardChartArtwork, dashboardKpiArtwork } from '../model/artwork';
-import { dashboardMeasurementRequirements } from '../model/measurement-requirements';
-import {
-  dashboardUnavailableReason,
-  dashboardVisualLimitation,
-} from '../model/availability';
 import { dashboardNumericAxis } from '../model/numeric-axis';
 import { DashboardArtworkIcon } from './dashboard-artwork-icon';
 import { DashboardStackedSeriesChart } from './dashboard-stacked-series-chart';
@@ -1157,7 +1152,6 @@ function KpiCard({
   onSelect,
   featured = false,
   metric,
-  unavailableReason,
 }: {
   definition: DashboardKpiDefinition;
   loading?: boolean;
@@ -1165,7 +1159,6 @@ function KpiCard({
   onSelect(): void;
   featured?: boolean;
   metric?: DashboardMetricSnapshot | undefined;
-  unavailableReason?: string | undefined;
 }) {
   return (
     <button
@@ -1218,19 +1211,6 @@ function KpiCard({
               metric={metric}
             />
           </span>
-          {!metric ? (
-            <span
-              data-dashboard-unavailable
-              className="relative mt-3 block text-xs leading-6 text-muted-foreground"
-            >
-              <span className="block">
-                {dashboardUnavailableReason(unavailableReason)}
-              </span>
-              <span className="mt-1 block">
-                دادهٔ موردنیاز: {dashboardMeasurementRequirements(definition)}
-              </span>
-            </span>
-          ) : null}
         </>
       )}
     </button>
@@ -2618,7 +2598,6 @@ export function dashboardReportCodeFromDrilldown(
 
 function VisualDetailsPanel({
   data,
-  decision,
   description,
   kind,
   onClose,
@@ -2632,7 +2611,6 @@ function VisualDetailsPanel({
   visualId,
 }: {
   data?: DashboardVisualSnapshot | undefined;
-  decision?: string | undefined;
   description: string;
   kind: DashboardVisualKind;
   onClose(): void;
@@ -2785,11 +2763,6 @@ function VisualDetailsPanel({
               >
                 محدودیت‌ها و دسترسی
               </h3>
-              {dashboardVisualLimitation(visualId, decision) ? (
-                <p className="mt-2 leading-7 text-amber-900/80 dark:text-amber-100/80">
-                  {dashboardVisualLimitation(visualId, decision)}
-                </p>
-              ) : null}
               <p className="mt-2 leading-7 text-amber-900/80 dark:text-amber-100/80">
                 فقط دادهٔ مجاز گزارش در محدودهٔ انتخاب‌شده نمایش داده می‌شود.
                 مجوز موردنیاز:{' '}
@@ -2826,7 +2799,6 @@ function ProjectionSlot({
   kind,
   title,
   description,
-  decision,
   drilldown,
   onOpenReportConfiguration,
   onTrendCalendarSystemChange,
@@ -2837,13 +2809,11 @@ function ProjectionSlot({
   trendCalendarSystem,
   wide = false,
   data,
-  unavailableReason,
 }: {
   visualId: string;
   kind: DashboardVisualKind;
   title: string;
   description: string;
-  decision?: string | undefined;
   drilldown: string;
   onOpenReportConfiguration(reportCode: string): void;
   onTrendCalendarSystemChange(value: TrendCalendarSystem): void;
@@ -2854,7 +2824,6 @@ function ProjectionSlot({
   trendCalendarSystem: TrendCalendarSystem;
   wide?: boolean;
   data?: DashboardVisualSnapshot | undefined;
-  unavailableReason?: string | undefined;
 }) {
   const [selectedCurrencyCode, setSelectedCurrencyCode] = useState<
     string | undefined
@@ -2999,6 +2968,10 @@ function ProjectionSlot({
                 {currencySymbol(displayData.currencyCode ?? '')}
               </bdi>
             </span>
+          ) : !loading && displayData?.values.length && displayUnit ? (
+            <span className="mb-2 block text-[11px] font-semibold text-muted-foreground">
+              {displayUnit}
+            </span>
           ) : null}
           {loading ? (
             <Skeleton
@@ -3040,42 +3013,12 @@ function ProjectionSlot({
                   داده‌ای در بازه و فیلتر انتخابی ثبت نشده است.
                 </p>
               ) : (
-                <div
-                  data-dashboard-unavailable
-                  className="mt-2 space-y-1 text-xs leading-6 text-muted-foreground"
-                >
-                  <p className="font-bold text-foreground">قابل محاسبه نیست</p>
-                  <p>{dashboardUnavailableReason(unavailableReason)}</p>
-                  <p>
-                    دادهٔ موردنیاز:{' '}
-                    {dashboardMeasurementRequirements({ id: visualId, source })}
-                  </p>
-                </div>
+                <p className="mt-2 text-xs font-medium text-muted-foreground">
+                  قابل محاسبه نیست
+                </p>
               )}
             </>
           )}
-          {data?.notice ? (
-            <p className="mt-2 text-xs text-muted-foreground">{data.notice}</p>
-          ) : null}
-          {Object.entries(data?.missingMetrics ?? {}).map(([id, reason]) => {
-            const definition = dashboardKpis.find((kpi) => kpi.id === id);
-            if (!definition) return null;
-            return (
-              <div
-                key={id}
-                data-dashboard-unavailable
-                className="mt-3 space-y-1 text-xs leading-6 text-muted-foreground"
-              >
-                <p className="font-bold text-foreground">
-                  {definition.title} · قابل محاسبه نیست
-                </p>
-                <p>{dashboardUnavailableReason(reason)}</p>
-                <p>
-                  دادهٔ موردنیاز: {dashboardMeasurementRequirements(definition)}
-                </p>
-              </div>
-            );
-          })}
           {displayData?.values.length ? (
             <>
               {kind === 'donut' && resolvedKind !== 'donut' ? (
@@ -3138,7 +3081,6 @@ function ProjectionSlot({
       {isVisualDetailsOpen ? (
         <VisualDetailsPanel
           data={displayData}
-          decision={decision}
           description={description}
           kind={resolvedKind}
           onClose={() => setIsVisualDetailsOpen(false)}
@@ -3928,9 +3870,6 @@ export function DashboardWorkspace() {
                         featured
                         loading={query.isPending}
                         metric={query.data?.metrics[item.id]}
-                        unavailableReason={
-                          query.data?.unavailableMetrics?.[item.id]
-                        }
                         selected={filters.widget === item.id}
                         onSelect={() =>
                           updateFilters({
@@ -3960,7 +3899,6 @@ export function DashboardWorkspace() {
                         kind={visualization.kind}
                         title={visualization.title}
                         description={visualization.description}
-                        decision={visualization.openDecision}
                         drilldown={visualization.drilldown}
                         onOpenReportConfiguration={openReportConfiguration}
                         onTrendCalendarSystemChange={setTrendCalendarSystem}
@@ -3970,9 +3908,6 @@ export function DashboardWorkspace() {
                         source={visualization.source}
                         trendCalendarSystem={trendCalendarSystem}
                         data={query.data?.visuals[visualization.id]}
-                        unavailableReason={
-                          query.data?.unavailableVisuals?.[visualization.id]
-                        }
                       />
                     ))}
                   </div>

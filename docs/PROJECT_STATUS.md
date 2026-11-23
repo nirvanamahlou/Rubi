@@ -10623,3 +10623,7 @@ CALL-CENTER-TODAY-FILTER-STYLE-1116: today's dialog initially focuses its title 
 ## Automatic hotel identification
 
 New hotels receive an HTL identifier on save using the established city prefix and a persistent global sequence. Excel inserts share the allocator. Existing identification codes remain available for publication and existing records keep their identifiers.
+
+## DASHBOARD-AVAILABILITY-NOTES — PC-C
+
+Archived dashboard widget availability reasons and expected data in docs/DASHBOARD-DATA-GAPS.md, ordered by the dashboard navigation. Removed long availability and coverage notes from cards and charts. Compact unavailable and empty states, chart units and genuine zeros remain. Dashboard suite: 62 passed, one existing skip.
