@@ -173,8 +173,6 @@ import { assistantCopy as c, type AssistantText } from '@/i18n/assistant-copy';
 import {
   assistantViews,
   loadExecutiveSnapshot,
-  loadAssistantAction,
-  type AssistantAction,
   type AssistantActionResult,
   type AssistantLoadState,
   type AssistantView,
@@ -390,7 +388,6 @@ function AssistantComposerContent({
     field.style.height = `${Math.min(field.scrollHeight, 132)}px`;
   }, [draft]);
 
-  const [filterError, setFilterError] = useState(false);
   const [messages, setMessages] = useState<
     Array<{
       role: 'user' | 'assistant';
@@ -508,46 +505,6 @@ function AssistantComposerContent({
     };
   }, [pathname, workbenchTab, agentMode]);
 
-  const prompts: readonly [AssistantText, AssistantAction][] = [
-    [c.quickDaily, 'daily-summary'],
-    [c.quickSales, 'sales-analysis'],
-    [c.quickReceivables, 'receivables-follow-up'],
-  ];
-  const run = async (action: AssistantAction) => {
-    if (denied) return;
-    pending.current?.abort();
-    const controller = new AbortController();
-    pending.current = controller;
-    setActionResult(null);
-    setChatError(null);
-    setActionState('loading');
-    setFilterError(false);
-    try {
-      const result = await loadAssistantAction(action, controller.signal);
-      if (!controller.signal.aborted) {
-        setActionResult(result);
-        setActionState(null);
-      }
-    } catch (error) {
-      if (!controller.signal.aborted) {
-        const message = error instanceof Error ? error.message : '';
-        if (message === 'HTTP_400') {
-          setFilterError(true);
-          setActionState(null);
-          return;
-        }
-        setActionState(
-          message === 'HTTP_401'
-            ? 'unauthenticated'
-            : message === 'HTTP_403'
-              ? 'forbidden'
-              : message === 'HTTP_429'
-                ? 'rate-limited'
-                : 'unavailable',
-        );
-      }
-    }
-  };
   const submit = async () => {
     if (
       denied ||
@@ -1707,23 +1664,6 @@ function AssistantComposerContent({
           </button>
         </div>
       </form>
-      <div className={styles.composerPrompts}>
-        {prompts.map(([prompt, action]) => (
-          <button
-            key={prompt[1]}
-            type="button"
-            disabled={denied || actionState === 'loading'}
-            onClick={() => {
-              setDraft(t(prompt));
-              setChatError(null);
-              input.current?.focus();
-              void run(action);
-            }}
-          >
-            {t(prompt)}
-          </button>
-        ))}
-      </div>
       <div className={styles.composerTranscript}>
         <div
           ref={chatViewportRef}
@@ -1819,7 +1759,6 @@ function AssistantComposerContent({
                 )}
               </p>
             )}
-            {filterError && <p role="alert">{t(c.filterInvalid)}</p>}
             {!denied && actionResult && 'filters' in actionResult && (
               <div className={styles.composerHint}>
                 <p>

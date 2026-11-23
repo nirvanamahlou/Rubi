@@ -223,9 +223,6 @@ export const assistantCopy = {
     'پیامت را برای نورا بنویس…',
     'Write your message to Noura…',
   ],
-  quickDaily: ['خلاصه امروز', 'Today’s summary'],
-  quickSales: ['تحلیل فروش', 'Sales analysis'],
-  quickReceivables: ['پیگیری مطالبات', 'Receivables follow-up'],
   chatPolicy: [
     'فقط متن پیام و تاریخچهٔ نشست به Groq ارسال می‌شود؛ نتایج ERP داخل سامانه می‌مانند.',
     'Only message text and session history are sent to Groq; ERP results stay in the system.',

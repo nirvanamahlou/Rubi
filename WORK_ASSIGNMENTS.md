@@ -13400,3 +13400,7 @@ Other destinations retain their product policy, credentials and checkout.
 Reserve the General Ledger navigation styles in `accounting-navigation-workspace.module.css` and this task's status entries. Accounting ownership stays with PC-B. Keep the menu dimensions, labels, hierarchy, destinations, and controls. No migration or deployment.
 
 Verified the fiscal-year route in Chromium with synthetic company context at desktop and mobile widths, in light and dark themes. Navigation tests, Web lint and typecheck pass. The reservation is released with this candidate.
+
+## NORA-REMOVE-QUICK-ACTIONS-1123 — PC-C — ACTIVE
+
+Reserve the shared Nora composer quick-action row, its dedicated styles and labels, and the corresponding render regression. Existing report APIs and chat evidence are out of scope.

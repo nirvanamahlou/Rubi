@@ -10592,3 +10592,7 @@ Antalya Iran Airtour and Kuala Lumpur plus Singapore XLSX formats now import to 
 The compact General Ledger menu uses legible labels and icons, distinct group and list colors, an inline marker for the current page, and a visible keyboard focus outline in both themes. The existing menu structure, dimensions, and destinations are preserved.
 
 Chromium verified selected and unselected rows, group and list toggles, keyboard focus and responsive widths. The visible label contrast on the fiscal-year route measured at least 5.10:1 in light mode and 6.05:1 in dark mode.
+
+## NORA-REMOVE-QUICK-ACTIONS-1123 — PC-C
+
+Removed the three quick-action buttons from the shared Nora chat composer. The message input and existing report/evidence paths remain available.
