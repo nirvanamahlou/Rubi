@@ -176,9 +176,9 @@ describe('site profile publication', () => {
         code: 'VISA-1',
         urlPath: '/visas/visa-1',
       };
-      const fetcher = vi.fn(async (_url: string, _options: RequestInit) =>
-        Response.json(receipt),
-      );
+      const fetcher = vi
+        .fn<typeof fetch>()
+        .mockImplementation(async () => Response.json(receipt));
       vi.stubGlobal('fetch', fetcher);
       await expect(
         f.service.publishVisaProfile(site, 'visa-1', publisher),
