@@ -563,8 +563,8 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
           expect(response?.status).toBe('ANSWER');
           expect(calls).toBe(0);
           expect(queryAttempts).toHaveLength(1);
-          expect(queryAttempts[0].sql).toContain('2026-11-21T20:30:00.000Z');
-          expect(queryAttempts[0].sql).toContain('2026-11-23T09:00:00.000Z');
+          expect(queryAttempts[0]?.sql).toContain('2026-11-21T20:30:00.000Z');
+          expect(queryAttempts[0]?.sql).toContain('2026-11-23T09:00:00.000Z');
           expect(response.sources).toHaveLength(1);
         }
         if (['unsupported', 'no-payments'].includes(id)) {
