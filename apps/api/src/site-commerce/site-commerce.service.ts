@@ -281,6 +281,11 @@ export class SiteCommerceService {
         id,
         name: data.name,
         flag,
+        ...((site === 'ghestiroo' ||
+          (site === 'nss' && kind === 'countries')) &&
+        data.attributes.englishName
+          ? { englishName: data.attributes.englishName }
+          : {}),
         countryName: parent?.name || data.attributes.countryName || undefined,
         ...(parent
           ? {

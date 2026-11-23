@@ -151,16 +151,22 @@ describe('site profile publication', () => {
     const f = setup();
     vi.stubEnv('GHESTIROO_CATALOG_WEBHOOK_SECRET', secret);
     f.references.detail.mockResolvedValue({
-      data: { name: 'آتن', attributes: { countryName: 'یونان' } },
+      data: {
+        name: 'آتن',
+        attributes: { countryName: 'یونان', englishName: 'Athens' },
+      },
     });
     const receipt = { slug: 'legacy-id', urlPath: '/destinations/athens--2' };
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => Response.json(receipt)),
-    );
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async () => Response.json(receipt));
+    vi.stubGlobal('fetch', fetcher);
     await expect(
       f.service.publishGeography('ghestiroo', 'cities', 'athens-id', publisher),
     ).resolves.toEqual({ url: 'https://ghestiroo.ir/destinations/athens--2' });
+    expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toMatchObject({
+      englishName: 'Athens',
+    });
 
     for (const urlPath of [
       'https://ghestiroo.ir/destinations/athens',
