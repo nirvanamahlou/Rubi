@@ -163,6 +163,29 @@ afterEach(() => {
 });
 
 describe('actual Composer submit routing and transport', () => {
+  it('answers a supported HR aggregate through the authenticated ERP dashboard only', async () => {
+    h.company = 'ALL';
+    h.path = '/workbench';
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '/api/v1');
+    h.fetcher.mockResolvedValueOnce(
+      Response.json({
+        state: 'ready',
+        metadata: { reportVersion: 'reporting.dashboard.native.v1' },
+        metrics: { 'employee-overtime': { value: '۱۲٫۵' } },
+        visuals: {},
+      }),
+    );
+    await send('مجموع اضافه‌کاری کارکنان این هفته چقدره؟');
+    expect(h.fetcher).toHaveBeenCalledOnce();
+    const [url, init] = h.fetcher.mock.calls[0]!;
+    expect(url).toMatch(/^\/api\/v1\/reports\/dashboard\/projection\?/u);
+    expect(new URLSearchParams(url.split('?')[1]).get('kpiIds')).toBe(
+      'employee-overtime',
+    );
+    expect(init.credentials).toBe('include');
+    expect(chat()[0]).toContain('**۱۲٫۵ ساعت**');
+  });
+
   it('also shows pending feedback immediately on the legacy v2 path and prevents a same-tick double send', async () => {
     vi.stubEnv('NEXT_PUBLIC_ASSISTANT_AGENT_ENABLED', 'false');
     let resolve!: (response: Response) => void;

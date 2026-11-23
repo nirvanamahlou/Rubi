@@ -1,3 +1,9 @@
+## Nora operational module reads
+
+Nora chat reads six native aggregate metrics from HR, Reservations, Documents, Customers and Customer Affairs via the existing Reporting dashboard endpoint. It uses the active ERP session and displays the exact returned numeric text without sending it to the model. Supported periods are today, the current week and the current Persian month in Tehran. The native dashboard aggregates authorized branches independently of the issuer, so Nora offers these reads in the aggregate company view. Other questions retain the existing routes.
+
+Wider business-data coverage requires separate registered producers for unsupported metrics, company-scoped reads and domain permissions. Administrative account grants and deployment are pending.
+
 ## Nora composite guide follow-up checks
 
 Capacity-change recovery and final registration-result steps are mandatory for the applicable Sales checklist questions. The selector restores the canonical step when a valid model checklist omits it. In five synthetic scenarios compared against direct guidance using the configured model, every displayed answer retained question-specific steps and the same approved links. The capacity and registration-result answers had 10 and 11 steps instead of 16. Four calls returned validated checklists and one used the complete guide after provider HTTP 400. Both paths supported the next action in one exchange in all five cases. The production flag stays disabled under the rollout criterion.

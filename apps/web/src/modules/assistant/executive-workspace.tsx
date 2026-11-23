@@ -184,6 +184,10 @@ import { agentResponseSchema, conversationHistory } from './agent-response';
 import { routeAssistantQuestion, type AnswerContext } from './question-routing';
 import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
 import { useAccessActor } from '@/modules/iam/access-context';
+import {
+  readOperationalMetric,
+  resolveOperationalMetric,
+} from './operational-metrics';
 
 type Translate = (text: AssistantText) => string;
 function SourceUpdated({
@@ -361,7 +365,12 @@ function CompanyScopedAgentComposer({
   const actor = useAccessActor();
   const key = assistantConversationScopeKey(context, actor);
   return (
-    <AssistantComposerContent key={key} {...props} agentMode={agentMode} />
+    <AssistantComposerContent
+      key={key}
+      {...props}
+      agentMode={agentMode}
+      companySelection={context?.selection}
+    />
   );
 }
 function AssistantComposerContent({
@@ -370,12 +379,14 @@ function AssistantComposerContent({
   english = false,
   floating = false,
   agentMode = false,
+  companySelection,
 }: {
   t: Translate;
   denied: boolean;
   english?: boolean;
   floating?: boolean;
   agentMode?: boolean;
+  companySelection: string | undefined;
 }) {
   const actor = useAccessActor();
   const inputId = useId();
@@ -574,6 +585,27 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    const operationalMetric = resolveOperationalMetric(message);
+    if (operationalMetric) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      const controller = new AbortController();
+      pending.current = controller;
+      setActionState('loading');
+      try {
+        const answer = await readOperationalMetric(
+          operationalMetric,
+          companySelection,
+          controller.signal,
+        );
+        if (!controller.signal.aborted) replyLocally(answer);
+      } catch (error) {
+        if (!controller.signal.aborted) throw error;
+      } finally {
+        if (pending.current === controller) setActionState(null);
+      }
+      return;
+    }
     const composite =
       guidanceAllowed && !decision.guideTopicId
         ? retrieveCompositeGuides(message, decision.domain)

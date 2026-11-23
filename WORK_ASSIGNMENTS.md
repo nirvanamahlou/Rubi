@@ -1,3 +1,7 @@
+## NORA-OPERATIONAL-READS-1123 — PC-C
+
+Base develop d3e0fdd48. Owner authorizes read-only integration with ERP module sources. Reserve the Assistant dashboard metric reader, bounded Composer dispatch, focused tests and status. Reuse Reporting's existing authenticated native dashboard projection and producer authorization. No schema, dependency, IAM, provider or producer changes.
+
 ## NORA-RAG-REQUIRED-FOLLOW-UP-1123 — PC-C — ACTIVE
 
 Reserve the Sales composite guide selector, focused regression tests, and pilot comparison record. Preserve the Web links, provider transport, runtime flag and all producer panels. No migration or dependency changes.
