@@ -1,3 +1,7 @@
+## NORA-INTERNAL-SOURCES-ONLY-1123 — PC-C
+
+Nora serves local internal procedures and verified ERP evidence. Unsupported model prose is replaced by a fixed request for scope in both conversation versions.
+
 ## NORA-TRAVEL-DOCUMENT-GUIDANCE-1123 — PC-C
 
 Nora routes procedural ticket and hotel voucher questions to the linked internal Sales guide, even after a report answer. The guide uses the approved Reservations and Finance delivery workflow.

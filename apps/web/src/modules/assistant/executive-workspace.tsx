@@ -1309,8 +1309,9 @@ function AssistantComposerContent({
     const guide =
       guidanceAllowed || decision.kind === 'data-with-guide'
         ? resolveContractGuide(
-            guideQuestion,
-            pathname === '/sales' ||
+            guideQuestion === `قرارداد: ${message}` ? message : guideQuestion,
+            decision.domain === 'sales' ||
+              pathname === '/sales' ||
               Boolean(pathname?.startsWith('/sales/contracts/')),
             guideTopic.current,
             guidanceAllowed && Boolean(selectedContract),
@@ -1445,6 +1446,10 @@ function AssistantComposerContent({
       );
       return;
     }
+    if (guidanceAllowed) {
+      replyLocally(t(c.internalSourceFallback));
+      return;
+    }
     pending.current?.abort();
     const controller = new AbortController();
     pending.current = controller;
@@ -1499,6 +1504,10 @@ function AssistantComposerContent({
       if (controller.signal.aborted) return;
       if (agentMode) {
         const result = agentResponseSchema.parse(body);
+        if (result.status === 'REPLY' || !result.sources.length) {
+          replyLocally(t(c.internalSourceFallback));
+          return;
+        }
         const sourceText = formatAssistantSources(result.sources, english);
         const answer = [
           result.text,
@@ -1539,12 +1548,14 @@ function AssistantComposerContent({
         return;
       }
       const result = conversationResponseSchema.parse(body);
+      if (result.status === 'REPLY') {
+        replyLocally(t(c.internalSourceFallback));
+        return;
+      }
       const answer =
-        (result.status === 'REPLY'
-          ? result.text
-          : result.status === 'CLARIFY'
-            ? t(c.conversationClarification[result.field])
-            : t(c.conversationEvidence)) +
+        (result.status === 'CLARIFY'
+          ? t(c.conversationClarification[result.field])
+          : t(c.conversationEvidence)) +
         (result.status === 'ANSWER' &&
         decision.kind === 'data-with-guide' &&
         guide

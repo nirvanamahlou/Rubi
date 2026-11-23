@@ -1,3 +1,7 @@
+## NORA-INTERNAL-SOURCES-ONLY-1123 — PC-C — ACTIVE
+
+Reserve the Nora Composer fallback, data-agent and legacy planner output policy, and focused tests. Base develop a45b0e5ea plus PR #1876. Preserve native data reads, document links and response contracts. No deployment, migration or dependency change.
+
 ## NORA-TRAVEL-DOCUMENT-GUIDANCE-1123 — PC-C — ACTIVE
 
 Reserve the Nora Sales guide source and generated catalogue, document-workflow intent, bounded Composer dispatch, focused tests and status. Use existing Sales, Reservations and Finance delivery policy. No producer, provider, schema or deployment change.
