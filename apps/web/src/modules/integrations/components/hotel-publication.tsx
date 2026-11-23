@@ -16,6 +16,11 @@ import { localizedFetch } from '@/i18n/localized-fetch';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
 type PublicationResource = 'hotels' | 'countries' | 'cities';
+const siteLabels = {
+  'jahan-bastan': 'جهان باستان',
+  ghestiroo: 'قسطی‌رو',
+} as const;
+type ProfileSite = keyof typeof siteLabels;
 
 export function HotelPublicationAction({
   id,
@@ -85,6 +90,33 @@ export function HotelPublication({
   manage?: boolean;
   resource?: PublicationResource;
 }) {
+  return (
+    <div className="grid gap-3 text-start text-sm">
+      <ProfileDestination id={id} resource={resource} site="jahan-bastan" />
+      <ProfileDestination id={id} resource={resource} site="ghestiroo" />
+      {!manage && resource === 'hotels' && (
+        <Link
+          className="flex items-center gap-2 border-t border-border pt-3 font-medium text-primary hover:underline"
+          href={'/integrations?view=hotels&hotelId=' + encodeURIComponent(id)}
+        >
+          <Settings2 aria-hidden="true" className="size-4" /> مدیریت انتشار در
+          سایت
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function ProfileDestination({
+  id,
+  resource,
+  site,
+}: {
+  id: string;
+  resource: PublicationResource;
+  site: ProfileSite;
+}) {
+  const label = siteLabels[site];
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [url, setUrl] = useState('');
@@ -95,7 +127,9 @@ export function HotelPublication({
     try {
       const response = await localizedFetch(
         getPublicApiBaseUrl() +
-          '/sales/site-commerce/v1/jahan-bastan/' +
+          '/sales/site-commerce/v1/' +
+          site +
+          '/' +
           (resource === 'hotels'
             ? 'hotel-profiles/'
             : 'geography-profiles/' + resource + '/') +
@@ -115,7 +149,7 @@ export function HotelPublication({
         throw new Error(
           result.error?.message ||
             result.message ||
-            'ثبت در جهان باستان انجام نشد.',
+            `ثبت در ${label} انجام نشد.`,
         );
       setUrl(result.url);
       setMessage('اطلاعات ثبت شد.');
@@ -134,13 +168,13 @@ export function HotelPublication({
           <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
             <Globe2 aria-hidden="true" className="size-[18px]" />
           </span>
-          <strong>جهان باستان</strong>
+          <strong>{label}</strong>
         </div>
         <button
           type="button"
           onClick={publish}
           disabled={busy}
-          aria-label="ثبت در جهان باستان"
+          aria-label={`ثبت در ${label}`}
           className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg bg-primary px-3 font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
         >
           {busy ? (
@@ -164,18 +198,9 @@ export function HotelPublication({
           className="inline-flex items-center gap-2 font-medium text-primary hover:underline"
           href={url}
         >
-          مشاهده در جهان باستان
+          مشاهده در {label}
           <ArrowUpRight aria-hidden="true" className="size-4" />
         </a>
-      )}
-      {!manage && resource === 'hotels' && (
-        <Link
-          className="flex items-center gap-2 border-t border-border pt-3 font-medium text-primary hover:underline"
-          href={'/integrations?view=hotels&hotelId=' + encodeURIComponent(id)}
-        >
-          <Settings2 aria-hidden="true" className="size-4" /> مدیریت انتشار در
-          سایت
-        </Link>
       )}
     </div>
   );

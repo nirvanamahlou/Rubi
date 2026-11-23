@@ -13404,3 +13404,7 @@ Verified the fiscal-year route in Chromium with synthetic company context at des
 ## NORA-REMOVE-QUICK-ACTIONS-1123 — PC-C — ACTIVE
 
 Reserve the shared Nora composer quick-action row, its dedicated styles and labels, and the corresponding render regression. Existing report APIs and chat evidence are out of scope.
+
+## GHESTIROO-PROFILES-1123 — PC-D
+
+Reserve the site-commerce profile sender and Integrations profile publication controls for the user-authorized Ghestiroo hotel, city and country integration. Coordinate the additive Ghestiroo-only ISO alpha-2 country code with the Ghestiroo receiver and preserve the Jahan Bastan payload and branch checks. No schema or dependency changes.

@@ -10596,3 +10596,7 @@ Chromium verified selected and unselected rows, group and list toggles, keyboard
 ## NORA-REMOVE-QUICK-ACTIONS-1123 — PC-C
 
 Removed the three quick-action buttons from the shared Nora chat composer. The message input and existing report/evidence paths remain available.
+
+## GHESTIROO-PROFILES-1123 — PC-D
+
+Hotel, country and city publication in Master Data supports Ghestiroo alongside Jahan Bastan. The Ghestiroo request includes an ISO alpha-2 country code when available and signs the existing profile payload with the Ghestiroo catalog secret. Each destination uses the existing branch and permission checks and shows its own publication receipt.

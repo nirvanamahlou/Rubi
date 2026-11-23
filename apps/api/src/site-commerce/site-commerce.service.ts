@@ -68,6 +68,15 @@ import {
   stableFingerprint,
 } from './site-commerce.policy';
 
+type ProfileSite = 'jahan-bastan' | 'ghestiroo';
+
+function countryCode(value: unknown): string | undefined {
+  const code = String(value ?? '')
+    .trim()
+    .toUpperCase();
+  return /^[A-Z]{2}$/.test(code) ? code : undefined;
+}
+
 @Injectable()
 export class SiteCommerceService {
   constructor(
@@ -111,7 +120,8 @@ export class SiteCommerceService {
     id: string,
     actor: AuthenticatedActor,
   ) {
-    if (site !== 'jahan-bastan') throw new BadRequestException();
+    if (site !== 'jahan-bastan' && site !== 'ghestiroo')
+      throw new BadRequestException();
     this.publicationBranch(site, actor);
     if (!actor.permissions.includes('master_data.read'))
       throw new ForbiddenException();
@@ -144,10 +154,19 @@ export class SiteCommerceService {
       'sourceMainImage',
       'sourceGalleryImages',
     ];
-    return this.sendProfile(config.origin, secret, '/hotel-profile', {
+    let hotelCountryCode: string | undefined;
+    if (site === 'ghestiroo' && fields.countryId) {
+      const country = await this.references.detail(
+        'countries',
+        String(fields.countryId),
+      );
+      hotelCountryCode = countryCode(country.data.attributes.iso2Code);
+    }
+    return this.sendProfile(site, secret, '/hotel-profile', {
       site,
       kind: 'hotel-profile',
       name: data.name,
+      ...(hotelCountryCode ? { countryCode: hotelCountryCode } : {}),
       ...Object.fromEntries(allowed.map((key) => [key, fields[key] ?? null])),
     });
   }
@@ -158,7 +177,10 @@ export class SiteCommerceService {
     id: string,
     actor: AuthenticatedActor,
   ) {
-    if (site !== 'jahan-bastan' || (kind !== 'countries' && kind !== 'cities'))
+    if (
+      (site !== 'jahan-bastan' && site !== 'ghestiroo') ||
+      (kind !== 'countries' && kind !== 'cities')
+    )
       throw new BadRequestException();
     this.publicationBranch(site, actor, undefined, 'master_data.update');
     const { data } = await this.references.detail(kind, id);
@@ -194,22 +216,32 @@ export class SiteCommerceService {
           .toBuffer()
       ).toString('base64');
     }
-    return this.sendProfile(config.origin, secret, '/geography-profile', {
+    const geographyCountryCode =
+      site === 'ghestiroo'
+        ? countryCode(
+            kind === 'countries'
+              ? data.attributes.iso2Code
+              : data.attributes.countryCode,
+          )
+        : undefined;
+    return this.sendProfile(site, secret, '/geography-profile', {
       site,
       kind,
       id,
       name: data.name,
       flag,
       countryName: data.attributes.countryName || undefined,
+      ...(geographyCountryCode ? { countryCode: geographyCountryCode } : {}),
     });
   }
 
   private async sendProfile(
-    origin: string,
+    site: ProfileSite,
     secret: string,
     path: string,
     payload: Record<string, unknown>,
   ) {
+    const { origin } = commerceSites[site];
     const body = JSON.stringify(payload);
     const stamp = String(Math.floor(Date.now() / 1000));
     const signature = createHmac('sha256', secret)
@@ -240,7 +272,9 @@ export class SiteCommerceService {
       throw new BadRequestException(
         typeof receipt?.detail === 'string'
           ? receipt.detail
-          : 'ثبت در جهان باستان تأیید نشد.',
+          : site === 'ghestiroo'
+            ? 'ثبت در قسطی‌رو تأیید نشد.'
+            : 'ثبت در جهان باستان تأیید نشد.',
       );
     const slug = encodeURIComponent(receipt.slug);
     return {
@@ -248,10 +282,12 @@ export class SiteCommerceService {
         origin +
         (payload.kind === 'hotel-profile'
           ? '/hotels/' + slug + '/'
-          : payload.kind === 'cities'
-            ? '/destinations/' + slug + '/'
-            : '/destinations/?country=' +
-              encodeURIComponent(String(payload.name))),
+          : site === 'ghestiroo'
+            ? '/destinations/'
+            : payload.kind === 'cities'
+              ? '/destinations/' + slug + '/'
+              : '/destinations/?country=' +
+                encodeURIComponent(String(payload.name))),
     };
   }
 
