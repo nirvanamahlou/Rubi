@@ -10604,3 +10604,7 @@ Removed the three quick-action buttons from the shared Nora chat composer. The m
 ## GHESTIROO-PROFILES-1123 — PC-D
 
 Hotel, country and city publication in Master Data supports Ghestiroo alongside Jahan Bastan. The Ghestiroo request includes an ISO alpha-2 country code when available and signs the existing profile payload with the Ghestiroo catalog secret. Each destination uses the existing branch and permission checks and shows its own publication receipt.
+
+## NORA-HOTEL-RANKING-PHRASING-1123 — PC-C
+
+Workbench now routes informal questions about most-contracted hotels to the authorized Sales hotel report. Without a date, use and disclose a recent 30-day window. Explicit ranking windows and data scope remain supported. No API contract or database change.

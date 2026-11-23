@@ -43,6 +43,12 @@ export function routeAssistantQuestion(
 ): QuestionDecision {
   const q = normalizeQuestion(message);
   const has = (pattern: RegExp) => matchesQuestion(q, pattern);
+  if (
+    /^(?:لطفا )?(?:پر ?فروش ?ترین هتل(?: ?ها(?:یی|ی)?)?(?: ?(?:را|رو))?(?: که (?:باهاشون|با آن ها) قرارداد (?:بستیم|بستیمو|بسته ایم))?|هتل(?: ?ها(?:یی|ی)?)? که بیش ?ترین قرارداد(?: (?:را|رو))? (?:دارن|دارند|دارندو|دارنو))(?: (?:را |رو )?(?:بده|بنویس|بگو|نشون بده|نشان بده))?$/u.test(
+      q.replace(/[؟?،.!]/g, ''),
+    )
+  )
+    return { kind: 'data', domain: 'sales', dataMessage: message };
   const documentProcedure =
     has(/رویه|فرایند|فرآیند|به چه صورت/) || has(procedure);
   const travelDocument =

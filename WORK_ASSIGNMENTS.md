@@ -13412,3 +13412,7 @@ Reserve the site-commerce profile sender and Integrations profile publication co
 ## MASTER-DATA-STALE-EDIT-1123 — PC-D — READY_FOR_CI
 
 Reserve the Master Data Web client, focused client tests, and linked geography edit path. Recover hotel, city, and country saves from a stale version by retrying a nonconflicting patch against the latest record. Preserve optimistic locking for competing changes. No migration or dependency change.
+
+## NORA-HOTEL-RANKING-PHRASING-1123 — PC-C — ACTIVE
+
+Reserve Nora hotel-ranking intent in the Web and assistant service, focused regressions and status. Preserve existing authorized Sales report contract and scopes.

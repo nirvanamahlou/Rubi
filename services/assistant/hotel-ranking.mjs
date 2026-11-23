@@ -11,13 +11,20 @@ export function hotelRankingRequest(message, now) {
   const window = text.match(
     /^(?:لطفا )?پرفروش ?ترین هتل(?: ?های)? (.+?) به تفکیک کشور(?: ?ها)?(?: (?:رو |را )?(?:بنویس|بگو|نشون بده|نشان بده))?$/u,
   )?.[1];
-  if (!window) return null;
-  if (/^(?:در )?(?:یک|1) ماه اخیر$/u.test(window)) {
-    const edge = Date.parse(tehranCivilDate(now) + 'T00:00:00+03:30');
+  const defaultPeriod =
+    /^(?:لطفا )?(?:پر ?فروش ?ترین هتل(?: ?ها(?:یی|ی)?)?(?: ?(?:را|رو))?(?: که (?:باهاشون|با آن ها) قرارداد (?:بستیم|بستیمو|بسته ایم))?|هتل(?: ?ها(?:یی|ی)?)? که بیش ?ترین قرارداد(?: (?:را|رو))? (?:دارن|دارند|دارندو|دارنو))(?: (?:را |رو )?(?:بده|بنویس|بگو|نشون بده|نشان بده))?$/u.test(
+      text,
+    );
+  if (!window && !defaultPeriod) return null;
+  if (defaultPeriod || /^(?:در )?(?:یک|1) ماه اخیر$/u.test(window)) {
+    const edge = defaultPeriod
+      ? now.getTime()
+      : Date.parse(tehranCivilDate(now) + 'T00:00:00+03:30');
     return {
       startUtc: new Date(edge - 30 * 86400000).toISOString(),
       endExclusiveUtc: now.toISOString(),
       partial: true,
+      ...(defaultPeriod ? { defaultPeriod: true } : {}),
     };
   }
   if (
@@ -106,6 +113,9 @@ export function renderHotelRanking(result, period, requestId) {
     ],
     text: [
       'پرفروش‌ترین هتل‌ها به تفکیک کشور',
+      ...(period.defaultPeriod
+        ? ['بازهٔ پیش‌فرض گزارش: ۳۰ روز اخیر، تا زمان سؤال.']
+        : []),
       'بازه بر اساس تاریخ ثبت قرارداد به وقت تهران، از ' +
         dates.format(new Date(period.startUtc)) +
         ' تا ' +
