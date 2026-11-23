@@ -18,6 +18,11 @@ import { AuditOutcome } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import {
+  allocateHotelIdentificationCode,
+  assertHotelIdentificationCodeAvailable,
+  lockHotelIdentificationCodes,
+} from './hotel-identification-code';
+import {
   assertMasterDataDeletionAllowed,
   removeOwnedMasterDataLinks,
 } from './master-data-deletion.policy';
@@ -1371,6 +1376,23 @@ export class MasterDataRepository {
   ) {
     const work = async (transaction: Prisma.TransactionClient) => {
       const createData = { ...data };
+      if (resource === 'hotels') {
+        await lockHotelIdentificationCodes(transaction);
+        if (
+          typeof createData.identificationCode === 'string' &&
+          createData.identificationCode
+        ) {
+          await assertHotelIdentificationCodeAvailable(
+            transaction,
+            createData.identificationCode,
+          );
+        } else {
+          createData.identificationCode = await allocateHotelIdentificationCode(
+            transaction,
+            String(createData.cityId),
+          );
+        }
+      }
       const dossier = createData.partnerDossier as
         Record<string, unknown> | undefined;
       delete createData.partnerDossier;
@@ -1466,6 +1488,12 @@ export class MasterDataRepository {
       delete writeData.partnerDossier;
       const brokerChanges = writeData.brokerLeaderChanges;
       delete writeData.brokerLeaderChanges;
+      const editedHotelCode =
+        resource === 'hotels' &&
+        typeof writeData.identificationCode === 'string'
+          ? writeData.identificationCode
+          : undefined;
+      if (editedHotelCode) await lockHotelIdentificationCodes(transaction);
       const before = await model.findUnique({
         where: { id },
         ...(resource === 'train-types' || resource === 'brokers'
@@ -1473,6 +1501,12 @@ export class MasterDataRepository {
           : {}),
       });
       if (!before || before.version !== expectedVersion) return null;
+      if (editedHotelCode && editedHotelCode !== before.identificationCode)
+        await assertHotelIdentificationCodeAvailable(
+          transaction,
+          editedHotelCode,
+          id,
+        );
       const claimed = await model.updateMany({
         where: { id, version: expectedVersion },
         data: { updatedByUserId: actorUserId, version: { increment: 1 } },

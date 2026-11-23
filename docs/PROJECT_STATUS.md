@@ -10608,3 +10608,7 @@ Hotel, country and city publication in Master Data supports Ghestiroo alongside 
 CALL-CENTER-TODAY-FILTER-STYLE-1116: exclude shared combobox options from generic dialog button styling so direction, outcome and destination options retain the contact-filter selected, hover and spacing styles. Source change only.
 
 CALL-CENTER-TODAY-FILTER-STYLE-1116: today's dialog initially focuses its title so the first combobox does not automatically open.
+
+## Automatic hotel identification
+
+New hotels receive an HTL identifier on save using the established city prefix and a persistent global sequence. Excel inserts share the allocator. Existing identification codes remain available for publication and existing records keep their identifiers.
