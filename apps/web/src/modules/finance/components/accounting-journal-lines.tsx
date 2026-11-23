@@ -1,5 +1,10 @@
 'use client';
 
+import {
+  accountingDetailLevels,
+  accountingDetailTypeIds,
+  isAccountingDetailLevelEnabled,
+} from '@nora/contracts';
 import { useRef, useState, type ReactNode } from 'react';
 import type { AccountingLineV1, AccountingSnapshotV1 } from '@nora/contracts';
 import {
@@ -219,11 +224,24 @@ export function AccountingJournalLines({
   const totals = journalDisplayTotals(rows);
   const td = 'border border-border p-1 align-top';
   const query = search.trim().toLocaleLowerCase();
+  const detailColumns = accountingDetailLevels.filter(
+    (level) =>
+      level <= 6 ||
+      rows.some(
+        (row) =>
+          row[`detail${level}Id`] ||
+          isAccountingDetailLevelEnabled(
+            book.accounts.find((item) => item.id === row.accountId)
+              ?.attributes ?? {},
+            level,
+          ),
+      ),
+  );
   const summary = [
     ['گروه حساب', group?.title ?? ''],
     ['حساب کل', general?.title ?? ''],
     ['حساب معین', account?.title ?? ''],
-    ...([4, 5, 6] as const).map((level) => [
+    ...detailColumns.map((level) => [
       `عنوان سطح ${level}`,
       book.details.find((item) => item.id === selectedRow?.[`detail${level}Id`])
         ?.title ?? '',
@@ -515,9 +533,7 @@ export function AccountingJournalLines({
                 'وضعیت مالیاتی',
                 'ردیف',
                 'کد حساب معین',
-                'سطح 4',
-                'سطح 5',
-                'سطح 6',
+                ...detailColumns.map((level) => `سطح ${level}`),
                 'شرح',
                 'بدهکار',
                 'بستانکار',
@@ -605,30 +621,35 @@ export function AccountingJournalLines({
                       onValueChange={(value) =>
                         update(index, {
                           accountId: value || null,
-                          detail4Id: null,
-                          detail5Id: null,
-                          detail6Id: null,
+                          ...Object.fromEntries(
+                            accountingDetailLevels.map((level) => [
+                              `detail${level}Id`,
+                              null,
+                            ]),
+                          ),
                         })
                       }
                     />
                   </td>
-                  {([4, 5, 6] as const).map((level) => {
-                    const allowed = chosen?.attributes[`detail${level}TypeIds`];
-                    const typeIds = Array.isArray(allowed)
-                      ? allowed
-                      : chosen?.attributes[`detail${level}TypeId`]
-                        ? [String(chosen.attributes[`detail${level}TypeId`])]
-                        : [];
+                  {detailColumns.map((level) => {
+                    const attributes = chosen?.attributes ?? {};
+                    const typeIds = accountingDetailTypeIds(attributes, level);
+                    const enabled = isAccountingDetailLevelEnabled(
+                      attributes,
+                      level,
+                    );
+                    const value = row[`detail${level}Id`] ?? '';
                     return (
                       <td key={level} className={td}>
                         <SearchCombobox
                           label={`سطح ${level} ردیف ${index + 1}`}
-                          disabled={readonly || !typeIds.length}
-                          value={row[`detail${level}Id`] ?? ''}
+                          disabled={readonly || !enabled || !typeIds.length}
+                          value={value}
                           options={book.details
                             .filter(
                               (item) =>
-                                item.active && typeIds.includes(item.typeId),
+                                item.id === value ||
+                                (item.active && typeIds.includes(item.typeId)),
                             )
                             .map((item) => ({
                               value: item.id,

@@ -1,4 +1,5 @@
 import { localizedFetch } from '@/i18n/localized-fetch';
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import {
   type MasterDataListResponse,
   type MasterDataRecord,
@@ -67,12 +68,20 @@ export async function listReferences(
   if (filters.countryId) query.set('countryId', filters.countryId);
   if (filters.cityId) query.set('cityId', filters.cityId);
   const path = `/selections/${workflow}/${resource}`;
-  const response = await localizedFetch(`${base}/master-data${path}?${query}`, {
+  const url = `${base}/master-data${path}?${query}`;
+  const init: RequestInit = {
     method: 'GET',
     credentials: 'include',
     headers: { accept: 'application/json' },
     ...(signal ? { signal } : {}),
-  });
+  };
+  let response = await localizedFetch(url, init);
+  if (
+    response.status === 401 &&
+    !signal?.aborted &&
+    (await refreshAuthenticatedSession(base))
+  )
+    response = await localizedFetch(url, init);
   if (!response.ok)
     throw new ReferenceApiError(
       referenceState(response.status),
@@ -103,7 +112,19 @@ export async function listReferences(
   }
   return {
     ...body,
-    data: body.data.filter((item) => item.status === 'active'),
+    data: body.data
+      .filter((item) => item.status === 'active')
+      .map((item) =>
+        // Airport selections expose cityId; the native query enforces countryId.
+        resource === 'airports' &&
+        filters.countryId &&
+        item.attributes.countryId === undefined
+          ? {
+              ...item,
+              attributes: { ...item.attributes, countryId: filters.countryId },
+            }
+          : item,
+      ),
   };
 }
 
@@ -154,6 +175,32 @@ export async function getActiveCityReference(
   if (body.data?.id !== id || body.data.resource !== 'cities') return undefined;
   const reference = asReference(body.data);
   return reference?.active ? reference : undefined;
+}
+export async function getAirportReference(
+  id: string,
+): Promise<Reference | undefined> {
+  return getTicketReference('airports', id);
+}
+
+export async function getTicketReference(
+  resource: PublishedResource,
+  id: string,
+): Promise<Reference | undefined> {
+  const base = getPublicApiBaseUrl();
+  if (!base || !id) return undefined;
+  const response = await localizedFetch(
+    `${base}/master-data/selections/ticket-catalog/${resource}/${encodeURIComponent(id)}`,
+    { credentials: 'include', headers: { accept: 'application/json' } },
+  );
+  if (response.status === 404) return undefined;
+  if (!response.ok)
+    throw new ReferenceApiError(
+      referenceState(response.status),
+      'دریافت مرجع اطلاعات پایه ممکن نشد.',
+    );
+  const body = (await response.json()) as { data?: MasterDataRecord };
+  if (body.data?.id !== id || body.data.resource !== resource) return undefined;
+  return asReference(body.data);
 }
 export function asReference(record: MasterDataRecord): Reference | undefined {
   const kinds = {

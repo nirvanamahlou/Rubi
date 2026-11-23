@@ -197,10 +197,37 @@ export class IamWorkbenchRequestDirectory {
     };
   }
 
+  async missionRecipient(actor: AuthenticatedActor, branchId: string) {
+    const nima = await this.database.client.user.findFirst({
+      where: { id: actor.userId, status: 'ACTIVE', username: 'nima' },
+      select: { id: true },
+    });
+    return nima
+      ? this.leaveRoute(actor, branchId)
+      : this.hrLeaveRecipient(actor, branchId);
+  }
+
+  async hrLeaveRecipient(actor: AuthenticatedActor, branchId: string) {
+    const options = await this.options(actor, branchId);
+    const matches = options.units.flatMap((unit) =>
+      unit.users
+        .filter(
+          (user) =>
+            user.username.toLowerCase() === 'nima' &&
+            /منابع انسانی|سرمایه انسانی/.test(unit.name),
+        )
+        .map((user) => ({ unitId: unit.id, recipientId: user.id })),
+    );
+    if (matches.length !== 1)
+      throw new BadRequestException(
+        'گیرنده فعال منابع انسانی برای مرخصی در این شعبه به‌صورت یکتا تعریف نشده است.',
+      );
+    return matches[0]!;
+  }
   async leaveRoute(actor: AuthenticatedActor, branchId: string) {
     const account = await this.database.client.user.findFirst({
       where: { id: actor.userId, status: 'ACTIVE' },
-      select: { displayName: true },
+      select: { displayName: true, username: true },
     });
     const normalize = (name: string) =>
       name
@@ -210,7 +237,10 @@ export class IamWorkbenchRequestDirectory {
         .replace(/ك/g, 'ک')
         .replace(/[\s‌]/g, '')
         .replace('مهسااعلایی', 'مهساعلایی');
-    const name = normalize(account?.displayName ?? '');
+    const name =
+      account?.username.toLowerCase() === 'nima'
+        ? 'نیمانادری'
+        : normalize(account?.displayName ?? '');
     const routes: [string[], string][] = [
       [['الناز'], 'رویابهزادنیا'],
       [['بهناز', 'ناهید', 'اتنا', 'شیدا', 'شهرزاد'], 'مهساعلایی'],

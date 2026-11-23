@@ -168,7 +168,11 @@ async function requestFile(
   return { blob, fileName };
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  retried = false,
+): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new MasterDataApiError('نشانی API پیکربندی نشده است.', 0);
   const response = await localizedFetch(`${baseUrl}/master-data${path}`, {
@@ -182,6 +186,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       ...init?.headers,
     },
   });
+  const method = (init?.method ?? 'GET').toUpperCase();
+  if (
+    response.status === 401 &&
+    method === 'GET' &&
+    !retried &&
+    !init?.signal?.aborted &&
+    (await refreshAuthenticatedSession(baseUrl))
+  )
+    return request<T>(path, init, true);
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as {
       error?: { message?: string };
@@ -195,7 +208,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     );
   }
   const payload = (await response.json()) as T;
-  const method = (init?.method ?? 'GET').toUpperCase();
   if (typeof window !== 'undefined' && method !== 'GET' && method !== 'HEAD')
     window.dispatchEvent(new Event(MASTER_DATA_CHANGED_EVENT));
   return payload;
@@ -273,6 +285,17 @@ export const masterDataApi = {
     if (!['image/png', 'image/jpeg'].includes(blob.type))
       throw new MasterDataApiError('پاسخ لوگو تصویر PNG یا JPEG نیست.', 415);
     return blob;
+  },
+  async uploadHotelImages(files: File[]) {
+    const form = new FormData();
+    for (const file of files) form.append('files', file);
+    const result = await request<{ data: string[] }>('/hotel-images', {
+      method: 'POST',
+      body: form,
+    });
+    return result.data.map(
+      (name) => `${getPublicApiBaseUrl()}/master-data/hotel-images/${name}`,
+    );
   },
   async uploadLogo(input: {
     file: File;
@@ -614,10 +637,11 @@ export const masterDataApi = {
     resource: MasterDataResource,
     query: MasterDataListQuery,
     workflow?: WorkflowSelectionContext,
+    signal?: AbortSignal,
   ) {
     return request<MasterDataListResponse>(
       `${workflow ? `/selections/${workflow}` : ''}/${resource}?${serializeMasterDataListQuery(query)}`,
-      { cache: 'no-store' },
+      { cache: 'no-store', ...(signal ? { signal } : {}) },
     );
   },
   listSummary(

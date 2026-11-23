@@ -824,15 +824,24 @@ export class HrService {
           ((['mission', 'radanMission'].includes(item.tab) &&
             rates[3] === 'بله') ||
             (['leave', 'radanLeave'].includes(item.tab) &&
-              rates[4] === 'بله' &&
-              (item.values as string[])[4] === 'ساعتی')),
+              ((item.values as string[])[4] !== 'ساعتی' ||
+                rates[4] === 'بله' ||
+                item.code.startsWith('WB-')))),
       )
       .map((item) => {
         const data = item.data as HrWorkflowData;
         const values = item.values as string[];
         return [
-          Date.parse(data.startsAt ?? `${values[2]}T00:00:00+03:30`),
-          Date.parse(data.endsAt ?? `${values[3]}T23:59:59+03:30`),
+          Date.parse(
+            (item.tab === 'radanLeave' && values[4] === 'روزانه'
+              ? undefined
+              : data.startsAt) ?? `${values[2]}T00:00:00+03:30`,
+          ),
+          Date.parse(
+            (item.tab === 'radanLeave' && values[4] === 'روزانه'
+              ? undefined
+              : data.endsAt) ?? `${values[3]}T23:59:59+03:30`,
+          ),
         ] as [number, number];
       })
       .filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
@@ -2726,10 +2735,12 @@ export class HrService {
       const hourly = values[4] === 'ساعتی';
       data.startsAt = hourly
         ? validate.localClockToUtc(values[2]!, values[5]!).toISOString()
-        : values[2] + 'T00:00:00.000Z';
+        : validate.localClockToUtc(values[2]!, '00:00').toISOString();
       data.endsAt = hourly
         ? validate.localClockToUtc(values[3]!, values[6]!).toISOString()
-        : values[3] + 'T23:59:59.999Z';
+        : new Date(
+            validate.localClockToUtc(values[3]!, '23:59').getTime() + 59999,
+          ).toISOString();
       if (hourly)
         data.minutes =
           (Date.parse(data.endsAt) - Date.parse(data.startsAt)) / 60000;
@@ -3041,6 +3052,27 @@ export class HrService {
       throw new ForbiddenException();
     return { users: await this.departmentSubstitutes(branchId, actor.userId) };
   }
+  async uploadMissionEvidence(
+    branchId: string,
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+  ) {
+    this.branch(actor, branchId);
+    await this.workbenchLeaveEmployee(
+      this.database.client,
+      branchId,
+      actor.userId,
+      actor,
+    );
+    return this.documents.uploadLeaveEvidence(
+      branchId,
+      '2099-12-31',
+      file,
+      actor,
+      {},
+      'MissionEvidence',
+    );
+  }
   async uploadLeaveEvidence(
     branchId: string,
     validUntil: string,
@@ -3149,6 +3181,7 @@ export class HrService {
     employee: Employee,
     leave: WorkbenchLeaveInputV1,
     actor: AuthenticatedActor,
+    fromHrRecord = false,
   ) {
     validate.isoDate(leave.from);
     validate.isoDate(leave.to);
@@ -3180,21 +3213,28 @@ export class HrService {
     if (!policy)
       throw new ConflictException('برای این نوع مرخصی سیاست فعال تعریف کنید.');
     assertHourlyLeaveDuration(leave, policy);
-    let workdayEnd: Date | undefined;
-    if (leave.mode === 'ساعتی') {
-      const schedules = await tx.hrRecord.findMany({
-        where: {
-          branchId: employee.branchId,
-          section: 'time',
-          tab: { in: ['shift', 'workingHours'] },
-          deletedAt: null,
-        },
-      });
-      workdayEnd =
-        this.attendanceView(schedules, employee.id, leave.from).shiftEnd ??
-        undefined;
+    // HR can record leave for another employee after the self-service deadline.
+    const canRecordRetroactively =
+      fromHrRecord &&
+      this.has(actor, 'hr.manage') &&
+      employee.userId !== actor.userId;
+    if (!canRecordRetroactively) {
+      let workdayEnd: Date | undefined;
+      if (leave.mode === 'ساعتی') {
+        const schedules = await tx.hrRecord.findMany({
+          where: {
+            branchId: employee.branchId,
+            section: 'time',
+            tab: { in: ['shift', 'workingHours'] },
+            deletedAt: null,
+          },
+        });
+        workdayEnd =
+          this.attendanceView(schedules, employee.id, leave.from).shiftEnd ??
+          undefined;
+      }
+      assertLeaveDeadline(leave, policy, new Date(), workdayEnd);
     }
-    assertLeaveDeadline(leave, policy, new Date(), workdayEnd);
     if (leave.substituteUserId) {
       if (
         leave.substituteUserId === employee.userId ||
@@ -3405,15 +3445,15 @@ export class HrService {
     actor: AuthenticatedActor,
     senderId?: string,
   ) {
-    if (senderId)
-      branchId = (
-        await this.workbenchLeaveEmployee(
+    const employee = senderId
+      ? await this.workbenchLeaveEmployee(
           this.database.client,
           branchId,
           senderId,
           actor,
         )
-      ).branchId;
+      : undefined;
+    if (employee) branchId = employee.branchId;
     const today = validate.localClockParts(new Date()).date;
     for (
       let at = Date.parse(leave.from);
@@ -3427,6 +3467,8 @@ export class HrService {
         randomUUID(),
         actor,
         true,
+        employee ? [employee.id] : [],
+        employee ? [employee.id] : undefined,
       );
     }
   }
@@ -3594,6 +3636,7 @@ export class HrService {
             employee,
             recordLeave(values, data),
             actor,
+            true,
           );
           if (data.substituteUserId) data.substituteStatus = 'PENDING';
         }
@@ -4132,6 +4175,7 @@ export class HrService {
           employee,
           recordLeave(values, data),
           actor,
+          true,
         );
         if (changed)
           data.substituteStatus = data.substituteUserId ? 'PENDING' : undefined;
@@ -6297,16 +6341,7 @@ export class HrService {
                   Number(validate.digits(shiftValues?.[3] ?? '0')) || 0,
                   validate.localClockToUtc(
                     date,
-                    (
-                      source.find(
-                        (r) =>
-                          r.tab === 'workingHours' &&
-                          r.status === 'فعال' &&
-                          (r.values as string[])[2] === shiftValues?.[1],
-                      )?.values as string[] | undefined
-                    )?.[9] ||
-                      shiftValues?.[2] ||
-                      '17:30',
+                    new Date(date).getUTCDay() === 4 ? '14:30' : '17:30',
                   ),
                 )
               : null;
@@ -6332,8 +6367,16 @@ export class HrService {
                       const v = r.values as string[],
                         d = r.data as HrWorkflowData;
                       return [
-                        Date.parse(d.startsAt ?? `${v[2]}T00:00:00+03:30`),
-                        Date.parse(d.endsAt ?? `${v[3]}T23:59:59+03:30`),
+                        Date.parse(
+                          (r.tab === 'radanLeave' && v[4] === 'روزانه'
+                            ? undefined
+                            : d.startsAt) ?? `${v[2]}T00:00:00+03:30`,
+                        ),
+                        Date.parse(
+                          (r.tab === 'radanLeave' && v[4] === 'روزانه'
+                            ? undefined
+                            : d.endsAt) ?? `${v[3]}T23:59:59+03:30`,
+                        ),
                       ] as [number, number];
                     })
                     .filter(
@@ -6342,7 +6385,7 @@ export class HrService {
                 )
               : null;
           if (metrics && leave) {
-            if (!events.length && leave.fullDay) {
+            if (leave.fullDay) {
               metrics.lateMinutes = 0;
               metrics.earlyMinutes = 0;
               metrics.deficitMinutes = 0;
@@ -6409,7 +6452,7 @@ export class HrService {
                 Boolean((row.data as HrWorkflowData).attendanceSource),
               )
                 ? (metrics?.overtimeMinutes ?? null)
-                : projected.overtime;
+                : Math.min(projected.overtime, metrics?.overtimeMinutes ?? 0);
             calculationMetrics = projected.metrics;
           }
           if (result.exceptions.length) exceptions++;
@@ -6464,8 +6507,50 @@ export class HrService {
                 (r.data as HrWorkflowData).endsAt ?? `${date}T23:59:59+03:30`,
               ) > shiftStart.getTime(),
           );
-          const status =
-            leave && leave.leaveMinutes > 0
+          // Compare each in-shift break with the union of approved leave and mission coverage.
+          const unexplainedExit =
+            shiftStart &&
+            shiftEnd &&
+            events.some((event, index) => {
+              const next = events[index + 1];
+              if (event.kind !== 'خروج' || next?.kind !== 'ورود') return false;
+              const from = new Date(
+                Math.max(event.at.getTime(), shiftStart.getTime()),
+              );
+              const to = new Date(
+                Math.min(next.at.getTime(), shiftEnd.getTime()),
+              );
+              if (to.getTime() - from.getTime() < 60000) return false;
+              const intervals = source.flatMap((r) => {
+                if (
+                  r.employeeId !== employee.id ||
+                  !['leave', 'radanLeave', 'mission', 'radanMission'].includes(
+                    r.tab,
+                  ) ||
+                  !validate.APPROVED.has(r.status)
+                )
+                  return [];
+                const v = r.values as string[];
+                const d = r.data as HrWorkflowData;
+                const daily = r.tab === 'radanLeave' && v[4] === 'روزانه';
+                return [
+                  [
+                    Date.parse(
+                      (daily ? undefined : d.startsAt) ??
+                        `${v[2]}T00:00:00+03:30`,
+                    ),
+                    Date.parse(
+                      (daily ? undefined : d.endsAt) ??
+                        `${v[3]}T23:59:59+03:30`,
+                    ),
+                  ] as [number, number],
+                ];
+              });
+              return !approvedLeaveCoverage([], from, to, intervals).fullDay;
+            });
+          const status = unexplainedExit
+            ? 'خروج غیرموجه'
+            : leave && leave.leaveMinutes > 0
               ? missionDay
                 ? 'مأموریت'
                 : hourlyLeave
@@ -6508,6 +6593,10 @@ export class HrService {
             reason: reviewExceptions.join('، '),
             minutes: result.worked,
             ...attendanceClockTimes(events),
+            attendancePunches: events.map(({ kind, at }) => ({
+              kind,
+              at: at.toISOString(),
+            })),
             registrationType: selected.length
               ? selected.some(
                   (r) =>
@@ -6519,18 +6608,20 @@ export class HrService {
                 ? 'manual'
                 : 'device'
               : null,
-            deficitMinutes: result.exceptions.length
-              ? null
-              : metrics?.deficitMinutes == null
+            deficitMinutes: leave?.fullDay
+              ? 0
+              : result.exceptions.length
                 ? null
-                : Math.max(
-                    0,
-                    metrics.deficitMinutes -
-                      Math.max(
-                        leave?.creditMinutes ?? 0,
-                        Math.floor(calculationMetrics?.creditedMinutes ?? 0),
-                      ),
-                  ),
+                : metrics?.deficitMinutes == null
+                  ? null
+                  : Math.max(
+                      0,
+                      metrics.deficitMinutes -
+                        Math.max(
+                          leave?.creditMinutes ?? 0,
+                          Math.floor(calculationMetrics?.creditedMinutes ?? 0),
+                        ),
+                    ),
             workedMinutes: result.worked,
             lateMinutes: late === '—' ? null : Number(late),
             earlyMinutes: early === '—' ? null : Number(early),

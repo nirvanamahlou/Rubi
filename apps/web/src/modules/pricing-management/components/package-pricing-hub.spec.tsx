@@ -8,6 +8,8 @@ describe('package pricing hub', () => {
     const html = renderToStaticMarkup(<PackagePricingHub />);
 
     expect(html).toContain('مدیریت پکیج');
+    expect(html).toContain('پکیج‌های شناور');
+    expect(html).toContain('href="/sales/pricing/floating"');
     expect(html).toContain('بستن پکیج');
     expect(html).toContain('پک جنریتور');
     expect(html).toContain('href="/sales/pricing/management"');

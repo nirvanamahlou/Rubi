@@ -150,7 +150,8 @@ async function proxyRead(
       /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(correlation)
     )
       headers['x-request-id'] = correlation;
-    if (!response.ok)
+    const agentRateError = agent && response.status === 429;
+    if (!response.ok && !agentRateError)
       return error(
         [400, 401, 403, 429].includes(response.status) ? response.status : 503,
         response.status === 400
@@ -183,6 +184,22 @@ async function proxyRead(
     for (const chunk of chunks) {
       bytes.set(chunk, offset);
       offset += chunk.length;
+    }
+    if (agentRateError) {
+      try {
+        const body = JSON.parse(new TextDecoder().decode(bytes));
+        if (
+          [
+            'AGENT_STEP_BUDGET_EXCEEDED',
+            'AGENT_QUERY_BUDGET_EXCEEDED',
+            'AGENT_TOKEN_BUDGET_EXCEEDED',
+          ].includes(body?.error?.code)
+        )
+          return error(429, 'ANALYSIS_LIMIT_REACHED');
+      } catch {
+        // Malformed upstream errors retain the generic rate-limit response.
+      }
+      return error(429, 'RATE_LIMITED');
     }
     return new Response(bytes, {
       headers: {

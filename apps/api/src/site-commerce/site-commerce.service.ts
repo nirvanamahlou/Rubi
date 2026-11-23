@@ -1,4 +1,18 @@
-import { websitePresentation } from './publication-presentation';
+import { MasterDataLogoService } from '../master-data/master-data-logo.service';
+import sharp from 'sharp';
+import { WebsiteCheckoutHoldsService } from './website-checkout-holds.service';
+import { commerceSites, isDeliverySite } from './commerce-sites';
+import { createHmac } from 'node:crypto';
+import {
+  VerifiedGatewayReceiptPublic,
+  type VerifiedGatewayProof,
+} from '../finance/payments/verified-gateway-receipt.public';
+import { ageCounts } from '../ticket-catalog/ticket-age-fares';
+import { passengerRate } from '../package-pricing/passenger-rates';
+import {
+  previewRateKinds,
+  websitePresentation,
+} from './publication-presentation';
 import { DocumentsService } from '../documents/documents.service';
 import {
   attachAirlineLogos,
@@ -24,6 +38,7 @@ import { DatabaseService } from '../database/database.service';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { TourPublicService } from '../ticket-catalog/tour-public.service';
 import { PackageTourPricingService } from '../package-pricing/package-tour-pricing.service';
+import { FloatingTourPricingService } from '../package-pricing/floating-tour-pricing.service';
 import { SalesService } from '../sales/sales.service';
 import { SalesOutputService } from '../sales/sales-output.service';
 import { MasterDataService } from '../master-data/master-data.service';
@@ -31,14 +46,44 @@ import { TravelWorkflowService } from '../reservations/travel-workflow.service';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import { ReservationTicketDocumentsService } from '../reservations/reservation-ticket-documents';
 import { salesContractFlights, isFloatingSalesContract } from '@nora/contracts';
-import { passengerAgeCategory } from '../sales/sales.domain';
-import { websiteFlightQuotes } from './ticket-quote';
 import {
+  passengerAgeCategory,
+  validateSalesContract,
+} from '../sales/sales.domain';
+import { assertFloatingFlightAirports } from '../sales/floating-flight-airports';
+import { websiteFlightQuotes } from './ticket-quote';
+import { assertWebsiteBookable, websitePriceOnly } from './price-only-policy';
+import {
+  floatingBookingIdentity,
+  floatingNativeDraft,
+  floatingWebsiteRooms,
+  validateFloatingBooking,
+  type FloatingWebsiteBooking,
+} from './floating-tour-booking';
+import {
+  actorSite,
   assertWebsiteDraft,
   externalOrderId,
   siteBinding,
   stableFingerprint,
 } from './site-commerce.policy';
+
+type ProfileSite = 'jahan-bastan' | 'ghestiroo' | 'nss';
+
+function ghestirooCountryCode(
+  value: unknown,
+  countryName: unknown,
+): string | undefined {
+  const code = String(value ?? '')
+    .trim()
+    .toUpperCase();
+  const name = String(countryName ?? '')
+    .trim()
+    .toUpperCase();
+  if (code === 'MA' && ['مالزی', 'MALAYSIA'].includes(name)) return 'MY';
+  if (code === 'SL' && ['اسلوونی', 'SLOVENIA'].includes(name)) return 'SI';
+  return /^[A-Z]{2}$/.test(code) ? code : undefined;
+}
 
 @Injectable()
 export class SiteCommerceService {
@@ -60,11 +105,200 @@ export class SiteCommerceService {
     @Optional()
     @Inject(DocumentsService)
     private readonly documents?: DocumentsService,
+    @Inject(FloatingTourPricingService)
+    private readonly floating?: FloatingTourPricingService,
+    @Optional()
+    @Inject(VerifiedGatewayReceiptPublic)
+    private readonly gatewayReceipts?: VerifiedGatewayReceiptPublic,
+    @Optional()
+    @Inject(WebsiteCheckoutHoldsService)
+    private readonly checkoutHolds?: WebsiteCheckoutHoldsService,
+    @Optional()
+    @Inject(MasterDataLogoService)
+    private readonly logos?: MasterDataLogoService,
   ) {}
 
   private scoped(site: string, actor: AuthenticatedActor) {
     const binding = siteBinding(site, actor);
     return { ...actor, branchIds: [binding.branchId] };
+  }
+
+  async publishHotelProfile(
+    site: string,
+    id: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (site !== 'jahan-bastan' && site !== 'ghestiroo' && site !== 'nss')
+      throw new BadRequestException();
+    this.publicationBranch(site, actor);
+    if (!actor.permissions.includes('master_data.read'))
+      throw new ForbiddenException();
+    const { data } = await this.references.detail('hotels', id);
+    const fields = data.attributes;
+    if (!String(fields.identificationCode ?? '').trim())
+      throw new BadRequestException('کد شناسایی هتل را وارد کنید.');
+    const config = commerceSites[site];
+    const secret = process.env[config.signingKey];
+    if (!secret || secret.length < 32)
+      throw new BadRequestException('اتصال سایت پیکربندی نشده است.');
+    const allowed = [
+      'identificationCode',
+      'cityName',
+      'countryName',
+      'starRating',
+      'address',
+      'regionName',
+      'facilityNames',
+      'mealServiceNames',
+      'roomTypeNames',
+      'englishName',
+      'chainName',
+      'checkInTime',
+      'checkOutTime',
+      'website',
+      'description',
+      'hotelRules',
+      'sourceRefundRules',
+      'sourceMainImage',
+      'sourceGalleryImages',
+    ];
+    let hotelCountryCode: string | undefined;
+    if (site === 'ghestiroo' && fields.countryId) {
+      const country = await this.references.detail(
+        'countries',
+        String(fields.countryId),
+      );
+      hotelCountryCode = ghestirooCountryCode(
+        country.data.attributes.iso2Code,
+        country.data.name,
+      );
+    }
+    return this.sendProfile(site, secret, '/hotel-profile', {
+      site,
+      kind: 'hotel-profile',
+      name: data.name,
+      ...(hotelCountryCode ? { countryCode: hotelCountryCode } : {}),
+      ...Object.fromEntries(allowed.map((key) => [key, fields[key] ?? null])),
+    });
+  }
+
+  async publishGeography(
+    site: string,
+    kind: string,
+    id: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      (site !== 'jahan-bastan' && site !== 'ghestiroo') ||
+      (kind !== 'countries' && kind !== 'cities')
+    )
+      throw new BadRequestException();
+    this.publicationBranch(site, actor, undefined, 'master_data.update');
+    const { data } = await this.references.detail(kind, id);
+    if (!actor.permissions.includes('master_data.read'))
+      throw new ForbiddenException();
+    const config = commerceSites[site];
+    const secret = process.env[config.signingKey];
+    if (!secret || secret.length < 32)
+      throw new BadRequestException('اتصال سایت پیکربندی نشده است.');
+    let flag: string | undefined;
+    if (kind === 'countries' && data.attributes.logoFileReference) {
+      if (!this.logos)
+        throw new BadRequestException('سرویس تصویر پرچم در دسترس نیست.');
+      const { stream } = await this.logos.preview(kind, id, actor, {});
+      const chunks: Buffer[] = [];
+      let size = 0;
+      for await (const chunk of stream) {
+        const buffer = Buffer.from(chunk);
+        size += buffer.length;
+        if (size > 5_000_000)
+          throw new BadRequestException('حجم پرچم بیش از حد مجاز است.');
+        chunks.push(buffer);
+      }
+      flag = (
+        await sharp(Buffer.concat(chunks), { limitInputPixels: 16_000_000 })
+          .resize({
+            width: 400,
+            height: 400,
+            fit: 'inside',
+            withoutEnlargement: true,
+          })
+          .webp()
+          .toBuffer()
+      ).toString('base64');
+    }
+    const geographyCountryCode =
+      site === 'ghestiroo'
+        ? ghestirooCountryCode(
+            kind === 'countries'
+              ? data.attributes.iso2Code
+              : data.attributes.countryCode,
+            kind === 'countries' ? data.name : data.attributes.countryName,
+          )
+        : undefined;
+    return this.sendProfile(site, secret, '/geography-profile', {
+      site,
+      kind,
+      id,
+      name: data.name,
+      flag,
+      countryName: data.attributes.countryName || undefined,
+      ...(geographyCountryCode ? { countryCode: geographyCountryCode } : {}),
+    });
+  }
+
+  private async sendProfile(
+    site: ProfileSite,
+    secret: string,
+    path: string,
+    payload: Record<string, unknown>,
+  ) {
+    const { origin } = commerceSites[site];
+    const body = JSON.stringify(payload);
+    const stamp = String(Math.floor(Date.now() / 1000));
+    const signature = createHmac('sha256', secret)
+      .update(stamp + '.' + body)
+      .digest('hex');
+    const response = await fetch(origin + '/api/v1/erp' + path, {
+      method: 'POST',
+      redirect: 'error',
+      signal: AbortSignal.timeout(50000),
+      headers: {
+        'content-type': 'application/json',
+        'x-erp-timestamp': stamp,
+        'x-erp-signature': signature,
+      },
+      body,
+    });
+    const receipt = (await response.json().catch(() => null)) as {
+      slug?: unknown;
+      identificationCode?: unknown;
+      detail?: unknown;
+    } | null;
+    if (
+      !response.ok ||
+      typeof receipt?.slug !== 'string' ||
+      (payload.kind === 'hotel-profile' &&
+        receipt.identificationCode !== payload.identificationCode)
+    )
+      throw new BadRequestException(
+        typeof receipt?.detail === 'string'
+          ? receipt.detail
+          : 'سایت مقصد ثبت اطلاعات را تأیید نکرد.',
+      );
+    const slug = encodeURIComponent(receipt.slug);
+    return {
+      url:
+        origin +
+        (payload.kind === 'hotel-profile'
+          ? '/hotels/' + slug + '/'
+          : site === 'ghestiroo'
+            ? '/destinations/'
+            : payload.kind === 'cities'
+              ? '/destinations/' + slug + '/'
+              : '/destinations/?country=' +
+                encodeURIComponent(String(payload.name))),
+    };
   }
 
   private async ticketTarget(site: string, branchId: string) {
@@ -73,7 +307,9 @@ export class SiteCommerceService {
     });
     if (binding?.branchId !== branchId || !binding.salePriceTargetId)
       throw new BadRequestException(
-        'ابتدا درصد مقصد «نیایش سیر سحر» را در مدیریت قیمت بلیط ثبت کنید.',
+        site === 'ghestiroo'
+          ? 'ابتدا مقصد فروش «قسطی‌رو» را برای شعبه تنظیم کنید.'
+          : 'ابتدا درصد مقصد «نیایش سیر سحر» را در مدیریت قیمت بلیط ثبت کنید.',
       );
     return binding.salePriceTargetId;
   }
@@ -84,7 +320,9 @@ export class SiteCommerceService {
     carrierName: string,
     actor: AuthenticatedActor,
   ) {
-    const scoped = this.scoped('nss', actor);
+    const site = actorSite(actor);
+    if (!isDeliverySite(site)) throw new ForbiddenException();
+    const scoped = this.scoped(site, actor);
     if (
       !this.documents ||
       typeof carrierName !== 'string' ||
@@ -93,7 +331,7 @@ export class SiteCommerceService {
     )
       throw new NotFoundException();
     const link = await this.db.client.websiteOrder.findFirst({
-      where: { siteCode: 'nss', branchId: scoped.branchIds[0]!, contractId },
+      where: { siteCode: site, branchId: scoped.branchIds[0]!, contractId },
       select: { id: true },
     });
     if (!link) throw new NotFoundException();
@@ -120,9 +358,10 @@ export class SiteCommerceService {
     site: string,
     actor: AuthenticatedActor,
     requested?: string,
+    permission:
+      'ticket_catalog.manage' | 'master_data.update' = 'ticket_catalog.manage',
   ) {
-    if (!actor.permissions.includes('ticket_catalog.manage'))
-      throw new ForbiddenException();
+    if (!actor.permissions.includes(permission)) throw new ForbiddenException();
     if (!['nss', 'jahan-bastan', 'ghestiroo', 'jahan-academy'].includes(site))
       throw new BadRequestException('انتشار سایت معتبر نیست.');
     let bindings: Record<string, { branchId?: string }> = {};
@@ -137,7 +376,7 @@ export class SiteCommerceService {
       !branchId ||
       !actor.branchIds.includes(branchId) ||
       (bound && bound !== branchId) ||
-      (site === 'nss' && !bound)
+      (isDeliverySite(site) && !bound)
     )
       throw new ForbiddenException('این شعبه به سایت انتخاب‌شده دسترسی ندارد.');
     return branchId;
@@ -149,14 +388,57 @@ export class SiteCommerceService {
     resourceId: string,
     actor: AuthenticatedActor,
     branch?: string,
+    requestedPeriod = '',
   ) {
     const branchId = this.publicationBranch(site, actor, branch);
-    if (!['ticket', 'tour'].includes(kind)) throw new BadRequestException();
-    return {
-      data: await this.db.client.websitePublication.findFirst({
-        where: { siteCode: site, kind, resourceId, branchId },
-      }),
+    if (!['ticket', 'tour', 'floating-tour'].includes(kind))
+      throw new BadRequestException();
+    const periodKey = this.publicationPeriod(kind, requestedPeriod);
+    const delivery = await this.db.client.websiteCatalogDelivery.findFirst({
+      where: { siteCode: site, branchId },
+      select: {
+        lastError: true,
+        deliveredAt: true,
+        deliveredRevision: true,
+        revision: true,
+      },
+    });
+    const deliveryStatus = !delivery
+      ? 'unconfigured'
+      : delivery.lastError
+        ? 'error'
+        : delivery.deliveredAt &&
+            delivery.deliveredRevision === delivery.revision
+          ? 'accepted'
+          : 'pending';
+    const deliveryDetails = delivery && {
+      deliveredAt: delivery.deliveredAt,
+      revision: delivery.revision.toString(),
+      deliveredRevision: delivery.deliveredRevision.toString(),
+      lastError: delivery.lastError,
     };
+    const data = await this.db.client.websitePublication.findFirst({
+      where: { siteCode: site, kind, resourceId, branchId, periodKey },
+    });
+    if (
+      kind === 'tour' &&
+      data?.presentation &&
+      websitePresentation(data.presentation).previewOnly
+    ) {
+      const departure = await this.tours.pricingDeparture(resourceId, [
+        branchId,
+      ]);
+      const ids = [...new Set(departure.package.hotelIds)];
+      const profiles = await this.references.publishedHotelProfiles(ids);
+      const names = new Map(profiles.map((hotel) => [hotel.id, hotel.name]));
+      return {
+        deliveryStatus,
+        deliveryDetails,
+        data,
+        previewHotels: ids.map((id) => ({ id, name: names.get(id) ?? id })),
+      };
+    }
+    return { deliveryStatus, deliveryDetails, data };
   }
 
   async publish(
@@ -169,11 +451,12 @@ export class SiteCommerceService {
       version: number;
       branchId?: string;
       presentation?: unknown;
+      periodKey?: string;
     },
     actor: AuthenticatedActor,
   ) {
     if (
-      !['ticket', 'tour'].includes(kind) ||
+      !['ticket', 'tour', 'floating-tour'].includes(kind) ||
       !['nss', 'jahan-bastan', 'ghestiroo', 'jahan-academy'].includes(site) ||
       typeof input?.enabled !== 'boolean' ||
       !Number.isInteger(input.version) ||
@@ -184,18 +467,82 @@ export class SiteCommerceService {
     if (!actor.permissions.includes('ticket_catalog.manage'))
       throw new ForbiddenException();
     const branchId = this.publicationBranch(site, actor, input.branchId);
+    const periodKey = this.publicationPeriod(kind, input.periodKey ?? '');
+    const key = {
+      siteCode: site,
+      kind,
+      resourceId,
+      branchId,
+      periodKey,
+    };
+    const row = await this.db.client.websitePublication.findUnique({
+      where: { siteCode_branchId_kind_resourceId_periodKey: key },
+    });
+    if ((row?.version ?? 0) !== input.version)
+      throw new ConflictException('وضعیت انتشار تغییر کرده است.');
+    const incoming =
+      input.presentation === undefined
+        ? undefined
+        : websitePresentation(input.presentation);
+    const currentPresentation = row?.presentation
+      ? websitePresentation(row.presentation)
+      : undefined;
+    const previewOnly =
+      incoming?.previewOnly ?? currentPresentation?.previewOnly ?? false;
+    const previewHotelRate =
+      incoming?.previewHotelRate !== undefined
+        ? incoming.previewHotelRate
+        : currentPresentation?.previewHotelRate;
+    const presentation = incoming && {
+      ...incoming,
+      ...(previewOnly ? { previewOnly: true } : {}),
+      ...(previewOnly && previewHotelRate ? { previewHotelRate } : {}),
+    };
+    if (!previewOnly && incoming?.previewHotelRate)
+      throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
+    if ((presentation && kind === 'ticket') || (previewOnly && kind !== 'tour'))
+      throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
     if (kind === 'ticket') {
       await this.tickets.documentSupply(resourceId, [branchId]);
       if (input.enabled)
         await this.tickets.websiteOffer(
           resourceId,
           [branchId],
-          site === 'nss' ? await this.ticketTarget(site, branchId) : undefined,
+          isDeliverySite(site)
+            ? await this.ticketTarget(site, branchId)
+            : undefined,
         );
+    } else if (kind === 'floating-tour') {
+      await this.floatingProduct(
+        resourceId,
+        [branchId],
+        periodKey,
+        input.enabled,
+      );
     } else {
-      await this.tours.pricingDeparture(resourceId, [branchId]);
+      const departure = await this.tours.pricingDeparture(resourceId, [
+        branchId,
+      ]);
+      const hotelRates = incoming?.previewHotelRate?.breakdown?.hotels;
+      if (hotelRates) {
+        const expected = new Set(departure.package.hotelIds);
+        const supplied = Object.keys(hotelRates);
+        if (
+          supplied.length !== expected.size ||
+          supplied.some((id) => !expected.has(id))
+        )
+          throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
+      }
+      if (
+        previewOnly &&
+        previewHotelRate &&
+        (previewHotelRate.checkIn < departure.startsOn ||
+          previewHotelRate.checkOut > departure.endsOn)
+      )
+        throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
       if (
         input.enabled &&
+        !previewOnly &&
         !(
           await this.packages.websitePublicationCandidates({
             ...actor,
@@ -205,31 +552,26 @@ export class SiteCommerceService {
       )
         throw new BadRequestException('قیمت منتشرشده پکیج الزامی است.');
     }
-    const presentation =
-      input.presentation === undefined
-        ? undefined
-        : websitePresentation(input.presentation);
-    if (presentation && kind !== 'tour')
-      throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
-    const key = {
-      siteCode: site,
-      kind,
-      resourceId,
-      branchId,
-    };
-    const row = await this.db.client.websitePublication.findUnique({
-      where: { siteCode_branchId_kind_resourceId: key },
-    });
-    if ((row?.version ?? 0) !== input.version)
-      throw new ConflictException('وضعیت انتشار تغییر کرده است.');
+    const ghestirooTour = site === 'ghestiroo' && kind !== 'ticket';
+    const storedPresentation = ghestirooTour
+      ? {
+          ...(presentation ??
+            currentPresentation ?? {
+              title: '',
+              description: '',
+              commissionPercent: '0',
+            }),
+          operatorApproved: true,
+        }
+      : presentation;
     if (!row)
       return {
         data: await this.db.client.websitePublication.create({
           data: {
             ...key,
-            ...(presentation ? { presentation } : {}),
+            ...(storedPresentation ? { presentation: storedPresentation } : {}),
             enabled: input.enabled,
-            salesStopped: input.salesStopped ?? false,
+            salesStopped: previewOnly || (input.salesStopped ?? false),
           },
         }),
       };
@@ -237,8 +579,13 @@ export class SiteCommerceService {
       where: { id: row.id, version: input.version },
       data: {
         enabled: input.enabled,
-        ...(presentation ? { presentation } : {}),
-        salesStopped: input.salesStopped ?? row.salesStopped,
+        ...(storedPresentation ? { presentation: storedPresentation } : {}),
+        salesStopped:
+          previewOnly ||
+          (input.salesStopped ??
+            (ghestirooTour && currentPresentation?.previewOnly
+              ? false
+              : row.salesStopped)),
         version: { increment: 1 },
       },
     });
@@ -284,6 +631,10 @@ export class SiteCommerceService {
       );
     return {
       ...offer,
+      baggageAllowanceKg:
+        (offer.cabinClassCode === 'BUSINESS'
+          ? offer.businessBaggageKg
+          : offer.economyBaggageKg) ?? null,
       international: countryCodes.some(
         (code) => code !== '' && !['IR', 'IRN', 'IRAN'].includes(code),
       ),
@@ -328,10 +679,23 @@ export class SiteCommerceService {
     return links.filter((link) => cancelled.has(link.contractId));
   }
 
-  async catalog(site: string, actor: AuthenticatedActor) {
+  async catalog(
+    site: string,
+    actor: AuthenticatedActor,
+    includeFloating = false,
+    floatingOnly = false,
+  ) {
     const scoped = this.scoped(site, actor);
     const rows = await this.db.client.websitePublication.findMany({
-      where: { siteCode: site, branchId: scoped.branchIds[0]! },
+      where: {
+        siteCode: site,
+        branchId: scoped.branchIds[0]!,
+        ...(floatingOnly
+          ? { kind: 'floating-tour' }
+          : !includeFloating
+            ? { kind: { in: ['ticket', 'tour'] } }
+            : {}),
+      },
       orderBy: { id: 'asc' },
       take: 501,
     });
@@ -341,17 +705,32 @@ export class SiteCommerceService {
       );
     const data = [];
     for (const row of rows) {
-      if (!row.enabled) {
+      // Legacy sites must explicitly opt into the additive floating-tour product contract.
+      if (row.kind === 'floating-tour' && !includeFloating) continue;
+      // Older rows could be created automatically when package pricing was saved.
+      // Require the explicit destination action before releasing a Ghestiroo tour.
+      const approved =
+        site !== 'ghestiroo' ||
+        row.kind === 'ticket' ||
+        (row.presentation as { operatorApproved?: boolean } | null)
+          ?.operatorApproved === true;
+      if (!row.enabled || !approved) {
         data.push({
           id: row.id,
           kind: row.kind,
           resourceId: row.resourceId,
+          ...(row.kind === 'floating-tour' ? { periodKey: row.periodKey } : {}),
           enabled: false,
           version: row.version,
         });
         continue;
       }
       try {
+        const presentation = row.presentation
+          ? websitePresentation(row.presentation)
+          : undefined;
+        const previewOnly =
+          row.kind === 'tour' && presentation?.previewOnly === true;
         const product =
           row.kind === 'ticket'
             ? {
@@ -361,33 +740,121 @@ export class SiteCommerceService {
                   await this.ticketTarget(site, scoped.branchIds[0]!),
                 ),
               }
-            : {
-                tour: await this.websiteTour(row.resourceId, scoped),
-                rooms: (
-                  await this.packages.saleCatalog(
+            : row.kind === 'floating-tour'
+              ? {
+                  floatingTour: await this.floatingProduct(
                     row.resourceId,
-                    scoped,
-                    scoped.branchIds[0],
-                  )
-                ).data,
-              };
+                    scoped.branchIds,
+                    row.periodKey,
+                  ),
+                }
+              : await (async () => {
+                  const tour = await this.websiteTour(row.resourceId, scoped);
+                  const pricing = previewOnly
+                    ? { data: [], passengerRates: [] }
+                    : await this.packages.saleCatalog(
+                        row.resourceId,
+                        scoped,
+                        scoped.branchIds[0],
+                        true,
+                      );
+                  return {
+                    tour,
+                    rooms: pricing.data,
+                    passengerRates: pricing.passengerRates ?? [],
+                  };
+                })();
+
         if (
           'tour' in product &&
+          product.tour &&
           (product.tour.isActive === false || product.tour.isDeleted === true)
         ) {
           data.push({
             id: row.id,
             kind: row.kind,
             resourceId: row.resourceId,
+            ...(row.kind === 'floating-tour'
+              ? { periodKey: row.periodKey }
+              : {}),
             enabled: false,
             version: row.version,
           });
           continue;
         }
-        const presentation = row.presentation
-          ? websitePresentation(row.presentation)
-          : undefined;
+        const floatingTour =
+          'floatingTour' in product ? product.floatingTour : undefined;
+        const floatingRooms = floatingTour?.dated.some(
+          (price) => price.flightSchedule,
+        )
+          ? await floatingWebsiteRooms(
+              floatingTour,
+              await this.packages.buyRates(),
+              this.references,
+            )
+          : [];
+        const hotels =
+          floatingTour && (site === 'ghestiroo' || floatingRooms.length)
+            ? await this.references.publishedHotelProfiles(
+                site === 'ghestiroo'
+                  ? [
+                      ...floatingTour.dated,
+                      ...(floatingTour.monthly?.rows ?? []),
+                    ].flatMap((row) => row.stays.map((stay) => stay.hotelId))
+                  : floatingRooms.flatMap((room) =>
+                      room.stays.map((stay) => stay.hotelId),
+                    ),
+              )
+            : 'tour' in product && product.tour && product.rooms
+              ? await this.references.publishedHotelProfiles([
+                  ...product.tour.package.hotelIds,
+                  ...product.rooms.flatMap((room) => [
+                    room.hotelId,
+                    ...(room.stays ?? []).map((stay) => stay.hotelId),
+                  ]),
+                ])
+              : undefined;
         if (presentation && 'tour' in product && product.tour) {
+          const previewRate = presentation.previewHotelRate;
+          if (previewOnly && previewRate?.breakdown) {
+            const tour = product.tour;
+            const breakdown = previewRate.breakdown;
+            if (
+              previewRate.checkIn >= tour.startsOn &&
+              previewRate.checkOut <= tour.endsOn
+            ) {
+              product.passengerRates = tour.package.hotelIds.flatMap(
+                (hotelId) => {
+                  const hotelRates = breakdown.hotels
+                    ? breakdown.hotels[hotelId]
+                    : breakdown.hotel;
+                  if (!hotelRates) return [];
+                  return previewRateKinds.flatMap((kind) => {
+                    const rate = passengerRate(
+                      {
+                        kind,
+                        hotelId,
+                        roomTypeName: '',
+                        checkIn: previewRate.checkIn,
+                        checkOut: previewRate.checkOut,
+                      },
+                      [{ currencyCode: 'IRR', amount: hotelRates[kind] }],
+                      [
+                        {
+                          currencyCode: 'IRR',
+                          amount:
+                            kind === 'childWithBed'
+                              ? breakdown.childFlightIrr
+                              : breakdown.adultFlightIrr,
+                        },
+                      ],
+                    );
+                    return rate ? [rate] : [];
+                  });
+                },
+              );
+            }
+          }
           product.tour.package = {
             ...product.tour.package,
             ...(presentation.title ? { name: presentation.title } : {}),
@@ -400,14 +867,45 @@ export class SiteCommerceService {
             },
           };
         }
+        if (presentation && 'floatingTour' in product && product.floatingTour) {
+          product.floatingTour.package = {
+            ...product.floatingTour.package,
+            ...(presentation.title ? { name: presentation.title } : {}),
+            details: {
+              ...product.floatingTour.package.details,
+              version: 1,
+              ...(presentation.description
+                ? { description: presentation.description }
+                : {}),
+            },
+          };
+        }
+        const capacityStopped =
+          'flight' in product &&
+          !!product.flight &&
+          product.flight.remainingCapacity <= 0;
+        const floatingPriceOnly = websitePriceOnly(
+          row.kind,
+          'flight' in product ? product.flight?.supplyType : undefined,
+        );
         data.push({
           id: row.id,
           kind: row.kind,
           resourceId: row.resourceId,
+          ...(row.kind === 'floating-tour' ? { periodKey: row.periodKey } : {}),
           enabled: true,
-          salesStopped: row.salesStopped,
+          // Stock exhaustion is a reversible projection, never a manual publication edit.
+          salesStopped:
+            previewOnly ||
+            floatingPriceOnly ||
+            row.salesStopped ||
+            capacityStopped,
+          ...(previewOnly || floatingPriceOnly ? { previewOnly: true } : {}),
+          ...(capacityStopped ? { capacityStopped: true } : {}),
           version: row.version,
           ...product,
+          ...(floatingTour ? { floatingRooms } : {}),
+          ...(hotels ? { hotels } : {}),
           ...(presentation ? { presentation } : {}),
         });
       } catch (error) {
@@ -421,13 +919,14 @@ export class SiteCommerceService {
           id: row.id,
           kind: row.kind,
           resourceId: row.resourceId,
+          ...(row.kind === 'floating-tour' ? { periodKey: row.periodKey } : {}),
           enabled: false,
           version: row.version,
         });
       }
     }
     const cancelledOrders = await this.cancelledOrders(site, scoped);
-    if (!this.documents || site !== 'nss')
+    if (!this.documents || !isDeliverySite(site))
       return { version: 1, data, cancelledOrders };
     const flights: { carrierName: string; carrierLogoUrl?: string }[] = [];
     for (const product of data) {
@@ -453,6 +952,7 @@ export class SiteCommerceService {
       (name) =>
         websiteAirlineLogo(name, scoped, this.references, this.documents!),
       available,
+      commerceSites[site].origin,
     );
     return { version: 1, data, airlineLogos, cancelledOrders };
   }
@@ -466,6 +966,35 @@ export class SiteCommerceService {
         ? { returning: await this.flight(tour.returning.id, actor.branchIds) }
         : {}),
     };
+  }
+
+  private floatingProduct(
+    id: string,
+    branchIds: string[],
+    periodKey: string,
+    requirePrices = true,
+  ) {
+    if (!this.floating) throw new Error('Floating tour pricing is unavailable');
+    return this.floating.websiteProduct(
+      id,
+      branchIds,
+      periodKey,
+      requirePrices,
+    );
+  }
+
+  private publicationPeriod(kind: string, key: string) {
+    if (
+      typeof key !== 'string' ||
+      key.length > 100 ||
+      (kind !== 'floating-tour' && key !== '') ||
+      (kind === 'floating-tour' &&
+        !/^(dated:\d{4}-\d{2}-\d{2}:\d{1,3}|monthly:(PERSIAN|GREGORIAN):\d{1,2}(?:-\d{1,2}){0,11}:\d{1,3})$/.test(
+          key,
+        ))
+    )
+      throw new BadRequestException('انتشار سایت معتبر نیست.');
+    return key;
   }
 
   private async assertPublished(
@@ -488,10 +1017,13 @@ export class SiteCommerceService {
         }));
     if (!resources.length || tourIds.length > 1)
       throw new BadRequestException('محصول ERP را انتخاب کنید.');
+    if (site === 'ghestiroo' && tourIds.length)
+      throw new ForbiddenException('رزرو تور برای قسطی‌رو فعال نیست.');
     for (const resource of resources) {
       const published = await this.db.client.websitePublication.findUnique({
         where: {
-          siteCode_branchId_kind_resourceId: {
+          siteCode_branchId_kind_resourceId_periodKey: {
+            periodKey: '',
             siteCode: site,
             branchId: actor.branchIds[0]!,
             ...resource,
@@ -540,7 +1072,16 @@ export class SiteCommerceService {
       const seats = input.passengers.filter(
         (p) => passengerAgeCategory(p.birthDate, input.departureDate) !== 'INF',
       ).length;
-      const quotes = websiteFlightQuotes(offers[0]!, offers[1], seats);
+      const quotes = websiteFlightQuotes(
+        offers[0]!,
+        offers[1],
+        seats,
+        ageCounts(
+          input.passengers.map((p) =>
+            passengerAgeCategory(p.birthDate, input.departureDate),
+          ),
+        ),
+      );
       for (const [index, selection] of selections.entries()) {
         const offer = offers[index]!,
           price = quotes[index]!;
@@ -588,21 +1129,44 @@ export class SiteCommerceService {
 
   async flightQuote(
     site: string,
-    body: { productIds: string[]; birthDates: string[] },
+    body: {
+      productIds: string[];
+      birthDates?: string[];
+      passengerCounts?: { adults: number; children: number; infants: number };
+    },
     actor: AuthenticatedActor,
   ) {
     const scoped = this.scoped(site, actor);
+    const dates = Array.isArray(body?.birthDates) ? body.birthDates : null;
+    const preview = body?.passengerCounts;
+    const validDates =
+      dates &&
+      dates.length >= 1 &&
+      dates.length <= 30 &&
+      dates.every(
+        (d) => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d),
+      );
+    const validPreview =
+      preview &&
+      typeof preview === 'object' &&
+      !Array.isArray(preview) &&
+      Object.keys(preview).length === 3 &&
+      (['adults', 'children', 'infants'] as const).every(
+        (key) => Number.isSafeInteger(preview[key]) && preview[key] >= 0,
+      ) &&
+      preview.adults + preview.children >= 1 &&
+      preview.adults + preview.children + preview.infants <= 30;
     if (
       !body ||
       !Array.isArray(body.productIds) ||
       body.productIds.length < 1 ||
       body.productIds.length > 2 ||
-      !Array.isArray(body.birthDates) ||
-      !body.birthDates.length ||
-      body.birthDates.length > 30 ||
-      body.birthDates.some(
-        (d) => typeof d !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(d),
-      )
+      body.productIds.some(
+        (id) => typeof id !== 'string' || !id || id.length > 80,
+      ) ||
+      new Set(body.productIds).size !== body.productIds.length ||
+      (body.birthDates !== undefined && body.passengerCounts !== undefined) ||
+      !(validDates || validPreview)
     )
       throw new BadRequestException('استعلام بلیت معتبر نیست.');
     const offers: Awaited<ReturnType<TicketPublicService['websiteOffer']>>[] =
@@ -628,11 +1192,22 @@ export class SiteCommerceService {
         ),
       );
     }
-    const seats = body.birthDates.filter(
-      (d) =>
-        passengerAgeCategory(d, offers[0]!.departureAt.slice(0, 10)) !== 'INF',
-    ).length;
-    return { data: websiteFlightQuotes(offers[0]!, offers[1], seats) };
+    const counts = dates
+      ? ageCounts(
+          dates.map((d) =>
+            passengerAgeCategory(d, offers[0]!.departureAt.slice(0, 10)),
+          ),
+        )
+      : preview!;
+    return {
+      data: websiteFlightQuotes(
+        offers[0]!,
+        offers[1],
+        counts.adults + counts.children,
+        counts,
+        true,
+      ),
+    };
   }
 
   async draft(
@@ -660,12 +1235,20 @@ export class SiteCommerceService {
       `site:${site}:${externalId}`,
       scoped,
     );
-    if (!recovered) await this.assertPublished(site, input, scoped);
+    const checkout = await this.checkoutHolds?.validateDraft(
+      site,
+      externalId,
+      input,
+      scoped,
+    );
+    if (!recovered && !checkout)
+      await this.assertPublished(site, input, scoped);
     const ticketTargetId = input.services.some(
       (s) => s.metadata?.tourDepartureId,
     )
       ? undefined
-      : await this.ticketTarget(site, scoped.branchIds[0]!);
+      : (checkout?.targetId ??
+        (await this.ticketTarget(site, scoped.branchIds[0]!)));
     const created = await this.sales.create(
       {
         ...input,
@@ -682,6 +1265,8 @@ export class SiteCommerceService {
       scoped,
       key.branchId,
       `site:${site}:${externalId}`,
+      undefined,
+      checkout?.frozenPackageSales,
     );
     // Native Sales create is durable/idempotent; a timeout before this link is safe to retry.
     await this.db.client.websiteOrder.upsert({
@@ -689,6 +1274,165 @@ export class SiteCommerceService {
       create: { ...key, fingerprint, contractId: created.data.id },
       update: {},
     });
+    return this.status(site, externalId, actor);
+  }
+
+  private async quoteFloating(
+    site: string,
+    scoped: AuthenticatedActor,
+    input: FloatingWebsiteBooking,
+  ) {
+    if (site === 'ghestiroo')
+      throw new ForbiddenException('رزرو تور برای قسطی‌رو فعال نیست.');
+    assertWebsiteBookable('floating-tour');
+    const publication = await this.db.client.websitePublication.findFirst({
+      where: {
+        id: input.publicationId,
+        siteCode: site,
+        branchId: scoped.branchIds[0]!,
+        kind: 'floating-tour',
+        enabled: true,
+        salesStopped: false,
+      },
+    });
+    if (!publication)
+      throw new ConflictException('این محصول برای سایت منتشر نشده است.');
+    const product = await this.floatingProduct(
+      publication.resourceId,
+      scoped.branchIds,
+      publication.periodKey,
+    );
+    const choices = await floatingWebsiteRooms(
+      product,
+      await this.packages.buyRates(),
+      this.references,
+    );
+    const draft = floatingNativeDraft(input, product.package, choices);
+    try {
+      validateSalesContract(draft, true);
+    } catch (error) {
+      if (error instanceof Error) throw new BadRequestException(error.message);
+      throw error;
+    }
+    await assertFloatingFlightAirports(draft.services, this.references);
+    return draft;
+  }
+
+  async previewFloating(
+    site: string,
+    input: FloatingWebsiteBooking,
+    actor: AuthenticatedActor,
+  ) {
+    const scoped = this.scoped(site, actor);
+    validateFloatingBooking(input);
+    return { data: await this.quoteFloating(site, scoped, input) };
+  }
+
+  async holdFloating(
+    site: string,
+    externalId: string,
+    body: {
+      booking: FloatingWebsiteBooking;
+      customerExternalId: string;
+      expiresNotAfter: string;
+    },
+    actor: AuthenticatedActor,
+  ) {
+    const scoped = this.scoped(site, actor);
+    assertWebsiteBookable('floating-tour');
+    validateFloatingBooking(body?.booking);
+    if (!this.checkoutHolds)
+      throw new ConflictException('درخواست رزرو خرید معتبر نیست.');
+    return this.checkoutHolds.prepareFloating(
+      site,
+      externalId,
+      floatingBookingIdentity(body.booking),
+      body.customerExternalId,
+      body.expiresNotAfter,
+      () => this.quoteFloating(site, scoped, body.booking),
+      actor,
+    );
+  }
+
+  async draftFloating(
+    site: string,
+    externalId: string,
+    input: FloatingWebsiteBooking,
+    actor: AuthenticatedActor,
+  ) {
+    const scoped = this.scoped(site, actor);
+    externalOrderId(externalId);
+    validateFloatingBooking(input);
+    const fingerprint = stableFingerprint({ floating: input });
+    const key = { siteCode: site, branchId: scoped.branchIds[0]!, externalId };
+    const where = { siteCode_branchId_externalId: key };
+    const clash = () =>
+      new ConflictException('شناسه سفارش با اطلاعات متفاوت استفاده شده است.');
+    const previous = await this.db.client.websiteOrder.findUnique({ where });
+    if (previous) {
+      if (previous.fingerprint !== fingerprint) throw clash();
+      return this.status(site, externalId, actor);
+    }
+    const createKey = `site:${site}:${externalId}`;
+    const recovered = await this.sales.createdByKey(createKey, scoped);
+    let contractId: string;
+    if (recovered) {
+      if (
+        !recovered.data.servicesDetail?.some(
+          (service) =>
+            service.metadata?.websiteFloatingFingerprint === fingerprint,
+        )
+      )
+        throw clash();
+      contractId = recovered.data.id;
+    } else {
+      assertWebsiteBookable('floating-tour');
+      const hold = await this.db.client.websiteCheckoutSession.findUnique({
+        where,
+      });
+      const quote = hold?.quoteSnapshot as
+        { floatingDraft?: SalesContractCreateRequest } | undefined;
+      const draft = quote?.floatingDraft;
+      if (
+        !hold ||
+        hold.status !== 'VERIFIED' ||
+        !hold.resolutionFingerprint ||
+        hold.fingerprint !== floatingBookingIdentity(input) ||
+        !draft
+      )
+        throw new ConflictException('ابتدا تأیید بانک لازم است.');
+      const metadata = {
+        ...draft.services[0]!.metadata,
+        sourceSite: site,
+        externalOrderId: externalId,
+        websiteFloatingFingerprint: fingerprint,
+      };
+      const created = await this.sales.create(
+        {
+          ...draft,
+          customerId: input.customerId,
+          passengers: draft.passengers.map((person, index) => ({
+            ...person,
+            customerId: input.passengers[index]!.customerId,
+            displayNameSnapshot: input.passengers[index]!.displayNameSnapshot,
+          })),
+          services: [
+            { ...draft.services[0]!, metadata },
+            ...draft.services.slice(1),
+          ],
+        },
+        scoped,
+        key.branchId,
+        createKey,
+      );
+      contractId = created.data.id;
+    }
+    const saved = await this.db.client.websiteOrder.upsert({
+      where,
+      create: { ...key, fingerprint, contractId },
+      update: {},
+    });
+    if (saved.fingerprint !== fingerprint) throw clash();
     return this.status(site, externalId, actor);
   }
 
@@ -715,9 +1459,19 @@ export class SiteCommerceService {
   async status(site: string, externalId: string, actor: AuthenticatedActor) {
     const { row, scoped } = await this.order(site, externalId, actor);
     const { data: contract } = await this.sales.detail(row.contractId, scoped);
+    const facts = await this.sales.financeCustomerDocumentDeliveryFacts(
+      row.contractId,
+      scoped.branchIds,
+    );
     return {
       version: 1,
       data: {
+        paymentStatus:
+          !facts.cancelled && facts.hasConfirmedPayment && facts.fullySettled
+            ? 'paid'
+            : 'unpaid',
+        hasConfirmedPayment: facts.hasConfirmedPayment,
+        fullySettled: facts.fullySettled,
         externalId,
         contractId: contract.id,
         contractNumber: contract.contractNumber,
@@ -725,6 +1479,11 @@ export class SiteCommerceService {
         contractVersion: contract.version,
         balances: contract.balances,
         ticketSelections: contract.ticketSelections,
+        ...(contract.servicesDetail?.some(
+          (service) => service.metadata?.websiteFloatingFingerprint,
+        )
+          ? { floatingFlights: salesContractFlights(contract.servicesDetail) }
+          : {}),
         hotelSelection: contract.hotelSelection,
         services: contract.servicesDetail,
       },
@@ -736,8 +1495,19 @@ export class SiteCommerceService {
     externalId: string,
     payments: SalesPaymentCreateRequest[],
     actor: AuthenticatedActor,
+    gatewayReceipt?: VerifiedGatewayProof,
   ) {
     const { row, scoped } = await this.order(site, externalId, actor);
+    if (gatewayReceipt && !this.gatewayReceipts)
+      throw new ForbiddenException('اتصال تسویه درگاه تنظیم نشده است.');
+    const gateway = gatewayReceipt
+      ? await this.gatewayReceipts!.resolve(
+          site,
+          externalId,
+          gatewayReceipt,
+          scoped,
+        )
+      : undefined;
     if (
       !Array.isArray(payments) ||
       !payments.length ||
@@ -749,10 +1519,45 @@ export class SiteCommerceService {
       )
     )
       throw new BadRequestException('رسید تأییدشده سایت الزامی است.');
+    if (
+      gateway &&
+      (payments.length !== 1 ||
+        payments[0]!.method !== 'ONLINE_GATEWAY' ||
+        payments[0]!.paymentReference !== gateway.reference ||
+        payments[0]!.currencyCode !== gateway.currencyCode ||
+        !new Prisma.Decimal(payments[0]!.amount).eq(gateway.amount) ||
+        (payments[0]!.destinationAccountId &&
+          payments[0]!.destinationAccountId !== gateway.accountId))
+    )
+      throw new ConflictException(
+        'تأیید بانکی با مبلغ و حساب رسید مطابقت ندارد.',
+      );
     const fingerprint = stableFingerprint(payments);
     if (row.paymentFingerprint && row.paymentFingerprint !== fingerprint)
       throw new ConflictException('رسید این سفارش تغییر کرده است.');
     const { data: before } = await this.sales.detail(row.contractId, scoped);
+    const floating = before.servicesDetail?.some(
+      (service) =>
+        typeof service.metadata?.websiteFloatingFingerprint === 'string',
+    );
+    if (floating) {
+      const hold = await this.db.client.websiteCheckoutSession.findUnique({
+        where: {
+          siteCode_branchId_externalId: {
+            siteCode: site,
+            branchId: scoped.branchIds[0]!,
+            externalId,
+          },
+        },
+      });
+      if (
+        !gateway ||
+        hold?.status !== 'BOUND' ||
+        hold.contractId !== row.contractId ||
+        hold.resolutionFingerprint !== stableFingerprint(gatewayReceipt)
+      )
+        throw new ConflictException('ابتدا تأیید بانک لازم است.');
+    }
     const paid = new Map<string, Prisma.Decimal>();
     for (const p of payments)
       paid.set(
@@ -804,7 +1609,7 @@ export class SiteCommerceService {
             .filter((id): id is string => typeof id === 'string'),
         ),
       ];
-      if (!tourIds.length) {
+      if (!floating && !tourIds.length) {
         const targetId = await this.ticketTarget(site, scoped.branchIds[0]!);
         if (
           current.servicesDetail.some(
@@ -824,7 +1629,8 @@ export class SiteCommerceService {
       for (const resource of resources) {
         const publication = await this.db.client.websitePublication.findUnique({
           where: {
-            siteCode_branchId_kind_resourceId: {
+            siteCode_branchId_kind_resourceId_periodKey: {
+              periodKey: '',
               siteCode: site,
               branchId: scoped.branchIds[0]!,
               ...resource,
@@ -842,6 +1648,29 @@ export class SiteCommerceService {
         scoped,
         `site:${site}:${externalId}:confirm`,
       );
+    }
+    if (gateway) {
+      const { data: receiptContract } = await this.sales.detail(
+        row.contractId,
+        scoped,
+      );
+      const matches = receiptContract.payments.filter(
+        (p) =>
+          p.method === 'ONLINE_GATEWAY' &&
+          p.paymentReference === gateway.reference &&
+          p.currencyCode === gateway.currencyCode &&
+          new Prisma.Decimal(p.amount).eq(gateway.amount),
+      );
+      if (matches.length !== 1)
+        throw new ConflictException('رسید بانکی یکتای قرارداد پیدا نشد.');
+      await this.gatewayReceipts!.confirm(
+        row.contractId,
+        matches[0]!,
+        gateway,
+        scoped,
+        (event) => this.sales.applyFinancePaymentConfirmed(event),
+      );
+      await this.releaseSettledWebsiteDocuments(row, scoped);
     }
     return this.status(site, externalId, actor);
   }
@@ -864,6 +1693,54 @@ export class SiteCommerceService {
     return this.sales.paymentAccounts(row.contractId, scoped);
   }
 
+  private async releaseSettledWebsiteDocuments(
+    row: { contractId: string; paymentFingerprint: string | null },
+    scoped: AuthenticatedActor,
+  ) {
+    const current = await this.delivery.readCustomerContract(row.contractId);
+    // Never override an explicit finance decision (including a revoked approval).
+    if (current.approved || current.version !== 0) return current;
+    const facts = await this.sales.financeCustomerDocumentDeliveryFacts(
+      row.contractId,
+      scoped.branchIds,
+    );
+    if (facts.cancelled || !facts.hasConfirmedPayment || !facts.fullySettled)
+      return current;
+    try {
+      return await this.delivery.updateCustomerContract(
+        {
+          expectedVersion: current.version,
+          approved: true,
+          basis: 'FULL_SETTLEMENT',
+          reason:
+            'تحویل خودکار خرید سایت پس از تأیید پرداخت و تسویه کامل در سامانه مرکزی',
+        },
+        facts,
+        scoped,
+        async (tx) => {
+          const fresh = await this.sales.financeCustomerDocumentDeliveryFacts(
+            row.contractId,
+            scoped.branchIds,
+            tx,
+          );
+          if (
+            fresh.cancelled ||
+            !fresh.hasConfirmedPayment ||
+            !fresh.fullySettled
+          )
+            throw new ConflictException(
+              'تسویه کامل تأییدشده برای تحویل مدارک لازم است.',
+            );
+          return fresh;
+        },
+      );
+    } catch (error) {
+      if (!(error instanceof ConflictException)) throw error;
+      // A simultaneous finance decision wins; do not overwrite or retry it.
+      return this.delivery.readCustomerContract(row.contractId);
+    }
+  }
+
   async travelDocuments(
     site: string,
     externalId: string,
@@ -875,9 +1752,11 @@ export class SiteCommerceService {
       row.contractId,
       scoped.branchIds,
     );
-    const authorization = await this.delivery.readCustomerContract(
-      row.contractId,
-    );
+    const authorization =
+      contract.status !== 'CANCELLED' &&
+      intake.workflow.supplierStatus !== 'CANCELLED'
+        ? await this.releaseSettledWebsiteDocuments(row, scoped)
+        : await this.delivery.readCustomerContract(row.contractId);
     if (
       !authorization.approved ||
       contract.status === 'CANCELLED' ||

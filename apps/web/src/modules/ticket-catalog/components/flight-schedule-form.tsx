@@ -5,6 +5,7 @@ import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import { Alert, Button, FormField, Input } from '@/components/ui';
 import type { ProductInput, Reference, Segment } from '../model/catalog';
 import { emptyInput } from '../model/preview';
+import { requireFlightAirports } from '../model/flight-airports';
 import { supplyOptions } from '../model/preview';
 import { TicketBaggageFields } from './ticket-baggage-fields';
 import {
@@ -140,6 +141,7 @@ export function flightScheduleDefaults(
     );
     return {
       date: departure.date,
+      scheduledReturnDate: item.scheduledReturnDate,
       time: {
         departure: departure.time,
         arrival: arrival.time,
@@ -155,14 +157,14 @@ export function flightScheduleDefaults(
     .sort((a, b) => a.date.localeCompare(b.date));
   const weekdays = new Map<number, WeekdayStay>();
   for (const outboundLeg of outboundLegs) {
-    const returningLeg = returnLegs.find(
-      (candidate) => candidate.date >= outboundLeg.date,
-    );
-    const stayDays = returningLeg
+    const returnDate =
+      outboundLeg.scheduledReturnDate ??
+      returnLegs.find((candidate) => candidate.date >= outboundLeg.date)?.date;
+    const stayDays = returnDate
       ? Math.max(
           1,
           Math.round(
-            (Date.parse(`${returningLeg.date}T00:00:00Z`) -
+            (Date.parse(`${returnDate}T00:00:00Z`) -
               Date.parse(`${outboundLeg.date}T00:00:00Z`)) /
               86_400_000,
           ),
@@ -279,17 +281,12 @@ export function FlightScheduleForm({
   const patchSegment = (patch: Partial<Segment>) =>
     setInput((current) => {
       const previous = current.segments[0]!;
-      const countryKey = `${saleSide}CountryId` as const;
-      const changedCountry =
-        patch[countryKey] !== undefined &&
-        patch[countryKey] !== previous[countryKey];
       return {
         ...current,
         segments: [{ ...previous, ...patch }],
         saleRoutes: current.saleRoutes
           ?.map((route) => ({
             ...route,
-            ...(changedCountry ? { [saleField]: '' } : {}),
             ...(current.journeyRole === 'return'
               ? {
                   destinationId: patch.destinationCityId ?? route.destinationId,
@@ -315,7 +312,11 @@ export function FlightScheduleForm({
     kind: Reference['kind'],
     value: string,
     change: (r: Reference | undefined) => void,
-    filters: { countryId?: string; cityId?: string } = {},
+    filters: {
+      countryId?: string;
+      cityId?: string;
+      allowAnyCityCountry?: boolean;
+    } = {},
   ) => (
     <ReferencePicker
       id={id}
@@ -324,6 +325,7 @@ export function FlightScheduleForm({
       value={ref(kind, value)}
       {...filters}
       readOnly={saving}
+      required={resource === 'airports'}
       onSelect={(r) => {
         if (r) onReference(r);
         change(r);
@@ -352,6 +354,7 @@ export function FlightScheduleForm({
     setSaving(true);
     setProblem('');
     try {
+      requireFlightAirports(segment);
       const routes = input.saleRoutes ?? [];
       if (
         routes.some(
@@ -479,6 +482,7 @@ export function FlightScheduleForm({
             patchSegment({
               [`${side}CountryId`]: r?.id ?? '',
               [`${side}CityId`]: '',
+              [`${side}AirportId`]: '',
               [side === 'origin' ? 'departureZone' : 'arrivalZone']:
                 'Asia/Tehran',
             }),
@@ -532,7 +536,7 @@ export function FlightScheduleForm({
                           ),
                         })),
                       {
-                        countryId: segment[`${saleSide}CountryId`],
+                        allowAnyCityCountry: true,
                       },
                     )}
                     <Button
@@ -554,10 +558,7 @@ export function FlightScheduleForm({
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={
-                    !segment[`${saleSide}CountryId`] ||
-                    (input.saleRoutes?.length ?? 0) >= 20
-                  }
+                  disabled={(input.saleRoutes?.length ?? 0) >= 20}
                   onClick={() =>
                     setInput((c) => ({
                       ...c,
@@ -583,6 +584,7 @@ export function FlightScheduleForm({
               [side === 'origin' ? 'departureZone' : 'arrivalZone']:
                 'Asia/Tehran',
             }),
+          { countryId: segment[`${side}CountryId`] },
         )}
       </section>
     );

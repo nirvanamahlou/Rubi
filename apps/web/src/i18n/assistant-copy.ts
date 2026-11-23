@@ -1,5 +1,47 @@
 export type AssistantText = readonly [string, string];
 export const assistantCopy = {
+  internalSourceFallback: [
+    'این پاسخ از منابع داخلی روبی قابل تأیید نیست. نام پنل، مرحلهٔ کار یا گزارش موردنظر را مشخص کنید.',
+    'This answer could not be verified from internal Rubi sources. Specify the panel, workflow step, or report.',
+  ],
+  internalGuideUnavailable: [
+    'راهنمای داخلی این گردش‌کار در دسترس نیست.',
+    'The internal guide for this workflow is unavailable.',
+  ],
+  termNonCancelled: [
+    'قراردادهای لغونشده در پنل',
+    'Non-cancelled panel contracts',
+  ],
+  termSalesCancelled: [
+    'قراردادهای لغوشده در فروش',
+    'Contracts cancelled in Sales',
+  ],
+  termReservationCancelled: [
+    'قراردادهای لغوشده فقط در رزرواسیون',
+    'Contracts cancelled only in Reservations',
+  ],
+  termCompleted: [
+    'قراردادهای تکمیل‌شده و لغونشده',
+    'Completed non-cancelled contracts',
+  ],
+  termCount: ['آمار وضعیت قراردادها', 'Contract status counts'],
+  sourceContracts: ['قراردادها', 'Contracts'],
+  sourcePassengers: ['مسافران', 'Passengers'],
+  sourceServices: ['خدمات قرارداد', 'Contract services'],
+  sourceAmounts: ['مبالغ قرارداد', 'Contract amounts'],
+  sourcePayments: ['پرداخت‌های ثبت‌شده', 'Recorded payments'],
+  sourceCountBreakdown: [
+    'آمار قراردادهای فروش و وضعیت رزرواسیون',
+    'Sales contract counts and reservation status',
+  ],
+  sourceAuthorized: ['داده‌های مجاز سامانه', 'Authorized ERP data'],
+  sourceDate: ['تاریخ مشاهده', 'Observation date'],
+  sourceTime: ['ساعت مشاهده', 'Observation time'],
+  sourceTimeUnavailable: [
+    'زمان مشاهده ثبت نشده است',
+    'Observation time unavailable',
+  ],
+  chatLatest: ['رفتن به آخر گفتگو', 'Go to latest message'],
   agentSources: ['منابع پاسخ', 'Answer sources'],
   agentLimitations: ['محدودیت‌های پاسخ', 'Answer limitations'],
   agentPlanning: ['بررسی سؤال', 'Reviewing the question'],
@@ -50,6 +92,10 @@ export const assistantCopy = {
   conversationMessage: ['پیام', 'Message'],
   conversationSend: ['ارسال', 'Send'],
   conversationClear: ['پاک‌کردن گفت‌وگو', 'Clear conversation'],
+  conversationAnalysisLimit: [
+    'تحلیل این سؤال در یک درخواست کامل نشد. سؤال را به بخش‌های کوچک‌تر تقسیم کنید یا بازه و معیار را مشخص‌تر بنویسید.',
+    'This analysis did not finish in one request. Split the question into smaller parts or specify the date range and metric.',
+  ],
   conversationUnavailable: [
     'گفت‌وگو در دسترس نیست؛ گزارش‌های آماده همچنان قابل استفاده‌اند.',
     'Conversation is unavailable. The fixed reports remain available.',
@@ -177,9 +223,6 @@ export const assistantCopy = {
     'پیامت را برای نورا بنویس…',
     'Write your message to Noura…',
   ],
-  quickDaily: ['خلاصه امروز', 'Today’s summary'],
-  quickSales: ['تحلیل فروش', 'Sales analysis'],
-  quickReceivables: ['پیگیری مطالبات', 'Receivables follow-up'],
   chatPolicy: [
     'فقط متن پیام و تاریخچهٔ نشست به Groq ارسال می‌شود؛ نتایج ERP داخل سامانه می‌مانند.',
     'Only message text and session history are sent to Groq; ERP results stay in the system.',

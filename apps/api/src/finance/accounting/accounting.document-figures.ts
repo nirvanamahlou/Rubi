@@ -1,3 +1,4 @@
+import { accountingDetailLevels } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import * as v from './accounting.validation';
 
@@ -21,10 +22,15 @@ export async function documentFigures(
     documentFigureStatuses,
   ];
   const level = Number(query.level ?? '3');
-  if (![3, 4, 5, 6].includes(level)) v.invalid('سطح گردش معتبر نیست.');
-  for (const detailLevel of [4, 5, 6]) {
+  if (![3, ...accountingDetailLevels].includes(level))
+    v.invalid('سطح گردش معتبر نیست.');
+  for (const detailLevel of accountingDetailLevels) {
     if (detailLevel > level) break;
-    const detailId = v.uuid(query[`detail${detailLevel}Id`])!;
+    const detailId = v.uuid(
+      query[`detail${detailLevel}Id`],
+      detailLevel !== level,
+    );
+    if (!detailId) continue;
     if (
       !(await tx.accountingDetail.findFirst({
         where: { id: detailId, bookId: book.id },

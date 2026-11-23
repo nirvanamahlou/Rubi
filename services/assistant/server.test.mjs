@@ -1,6 +1,8 @@
+import { internalSourceFallback } from './source-policy.mjs';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { test } from 'node:test';
+import { ServiceError } from './errors.mjs';
 import {
   createAssistantServer,
   accessCookie,
@@ -62,8 +64,9 @@ async function harness(t, options = {}) {
         response.end('{}');
         return;
       }
-      const userId =
+      const user =
         request.headers.cookie === 'nora_access=user-b' ? 'user-b' : 'user-a';
+      const userId = options.identityIds?.[user] ?? user;
       response.end(
         JSON.stringify({
           userId,
@@ -155,6 +158,7 @@ async function harness(t, options = {}) {
     audit: (event) => audit.push(event),
     now: clock,
     conversation: options.conversation,
+    rateLimitExemptUserIds: options.rateLimitExemptUserIds ?? [],
     timeoutMs: options.timeoutMs ?? 1000,
   });
   const base = await listen(service);
@@ -166,7 +170,12 @@ async function harness(t, options = {}) {
     cookie = 'nora_access=user-a',
     path = '/v1/executive/snapshot',
     method = 'GET',
-  ) => fetch(base + path, { method, headers: cookie ? { cookie } : {} });
+    extraHeaders = {},
+  ) =>
+    fetch(base + path, {
+      method,
+      headers: { ...(cookie ? { cookie } : {}), ...extraHeaders },
+    });
   const post = (body, cookie = 'nora_access=user-a') =>
     fetch(base + '/v2/assistant/conversation', {
       method: 'POST',
@@ -337,6 +346,138 @@ test('caps results and rejects excessive requests', async (t) => {
   assert.equal(body.truncated, true);
   for (let i = 1; i < 12; i++) assert.equal((await h.get()).status, 200);
   assert.equal((await h.get()).status, 429);
+});
+
+test('both operator-configured native identities exceed user/IP quotas without changing other accounts', async (t) => {
+  const ids = [
+    '11111111-1111-4111-8111-111111111111',
+    '22222222-2222-4222-8222-222222222222',
+  ];
+  const h = await harness(t, {
+    identityIds: { 'user-a': ids[0], 'user-b': ids[1] },
+    rateLimitExemptUserIds: ids,
+    conversation: {
+      enabled: true,
+      provider: {
+        plan: async () => ({ kind: 'REPLY', text: 'Synthetic reply' }),
+      },
+    },
+  });
+  for (let i = 0; i < 65; i++) {
+    for (const cookie of ['nora_access=user-a', 'nora_access=user-b'])
+      assert.equal(
+        (
+          await h.post(
+            { version: 1, message: 'Synthetic', history: [] },
+            cookie,
+          )
+        ).status,
+        200,
+      );
+  }
+  assert.equal((await h.get(null)).status, 401);
+});
+
+test('exempt activity does not consume another account quota and client headers cannot grant exemption', async (t) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  const h = await harness(t, {
+    identityIds: { 'user-a': id },
+    rateLimitExemptUserIds: [id],
+  });
+  for (let i = 0; i < 65; i++) assert.equal((await h.get()).status, 200);
+  for (let i = 0; i < 12; i++)
+    assert.equal((await h.get('nora_access=user-b')).status, 200);
+  assert.equal(
+    (
+      await h.get('nora_access=user-b', '/v1/executive/snapshot', 'GET', {
+        'x-user-id': id,
+        'x-username': 'demo',
+      })
+    ).status,
+    429,
+  );
+});
+
+test('quota-exempt identities retain source permission denial and actual provider429', async (t) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  const denied = await harness(t, {
+    identityIds: { 'user-a': id },
+    rateLimitExemptUserIds: [id],
+    permissions: [],
+  });
+  assert.equal(
+    (
+      await denied.get(
+        'nora_access=user-a',
+        '/v1/assistant/actions/sales-analysis',
+      )
+    ).status,
+    403,
+  );
+  const limited = await harness(t, {
+    identityIds: { 'user-a': id },
+    rateLimitExemptUserIds: [id],
+    conversation: {
+      enabled: true,
+      provider: {
+        plan: async () => {
+          throw new ServiceError(429, 'PROVIDER_RATE_LIMITED');
+        },
+      },
+    },
+  });
+  assert.equal(
+    (await limited.post({ version: 1, message: 'Synthetic', history: [] }))
+      .status,
+    429,
+  );
+});
+
+test('an exempt account is not blocked by eight ordinary in-flight requests', async (t) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  let release;
+  let held = 0;
+  const barrier = new Promise((resolve) => {
+    release = resolve;
+  });
+  const h = await harness(t, {
+    identityIds: { 'user-a': id },
+    rateLimitExemptUserIds: [id],
+    conversation: {
+      enabled: true,
+      timeoutMs: 6000,
+      provider: {
+        plan: async (input) => {
+          if (input.message === 'hold') {
+            held++;
+            await barrier;
+          }
+          return { kind: 'REPLY', text: 'Synthetic reply' };
+        },
+      },
+    },
+  });
+  const body = (message) => ({ version: 1, message, history: [] });
+  const pending = Array.from({ length: 8 }, () =>
+    h.post(body('hold'), 'nora_access=user-b'),
+  );
+  try {
+    const start = Date.now();
+    while (held < 8 && Date.now() - start < 3000)
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    assert.equal(held, 8);
+    assert.equal(
+      (await h.post(body('reply'), 'nora_access=user-b')).status,
+      429,
+    );
+    assert.equal(
+      (await h.post(body('reply'), 'nora_access=user-a')).status,
+      200,
+    );
+  } finally {
+    release();
+    await Promise.all(pending);
+  }
 });
 test('follow-up rules exclude completed, unscheduled notes and distant events', () => {
   assert.equal(
@@ -1154,7 +1295,7 @@ test('plain model replies reauthenticate before release and never fetch or audit
   assert.deepEqual(await response.json(), {
     version: 1,
     status: 'REPLY',
-    text: 'Synthetic reply',
+    text: internalSourceFallback,
   });
   assert.ok(h.calls.every((call) => call.path === '/api/v1/iam/auth/access'));
   assert.ok(!JSON.stringify(h.audit).includes('private generic message'));

@@ -17,6 +17,30 @@ afterEach(() => {
 });
 
 describe('customer affairs operational API client', () => {
+  it('keeps substitute replies separate from the explicit HR override', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4190/api/v1';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: {} }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    await customerAffairsApi.reviewLeaveSubstitute('leave', 3, 'APPROVED');
+    expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({
+      version: 3,
+      status: 'APPROVED',
+    });
+    await customerAffairsApi.reviewHrWorkbenchRequest(
+      'leave',
+      4,
+      'APPROVED',
+      true,
+    );
+    expect(JSON.parse(fetchMock.mock.calls[1]![1].body)).toEqual({
+      version: 4,
+      status: 'APPROVED',
+      overrideSubstitute: true,
+    });
+  });
   it('reuses a form-supplied idempotency key for lead and ticket creation', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4190/api/v1';
     const fetchMock = vi

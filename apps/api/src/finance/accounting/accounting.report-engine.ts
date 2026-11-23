@@ -1,15 +1,17 @@
+import {
+  accountingDetailLevels,
+  type AccountingDetailIds,
+} from '@nora/contracts';
+import { detailFields, lineDetails } from './accounting.detail-levels';
 import { DecimalValue } from '../finance.money';
 import * as v from './accounting.validation';
 import { reportMonth } from './accounting-report-calendar';
 
-export interface InternalReportLine {
+export interface InternalReportLine extends AccountingDetailIds {
   id: string;
   accountId: string;
   accountCode: string;
   accountTitle: string;
-  detail4Id: string | null;
-  detail5Id: string | null;
-  detail6Id: string | null;
   documentDate: string;
   journalId: string;
   debit: string;
@@ -20,9 +22,7 @@ export interface InternalReportLine {
 }
 const axes = [
   'account',
-  'detail4',
-  'detail5',
-  'detail6',
+  ...accountingDetailLevels.map((level) => `detail${level}` as const),
   'month',
   'currency',
 ] as const;
@@ -51,7 +51,7 @@ const dimension = (
       ? reportMonth(r.documentDate, calendar)
       : axis === 'currency'
         ? r.currency
-        : r[`${axis}Id`];
+        : (r[`${axis}Id`] ?? null);
 
 /** I11–I14: one set of source lines, exact base totals, separate foreign currencies. */
 export function aggregateInternalReport(
@@ -148,9 +148,7 @@ export function ageInternalLines(lines: InternalReportLine[], asOf: string) {
   for (const line of lines) {
     const key = JSON.stringify([
       line.accountId,
-      line.detail4Id,
-      line.detail5Id,
-      line.detail6Id,
+      ...detailFields.map((field) => line[field] ?? null),
       line.currency,
     ]);
     groups.set(key, [...(groups.get(key) ?? []), line]);
@@ -222,9 +220,7 @@ export function ageInternalLines(lines: InternalReportLine[], asOf: string) {
         accountId: values[0]!.accountId,
         accountCode: values[0]!.accountCode,
         accountTitle: values[0]!.accountTitle,
-        detail4Id: values[0]!.detail4Id,
-        detail5Id: values[0]!.detail5Id,
-        detail6Id: values[0]!.detail6Id,
+        ...lineDetails(values[0]!),
         currency: values[0]!.currency,
         side: net.isNegative ? 'CREDIT' : 'DEBIT',
         balance: net.toString(),

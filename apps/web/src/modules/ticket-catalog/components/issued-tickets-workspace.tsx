@@ -33,6 +33,8 @@ import { TicketDatePicker } from './ticket-date-picker';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import { reportGregorianTime } from '../model/report-time';
 
+import { exposeReservationReport } from '../model/reservation-report-context';
+
 export const serviceLabels: Record<string, string> = {
   all: 'همه خدمات',
   FLIGHT: 'پرواز',
@@ -546,7 +548,9 @@ export function IssuedTicketsWorkspace({
   );
 }
 
-export function ConnectedIssuedTicketsWorkspace() {
+export function ConnectedIssuedTicketsWorkspace({
+  exposeReportContext = false,
+}: { exposeReportContext?: boolean } = {}) {
   const [tickets, setTickets] = useState<IssuedTicketReadModel[]>([]);
   const [reportOptions, setReportOptions] = useState<{
     origins: { id: string; name: string }[];
@@ -589,6 +593,14 @@ export function ConnectedIssuedTicketsWorkspace() {
       });
     return () => controller.abort();
   }, [range]);
+  useEffect(() => {
+    if (!exposeReportContext) return;
+    return exposeReservationReport(() => ({
+      query: range,
+      rows: tickets,
+      state: loading ? 'loading' : error ? 'error' : 'ready',
+    }));
+  }, [range, tickets, loading, error, exposeReportContext]);
   return (
     <IssuedTicketsWorkspace
       {...(reportOptions ? { reportOptions } : {})}

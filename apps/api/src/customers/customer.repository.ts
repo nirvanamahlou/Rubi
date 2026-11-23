@@ -490,6 +490,31 @@ export class CustomerRepository {
     return match ? this.find(match.id, branchIds) : null;
   }
 
+  /** Constraint probe owned by Customers. Never return these records to a website. */
+  async websiteIdentityCandidates(
+    nationalIdFingerprint?: string,
+    passportNumberFingerprint?: string,
+  ) {
+    const OR = [
+      ...(nationalIdFingerprint ? [{ nationalIdFingerprint }] : []),
+      ...(passportNumberFingerprint ? [{ passportNumberFingerprint }] : []),
+    ];
+    if (!OR.length) return [];
+    return this.database.client.customer.findMany({
+      where: { OR },
+      take: 2,
+      select: {
+        id: true,
+        ownerBranchId: true,
+        mergedIntoId: true,
+        isActive: true,
+        kind: true,
+        nationalIdFingerprint: true,
+        passportNumberFingerprint: true,
+      },
+    });
+  }
+
   async statusHistory(id: string, branchIds: readonly string[]) {
     const customer = await this.database.client.customer.findFirst({
       where: { id, ownerBranchId: { in: [...branchIds] }, mergedIntoId: null },

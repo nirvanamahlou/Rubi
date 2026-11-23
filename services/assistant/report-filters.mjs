@@ -1,3 +1,7 @@
+import {
+  tehranCivilDate,
+  civilShift as shift,
+} from './persian-sales-period.mjs';
 import { ServiceError } from './errors.mjs';
 import { validSalesSource, projectSalesSource } from './sales-source.mjs';
 import {
@@ -21,23 +25,7 @@ const uuid = /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i;
 const fail = () => {
   throw new ServiceError(400, 'INVALID_REPORT_FILTER');
 };
-export function civilDate(value) {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat('en-GB-u-ca-gregory', {
-      timeZone: 'Asia/Tehran',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    })
-      .formatToParts(new Date(value))
-      .map((part) => [part.type, part.value]),
-  );
-  return `${parts.year}-${parts.month}-${parts.day}`;
-}
-const shift = (date, days) =>
-  new Date(Date.parse(`${date}T00:00:00Z`) + days * dayMs)
-    .toISOString()
-    .slice(0, 10);
+export const civilDate = tehranCivilDate;
 export function resolveReportFilters(input, now = new Date()) {
   if (
     !input ||

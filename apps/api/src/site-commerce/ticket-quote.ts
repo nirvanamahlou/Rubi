@@ -1,3 +1,8 @@
+import {
+  ageFareTotal,
+  ageFareBreakdown,
+  type AgeCounts,
+} from '../ticket-catalog/ticket-age-fares';
 import { ConflictException } from '@nestjs/common';
 import { Prisma } from '@nora/database';
 import {
@@ -5,6 +10,18 @@ import {
   type TicketOfferV1,
   type TicketStandaloneSalePriceV1,
 } from '@nora/contracts';
+
+import { assertWebsiteBookable } from './price-only-policy';
+
+export type WebsiteFlightQuote = {
+  amount: string;
+  currencyCode: string;
+  pricingBreakdown?: ReturnType<typeof ageFareBreakdown> & {
+    version: 1;
+    coverage: 'one_way' | 'round_trip';
+    currencyCode: string;
+  };
+};
 
 export function websiteFareTotal(
   fare: TicketStandaloneSalePriceV1,
@@ -41,7 +58,32 @@ export function websiteFlightQuotes(
   outbound: TicketOfferV1,
   returning: TicketOfferV1 | undefined,
   seats: number,
-) {
+  counts?: AgeCounts,
+  includeBreakdown = false,
+): WebsiteFlightQuote[] {
+  for (const offer of [outbound, ...(returning ? [returning] : [])])
+    assertWebsiteBookable('ticket', offer.supplyType);
+  const totalFor = (fare: TicketStandaloneSalePriceV1, consumed: number) =>
+    counts
+      ? ageFareTotal(fare, counts, consumed)
+      : websiteFareTotal(fare, seats, consumed);
+  const details = (
+    fare: TicketStandaloneSalePriceV1,
+    consumed: number,
+    coverage: 'one_way' | 'round_trip',
+  ) =>
+    includeBreakdown && counts
+      ? {
+          pricingBreakdown: {
+            version: 1 as const,
+            coverage,
+            currencyCode: fare.currencyCode,
+            ...ageFareBreakdown(fare, counts, consumed),
+          },
+        }
+      : {};
+  if (counts && counts.adults + counts.children !== seats)
+    throw new ConflictException('ترکیب مسافران معتبر نیست.');
   const offers = [outbound, ...(returning ? [returning] : [])];
   if (offers.some((o) => o.remainingCapacity < seats))
     throw new ConflictException('ظرفیت بلیت کافی نیست.');
@@ -56,10 +98,14 @@ export function websiteFlightQuotes(
         (o) => (o.allocatedCapacity ?? 0) + (o.reservedCapacity ?? 0),
       ),
     );
-    const total = websiteFareTotal(pair, seats, consumed);
+    const total = totalFor(pair, consumed);
     const first = total.div(2).toDecimalPlaces(2, Prisma.Decimal.ROUND_DOWN);
     return [
-      { amount: first.toFixed(2), currencyCode: pair.currencyCode },
+      {
+        amount: first.toFixed(2),
+        currencyCode: pair.currencyCode,
+        ...details(pair, consumed, 'round_trip'),
+      },
       { amount: total.sub(first).toFixed(2), currencyCode: pair.currencyCode },
     ];
   }
@@ -67,12 +113,16 @@ export function websiteFlightQuotes(
     if (!offer.standaloneSalePrice)
       throw new ConflictException('قیمت فروش بلیت منتشر نشده است.');
     return {
-      amount: websiteFareTotal(
+      amount: totalFor(
         offer.standaloneSalePrice,
-        seats,
         (offer.allocatedCapacity ?? 0) + (offer.reservedCapacity ?? 0),
       ).toFixed(2),
       currencyCode: offer.standaloneSalePrice.currencyCode,
+      ...details(
+        offer.standaloneSalePrice,
+        (offer.allocatedCapacity ?? 0) + (offer.reservedCapacity ?? 0),
+        'one_way',
+      ),
     };
   });
 }

@@ -1,6 +1,8 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import type * as ReactModule from 'react';
+import { useEffect } from 'react';
 import { beforeEach, expect, it, vi } from 'vitest';
+import { packagePricingApi } from '../api/client';
 import { FloatingTourPricingWorkspace } from './floating-tour-pricing-workspace';
 const h = vi.hoisted(() => ({
   states: [] as unknown[],
@@ -26,10 +28,63 @@ vi.mock('@/modules/iam/access-context', () => ({
   useAccessPermissions: () => h.permissions,
   useRouteAccess: () => () => true,
 }));
+vi.mock('@/lib/environment', () => ({ getPublicApiBaseUrl: () => '/api/v1' }));
+vi.mock('../api/client', () => ({
+  packagePricingApi: { session: vi.fn(), floatingTours: vi.fn() },
+}));
 beforeEach(() => {
   h.states = [];
   h.index = 0;
+  vi.clearAllMocks();
   h.permissions = ['package_pricing.read', 'package_pricing.period.manage'];
+});
+it('lists only explicitly floating tours and ignores a regular tour in the URL', async () => {
+  const floating = { id: 'floating', details: { isFloating: true } };
+  const ordinary = { id: 'ordinary', details: { isFloating: false } };
+  const legacy = { id: 'legacy' };
+  vi.mocked(packagePricingApi.session).mockResolvedValue({} as never);
+  vi.mocked(packagePricingApi.floatingTours).mockResolvedValue({
+    data: [floating, ordinary, legacy],
+  } as never);
+  vi.stubGlobal('window', { location: { search: '?tour=ordinary' } });
+  try {
+    renderToStaticMarkup(<FloatingTourPricingWorkspace />);
+    vi.mocked(useEffect).mock.calls[0]?.[0]();
+    await vi.waitFor(() => expect(h.states[1]).toEqual([floating]));
+    expect(h.states[2]).toBe('');
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+it('distinguishes same-name tours while keeping each definition selectable by ID', () => {
+  h.states = [
+    { user: { branches: [{ id: 'branch-a', name: 'شعبه آوینا' }] } },
+    [
+      {
+        id: '11111111-a',
+        name: 'تور ترکیه',
+        branchId: 'branch-a',
+        routeNames: ['تهران', 'آنتالیا', 'ازمیر'],
+        details: { durationDays: 8 },
+        createdAt: '2026-11-22T00:00:00Z',
+      },
+      {
+        id: '22222222-b',
+        name: 'تور ترکیه',
+        branchId: 'branch-a',
+        routeNames: ['تهران', 'ازمیر'],
+        details: { durationDays: 5 },
+      },
+    ],
+    '',
+  ];
+  const html = renderToStaticMarkup(<FloatingTourPricingWorkspace />);
+  expect(html).toContain(
+    'value="11111111-a">تور ترکیه · تهران ← آنتالیا ← ازمیر · شعبه آوینا · 8 روز · 2026-11-22 · 11111111',
+  );
+  expect(html).toContain(
+    'value="22222222-b">تور ترکیه · تهران ← ازمیر · شعبه آوینا · 5 روز · 22222222',
+  );
 });
 function seed(nights: number) {
   h.states = [
@@ -42,14 +97,31 @@ function seed(nights: number) {
     false,
     '',
     '',
-    { nights, mode: 'DATED', calendar: 'PERSIAN', months: [], combined: true },
+    {
+      nights,
+      destinationNights: nights ? [3, nights - 3] : [0, 0],
+      mode: 'DATED',
+      calendar: 'PERSIAN',
+      months: [],
+      combined: true,
+    },
   ];
 }
 it('requires an explicitly entered night count before enabling the Excel picker', () => {
   seed(0);
   const html = renderToStaticMarkup(<FloatingTourPricingWorkspace />);
   expect(html).toContain('تعداد شب این بازه');
-  expect(html).toContain('دانلود قالب ترکیبی');
+  expect(html).toContain('تعداد مقصد');
+  expect(html).toContain('تعداد شب مقصد 1');
+  expect(html).toContain('تعداد شب مقصد 2');
+  expect(html).toContain('شهر هر مقصد از هتل داخل اکسل خوانده می‌شود');
+  expect(
+    html.match(/<input[^>]*aria-label="تعداد شب این بازه"[^>]*>/)?.[0],
+  ).toContain('readOnly=""');
+  expect(html).toContain('دانلود قالب قیمت تور');
+  expect(html).toContain('/api/v1/sales/pricing/floating-tours/tour/template');
+  expect(html).toContain('قیمت مشترک را در سلول ادغام‌شده وارد کنید');
+  expect(html).not.toContain('دو ردیف پشت‌سرهم');
   expect(
     html.match(/<input[^>]*aria-label="فایل قیمت تور"[^>]*>/)?.[0],
   ).toContain('disabled=""');
@@ -61,10 +133,26 @@ it('requires an explicitly entered night count before enabling the Excel picker'
   ).not.toContain('disabled=""');
   expect(enabled).toContain('فروش نفری');
 });
+it('matches the merged template to three destinations and blocks incomplete stops', () => {
+  seed(7);
+  h.states[9] = {
+    nights: 7,
+    mode: 'DATED',
+    combined: true,
+    destinationNights: [2, 0, 5],
+  };
+  const html = renderToStaticMarkup(<FloatingTourPricingWorkspace />);
+  expect(html).toContain('destinationCount=3');
+  expect(html).toContain('تعداد شب مقصد 3');
+  expect(
+    html.match(/<input[^>]*aria-label="فایل قیمت تور"[^>]*>/)?.[0],
+  ).toContain('disabled=""');
+});
 it('keeps preview and final confirmation separate and blocks mutation for read-only users', () => {
   seed(7);
   h.states[5] = {
     rows: [],
+    warnings: ['Row 7: خدمات اقامت وارد نشده است.'],
     options: { nights: 7, mode: 'DATED' },
     digest: 'a',
     expectedVersion: 0,
@@ -73,6 +161,8 @@ it('keeps preview and final confirmation separate and blocks mutation for read-o
   const html = renderToStaticMarkup(<FloatingTourPricingWorkspace />);
   expect(html).toContain('پیش‌نمایش ورود قیمت');
   expect(html).toContain('ثبت نهایی قیمت فروش');
+  expect(html).toContain('ردیف 7: خدمات اقامت وارد نشده است.');
+  expect(html).toContain('ردیف اکسل');
   expect(
     html.match(/<input[^>]*aria-label="فایل قیمت تور"[^>]*>/)?.[0],
   ).toContain('disabled=""');

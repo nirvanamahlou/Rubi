@@ -159,7 +159,19 @@ export class WorkbenchReviewDto {
   @IsInt() @Min(1) version!: number;
 }
 
+export class WorkbenchMissionDto {
+  @IsString() @Length(1, 200) destination!: string;
+  @IsString() @Length(3, 500) purpose!: string;
+  @Matches(/^\d{4}-\d{2}-\d{2}$/) from!: string;
+  @Matches(/^\d{4}-\d{2}-\d{2}$/) to!: string;
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/) startTime!: string;
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/) endTime!: string;
+}
 export class WorkbenchRequestDto {
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => WorkbenchMissionDto)
+  mission?: WorkbenchMissionDto;
   @IsOptional()
   @ValidateNested()
   @Type(() => WorkbenchLeaveDto)
@@ -272,6 +284,7 @@ export class ReferralDto {
 }
 
 export class ReferralResponseDto {
+  @IsOptional() @IsBoolean() overrideSubstitute?: boolean;
   @IsIn(['IN_PROGRESS', 'DONE', 'CANCELLED']) status!: string;
   @IsString() @Length(3, 1000) responseSummary!: string;
 }

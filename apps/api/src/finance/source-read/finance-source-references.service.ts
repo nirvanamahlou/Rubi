@@ -241,6 +241,33 @@ export class FinanceSourceReferences {
     }));
   }
 
+  brokerTransfers(
+    items: {
+      purchaseId: string | null;
+      invoiceId: string | null;
+      costId: string | null;
+      requestId: string | null;
+    }[],
+    actor: AuthenticatedActor,
+  ) {
+    return this.resolve(
+      items.map((r) =>
+        r.purchaseId
+          ? {
+              source: 'RESERVATIONS',
+              requestIds: [r.purchaseId],
+              purchaseIds: [r.purchaseId],
+            }
+          : r.invoiceId
+            ? { source: 'INVOICE', requestIds: [r.invoiceId] }
+            : {
+                source: 'TICKET',
+                requestIds: r.requestId ? [r.requestId] : [],
+              },
+      ),
+      actor,
+    );
+  }
   async inbox(items: readonly FinanceInboxItemV1[], actor: AuthenticatedActor) {
     const linkedItems = items.filter((item) => item.kind !== 'HR_REFERRAL');
     const sources = linkedItems.map((item): Source => {

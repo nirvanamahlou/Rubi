@@ -187,3 +187,9 @@ describe('ERP contract workflow help', () => {
     expect(contractGuideAnswer('چطور هتل انتخاب کنم؟', false)).toBeUndefined();
   });
 });
+
+it('explains how the contract list displays dates', () => {
+  expect(
+    resolveContractGuide('چرا تاریخ بستن قرارداد میلادی است؟', false),
+  ).toMatchObject({ topicId: 'list', text: expect.stringContaining('تهران') });
+});

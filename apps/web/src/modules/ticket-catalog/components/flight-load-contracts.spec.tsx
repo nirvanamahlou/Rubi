@@ -36,7 +36,7 @@ const report: FlightLoadContractsV1 = {
     },
   ],
 };
-it('renders contract identity, actual leg counts, unknown child ages, Gregorian local dates and safe contract link', () => {
+it('renders contract identity, actual leg counts, unknown child ages, Gregorian dates and a preview button', () => {
   const html = renderToStaticMarkup(
     <FlightLoadContractsTable
       report={report}
@@ -48,8 +48,8 @@ it('renders contract identity, actual leg counts, unknown child ages, Gregorian 
   expect(html).toContain('2099-01-03');
   expect(html).toContain('کودک با سن نامشخص');
   expect(html).toContain('تعداد صندلی');
-  expect(html).toContain('/sales/contracts/contract/pdf');
-  expect(html).toContain('noopener noreferrer');
+  expect(html).toMatch(/<button[^>]*>00120<\/button>/);
+  expect(html).not.toContain('/sales/contracts/contract/pdf');
   expect(html).not.toContain('undefined');
 });
 it('renders an explicit empty report with zero contracts', () => {

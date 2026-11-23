@@ -1,15 +1,140 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import { masterDataApi } from '@/modules/master-data/api/client';
 import {
   asReference,
   getActiveCityReference,
   listActiveCurrencyReferences,
   listReferences,
 } from './references';
+vi.mock('@/lib/auth-session');
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
 });
 describe('Published read-only Master Data adapter', () => {
+  it.each([
+    {
+      read: () => listReferences('cities', '', 1, undefined, {}, 'sales'),
+      expected: '/selections/sales/cities?',
+    },
+    {
+      read: () =>
+        masterDataApi.list('organizations', {
+          page: 1,
+          pageSize: 20,
+          search: '',
+          status: 'all',
+          sortBy: 'updatedAt',
+          sortDirection: 'desc',
+        }),
+      expected: '/organizations?',
+    },
+  ])(
+    'retries a read once with the refreshed session: $expected',
+    async ({ read, expected }) => {
+      vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
+      const refresh = vi.mocked(refreshAuthenticatedSession);
+      refresh.mockClear();
+      refresh.mockResolvedValue(
+        {} as NonNullable<
+          Awaited<ReturnType<typeof refreshAuthenticatedSession>>
+        >,
+      );
+      const fetcher = vi
+        .fn()
+        .mockResolvedValueOnce(new Response(null, { status: 401 }))
+        .mockResolvedValueOnce(
+          Response.json({
+            data: [],
+            meta: { total: 0, page: 1, pageSize: 25 },
+          }),
+        );
+      vi.stubGlobal('fetch', fetcher);
+      await expect(read()).resolves.toMatchObject({ data: [] });
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(fetcher).toHaveBeenCalledTimes(2);
+      expect(fetcher.mock.calls[0]?.[0]).toContain(expected);
+      expect(fetcher.mock.calls[1]?.[0]).toBe(fetcher.mock.calls[0]?.[0]);
+    },
+  );
+
+  it.each([
+    { scope: 'iran', attributes: { cityId: 'tehran' }, expected: 'iran' },
+    { scope: undefined, attributes: { cityId: 'tehran' }, expected: undefined },
+    {
+      scope: 'iran',
+      attributes: { cityId: 'istanbul', countryId: 'turkey' },
+      expected: 'turkey',
+    },
+  ])(
+    'keeps airport country provenance for scoped and unscoped reads: $expected',
+    async ({ scope, attributes, expected }) => {
+      vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
+      const fetcher = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: [
+            {
+              id: 'airport-thr',
+              resource: 'airports',
+              code: 'THR',
+              name: 'فرودگاه مهرآباد',
+              status: 'active',
+              attributes,
+              version: 1,
+              createdAt: '',
+              updatedAt: '',
+            },
+          ],
+          meta: { total: 1, page: 1, pageSize: 25 },
+        }),
+      });
+      vi.stubGlobal('fetch', fetcher);
+      const result = await listReferences(
+        'airports',
+        'مهرآباد',
+        1,
+        undefined,
+        scope ? { countryId: scope } : {},
+      );
+      expect(asReference(result.data[0]!)?.countryId).toBe(expected);
+      expect(asReference(result.data[0]!)?.cityId).toBe(attributes.cityId);
+      const requested = new URL(fetcher.mock.calls[0]![0]);
+      expect(requested.searchParams.get('countryId')).toBe(scope ?? null);
+    },
+  );
+
+  it('does not infer a missing country on other reference resources', async () => {
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: [
+            {
+              id: 'city',
+              resource: 'cities',
+              code: 'CITY',
+              name: 'City',
+              status: 'active',
+              attributes: {},
+              version: 1,
+              createdAt: '',
+              updatedAt: '',
+            },
+          ],
+          meta: { total: 1, page: 1, pageSize: 25 },
+        }),
+      }),
+    );
+    const result = await listReferences('cities', '', 1, undefined, {
+      countryId: 'iran',
+    });
+    expect(asReference(result.data[0]!)?.countryId).toBeUndefined();
+  });
+
   it('resolves a saved city id to its current human-readable name', async () => {
     vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
     const fetcher = vi.fn().mockResolvedValue({
@@ -248,4 +373,32 @@ it('maps published rail and bus references for ticket definitions', () => {
         })?.kind,
     ),
   ).toEqual(['railCompany', 'trainType', 'busCompany', 'busType']);
+});
+import { getAirportReference } from './references';
+
+it('hydrates the saved airport label and country through the catalog selection endpoint', async () => {
+  vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
+  const record = {
+    id: 'saved-airport',
+    resource: 'airports',
+    name: 'Antalya Airport',
+    code: 'AYT',
+    status: 'active',
+    attributes: { countryId: 'tr', cityId: 'ayt' },
+  };
+  const fetcher = vi
+    .fn()
+    .mockResolvedValue({ ok: true, json: async () => ({ data: record }) });
+  vi.stubGlobal('fetch', fetcher);
+  await expect(getAirportReference('saved-airport')).resolves.toMatchObject({
+    id: 'saved-airport',
+    name: 'Antalya Airport',
+    countryId: 'tr',
+  });
+  expect(fetcher.mock.calls[0]![0]).toBe(
+    'http://localhost:4000/api/v1/master-data/selections/ticket-catalog/airports/saved-airport',
+  );
+  await expect(
+    getAirportReference('different-airport'),
+  ).resolves.toBeUndefined();
 });

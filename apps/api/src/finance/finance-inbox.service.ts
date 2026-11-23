@@ -1,4 +1,4 @@
-import { debitExchange } from './exchange-offices/exchange-payment';
+import { verifyBankPayment } from './payments/broker-transfer';
 import { FinanceSourceReferences } from './source-read/finance-source-references.service';
 import { voidSalesReceipt } from './operations/void-sales-receipt';
 import { financialDate } from './accounting/accounting.financial-events';
@@ -453,7 +453,12 @@ export class FinanceInboxService {
         amount: item.amount ?? null,
         settlement: null,
         status: hrStatus[item.status],
-        hrReferral: { canRespond: item.canRespond, response: item.response },
+        hrReferral: {
+          canRespond: item.canRespond,
+          response: item.response,
+          sourceId: item.sourceId,
+          mission: item.mission,
+        },
         dueAt: item.dueAt,
         createdAt: item.createdAt,
         requesterDisplaySnapshot: null,
@@ -843,6 +848,8 @@ export class FinanceInboxService {
       where: {
         branchId: { in: [...actor.branchIds] },
         isActive: true,
+        isExternal: false,
+        deletedAt: null,
         currencyCode: { not: null },
       },
       include: { bank: { select: { name: true } } },
@@ -1410,6 +1417,23 @@ export class FinanceInboxService {
           current.cumulativePaid.toString(),
         ).add(paidAmount);
         const remainingAmount = currentRemaining.subtract(paidAmount);
+        const verified = await verifyBankPayment(
+          tx,
+          input,
+          { invoiceId: sourceId },
+          {
+            amount: paidAmount.toString(),
+            rate: exchangeRate.toString(),
+            remaining: currentRemaining.toString(),
+            currency: source.currencyCode,
+            actorId: actor.userId,
+            branchId: source.branchId,
+            date: transferAt,
+            payeeCurrency: account?.currencyCode,
+            channel: account ? method.channel : undefined,
+            party: { supplierId: source.supplier.id },
+          },
+        );
         const status = remainingAmount.isZero ? 'PAID' : 'PARTIALLY_PAID';
         const row = await tx.financeProcurementInvoiceRevision.create({
           data: {
@@ -1417,6 +1441,7 @@ export class FinanceInboxService {
             sourceVersion: source.sourceVersion,
             branchId: source.branchId,
             version: current.version + 1,
+            ...verified,
             status,
             accountId: account?.id ?? null,
             payingSupplierId,
@@ -1435,13 +1460,6 @@ export class FinanceInboxService {
             reason,
             actorUserId: actor.userId,
           },
-        });
-        await debitExchange(tx, {
-          officeId: exchangeOfficeId,
-          currencyCode: source.currencyCode,
-          amount: paidAmount.toString(),
-          actorUserId: actor.userId,
-          invoicePaymentId: row.id,
         });
         await recordFinancialEvent(tx, {
           source: 'INVOICE',

@@ -1,5 +1,17 @@
 # برنامه اجرای Nora
 
+## NORA-FINAL-ACCEPTANCE-1118 — PC-C
+
+- [x] Synchronize published develop and verify the other PC's release receipts; preserve its work.
+- [x] Verify Germany relay, deployed pool/source and isolated native-count PostgreSQL preflight.
+- [x] Current195 assistant regressions and73 SQL/access/PostgreSQL tests pass; API typecheck/build and scoped lint pass.
+- [ ] Complete all30 real-Groq scenarios on one final source fingerprint; correct demonstrated defects without weakening oracles or access/budget controls.
+- [x] Publish scoped validation, documentation and handoff for review: draft PR1791; no automatic merge/deploy.
+
+Final-source matrix is not certified: cases1–2 pass; remaining execution is BLOCKED_PROVIDER_QUOTA. No additional key is available. Idle runner/helper stopped and195 regressions/73 SQL tests remain green. Same-source resume must verify original receipts; a changed source restarts the matrix. Review: [PR1791](https://github.com/nirvanamahlou/Rubi/pull/1791).
+
+PR1787's original financial workflow is already deployed/browser accepted per its final release receipt. Older pending lines below are historical; full30-case acceptance remains separate. See [current task](docs/tasks/NORA-FINAL-ACCEPTANCE-1118.md).
+
 ## NORA-DATA-AGENT-V1 — PC-C
 
 - [x] Owner approves model-authored curated SQL, authorized result analysis by Groq and Sales-first delivery.

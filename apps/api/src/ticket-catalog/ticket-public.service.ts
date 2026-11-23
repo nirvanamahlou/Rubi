@@ -1,3 +1,9 @@
+import {
+  checkoutQuoteFingerprint,
+  checkoutHoldIsLive,
+} from './checkout-hold-policy';
+import { liveCapacityHolds } from './live-capacity-holds';
+import { ageFareFields, ageFareTotal } from './ticket-age-fares';
 import { websiteTargetOffer } from './website-target-offer';
 import { createHash, randomUUID } from 'node:crypto';
 import { restoreContractCapacity } from './restore-contract-capacity';
@@ -103,6 +109,7 @@ function offerFields(
 }
 const routeSelect = { originId: true, destinationId: true } as const;
 const createSchema = Joi.object({
+  aircraftTypeId: uuid.allow(null).optional(),
   saleRoutes: Joi.array()
     .items(
       Joi.object({
@@ -187,6 +194,7 @@ export class TicketPublicService {
       where: {
         branchId: { in: [...branchIds] },
         status: 'ACTIVE',
+        paymentPendingAt: null,
         expiresAt: { gt: new Date() },
       },
       _min: { expiresAt: true },
@@ -198,10 +206,11 @@ export class TicketPublicService {
     id: string,
     branchIds: readonly string[],
     salePriceTargetId?: string,
+    client: Prisma.TransactionClient = this.database.client,
   ) {
     if (
       salePriceTargetId &&
-      !(await this.database.client.ticketSalePriceTarget.findFirst({
+      !(await client.ticketSalePriceTarget.findFirst({
         where: {
           id: salePriceTargetId,
           branchId: { in: [...branchIds] },
@@ -211,7 +220,7 @@ export class TicketPublicService {
       }))
     )
       throw new BadRequestException('بلیت فعال سایت یافت نشد.');
-    const row = await this.database.client.ticketPublishedOffer.findFirst({
+    const row = await client.ticketPublishedOffer.findFirst({
       where: {
         id,
         branchId: { in: [...branchIds] },
@@ -225,7 +234,7 @@ export class TicketPublicService {
           select: { quantity: true },
         },
         capacityHolds: {
-          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          where: liveCapacityHolds(),
           select: { quantity: true },
         },
         standaloneSalePrices: {
@@ -256,19 +265,18 @@ export class TicketPublicService {
       !offer.standaloneSalePrice &&
       !offer.roundTripSalePrices?.length
     ) {
-      const incoming =
-        await this.database.client.ticketSaleCommissionRevision.findMany({
-          where: {
-            returnOfferId: id,
-            salePriceTargetId,
-            offer: {
-              branchId: { in: [...branchIds] },
-              status: 'ACTIVE',
-              departureAt: { gt: new Date() },
-            },
+      const incoming = await client.ticketSaleCommissionRevision.findMany({
+        where: {
+          returnOfferId: id,
+          salePriceTargetId,
+          offer: {
+            branchId: { in: [...branchIds] },
+            status: 'ACTIVE',
+            departureAt: { gt: new Date() },
           },
-          orderBy: { revision: 'desc' },
-        });
+        },
+        orderBy: { revision: 'desc' },
+      });
       const latest = new Map<string, (typeof incoming)[number]>();
       for (const rate of incoming)
         if (!latest.has(rate.offerId)) latest.set(rate.offerId, rate);
@@ -352,7 +360,15 @@ export class TicketPublicService {
         throw new BadRequestException('اطلاعات بلیت معتبر نیست.');
     }
   }
-  private async validateAirports(value: TicketOfferCreateV1) {
+  private async validateFlightReferences(value: TicketOfferCreateV1) {
+    if (value.aircraftTypeId) {
+      const aircraft = await this.master?.detail(
+        'aircraft-types',
+        value.aircraftTypeId,
+      );
+      if (aircraft?.data.status !== 'active')
+        throw new BadRequestException('اطلاعات بلیت معتبر نیست.');
+    }
     for (const id of [value.originAirportId, value.destinationAirportId]) {
       if (!id) continue;
       if (!this.master)
@@ -505,7 +521,7 @@ export class TicketPublicService {
           select: { quantity: true },
         },
         capacityHolds: {
-          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          where: liveCapacityHolds(),
           select: { quantity: true },
         },
       },
@@ -612,6 +628,8 @@ export class TicketPublicService {
       salePriceTargetId: string | null;
       revision: number;
       amount: Prisma.Decimal;
+      childAmount?: Prisma.Decimal | null;
+      infantAmount?: Prisma.Decimal | null;
       tiers?: readonly { seatCount: number; amount: Prisma.Decimal }[];
       currencyCode: string;
       salePriceTarget: {
@@ -627,6 +645,8 @@ export class TicketPublicService {
       returnOfferId: string;
       revision: number;
       amount: Prisma.Decimal;
+      childAmount?: Prisma.Decimal | null;
+      infantAmount?: Prisma.Decimal | null;
       tiers?: readonly { seatCount: number; amount: Prisma.Decimal }[];
       currencyCode: string;
     }[];
@@ -679,6 +699,7 @@ export class TicketPublicService {
           ? {
               revision: directSalePrice.revision,
               amount: directSalePrice.amount.toString(),
+              ...ageFareFields(directSalePrice),
               currencyCode: directSalePrice.currencyCode,
               ...(directSalePrice.tiers?.length
                 ? {
@@ -700,6 +721,7 @@ export class TicketPublicService {
                 {
                   revision: price.revision,
                   amount: price.amount.toString(),
+                  ...ageFareFields(price),
                   currencyCode: price.currencyCode,
                   ...(price.tiers?.length
                     ? {
@@ -724,6 +746,7 @@ export class TicketPublicService {
                   returnOfferId: price.returnOfferId,
                   revision: price.revision,
                   amount: price.amount.toString(),
+                  ...ageFareFields(price),
                   currencyCode: price.currencyCode,
                   ...(price.tiers?.length
                     ? {
@@ -792,7 +815,7 @@ export class TicketPublicService {
           select: { quantity: true },
         },
         capacityHolds: {
-          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          where: liveCapacityHolds(),
           select: { quantity: true },
         },
         standaloneSalePrices: {
@@ -835,6 +858,7 @@ export class TicketPublicService {
         );
         return {
           ...this.offerView(row),
+          aircraftTypeId: row.aircraftTypeId ?? null,
           ...(row.createKey?.startsWith('ticket-catalog:')
             ? {
                 catalogProductId: row.createKey.slice('ticket-catalog:'.length),
@@ -937,7 +961,7 @@ export class TicketPublicService {
           select: { quantity: true },
         },
         capacityHolds: {
-          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          where: liveCapacityHolds(),
           select: { quantity: true },
         },
         standaloneSalePrices: {
@@ -994,7 +1018,7 @@ export class TicketPublicService {
       throw new BadRequestException('کلید درخواست معتبر لازم است.');
     const value = validateTicketOffer(input);
     await this.validateManifest(value);
-    await this.validateAirports(value);
+    await this.validateFlightReferences(value);
     await this.validateSaleRoutes(value);
     const fingerprint = createHash('sha256')
       .update(JSON.stringify({ branchId, ...value }))
@@ -1066,6 +1090,7 @@ export class TicketPublicService {
         (value.businessBaggageKg == null
           ? null
           : new Prisma.Decimal(value.businessBaggageKg).toString()) &&
+      (row.aircraftTypeId ?? null) === (value.aircraftTypeId ?? null) &&
       (row.originAirportId ?? null) === (value.originAirportId ?? null) &&
       (row.destinationAirportId ?? null) ===
         (value.destinationAirportId ?? null) &&
@@ -1140,7 +1165,7 @@ export class TicketPublicService {
           },
           include: {
             capacityHolds: {
-              where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+              where: liveCapacityHolds(),
             },
             tourOutboundDepartures: { select: { id: true } },
             tourReturnDepartures: { select: { id: true } },
@@ -1297,6 +1322,14 @@ export class TicketPublicService {
     if (uuid.validate(offerId).error || !key?.trim() || key.length > 160)
       throw new BadRequestException('شناسه بلیط یا کلید درخواست معتبر نیست.');
     const validation = Joi.object({
+      childAmount: Joi.string()
+        .pattern(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,4})?$/)
+        .allow(null)
+        .optional(),
+      infantAmount: Joi.string()
+        .pattern(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,4})?$/)
+        .allow(null)
+        .optional(),
       expectedRevision: Joi.number().integer().min(0).required(),
       amount: Joi.string()
         .pattern(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,4})?$/)
@@ -1363,6 +1396,7 @@ export class TicketPublicService {
               data: {
                 revision: replay.revision,
                 amount: replay.amount.toString(),
+                ...ageFareFields(replay),
                 currencyCode: replay.currencyCode,
               },
             };
@@ -1381,6 +1415,27 @@ export class TicketPublicService {
               salePriceTargetId,
               revision: input.expectedRevision + 1,
               amount: new Prisma.Decimal(input.amount),
+              ...(input.childAmount !== undefined || latest?.childAmount != null
+                ? {
+                    childAmount:
+                      input.childAmount === undefined
+                        ? (latest?.childAmount ?? null)
+                        : input.childAmount === null
+                          ? null
+                          : new Prisma.Decimal(input.childAmount),
+                  }
+                : {}),
+              ...(input.infantAmount !== undefined ||
+              latest?.infantAmount != null
+                ? {
+                    infantAmount:
+                      input.infantAmount === undefined
+                        ? (latest?.infantAmount ?? null)
+                        : input.infantAmount === null
+                          ? null
+                          : new Prisma.Decimal(input.infantAmount),
+                  }
+                : {}),
               currencyCode: input.currencyCode,
               ...(input.tiers
                 ? {
@@ -1398,6 +1453,7 @@ export class TicketPublicService {
             data: {
               revision: price.revision,
               amount: price.amount.toString(),
+              ...ageFareFields(price),
               currencyCode: price.currencyCode,
             },
           };
@@ -1435,6 +1491,14 @@ export class TicketPublicService {
         'شناسه جفت بلیط یا کلید درخواست معتبر نیست.',
       );
     const validation = Joi.object({
+      childAmount: Joi.string()
+        .pattern(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,4})?$/)
+        .allow(null)
+        .optional(),
+      infantAmount: Joi.string()
+        .pattern(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,4})?$/)
+        .allow(null)
+        .optional(),
       expectedRevision: Joi.number().integer().min(0).required(),
       amount: Joi.string()
         .pattern(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,4})?$/)
@@ -1519,6 +1583,7 @@ export class TicketPublicService {
               data: {
                 revision: replay.revision,
                 amount: replay.amount.toString(),
+                ...ageFareFields(replay),
                 currencyCode: replay.currencyCode,
               },
             };
@@ -1537,6 +1602,27 @@ export class TicketPublicService {
               returnOfferId,
               revision: input.expectedRevision + 1,
               amount: new Prisma.Decimal(input.amount),
+              ...(input.childAmount !== undefined || latest?.childAmount != null
+                ? {
+                    childAmount:
+                      input.childAmount === undefined
+                        ? (latest?.childAmount ?? null)
+                        : input.childAmount === null
+                          ? null
+                          : new Prisma.Decimal(input.childAmount),
+                  }
+                : {}),
+              ...(input.infantAmount !== undefined ||
+              latest?.infantAmount != null
+                ? {
+                    infantAmount:
+                      input.infantAmount === undefined
+                        ? (latest?.infantAmount ?? null)
+                        : input.infantAmount === null
+                          ? null
+                          : new Prisma.Decimal(input.infantAmount),
+                  }
+                : {}),
               currencyCode: input.currencyCode,
               ...(input.tiers
                 ? {
@@ -1554,6 +1640,7 @@ export class TicketPublicService {
             data: {
               revision: price.revision,
               amount: price.amount.toString(),
+              ...ageFareFields(price),
               currencyCode: price.currencyCode,
             },
           };
@@ -1644,7 +1731,7 @@ export class TicketPublicService {
       throw new BadRequestException('شناسه یا نسخه بلیط معتبر نیست.');
     const value = validateTicketOffer(input.offer);
     await this.validateManifest(value);
-    await this.validateAirports(value);
+    await this.validateFlightReferences(value);
     await this.validateSaleRoutes(value);
     return this.database.client.$transaction(async (tx) => {
       await tx.$queryRaw(
@@ -1693,7 +1780,7 @@ export class TicketPublicService {
     await Promise.all(
       validated.flatMap(({ offer }) => [
         this.validateManifest(offer),
-        this.validateAirports(offer),
+        this.validateFlightReferences(offer),
         this.validateSaleRoutes(offer),
       ]),
     );
@@ -1770,7 +1857,7 @@ export class TicketPublicService {
     await Promise.all(
       validated.flatMap((offer) => [
         this.validateManifest(offer),
-        this.validateAirports(offer),
+        this.validateFlightReferences(offer),
         this.validateSaleRoutes(offer),
       ]),
     );
@@ -1804,7 +1891,7 @@ export class TicketPublicService {
           },
           include: {
             capacityHolds: {
-              where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+              where: liveCapacityHolds(),
             },
             tourOutboundDepartures: { select: { id: true } },
             tourReturnDepartures: { select: { id: true } },
@@ -2001,7 +2088,7 @@ export class TicketPublicService {
         saleRoutes: { select: routeSelect },
         capacityAllocations: { where: { status: 'ACTIVE' } },
         capacityHolds: {
-          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          where: liveCapacityHolds(),
         },
         tourOutboundDepartures: { select: { id: true } },
         tourReturnDepartures: { select: { id: true } },
@@ -2264,7 +2351,7 @@ export class TicketPublicService {
         saleRoutes: { select: routeSelect },
         capacityAllocations: { where: { status: 'ACTIVE' } },
         capacityHolds: {
-          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          where: liveCapacityHolds(),
         },
       },
     });
@@ -2356,7 +2443,16 @@ export class TicketPublicService {
     expectedTicketTotals?: Readonly<
       Record<
         string,
-        { amount: string; currencyCode: string; salePriceTargetId?: string }
+        {
+          amount: string;
+          currencyCode: string;
+          salePriceTargetId?: string;
+          passengerCounts?: {
+            adults: number;
+            children: number;
+            infants: number;
+          };
+        }
       >
     >,
     counts?: Readonly<Record<string, number>>,
@@ -2446,11 +2542,33 @@ export class TicketPublicService {
             select: { contractId: true, direction: true, quantity: true },
           },
           capacityHolds: {
-            where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
-            select: { quantity: true },
+            where: {
+              OR: [liveCapacityHolds(), { checkoutContractId: contractId }],
+            },
+            select: {
+              id: true,
+              quantity: true,
+              status: true,
+              expiresAt: true,
+              paymentPendingAt: true,
+              checkoutContractId: true,
+              checkoutQuoteFingerprint: true,
+            },
           },
         },
       });
+      const ownHolds = new Map(
+        offers.flatMap((offer) =>
+          offer.capacityHolds
+            .filter((h) => h.checkoutContractId === contractId)
+            .map((h) => [offer.id, h] as const),
+        ),
+      );
+      // The owning lease is converted, not added to the inventory demand a second time.
+      for (const offer of offers)
+        offer.capacityHolds = offer.capacityHolds.filter(
+          (h) => h.checkoutContractId !== contractId,
+        );
       const byId = new Map(offers.map((offer) => [offer.id, offer]));
       const existing = await transaction.ticketOfferCapacityAllocation.findMany(
         {
@@ -2460,6 +2578,31 @@ export class TicketPublicService {
       const existingByDirection = new Map(
         existing.map((allocation) => [allocation.direction, allocation]),
       );
+      if (
+        ownHolds.size &&
+        (ownHolds.size !== selections.length ||
+          selections.some((selection) => {
+            const hold = ownHolds.get(selection.offerId);
+            const allocation = existingByDirection.get(selection.direction);
+            if (
+              !hold ||
+              hold.quantity !==
+                (counts?.[selection.serviceClientKey] ?? seatCount)
+            )
+              return true;
+            if (
+              !allocation &&
+              (!checkoutHoldIsLive(hold, new Date()) || !hold.paymentPendingAt)
+            )
+              return true;
+            const quoted = expectedTicketTotals?.[selection.serviceClientKey];
+            return (
+              quoted !== undefined &&
+              hold.checkoutQuoteFingerprint !== checkoutQuoteFingerprint(quoted)
+            );
+          }))
+      )
+        throw new ConflictException('رزرو پرداخت با قرارداد مطابقت ندارد.');
       const unavailableOfferIds = selections
         .filter((selection) => {
           const quantity = counts?.[selection.serviceClientKey] ?? seatCount;
@@ -2522,7 +2665,7 @@ export class TicketPublicService {
           unavailableOfferIds,
           createdAllocationIds: [] as string[],
         };
-      if (expectedTicketTotals) {
+      if (expectedTicketTotals && ownHolds.size === 0) {
         const quoted = (selection: SalesTicketSelectionInput) =>
           expectedTicketTotals[selection.serviceClientKey];
         const verify = (
@@ -2532,6 +2675,11 @@ export class TicketPublicService {
           consumed: number,
           selection: SalesTicketSelectionInput,
           half?: 'OUTBOUND' | 'RETURN',
+          ageFare?: {
+            amount: Prisma.Decimal;
+            childAmount?: Prisma.Decimal | null;
+            infantAmount?: Prisma.Decimal | null;
+          },
         ) => {
           if (!tiers.length) return;
           if (commissionPercent?.eq(100))
@@ -2542,6 +2690,13 @@ export class TicketPublicService {
               'قیمت پله‌ای بلیت در قرارداد ثبت نشده است؛ قرارداد را تازه کنید.',
             );
           const quantity = counts?.[selection.serviceClientKey] ?? seatCount;
+          if (
+            current.passengerCounts &&
+            current.passengerCounts.adults +
+              current.passengerCounts.children !==
+              quantity
+          )
+            throw new ConflictException('ترکیب مسافران تغییر کرده است.');
           let first = 0;
           let units = 0n;
           for (const tier of tiers) {
@@ -2563,6 +2718,33 @@ export class TicketPublicService {
             throw new ConflictException(
               'ظرفیت پله‌های قیمت کافی نیست؛ فهرست را تازه کنید.',
             );
+          if (current.passengerCounts && ageFare) {
+            const net = (v: Prisma.Decimal) =>
+              commissionPercent
+                ? commissionAmount(v.toString(), commissionPercent.toString())
+                : v.toString();
+            units = moneyUnits(
+              ageFareTotal(
+                {
+                  amount: net(ageFare.amount),
+                  childAmount:
+                    ageFare.childAmount == null
+                      ? null
+                      : net(ageFare.childAmount),
+                  infantAmount:
+                    ageFare.infantAmount == null
+                      ? null
+                      : net(ageFare.infantAmount),
+                  tiers: tiers.map((t) => ({
+                    seatCount: t.seatCount,
+                    amount: net(t.amount),
+                  })),
+                },
+                current.passengerCounts,
+                consumed,
+              ).toFixed(4),
+            );
+          }
           // Website checkout quotes at two decimals; split the outbound half down,
           // then round the remaining half, exactly as websiteFlightQuotes does.
           const targetQuote = current.salePriceTargetId !== undefined;
@@ -2648,7 +2830,9 @@ export class TicketPublicService {
             verify(
               pairPrice.tiers.length
                 ? pairPrice.tiers
-                : salePriceTargetId
+                : salePriceTargetId ||
+                    pairPrice.childAmount != null ||
+                    pairPrice.infantAmount != null
                   ? [
                       {
                         seatCount: Number.MAX_SAFE_INTEGER,
@@ -2661,6 +2845,7 @@ export class TicketPublicService {
               consumed,
               selection,
               selection.direction,
+              pairPrice,
             );
         } else {
           for (const selection of selections) {
@@ -2696,7 +2881,9 @@ export class TicketPublicService {
             verify(
               fare.tiers.length
                 ? fare.tiers
-                : salePriceTargetId
+                : salePriceTargetId ||
+                    fare.childAmount != null ||
+                    fare.infantAmount != null
                   ? [
                       {
                         seatCount: Number.MAX_SAFE_INTEGER,
@@ -2708,6 +2895,8 @@ export class TicketPublicService {
               commission?.percent,
               consumed,
               selection,
+              undefined,
+              fare,
             );
           }
         }
@@ -2726,6 +2915,15 @@ export class TicketPublicService {
         });
         createdAllocationIds.push(created.id);
       }
+      if (ownHolds.size)
+        await transaction.ticketOfferCapacityHold.updateMany({
+          where: {
+            id: { in: [...ownHolds.values()].map((h) => h.id) },
+            checkoutContractId: contractId,
+            status: 'ACTIVE',
+          },
+          data: { status: 'CONSUMED', releasedAt: new Date() },
+        });
       return { available: true, unavailableOfferIds: [], createdAllocationIds };
     });
   }
@@ -2797,7 +2995,12 @@ export class TicketPublicService {
         };
       }
       await transaction.ticketOfferCapacityHold.updateMany({
-        where: { offerId, status: 'ACTIVE', expiresAt: { lte: now } },
+        where: {
+          offerId,
+          status: 'ACTIVE',
+          paymentPendingAt: null,
+          expiresAt: { lte: now },
+        },
         data: { status: 'EXPIRED', releasedAt: now },
       });
       await transaction.$queryRaw(
@@ -2816,7 +3019,7 @@ export class TicketPublicService {
             select: { quantity: true },
           },
           capacityHolds: {
-            where: { status: 'ACTIVE', expiresAt: { gt: now } },
+            where: liveCapacityHolds(now),
             select: { quantity: true },
           },
         },
@@ -2855,8 +3058,36 @@ export class TicketPublicService {
   }
   async release(allocationIds: readonly string[]) {
     if (!allocationIds.length) return;
+    // Sales confirmation compensation must not free seats already paid for.
+    // A retry reuses this allocation; explicit contract cancellation uses releaseContract.
+    const allocations =
+      await this.database.client.ticketOfferCapacityAllocation.findMany({
+        where: { id: { in: [...allocationIds] }, status: 'ACTIVE' },
+        select: { id: true, contractId: true, offerId: true },
+      });
+    const paidHolds =
+      await this.database.client.ticketOfferCapacityHold.findMany({
+        where: {
+          status: 'CONSUMED',
+          checkoutSessionId: { not: null },
+          paymentPendingAt: { not: null },
+          checkoutContractId: { in: allocations.map((row) => row.contractId) },
+        },
+        select: { checkoutContractId: true, offerId: true },
+      });
+    const releasable = allocations
+      .filter(
+        (row) =>
+          !paidHolds.some(
+            (hold) =>
+              hold.checkoutContractId === row.contractId &&
+              hold.offerId === row.offerId,
+          ),
+      )
+      .map((row) => row.id);
+    if (!releasable.length) return;
     await this.database.client.ticketOfferCapacityAllocation.updateMany({
-      where: { id: { in: [...allocationIds] }, status: 'ACTIVE' },
+      where: { id: { in: releasable }, status: 'ACTIVE' },
       data: { status: 'RELEASED', releasedAt: new Date() },
     });
   }

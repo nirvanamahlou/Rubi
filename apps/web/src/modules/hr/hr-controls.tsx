@@ -22,6 +22,7 @@ import {
   DialogDescription,
 } from '@/components/ui/overlays';
 import type { HrPreviewDataset } from './hr-preview-data';
+import type { HrPreviewCell } from './hr-preview-data';
 import { cellText, recordKey, subsetDataset } from './hr-data-utils';
 import { reportCellText } from './hr-report-text';
 import { hrStatusText, hrStatusTone } from './hr-presentation';
@@ -318,7 +319,7 @@ export function HrTable({
                       ) : column === 'وضعیت' ? (
                         <HrStatus>{cellText(row[col])}</HrStatus>
                       ) : (
-                        reportCellText(row[col] ?? '')
+                        <HrCellValue cell={row[col]} />
                       )}
                     </td>
                   ))}
@@ -588,4 +589,17 @@ export function HrSelectionSummary({
       </HrButton>
     </div>
   );
+}
+
+function HrCellValue({ cell }: { cell: HrPreviewCell | undefined }) {
+  if (typeof cell === 'object' && cell.lines)
+    return cell.lines.map((line, index) => (
+      <span
+        key={index}
+        className={index ? 'block text-red-700 dark:text-red-400' : 'block'}
+      >
+        {line}
+      </span>
+    ));
+  return reportCellText(cell ?? '');
 }

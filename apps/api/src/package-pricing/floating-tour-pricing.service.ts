@@ -12,21 +12,48 @@ import { Prisma } from '@nora/database';
 import {
   type AuthenticatedActor,
   type FloatingTourImportOptions,
+  type FloatingTourFlightInput,
   type FloatingTourImportPreview,
   type FloatingTourSaleRow,
   type FloatingTourSaleSet,
+  type FloatingTourWebsiteCandidate,
   type TourPackageInputV1,
 } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { PackageTourPricingService } from './package-tour-pricing.service';
+import { buildFloatingTourTemplate } from './floating-tour-template';
 import {
   parseFloatingRows,
   readFloatingWorkbook,
+  resolveFloatingHotelCells,
   type FloatingHotelReference,
 } from './floating-tour-import';
+import { floatingWebsitePeriods } from './floating-tour-publication';
 
+const flightClock = Joi.string().pattern(/^(?:[01]\d|2[0-3]):[0-5]\d$/);
+const airport = Joi.object({
+  id: Joi.string().guid().required(),
+  cityId: Joi.string().guid().required(),
+  countryId: Joi.string().guid().required(),
+  code: Joi.string()
+    .pattern(/^[A-Z]{3}$/)
+    .required(),
+  name: Joi.string().trim().max(200).required(),
+});
+const flightLeg = Joi.object({
+  departureClock: flightClock.required(),
+  arrivalClock: flightClock.required(),
+  carrierName: Joi.string().trim().max(160).required(),
+  serviceNumber: Joi.string().trim().max(80).required(),
+  cabinClassCode: Joi.string().valid('ECONOMY', 'BUSINESS', 'FIRST').required(),
+  originAirport: airport.required(),
+  destinationAirport: airport.required(),
+});
 const optionsSchema = Joi.object({
+  hotelSelections: Joi.object()
+    .pattern(/^\d{1,5}:\d{1,2}$/, Joi.string().guid().required())
+    .max(10000),
   nights: Joi.number().integer().min(1).max(365).required(),
   mode: Joi.string().valid('DATED', 'MONTHLY').required(),
   calendar: Joi.string()
@@ -38,7 +65,71 @@ const optionsSchema = Joi.object({
     .max(12)
     .when('mode', { is: 'MONTHLY', then: Joi.array().min(1).required() }),
   combined: Joi.boolean(),
+  flightPattern: Joi.object({
+    outbound: flightLeg.required(),
+    inbound: flightLeg.required(),
+  }).when('mode', { is: 'MONTHLY', then: Joi.forbidden() }),
+  destinationNights: Joi.array()
+    .items(Joi.number().integer().min(1).max(365))
+    .min(2)
+    .max(10)
+    .when('combined', { is: true, otherwise: Joi.forbidden() }),
 });
+
+function applyFlightSchedule(
+  rows: FloatingTourSaleRow[],
+  options: FloatingTourImportOptions,
+  current: FloatingTourSaleSet,
+) {
+  const pattern = options.flightPattern;
+  const toLeg = (day: string, flight: FloatingTourFlightInput) => {
+    const { departureClock, arrivalClock, ...details } = flight;
+    const arrivalDay =
+      arrivalClock <= departureClock
+        ? new Date(Date.parse(day) + 86400000).toISOString().slice(0, 10)
+        : day;
+    return {
+      ...details,
+      departureAt: new Date(
+        day + 'T' + departureClock + ':00+03:30',
+      ).toISOString(),
+      arrivalAt: new Date(
+        arrivalDay + 'T' + arrivalClock + ':00+03:30',
+      ).toISOString(),
+    };
+  };
+  const errors: string[] = [];
+  for (const row of rows) {
+    if (pattern && row.startsOn && row.endsOn) {
+      const outbound = toLeg(row.startsOn, pattern.outbound);
+      const inbound = toLeg(row.endsOn, pattern.inbound);
+      if (
+        outbound.arrivalAt >= inbound.departureAt ||
+        outbound.originAirport.id === outbound.destinationAirport.id ||
+        inbound.originAirport.id === inbound.destinationAirport.id
+      ) {
+        errors.push(
+          `Row ${row.sourceRows.join(', ')}: مسیر و ساعت پروازها را بررسی کنید؛ حرکت برگشت باید بعد از رسیدن پرواز رفت باشد.`,
+        );
+        continue;
+      }
+      row.flightSchedule = {
+        startsOn: row.startsOn,
+        endsOn: row.endsOn,
+        outbound,
+        inbound,
+      };
+    } else {
+      const saved = current.dated.find(
+        (previous) =>
+          previous.startsOn === row.startsOn && previous.nights === row.nights,
+      )?.flightSchedule;
+      if (saved) row.flightSchedule = saved;
+    }
+  }
+  if (errors.length) throw new BadRequestException(errors.join('\n'));
+}
+
 @Injectable()
 export class FloatingTourPricingService {
   constructor(
@@ -66,6 +157,107 @@ export class FloatingTourPricingService {
       throw new BadRequestException('این تور شناور نیست.');
     return { row, definition };
   }
+  async websiteCandidates(
+    actor: AuthenticatedActor,
+  ): Promise<{ data: FloatingTourWebsiteCandidate[] }> {
+    if (!actor.permissions.includes('ticket_catalog.manage'))
+      throw new ForbiddenException();
+    const rows = await this.db.client.tourPackage.findMany({
+      where: {
+        branchId: { in: actor.branchIds },
+        definition: { path: ['details', 'isFloating'], equals: true },
+      },
+      include: { floatingSaleCatalog: true },
+      orderBy: { createdAt: 'desc' },
+      take: 501,
+    });
+    if (rows.length > 500)
+      throw new BadRequestException(
+        'برای کاتالوگ بزرگ‌تر صفحه‌بندی تنظیم شود.',
+      );
+    return {
+      data: rows.map((row) => {
+        const prices = row.floatingSaleCatalog?.payload as unknown as
+          FloatingTourSaleSet | undefined;
+        const definition = row.definition as unknown as TourPackageInputV1;
+        return {
+          id: row.id,
+          branchId: row.branchId,
+          name: definition.name,
+          destinationId: definition.destinationId,
+          destinationIds: [
+            ...new Set([
+              definition.destinationId,
+              ...(definition.details?.destinations?.map(
+                (stay) => stay.cityId,
+              ) ?? []),
+            ]),
+          ],
+          canPublish: !!(prices?.dated.length || prices?.monthly?.rows.length),
+          periods: floatingWebsitePeriods(prices),
+        };
+      }),
+    };
+  }
+  /** Public sales projection: no workbook row numbers, commissions or inventory promises. */
+  async websiteProduct(
+    id: string,
+    branchIds: string[],
+    periodKey: string,
+    requirePrices = true,
+  ) {
+    const { row, definition } = await this.definition(id, {
+      branchIds,
+    } as AuthenticatedActor);
+    const catalog = await this.db.client.floatingTourSaleCatalog.findUnique({
+      where: { packageId: id },
+    });
+    const prices = catalog?.payload as unknown as
+      FloatingTourSaleSet | undefined;
+    const period = floatingWebsitePeriods(prices).find(
+      (item) => item.key === periodKey,
+    );
+    if (requirePrices && !period)
+      throw new BadRequestException('قیمت منتشرشده پکیج الزامی است.');
+    const project = (price: FloatingTourSaleRow) => ({
+      startsOn: price.startsOn,
+      endsOn: price.endsOn,
+      nights: price.nights,
+      stays: price.stays,
+      prices: price.prices,
+      ...(price.flightSchedule ? { flightSchedule: price.flightSchedule } : {}),
+    });
+    return {
+      package: {
+        ...definition,
+        id: row.id,
+        branchId: row.branchId,
+        version: row.version,
+      },
+      version: catalog?.version ?? 0,
+      periodKey,
+      dated:
+        period && !period.monthly
+          ? (prices?.dated ?? [])
+              .filter(
+                (price) =>
+                  price.startsOn === period.startsOn &&
+                  price.nights === period.nights,
+              )
+              .map(project)
+          : [],
+      monthly:
+        prices?.monthly && period?.monthly
+          ? {
+              calendar: prices.monthly.calendar,
+              months: prices.monthly.months,
+              rows: prices.monthly.rows
+                .filter((price) => price.nights === period.nights)
+                .map(project),
+            }
+          : null,
+    };
+  }
   async list(actor: AuthenticatedActor) {
     this.authorize(actor);
     const rows = await this.db.client.tourPackage.findMany({
@@ -73,18 +265,45 @@ export class FloatingTourPricingService {
       orderBy: { createdAt: 'desc' },
       take: 500,
     });
+    const definitions = rows.flatMap((row) => {
+      const definition = row.definition as unknown as TourPackageInputV1;
+      return definition.details?.isFloating ? [{ row, definition }] : [];
+    });
+    const routeIds = (tour: TourPackageInputV1) => [
+      tour.originId,
+      ...(tour.details?.isCombined && tour.details.destinations?.length
+        ? tour.details.destinations.map((stay) => stay.cityId)
+        : [tour.destinationId]),
+    ];
+    const cityIds = [
+      ...new Set(
+        definitions
+          .flatMap(({ definition }) => routeIds(definition))
+          .filter(Boolean),
+      ),
+    ];
+    const cities = await Promise.all(
+      cityIds.map(async (id) => {
+        try {
+          return await this.directory.hotelRatePeriodCityNames([id]);
+        } catch (error) {
+          if (error instanceof NotFoundException) return [];
+          throw error;
+        }
+      }),
+    );
+    const cityNames = new Map(
+      cities.flat().map((city) => [city.id, city.name]),
+    );
     return {
-      data: rows
-        .filter(
-          (r) =>
-            (r.definition as unknown as TourPackageInputV1).details?.isFloating,
-        )
-        .map((r) => ({
-          id: r.id,
-          branchId: r.branchId,
-          version: r.version,
-          ...(r.definition as unknown as TourPackageInputV1),
-        })),
+      data: definitions.map(({ row, definition }) => ({
+        ...definition,
+        id: row.id,
+        branchId: row.branchId,
+        version: row.version,
+        createdAt: row.createdAt.toISOString(),
+        routeNames: routeIds(definition).map((id) => cityNames.get(id) ?? ''),
+      })),
     };
   }
   async get(
@@ -103,6 +322,22 @@ export class FloatingTourPricingService {
         }
       : { version: 0, dated: [], monthly: null };
   }
+  async template(
+    id: string,
+    actor: AuthenticatedActor,
+    destinationCount?: string,
+  ) {
+    this.authorize(actor);
+    const { definition } = await this.definition(id, actor);
+    const count =
+      destinationCount === undefined ? undefined : Number(destinationCount);
+    if (
+      count !== undefined &&
+      (!Number.isInteger(count) || count < 2 || count > 10)
+    )
+      throw new BadRequestException('تعداد مقصد باید بین ۲ تا ۱۰ باشد.');
+    return buildFloatingTourTemplate(definition, count);
+  }
   async preview(
     id: string,
     bytes: Uint8Array,
@@ -114,21 +349,38 @@ export class FloatingTourPricingService {
     if (parsed.error)
       throw new BadRequestException('تعداد شب و تنظیمات بازه را بررسی کنید.');
     const options = parsed.value as FloatingTourImportOptions;
+    if (
+      options.destinationNights &&
+      options.destinationNights.reduce((sum, n) => sum + n, 0) !==
+        options.nights
+    )
+      throw new BadRequestException(
+        'مجموع شب‌های مقصدها باید با تعداد شب بازه برابر باشد.',
+      );
     const { row, definition } = await this.definition(id, actor);
     if (!definition.originId || !definition.destinationId)
       throw new BadRequestException('مسیر تور را تکمیل کنید.');
     if (definition.details?.isCombined && !options.combined)
       throw new BadRequestException(
-        'برای تور ترکیبی، ورود جفت‌ردیفی را انتخاب کنید.',
+        'برای تور ترکیبی، قیمت مشترک اقامت‌ها را انتخاب کنید.',
       );
     const current = await this.get(id, actor);
     const cities = options.combined
       ? (definition.details?.destinations?.map((s) => s.cityId) ?? [])
       : [definition.destinationId];
-    if (!cities.length)
+    if (!cities.length && !options.destinationNights)
       throw new BadRequestException('مسیر تور ترکیبی را تکمیل کنید.');
     const hotels: FloatingHotelReference[] = [];
-    for (const cityId of new Set(cities)) {
+    if (options.destinationNights) {
+      for (let page = 1; page <= 100; page++) {
+        const result = await this.directory.floatingHotelReferences(page);
+        hotels.push(...result.data.filter((hotel) => hotel.cityId));
+        if (page * 100 >= result.meta.total) break;
+        if (page === 100)
+          throw new BadRequestException('تعداد هتل‌ها از سقف مجاز بیشتر است.');
+      }
+    }
+    for (const cityId of new Set(options.destinationNights ? [] : cities)) {
       for (let page = 1; page <= 100; page++) {
         const result = await this.directory.hotelRatePackChoices(
           'hotels',
@@ -149,13 +401,31 @@ export class FloatingTourPricingService {
           throw new BadRequestException('تعداد هتل‌ها از سقف مجاز بیشتر است.');
       }
     }
+    const workbook = readFloatingWorkbook(bytes);
+    const hotelMatches = resolveFloatingHotelCells(
+      workbook,
+      hotels,
+      options.hotelSelections,
+    );
+    if (hotelMatches.length)
+      return {
+        hotelMatches,
+        exchangeRates: {},
+        packageVersion: row.version,
+        expectedVersion: current.version,
+        digest: '',
+        rows: [],
+        options,
+        warnings: [],
+      };
     const rows = parseFloatingRows(
-      readFloatingWorkbook(bytes),
+      workbook,
       options,
       definition,
       hotels,
       options.mode === 'DATED' ? current.dated : (current.monthly?.rows ?? []),
     );
+    if (options.mode === 'DATED') applyFlightSchedule(rows, options, current);
     const fx = await this.pricing.buyRates();
     const Decimal = Prisma.Decimal.clone({ precision: 50 });
     const equivalent = (r: FloatingTourSaleRow): Prisma.Decimal | null => {
@@ -164,7 +434,9 @@ export class FloatingTourPricingService {
       for (const m of r.prices.double) {
         const rate = fx[m.currency];
         if (!rate)
-          throw new BadRequestException(`Missing exchange rate: ${m.currency}`);
+          throw new BadRequestException(
+            `Row ${r.sourceRows.join(', ')}: نرخ تبدیل ارز ${m.currency} ثبت نشده است.`,
+          );
         total = total.plus(new Decimal(m.amount).mul(rate));
       }
       return total;
@@ -199,7 +471,15 @@ export class FloatingTourPricingService {
       digest,
       rows,
       options,
-      warnings: [],
+      warnings: rows.flatMap((price) =>
+        price.stays.flatMap((stay, index) =>
+          stay.service
+            ? []
+            : [
+                `Row ${price.sourceRows[index] ?? price.sourceRows[0]}: خدمات اقامت برای «${stay.hotelName}» وارد نشده است.`,
+              ],
+        ),
+      ),
     };
   }
   async commit(

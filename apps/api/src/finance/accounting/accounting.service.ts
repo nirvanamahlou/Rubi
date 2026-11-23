@@ -1,4 +1,25 @@
 import {
+  allowsManualFinanceCode,
+  financeCodingProfile,
+  financeCodingProfiles,
+} from '@nora/contracts';
+import { assertFinanceCodeUnissued } from '../../system-management/finance-coding.public';
+import {
+  allocateFinanceAccountingCode,
+  assertFinanceCodingTypeUnchanged,
+  newFinanceCodingTypes,
+  setupFinanceCodingTypes,
+  suggestFinanceAccountingCode,
+} from './finance-coding-types';
+import {
+  newOwnerTypes,
+  detailOwners,
+  saveDetailOwner,
+  resolveDetailOwner,
+} from './detail-owners';
+import { bankCommand, bankReport } from './bank-reconciliation';
+import { beneficiaryRegister, saveBeneficiary } from '../payments/bank-payee';
+import {
   voidedSalesReceiptEvent,
   voidedSalesReceiptIds,
 } from '../../sales/sales-receipt-void.public';
@@ -47,6 +68,19 @@ import {
   accountingFinancialEventLabels,
 } from '@nora/contracts';
 import {
+  accountingDetailLevels,
+  accountingDetailTypeIds,
+  isAccountingDetailLevelEnabled,
+  type AccountingDetailField,
+  type AccountingDetailIds,
+} from '@nora/contracts';
+import {
+  detailFields,
+  detailIds,
+  journalDetailSql,
+  lineDetails,
+} from './accounting.detail-levels';
+import {
   FINANCIAL_RULE_KIND,
   financialDate,
   financialEventLines,
@@ -80,6 +114,29 @@ import { accountingCurrencies } from './accounting.currency-directory';
 import { IamFinanceDirectory } from '../../iam/iam-finance-directory';
 import { DecimalValue } from '../finance.money';
 import * as v from './accounting.validation';
+import { readAccountBrowser } from './accounting-account-browser';
+import {
+  importTaxReference,
+  saveTaxMapping,
+  taxKind,
+  taxMappingView,
+} from './tax-reference';
+import {
+  finalizeSeasonal,
+  seasonalLayout,
+  seasonalPreview,
+  seasonalSnapshot,
+  setSeasonalRegion,
+} from './seasonal-report';
+import { hasAccessControl } from '@nora/contracts';
+import {
+  saveTreasuryInstrument,
+  treasuryInstruments,
+} from './treasury-instruments';
+import {
+  treasuryConfigAttributes,
+  treasuryConfigKinds,
+} from './accounting-treasury';
 import {
   executeAccountSetup,
   validateGroupDetailAllocations,
@@ -204,6 +261,7 @@ const resetApprovalAttributes = (value: unknown) =>
     'warnings',
   ]);
 const kinds = [
+  ...treasuryConfigKinds,
   'coding-standards',
   'accounting-list-filters',
   'approval-policies',
@@ -222,15 +280,9 @@ const accountRules = (value: unknown, permanent = true) => {
   const attrs = v.attributes(value);
   return {
     ...Object.fromEntries(
-      [
-        'traceable',
-        'multiCurrency',
-        'revaluable',
-        'zeroBalanceAtClose',
-        'detail4Required',
-        'detail5Required',
-        'detail6Required',
-      ].map((key) => [key, attrs[key] === true]),
+      ['traceable', 'multiCurrency', 'revaluable', 'zeroBalanceAtClose'].map(
+        (key) => [key, attrs[key] === true],
+      ),
     ),
     natureControl: attrs.natureControl || 'NONE',
     natureControlScope:
@@ -239,24 +291,6 @@ const accountRules = (value: unknown, permanent = true) => {
         ? 'ACCOUNT'
         : 'NONE'),
     accountType: attrs.accountType || (permanent ? 'PERMANENT' : 'TEMPORARY'),
-    ...Object.fromEntries(
-      [4, 5, 6].flatMap((n) => [
-        [
-          `detail${n}TypeIds`,
-          Array.isArray(attrs[`detail${n}TypeIds`])
-            ? [...(attrs[`detail${n}TypeIds`] as string[])].sort()
-            : attrs[`detail${n}TypeId`]
-              ? [attrs[`detail${n}TypeId`]]
-              : [],
-        ],
-        [
-          `detail${n}NatureTypeIds`,
-          Array.isArray(attrs[`detail${n}NatureTypeIds`])
-            ? [...(attrs[`detail${n}NatureTypeIds`] as string[])].sort()
-            : [],
-        ],
-      ]),
-    ),
   };
 };
 
@@ -424,24 +458,53 @@ export class AccountingService {
         },
       });
       await tx.accountingConfiguration.createMany({
-        data: ['شخص', 'شرکت'].map((title) => ({
-          bookId: id,
-          kind: 'detail-types',
-          code: 'DT-' + randomUUID(),
-          title,
-          attributes: {
-            isSystem: true,
-            classificationNumberLength: '6',
-            defaultFirstCode: '',
-            parentTypeId: '',
-            enforceParent: false,
-          },
-        })),
+        data: [
+          ...newOwnerTypes(id),
+          ...newFinanceCodingTypes(id),
+          ...['شخص', 'شرکت'].map((title) => ({
+            bookId: id,
+            kind: 'detail-types',
+            code: 'DT-' + randomUUID(),
+            title,
+            attributes: {
+              isSystem: true,
+              classificationNumberLength: '6',
+              defaultFirstCode: '',
+              parentTypeId: '',
+              enforceParent: false,
+            },
+          })),
+        ],
       });
       await seedStandardCatalogs(tx, id);
       return created;
     });
   }
+  async detailCodeSuggestion(
+    bookId: string,
+    rawTypeId: unknown,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, 'finance.account.manage');
+    const tx = this.database.client;
+    await this.book(tx, bookId, actor);
+    const type = await tx.accountingConfiguration.findFirst({
+      where: {
+        id: v.uuid(rawTypeId)!,
+        bookId,
+        kind: 'detail-types',
+        active: true,
+      },
+      select: { code: true },
+    });
+    const profile = financeCodingProfile(type?.code);
+    if (!profile || !allowsManualFinanceCode(profile))
+      throw new NotFoundException(
+        'برای این نوع تفصیلی پیشنهاد کد در دسترس نیست.',
+      );
+    return { code: await suggestFinanceAccountingCode(tx, profile) };
+  }
+
   async snapshot(id: string, actor: AuthenticatedActor) {
     this.require(actor);
     return this.database.client.$transaction(
@@ -984,11 +1047,11 @@ export class AccountingService {
     actor: AuthenticatedActor,
   ) {
     const permission: IamPermissionCode =
-      action === 'workflow-cancel'
+      action === 'workflow-cancel' || action === 'bank-statement-finalize'
         ? 'finance.journal.approve'
         : action.startsWith('workflow-')
           ? 'finance.journal.create'
-          : action === 'export-batch'
+          : ['export-batch', 'seasonal-finalize'].includes(action)
             ? 'finance.export'
             : [
                   'approve',
@@ -1199,6 +1262,39 @@ export class AccountingService {
       ].includes(action)
     )
       return standardCommand(tx, bookId, action, p, expected);
+    if (action === 'save-beneficiary' || action.startsWith('bank-statement-')) {
+      if (
+        !actor.permissions.includes('master_data.read') ||
+        !hasAccessControl(actor.permissions, 'master-data.resource.banks')
+      )
+        throw new ForbiddenException();
+      if (action === 'save-beneficiary')
+        return saveBeneficiary(tx, book, p, expected);
+      const { period } = await this.reportPeriod(tx, bookId, {
+        periodId: v.uuid(p.periodId)!,
+      });
+      return bankCommand(tx, book, period, action, p);
+    }
+    if (action === 'tax-reference-import')
+      return importTaxReference(tx, bookId, p, actor.userId);
+    if (action === 'tax-map-save') return saveTaxMapping(tx, bookId, p);
+    if (action === 'seasonal-finalize' || action === 'seasonal-region') {
+      const window = await this.reportPeriod(tx, bookId, {
+        periodId: v.uuid(p.periodId)!,
+        from: v.date(p.from)!,
+        to: v.date(p.to)!,
+      });
+      return action === 'seasonal-region'
+        ? setSeasonalRegion(tx, bookId, window, p)
+        : finalizeSeasonal(
+            tx,
+            bookId,
+            window,
+            seasonalLayout(p.layout),
+            p.digest,
+            actor.userId,
+          );
+    }
     if (action === 'workflow-create')
       return captureWorkflow(tx, book, p, actor);
     if (action === 'workflow-cancel') return cancelWorkflow(tx, book, p, actor);
@@ -2122,7 +2218,7 @@ export class AccountingService {
         }),
         accountMap = new Map(accounts.map((a) => [a.id, a]));
       const lots = await tx.$queryRaw<
-        {
+        (AccountingDetailIds & {
           accountId: string;
           detail4Id: string | null;
           detail5Id: string | null;
@@ -2136,21 +2232,19 @@ export class AccountingService {
           valuationCurrency: string | null;
           balance: Prisma.Decimal;
           foreignBalance: Prisma.Decimal | null;
-        }[]
+        })[]
       >`
-        SELECT l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",l.currency,l."fxSnapshotId",l.rate,l.attributes->>'trackingNumber' AS "trackingNumber",l.attributes->>'trackingDate' AS "trackingDate",l.attributes->>'valuationCurrency' AS "valuationCurrency",
+        SELECT l."accountId",${journalDetailSql},l.currency,l."fxSnapshotId",l.rate,l.attributes->>'trackingNumber' AS "trackingNumber",l.attributes->>'trackingDate' AS "trackingDate",l.attributes->>'valuationCurrency' AS "valuationCurrency",
           ARRAY_AGG(l.id ORDER BY l.id) AS "sourceLineIds", SUM(l.debit-l.credit) AS balance,
           SUM(CASE WHEN l.debit>0 THEN l."foreignAmount" ELSE -l."foreignAmount" END) AS "foreignBalance"
         FROM accounting_journal_lines l JOIN accounting_journals j ON j.id=l."journalId"
         WHERE j."bookId"=${bookId}::uuid AND j."periodId"=${periodId}::uuid AND j.status='POSTED'
           AND (${operation !== 'year-end-opening'} OR j."sourceKey" IS NULL OR j."sourceKey" NOT LIKE 'FINAL:%')
-        GROUP BY l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",l.currency,l."fxSnapshotId",l.rate,l.attributes->>'trackingNumber',l.attributes->>'trackingDate',l.attributes->>'valuationCurrency'`;
+        GROUP BY l."accountId",${journalDetailSql},l.currency,l."fxSnapshotId",l.rate,l.attributes->>'trackingNumber',l.attributes->>'trackingDate',l.attributes->>'valuationCurrency'`;
       lots.sort((a, b) =>
         JSON.stringify([
           a.accountId,
-          a.detail4Id,
-          a.detail5Id,
-          a.detail6Id,
+          ...detailFields.map((field) => a[field] ?? null),
           a.currency,
           a.fxSnapshotId,
           a.rate?.toFixed(),
@@ -2160,9 +2254,7 @@ export class AccountingService {
         ]).localeCompare(
           JSON.stringify([
             b.accountId,
-            b.detail4Id,
-            b.detail5Id,
-            b.detail6Id,
+            ...detailFields.map((field) => b[field] ?? null),
             b.currency,
             b.fxSnapshotId,
             b.rate?.toFixed(),
@@ -2229,9 +2321,7 @@ export class AccountingService {
           checksum,
           balances: balances.map((r) => ({
             accountId: r.accountId,
-            detail4Id: r.detail4Id,
-            detail5Id: r.detail5Id,
-            detail6Id: r.detail6Id,
+            ...lineDetails(r),
             balance: r.balance,
             permanent: r.permanent,
           })),
@@ -2327,9 +2417,7 @@ export class AccountingService {
           net = net.add(value);
           return {
             accountId: r.accountId,
-            detail4Id: r.detail4Id,
-            detail5Id: r.detail5Id,
-            detail6Id: r.detail6Id,
+            ...lineDetails(r),
             currency: r.currency,
             fxSnapshotId: r.fxSnapshotId,
             attributes: {
@@ -2376,9 +2464,7 @@ export class AccountingService {
           if (!value.isZero)
             rows.push({
               accountId: target.accountId,
-              detail4Id: target.detail4Id,
-              detail5Id: target.detail5Id,
-              detail6Id: target.detail6Id,
+              ...lineDetails(target),
               debit: value.isNegative ? '0' : value.toString(),
               credit: value.isNegative
                 ? DecimalValue.zero().subtract(value).toString()
@@ -2457,9 +2543,7 @@ export class AccountingService {
           net = net.add(value);
           return {
             accountId: r.accountId,
-            detail4Id: r.detail4Id,
-            detail5Id: r.detail5Id,
-            detail6Id: r.detail6Id,
+            ...lineDetails(r),
             currency: r.currency,
             fxSnapshotId: r.fxSnapshotId,
             rate: r.rate?.toFixed() ?? null,
@@ -2519,9 +2603,7 @@ export class AccountingService {
           const value = DecimalValue.parse(r.balance);
           return {
             accountId: r.accountId,
-            detail4Id: r.detail4Id,
-            detail5Id: r.detail5Id,
-            detail6Id: r.detail6Id,
+            ...lineDetails(r),
             currency: r.currency,
             fxSnapshotId: r.fxSnapshotId,
             attributes: {
@@ -2689,9 +2771,7 @@ export class AccountingService {
           : delta.toString();
         rows.push({
           accountId: position.accountId,
-          detail4Id: position.detail4Id,
-          detail5Id: position.detail5Id,
-          detail6Id: position.detail6Id,
+          ...lineDetails(position),
           debit: delta.isNegative ? '0' : amount,
           credit: delta.isNegative ? amount : '0',
           fxSnapshotId: rate.id,
@@ -2821,9 +2901,7 @@ export class AccountingService {
           reversalOfId: j.reversalOfId,
           lines: j.lines.map((l) => ({
             accountCode: map.get(l.accountId!),
-            detail4Id: l.detail4Id,
-            detail5Id: l.detail5Id,
-            detail6Id: l.detail6Id,
+            ...lineDetails(l),
             debit: l.debit.toString(),
             credit: l.credit.toString(),
             currency: l.currency,
@@ -3139,7 +3217,7 @@ export class AccountingService {
           const attrs = v.attributes(account.attributes);
           if (event.currency !== book.baseCurrency && !attrs.multiCurrency)
             v.rule('برای رویداد ارزی حساب با ویژگی ارزی انتخاب کنید.');
-          for (const level of [4, 5, 6] as const) {
+          for (const level of accountingDetailLevels) {
             const id = line[`detail${level}Id`];
             if (attrs[`detail${level}Required`] && !id)
               v.rule('تفصیلی الزامی قاعده باید انتخاب شود.');
@@ -3175,9 +3253,7 @@ export class AccountingService {
         for (const side of ['debit', 'credit'])
           for (const field of [
             'AccountId',
-            'Detail4Id',
-            'Detail5Id',
-            'Detail6Id',
+            ...accountingDetailLevels.map((level) => `Detail${level}Id`),
           ])
             attributes[side + field] = String(mapping[side + field] ?? '');
         return tx.accountingConfiguration.create({
@@ -3469,6 +3545,12 @@ export class AccountingService {
         },
       });
     }
+    if (action === 'setup-finance-coding-types')
+      return setupFinanceCodingTypes(tx, bookId);
+    if (action === 'save-detail-owner')
+      return saveDetailOwner(tx, book, p, expected, actor.userId);
+    if (action === 'save-treasury-instrument')
+      return saveTreasuryInstrument(tx, book, p, expected, actor.userId);
     if (action === 'save-configuration') {
       const kind = v.text(p.kind, 40, true);
       if (!kinds.includes(kind)) v.invalid('نوع اطلاعات پایه معتبر نیست.');
@@ -3480,7 +3562,21 @@ export class AccountingService {
         this.version(existing.version, expected);
         if (existing.kind !== kind) v.invalid('نوع رکورد قابل تغییر نیست.');
       }
+      const requestedCode = v.text(p.code, 40);
+      const financeProfile = financeCodingProfile(existing?.code);
+      if (
+        (financeCodingProfile(requestedCode) &&
+          requestedCode !== existing?.code) ||
+        (financeProfile &&
+          ((requestedCode && requestedCode !== financeProfile.typeCode) ||
+            p.active === false))
+      )
+        v.rule('قواعد نوع تفصیلی ۸ رقمی ثابت است.');
       let attributes = v.attributes(p.attributes);
+      if (financeProfile)
+        assertFinanceCodingTypeUnchanged(financeProfile, attributes);
+      if (treasuryConfigKinds.includes(kind))
+        attributes = treasuryConfigAttributes(kind, p.code, attributes);
       if (kind === 'accounting-list-filters')
         attributes = listFilterAttributes(attributes);
       if (kind === 'coding-standards') {
@@ -3552,6 +3648,13 @@ export class AccountingService {
         if (attributes.defaultFirstCode !== undefined)
           attributes.defaultFirstCode = first;
         const title = v.text(p.title, 160, true);
+        if (
+          title !== existing?.title &&
+          financeCodingProfiles.some(
+            (profile) => detailTypeKey(profile.title) === detailTypeKey(title),
+          )
+        )
+          v.rule('برای این عنوان از تعریف نوع‌های تفصیلی ۸ رقمی استفاده کنید.');
         const siblings = await tx.accountingConfiguration.findMany({
           where: { bookId, kind, id: { not: id } },
           select: { title: true },
@@ -3660,7 +3763,7 @@ export class AccountingService {
         bookId,
         kind,
         code:
-          v.text(p.code, 40) ||
+          requestedCode ||
           existing?.code ||
           `${kind === 'fiscal-years' ? 'FY' : kind === 'voucher-types' ? 'VT' : kind === 'detail-types' ? 'DT' : 'CFG'}-${id.slice(0, 8).toUpperCase()}`,
         title: v.text(p.title, 160, true),
@@ -3841,9 +3944,16 @@ export class AccountingService {
         !['DEBIT', 'CREDIT', 'ANY'].includes(nature)
       )
         v.invalid('کد، سطح یا ماهیت حساب معتبر نیست.');
+      const existing = await tx.accountingAccount.findFirst({
+        where: { id, bookId },
+      });
       const parent = parentId
         ? await tx.accountingAccount.findFirst({
-            where: { id: parentId, bookId, active: true },
+            where: {
+              id: parentId,
+              bookId,
+              ...(existing?.parentId === parentId ? {} : { active: true }),
+            },
           })
         : null;
       if (
@@ -3854,9 +3964,6 @@ export class AccountingService {
             !code.startsWith(parent.code)
       )
         v.rule('والد و پیشوند کد با سطح حساب سازگار نیست.');
-      const existing = await tx.accountingAccount.findFirst({
-        where: { id, bookId },
-      });
       if (existing) {
         this.version(existing.version, expected);
         if (
@@ -3908,7 +4015,7 @@ export class AccountingService {
       )
         v.rule('حساب طرف مقابل معتبر نیست.');
       const previousAccountAttrs = v.attributes(existing?.attributes);
-      for (const n of [4, 5, 6]) {
+      for (const n of accountingDetailLevels) {
         const ids = accountAttrs[`detail${n}TypeIds`];
         const legacyId = accountAttrs[`detail${n}TypeId`];
         const requestedIds = [
@@ -4026,13 +4133,21 @@ export class AccountingService {
       }
       const existing = await tx.accountingDetail.findFirst({
         where: { id, bookId },
+        include: { type: { select: { code: true } } },
       });
+      const codingProfile = financeCodingProfile(detailType.code);
+      if (
+        existing &&
+        existing.typeId !== typeId &&
+        (codingProfile || financeCodingProfile(existing.type?.code))
+      )
+        v.rule('نوع تفصیلی رکورد دارای کد ۸ رقمی قابل تغییر نیست.');
       if (existing) {
         this.version(existing.version, expected);
         if (
           (await tx.accountingJournalLine.count({
             where: {
-              OR: [{ detail4Id: id }, { detail5Id: id }, { detail6Id: id }],
+              OR: detailFields.map((field) => ({ [field]: id })),
             },
           })) &&
           (typeId !== existing.typeId ||
@@ -4054,45 +4169,65 @@ export class AccountingService {
             actorName,
           ),
         );
-      const width = detailWidth(typeAttrs.classificationNumberLength);
-      if (!width) v.rule('طول شماره طبقه‌بندی نوع تفصیلی معتبر نیست.');
       const supplied = detailDigits(v.text(p.code, 20));
-      const preserveCode =
-        existing?.typeId === typeId && existing.code === supplied;
-      const codes = await tx.accountingDetail.findMany({
-        where: { bookId, typeId, id: { not: id } },
-        select: { code: true },
-      });
-      const detailCode = preserveCode
-        ? supplied
-        : supplied
-          ? paddedDetailCode(supplied, width)
-          : nextDetailCode(
-              width,
-              v.text(typeAttrs.defaultFirstCode, 20),
-              codes.map((row) => row.code),
-            );
-      if (!detailCode)
-        v.rule(
-          supplied
-            ? 'کد با طول نوع تفصیلی سازگار نیست.'
-            : 'بازه کد این نوع تفصیلی تکمیل شده است.',
-        );
-      if (
-        !preserveCode &&
-        codes.some((row) => paddedDetailCode(row.code, width) === detailCode)
-      )
-        v.rule('کد در این نوع تفصیلی تکراری است.');
+      let detailCode: string;
+      if (codingProfile) {
+        if (existing && supplied && supplied !== existing.code)
+          v.rule('کد حساب تفصیلی پس از ثبت قابل تغییر نیست.');
+        detailCode =
+          existing?.code ??
+          (await allocateFinanceAccountingCode(
+            tx,
+            codingProfile,
+            actor.userId,
+            id,
+            supplied,
+          ));
+      } else {
+        const width = detailWidth(typeAttrs.classificationNumberLength);
+        if (!width) v.rule('طول شماره طبقه‌بندی نوع تفصیلی معتبر نیست.');
+        const preserveCode =
+          existing?.typeId === typeId && existing.code === supplied;
+        const codes = await tx.accountingDetail.findMany({
+          where: { bookId, typeId, id: { not: id } },
+          select: { code: true },
+        });
+        const candidateCode = preserveCode
+          ? supplied
+          : supplied
+            ? paddedDetailCode(supplied, width)
+            : nextDetailCode(
+                width,
+                v.text(typeAttrs.defaultFirstCode, 20),
+                codes.map((row) => row.code),
+              );
+        if (!candidateCode)
+          v.rule(
+            supplied
+              ? 'کد با طول نوع تفصیلی سازگار نیست.'
+              : 'بازه کد این نوع تفصیلی تکمیل شده است.',
+          );
+        detailCode = candidateCode;
+        if (
+          !preserveCode &&
+          codes.some((row) => paddedDetailCode(row.code, width) === detailCode)
+        )
+          v.rule('کد در این نوع تفصیلی تکراری است.');
+        if (!preserveCode) await assertFinanceCodeUnissued(tx, detailCode);
+      }
       let title = v.text(p.title, 160, true);
       let customerId: string | null = null;
-      if (['شخص', 'شرکت'].includes(detailType.title)) {
+      const corporateCustomer = codingProfile?.prefix === '3';
+      const codedCustomer = corporateCustomer || codingProfile?.prefix === '4';
+      if (codedCustomer || ['شخص', 'شرکت'].includes(detailType.title)) {
         customerId = v.uuid(p.customerId ?? existing?.customerId, true);
         if (customerId) {
           const owner = await accountingOwner(
             tx,
             customerId,
             book.branchId,
-            detailType.title === 'شرکت',
+            corporateCustomer || detailType.title === 'شرکت',
+            codedCustomer,
           );
           if (!owner)
             v.rule('شخص یا شرکت انتخاب‌شده برای این دفتر معتبر نیست.');
@@ -4108,13 +4243,34 @@ export class AccountingService {
           customerId !== existing.customerId &&
           (await tx.accountingJournalLine.count({
             where: {
-              OR: [{ detail4Id: id }, { detail5Id: id }, { detail6Id: id }],
+              OR: detailFields.map((field) => ({ [field]: id })),
             },
           }))
         )
           v.rule('مالک تفصیلی استفاده‌شده قابل تغییر نیست.');
       }
-      const currency = v.text(p.currency, 3) || null;
+      const sourceOwner = await resolveDetailOwner(
+        tx,
+        book,
+        detailType,
+        p,
+        existing?.typeId === typeId ? existing : null,
+      );
+      const sourceConfigurationId = sourceOwner?.configurationId ?? null,
+        sourceAccountId = sourceOwner?.accountId ?? null;
+      if (
+        existing &&
+        (existing.sourceConfigurationId !== sourceConfigurationId ||
+          existing.sourceAccountId !== sourceAccountId) &&
+        (await tx.accountingJournalLine.count({
+          where: {
+            OR: detailFields.map((field) => ({ [field]: id })),
+          },
+        }))
+      )
+        v.rule('مرجع تفصیلی استفاده‌شده قابل تغییر نیست.');
+      if (sourceOwner) title = sourceOwner.title;
+      const currency = sourceOwner?.currency ?? (v.text(p.currency, 3) || null);
       if (currency && !/^[A-Z]{3}$/.test(currency))
         v.invalid('کد ارز معتبر نیست.');
       const data = {
@@ -4122,6 +4278,8 @@ export class AccountingService {
         typeId,
         parentId,
         code: detailCode,
+        sourceConfigurationId,
+        sourceAccountId,
         title,
         customerId,
         currency,
@@ -4365,7 +4523,7 @@ export class AccountingService {
         v.rule('حساب‌ها و نوع سند با نوع الگو سازگار نیستند.');
       if (!Array.isArray(p.lines) || p.lines.length > 500)
         v.invalid('ردیف‌های الگو معتبر نیستند.');
-      const lines = [] as {
+      const lines = [] as (AccountingDetailIds & {
         bookId: string;
         position: number;
         accountId: string;
@@ -4376,7 +4534,7 @@ export class AccountingService {
         percentage: string;
         include: boolean;
         role: string | null;
-      }[];
+      })[];
       const templateAccountAttributes = new Map<string, AccountingAttributes>();
       for (const [position, raw] of p.lines.entries()) {
         const line = v.object(raw),
@@ -4384,6 +4542,16 @@ export class AccountingService {
           detail4Id = v.uuid(line.detail4Id, true),
           detail5Id = v.uuid(line.detail5Id, true),
           detail6Id = v.uuid(line.detail6Id, true),
+          templateDetails: AccountingDetailIds = {
+            detail4Id,
+            detail5Id,
+            detail6Id,
+            ...Object.fromEntries(
+              detailFields
+                .slice(3)
+                .map((field) => [field, v.uuid(line[field], true)]),
+            ),
+          },
           role = sourceForm ? v.text(line.role, 8, true) : null,
           side = sourceForm ? 'DEBIT' : v.text(line.side, 8, true),
           percentage =
@@ -4417,23 +4585,18 @@ export class AccountingService {
           accountId,
           v.attributes(templateAccount.attributes),
         );
-        const detailIds = [detail4Id, detail5Id, detail6Id].filter(
-          (value): value is string => Boolean(value),
-        );
+        const requestedDetails = detailIds(templateDetails);
         if (
-          detailIds.length &&
+          requestedDetails.length &&
           (await tx.accountingDetail.count({
-            where: { bookId, id: { in: detailIds }, active: true },
-          })) !== new Set(detailIds).size
+            where: { bookId, id: { in: requestedDetails }, active: true },
+          })) !== new Set(requestedDetails).size
         )
           v.rule('تفصیلی ردیف الگو معتبر نیست.');
         if (sourceForm) {
           const attrs = v.attributes(templateAccount.attributes);
-          for (const [level, detailId] of [
-            [4, detail4Id],
-            [5, detail5Id],
-            [6, detail6Id],
-          ] as const) {
+          for (const level of accountingDetailLevels) {
+            const detailId = templateDetails[`detail${level}Id`];
             if (!detailId) continue;
             const allowed = Array.isArray(attrs[`detail${level}TypeIds`])
               ? (attrs[`detail${level}TypeIds`] as string[])
@@ -4455,9 +4618,7 @@ export class AccountingService {
           bookId,
           position,
           accountId,
-          detail4Id,
-          detail5Id,
-          detail6Id,
+          ...lineDetails(templateDetails),
           side,
           percentage,
           include: line.include !== false,
@@ -4486,7 +4647,7 @@ export class AccountingService {
               Boolean(attrs[`detail${level}TypeId`]) ||
               (Array.isArray(attrs[`detail${level}TypeIds`]) &&
                 (attrs[`detail${level}TypeIds`] as string[]).length > 0);
-            for (const level of [4, 5, 6] as const) {
+            for (const level of accountingDetailLevels) {
               if (
                 hasLevel(rootAttrs, level) &&
                 !root[`detail${level}Id`] &&
@@ -4785,6 +4946,14 @@ export class AccountingService {
         for (const [i, row] of rows.entries()) {
           const old = existing.lines[i];
           if (!old) continue;
+          if (
+            old.accountId === row.accountId &&
+            Array.isArray(p.lines) &&
+            v.object(p.lines[i]).id === old.id
+          )
+            for (const field of detailFields.slice(3))
+              if (row[field] === undefined && old[field])
+                row[field] = old[field];
           if (!internal)
             row.attributes = {
               ...without(v.attributes(old.attributes), lineWritableAttributes),
@@ -4795,11 +4964,7 @@ export class AccountingService {
             /^(REVALUE|OPEN|CLOSE|FINAL|NATURE|REVERSE):/.test(
               existing.sourceKey,
             ) &&
-            [4, 5, 6].some(
-              (n) =>
-                row[`detail${n}Id` as 'detail4Id'] !==
-                old[`detail${n}Id` as 'detail4Id'],
-            )
+            detailFields.some((field) => (row[field] ?? null) !== old[field])
           )
             v.rule('تفصیلی‌های سند محاسباتی باید با مبنا یکسان بمانند.');
         }
@@ -4819,9 +4984,9 @@ export class AccountingService {
               row.rate === (old.rate?.toString() ?? null) &&
               row.foreignAmount === (old.foreignAmount?.toString() ?? null) &&
               (row.fxSnapshotId ?? null) === old.fxSnapshotId &&
-              row.detail4Id === old.detail4Id &&
-              row.detail5Id === old.detail5Id &&
-              row.detail6Id === old.detail6Id &&
+              detailFields.every(
+                (field) => (row[field] ?? null) === old[field],
+              ) &&
               v.attributes(row.attributes).trackingNumber ===
                 v.attributes(old.attributes).trackingNumber &&
               v.attributes(row.attributes).trackingDate ===
@@ -5438,9 +5603,7 @@ export class AccountingService {
               create: journal.lines.map((row) => ({
                 position: row.position,
                 accountId: row.accountId,
-                detail4Id: row.detail4Id,
-                detail5Id: row.detail5Id,
-                detail6Id: row.detail6Id,
+                ...lineDetails(row),
                 description: row.description,
                 debit: row.credit,
                 credit: row.debit,
@@ -5604,7 +5767,7 @@ export class AccountingService {
         const outstanding = await tx.$queryRaw<{ present: number }[]>`
           SELECT 1 AS present FROM accounting_journal_lines l JOIN accounting_journals j ON j.id=l."journalId"
           WHERE j."bookId"=${bookId}::uuid AND j."periodId"=${id}::uuid AND j.status='POSTED'
-          GROUP BY l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",l.currency,l."fxSnapshotId",l.rate,l.attributes->>'valuationCurrency',l.attributes->>'trackingNumber',l.attributes->>'trackingDate'
+          GROUP BY l."accountId",${journalDetailSql},l.currency,l."fxSnapshotId",l.rate,l.attributes->>'valuationCurrency',l.attributes->>'trackingNumber',l.attributes->>'trackingDate'
           HAVING SUM(l.debit-l.credit)<>0 OR COALESCE(SUM(CASE WHEN l.debit>0 THEN l."foreignAmount" ELSE -l."foreignAmount" END),0)<>0 LIMIT 1`;
         if (outstanding.length)
           v.rule('اختتامیه قطعی برای بستن دوره دارای مانده لازم است.');
@@ -5633,15 +5796,7 @@ export class AccountingService {
     const accounts = [
         ...new Set(rows.flatMap((r) => (r.accountId ? [r.accountId] : []))),
       ],
-      details = [
-        ...new Set(
-          rows.flatMap((r) =>
-            [r.detail4Id, r.detail5Id, r.detail6Id].filter(
-              (id): id is string => !!id,
-            ),
-          ),
-        ),
-      ];
+      details = [...new Set(rows.flatMap((r) => detailIds(r)))];
     if (
       (await tx.accountingAccount.count({
         where: { id: { in: accounts }, bookId },
@@ -5722,9 +5877,9 @@ export class AccountingService {
             const actual = journal.lines[index]!;
             return (
               actual.accountId !== line.accountId ||
-              actual.detail4Id !== line.detail4Id ||
-              actual.detail5Id !== line.detail5Id ||
-              actual.detail6Id !== line.detail6Id ||
+              detailFields.some(
+                (field) => (actual[field] ?? null) !== (line[field] ?? null),
+              ) ||
               actual.debit.toString() !== line.debit ||
               actual.credit.toString() !== line.credit ||
               actual.currency !== (line.currency ?? null) ||
@@ -5906,9 +6061,7 @@ export class AccountingService {
       ) {
         const detailTypes: Record<string, string> = {};
         if (accountAttrs.natureControlScope === 'SELECTED_DETAIL') {
-          const ids = [row.detail4Id, row.detail5Id, row.detail6Id].filter(
-            (id): id is string => !!id,
-          );
+          const ids = detailIds(row);
           for (const detail of await tx.accountingDetail.findMany({
             where: { bookId: book.id, id: { in: ids } },
             select: { id: true, typeId: true },
@@ -5941,8 +6094,7 @@ export class AccountingService {
               (r) =>
                 r.accountId === account.id &&
                 Object.entries(dimensions).every(
-                  ([key, value]) =>
-                    r[key as 'detail4Id' | 'detail5Id' | 'detail6Id'] === value,
+                  ([key, value]) => r[key as AccountingDetailField] === value,
                 ),
             )
             .reduce(
@@ -5966,17 +6118,25 @@ export class AccountingService {
           }
         }
       }
-      for (const n of [4, 5, 6] as const) {
+      for (const n of accountingDetailLevels) {
         const id = row[`detail${n}Id`];
-        const attrs = v.attributes(account.attributes);
-        if (attrs[`detail${n}Required`] === true && !id)
+        const attrs = accountAttrs;
+        if (
+          attrs[`detail${n}Required`] === true &&
+          !id &&
+          !journal.reversalOfId
+        )
           v.rule(`تفصیلی سطح ${n} لازم است.`);
-        if (id) {
+        if (id && !journal.reversalOfId) {
+          if (n > 6 && !isAccountingDetailLevelEnabled(attrs, n))
+            v.rule(`تفصیلی سطح ${n} برای این حساب فعال نیست.`);
           const detail = await tx.accountingDetail.findFirst({
             where: { id, bookId: book.id, active: true },
           });
           if (
             !detail ||
+            (n > 6 &&
+              !accountingDetailTypeIds(attrs, n).includes(detail.typeId)) ||
             (attrs[`detail${n}TypeId`] &&
               detail.typeId !== attrs[`detail${n}TypeId`]) ||
             (Array.isArray(attrs[`detail${n}TypeIds`]) &&
@@ -6236,7 +6396,7 @@ export class AccountingService {
           .map((a) => a.id),
       );
     const values = await tx.$queryRaw<
-      {
+      (AccountingDetailIds & {
         accountId: string;
         detail4Id: string | null;
         detail5Id: string | null;
@@ -6244,15 +6404,15 @@ export class AccountingService {
         currency: string | null;
         quantity: Prisma.Decimal | null;
         base: Prisma.Decimal;
-      }[]
+      })[]
     >`
-      SELECT l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",
+      SELECT l."accountId",${journalDetailSql},
         CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'FINAL:%' OR j."sourceKey" LIKE 'NATURE:%' OR j."sourceKey" LIKE 'REVERSE:%' OR j."sourceKey" LIKE 'WORKFLOW:%' THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END AS currency,
         SUM(CASE WHEN l.currency<>${book.baseCurrency} THEN CASE WHEN l.debit>0 THEN l."foreignAmount" ELSE -l."foreignAmount" END ELSE 0 END) AS quantity,
         SUM(l.debit-l.credit) AS base
       FROM accounting_journal_lines l JOIN accounting_journals j ON j.id=l."journalId"
       WHERE j."bookId"=${book.id}::uuid AND j."periodId"=${periodId}::uuid AND j.status='POSTED' AND j."documentDate"<=${asOf}
-      GROUP BY l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'FINAL:%' OR j."sourceKey" LIKE 'NATURE:%' OR j."sourceKey" LIKE 'REVERSE:%' OR j."sourceKey" LIKE 'WORKFLOW:%' THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END`;
+      GROUP BY l."accountId",${journalDetailSql},CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'FINAL:%' OR j."sourceKey" LIKE 'NATURE:%' OR j."sourceKey" LIKE 'REVERSE:%' OR j."sourceKey" LIKE 'WORKFLOW:%' THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END`;
     const rows = values
       .filter(
         (r) =>
@@ -6261,7 +6421,8 @@ export class AccountingService {
           r.currency !== book.baseCurrency,
       )
       .map((r) => ({
-        ...r,
+        accountId: r.accountId,
+        ...lineDetails(r),
         currency: r.currency!,
         quantity: r.quantity?.toString() ?? '0',
         base: r.base.toString(),
@@ -6269,16 +6430,12 @@ export class AccountingService {
       .sort((a, b) =>
         JSON.stringify([
           a.accountId,
-          a.detail4Id,
-          a.detail5Id,
-          a.detail6Id,
+          ...detailFields.map((field) => a[field]),
           a.currency,
         ]).localeCompare(
           JSON.stringify([
             b.accountId,
-            b.detail4Id,
-            b.detail5Id,
-            b.detail6Id,
+            ...detailFields.map((field) => b[field]),
             b.currency,
           ]),
         ),
@@ -6439,7 +6596,7 @@ export class AccountingService {
         if (!Number.isSafeInteger(page) || page < 1 || page > 10000)
           v.invalid('صفحه معتبر نیست.');
         const detailFilter: Prisma.AccountingJournalLineWhereInput = {};
-        for (const n of [4, 5, 6] as const)
+        for (const n of accountingDetailLevels)
           if (query[`detail${n}Id`])
             detailFilter[`detail${n}Id`] = v.uuid(query[`detail${n}Id`])!;
         const base = {
@@ -6573,7 +6730,7 @@ export class AccountingService {
       ...(query.typeId ? { typeId: v.uuid(query.typeId)! } : {}),
     };
     const detailFilter: Prisma.AccountingJournalLineWhereInput = {};
-    for (const n of [4, 5, 6] as const)
+    for (const n of accountingDetailLevels)
       if (query[`detail${n}Id`])
         detailFilter[`detail${n}Id`] = v.uuid(query[`detail${n}Id`])!;
     const aggregate = async (dateFilter: Prisma.StringNullableFilter) =>
@@ -6681,8 +6838,79 @@ export class AccountingService {
     actor: AuthenticatedActor,
   ) {
     this.require(actor);
+    if (kind === 'detail-owners')
+      return this.database.client.$transaction(async (tx) =>
+        detailOwners(tx, await this.book(tx, bookId, actor), query),
+      );
+    if (kind === 'bank-reconciliation' || kind === 'beneficiaries') {
+      if (
+        !actor.permissions.includes('master_data.read') ||
+        !hasAccessControl(actor.permissions, 'master-data.resource.banks')
+      )
+        throw new ForbiddenException();
+      return this.database.client.$transaction(
+        async (tx) => {
+          const book = await this.book(tx, bookId, actor);
+          if (kind === 'beneficiaries') return beneficiaryRegister(tx, book);
+          const { period } = await this.reportPeriod(tx, bookId, query);
+          return bankReport(tx, book, period, query);
+        },
+        { isolationLevel: 'RepeatableRead' },
+      );
+    }
+    if (kind === 'tax-mapping' || kind === 'seasonal-report') {
+      return this.database.client.$transaction(
+        async (tx) => {
+          await this.book(tx, bookId, actor);
+          if (kind === 'tax-mapping')
+            return taxMappingView(tx, bookId, taxKind(query.kind));
+          const window = await this.reportPeriod(tx, bookId, query);
+          if (query.snapshotId)
+            return seasonalSnapshot(
+              tx,
+              bookId,
+              window.period.id,
+              query.snapshotId,
+            );
+          return seasonalPreview(
+            tx,
+            bookId,
+            window,
+            seasonalLayout(query.layout),
+          );
+        },
+        {
+          isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+          timeout: 20000,
+        },
+      );
+    }
+    if (kind === 'treasury-instruments') {
+      if (
+        ['bank-history', 'history-banks'].includes(query.view ?? '') &&
+        (!actor.permissions.includes('master_data.read') ||
+          !hasAccessControl(actor.permissions, 'master-data.resource.banks'))
+      )
+        throw new ForbiddenException();
+      return this.database.client.$transaction(async (tx) =>
+        treasuryInstruments(tx, await this.book(tx, bookId, actor), query),
+      );
+    }
     if (kind !== 'standard-mapping')
       query = this.fiscal?.query(bookId, query) ?? query;
+    if (kind === 'account-browser')
+      return this.database.client.$transaction(
+        async (tx) => {
+          await this.book(tx, bookId, actor);
+          const { period, from, to } = await this.reportPeriod(
+            tx,
+            bookId,
+            query,
+          );
+          return readAccountBrowser(tx, bookId, period.id, from, to, query);
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+      );
     if (kind === 'standard-mapping' || kind === 'standard-turnover')
       return this.database.client.$transaction(
         async (tx) => {

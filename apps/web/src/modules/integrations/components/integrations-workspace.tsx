@@ -1,4 +1,5 @@
 'use client';
+import { useTicketPublicationLink } from '../use-ticket-publication-link';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -92,7 +93,11 @@ export function IntegrationsWorkspace() {
 }
 
 function IntegrationEntry({ actor }: { actor: AuthenticatedActor }) {
-  const [view, setView] = useState<'sites' | 'monitoring' | null>(null);
+  const ticketRoute = useTicketPublicationLink();
+  const [selectedView, setView] = useState<'sites' | 'monitoring' | null>();
+  const view =
+    selectedView === undefined ? (ticketRoute ? 'sites' : null) : selectedView;
+  const ticketLink = selectedView === undefined ? ticketRoute : undefined;
   if (view)
     return (
       <div className="grid gap-4" dir="rtl">
@@ -105,7 +110,7 @@ function IntegrationEntry({ actor }: { actor: AuthenticatedActor }) {
           بازگشت به یکپارچه‌سازی‌ها
         </Button>
         {view === 'sites' ? (
-          <SiteManagement actor={actor} />
+          <SiteManagement actor={actor} ticketLink={ticketLink} />
         ) : (
           <IntegrationWorkspaceBody actor={actor} />
         )}

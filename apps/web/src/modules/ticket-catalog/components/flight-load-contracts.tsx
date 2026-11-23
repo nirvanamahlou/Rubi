@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FlightLoadContractsV1, TicketOfferV1 } from '@nora/contracts';
 import { ticketCalendarDate } from '@nora/contracts';
 import { Button } from '@/components/ui';
+import { ContractOutputButton } from '@/modules/sales/components/contract-output';
 import {
   loadFlightContracts,
   downloadFlightContracts,
@@ -73,14 +74,10 @@ export function FlightLoadContractsTable({
             {report.data.map((r) => (
               <tr key={r.id}>
                 <td>
-                  <a
-                    href={`/sales/contracts/${encodeURIComponent(r.id)}/pdf`}
-                    title="دانلود قرارداد"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {r.contractNumber}
-                  </a>
+                  <ContractOutputButton
+                    contractId={r.id}
+                    label={r.contractNumber}
+                  />
                 </td>
                 <td>{r.customerName}</td>
                 <td>{statuses[r.status] ?? r.status}</td>

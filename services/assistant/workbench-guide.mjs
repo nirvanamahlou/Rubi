@@ -1,4 +1,10 @@
+import {
+  OPENAI_ENDPOINT,
+  responsesRequest,
+  responsesResult,
+} from './openai-responses.mjs';
 import catalog from './workbench-guides.json' with { type: 'json' };
+import callCenter from './call-center-guides.json' with { type: 'json' };
 import { ServiceError } from './errors.mjs';
 import { boundedAgentJson } from './agent-provider.mjs';
 import { dataAgentConfiguration } from './agent-config.mjs';
@@ -11,7 +17,9 @@ export function validateWorkbenchGuide(value) {
       (k) => !['version', 'topicId', 'goal'].includes(k),
     ) ||
     value.version !== 1 ||
-    !catalog.topics.some((t) => t.id === value.topicId) ||
+    ![...catalog.topics, ...callCenter.topics].some(
+      (t) => t.id === value.topicId,
+    ) ||
     !['steps', 'troubleshoot', 'follow-up'].includes(value.goal)
   )
     throw new ServiceError(400, 'INVALID_GUIDE_INPUT');
@@ -20,16 +28,51 @@ export function validateWorkbenchGuide(value) {
 
 export function createWorkbenchGuideSelector({
   apiKey,
+  transport,
+  openaiTransport,
   fetcher = fetch,
   now = Date.now,
 } = {}) {
   let unavailableUntil = 0;
-  return async (input, signal) => {
+  return async (
+    input,
+    signal,
+    { beforeRetry, consumptionExempt = false } = {},
+  ) => {
     const safe = validateWorkbenchGuide(input);
     const fallback = () => ({ ...safe, selection: 'internal' });
-    if (!apiKey || now() < unavailableUntil) return fallback();
+    if ((!apiKey && !transport) || (!transport && now() < unavailableUntil))
+      return fallback();
     try {
-      const response = await fetcher(
+      const attemptBudget = {
+        attempts: 0,
+        retryTokens: 0,
+        ...(consumptionExempt ? { maxAttempts: Number.MAX_SAFE_INTEGER } : {}),
+      };
+      let usedOpenAI = false;
+      const fetchWithFailover = async (url, init, options) => {
+        const response = await (transport?.fetch ?? fetcher)(
+          url,
+          init,
+          options,
+        );
+        if (response.status !== 429 || !consumptionExempt || !openaiTransport)
+          return response;
+        await response.body?.cancel();
+        if (beforeRetry) await beforeRetry();
+        if (signal.aborted) throw new ServiceError(503, 'AGENT_TIMEOUT');
+        usedOpenAI = true;
+        const body = responsesRequest(
+          { ...JSON.parse(init.body), max_completion_tokens: 1024 },
+          'low',
+        );
+        return openaiTransport.fetch(
+          OPENAI_ENDPOINT,
+          { ...init, body: JSON.stringify(body) },
+          options,
+        );
+      };
+      const response = await fetchWithFailover(
         'https://api.groq.com/openai/v1/chat/completions',
         {
           method: 'POST',
@@ -37,7 +80,7 @@ export function createWorkbenchGuideSelector({
           cache: 'no-store',
           signal: AbortSignal.any([signal, AbortSignal.timeout(5000)]),
           headers: {
-            authorization: `Bearer ${apiKey}`,
+            ...(!transport ? { authorization: `Bearer ${apiKey}` } : {}),
             'content-type': 'application/json',
           },
           body: JSON.stringify({
@@ -76,6 +119,7 @@ export function createWorkbenchGuideSelector({
             ],
           }),
         },
+        { beforeRetry, attemptBudget },
       );
       if (!response.ok) {
         if (response.status === 429) {
@@ -93,7 +137,8 @@ export function createWorkbenchGuideSelector({
         await response.body?.cancel();
         return fallback();
       }
-      const body = await boundedAgentJson(response, 16384);
+      const payload = await boundedAgentJson(response, 16384);
+      const body = usedOpenAI ? responsesResult(payload) : payload;
       const calls = body.choices?.[0]?.message?.tool_calls;
       if (
         !Array.isArray(calls) ||
@@ -116,9 +161,20 @@ export function createWorkbenchGuideSelector({
   };
 }
 
-export function workbenchGuideConfiguration(env = process.env) {
+export function workbenchGuideConfiguration(
+  env = process.env,
+  { transport, openaiTransport } = {},
+) {
   // Reuse the existing Germany-only startup admission; never add a direct fallback.
   if (env.ASSISTANT_AGENT_ENABLED !== 'true') return {};
-  dataAgentConfiguration(env);
-  return { apiKey: env.GROQ_API_KEY };
+  dataAgentConfiguration(env, { transport, openaiTransport });
+  return transport
+    ? {
+        transport,
+        openaiTransport,
+        ...(env.ASSISTANT_GUIDE_RAG_ENABLED === 'true'
+          ? { compositeEnabled: true }
+          : {}),
+      }
+    : { apiKey: env.GROQ_API_KEY };
 }

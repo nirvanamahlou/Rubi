@@ -2,12 +2,48 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import type { Prisma } from '@nora/database';
 
+export function readBankNames(tx: Prisma.TransactionClient, ids: string[]) {
+  return tx.masterBank.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, name: true },
+  });
+}
+export async function readBankAndBranchLabels(
+  tx: Prisma.TransactionClient,
+  bankIds: string[],
+  branchIds: string[],
+) {
+  const banks = await tx.masterBank.findMany({
+    where: { id: { in: bankIds } },
+    select: { id: true, name: true, code: true, swiftCode: true },
+  });
+  const branches = await tx.masterBankBranch.findMany({
+    where: { id: { in: branchIds } },
+    select: { id: true, name: true, code: true },
+  });
+  return [banks, branches] as const;
+}
+
 /** Public owner projection. Procurement never reads Master Data tables itself. */
 @Injectable()
 export class MasterProcurementDirectory {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
+  async assertBankBranch(
+    id: string,
+    bankId: string,
+    tx: Prisma.TransactionClient,
+  ) {
+    const branch = await tx.masterBankBranch.findFirst({
+      where: { id, bankId, isActive: true },
+      select: { id: true },
+    });
+    if (!branch)
+      throw new BadRequestException(
+        'شعبه انتخاب‌شده متعلق به این بانک نیست یا غیرفعال است.',
+      );
+  }
   /** Finance-owned accounts reference this canonical bank, never duplicate it. */
   async assertBank(id: string, transaction?: Prisma.TransactionClient) {
     const row = await (
@@ -20,10 +56,7 @@ export class MasterProcurementDirectory {
   }
   /** Approved operational reference only; never journal-posting authority. */
   bankNames(ids: string[], transaction?: Prisma.TransactionClient) {
-    return (transaction ?? this.database.client).masterBank.findMany({
-      where: { id: { in: ids } },
-      select: { id: true, name: true },
-    });
+    return readBankNames(transaction ?? this.database.client, ids);
   }
   /** Approved operational reference only; never journal-posting authority. */
   async purchaseRateToIrr(
@@ -105,7 +138,7 @@ export class MasterProcurementDirectory {
   ) {
     return (transaction ?? this.database.client).masterPaymentMethod.findFirst({
       where: { id, isActive: true, direction: { in: ['PAYMENT', 'BOTH'] } },
-      select: { id: true, name: true },
+      select: { id: true, name: true, channel: true },
     });
   }
   /** Public validator for manually confirmed incoming treasury receipts. */

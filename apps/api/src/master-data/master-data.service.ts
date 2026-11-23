@@ -1,6 +1,10 @@
 import type { Prisma } from '@nora/database';
 import type { DisplayLanguage } from '../common/i18n/language';
 import {
+  validateBankBranchMetadata,
+  validateBankInstitutionFields,
+} from './bank-institution-fields';
+import {
   FACILITY_NAME_MAX_CHARACTERS,
   postgresCharacterLength,
 } from './facility-text';
@@ -291,7 +295,14 @@ function normalizeManufacturerModel(value: unknown): {
 }
 
 const allowedFields: Record<MasterDataResource, readonly string[]> = {
-  countries: ['iso2Code', 'name', 'englishName', 'gmtOffset', 'displayOrder'],
+  countries: [
+    'iso2Code',
+    'name',
+    'englishName',
+    'gmtOffset',
+    'displayOrder',
+    'logoFileReference',
+  ],
   regions: ['code', 'name', 'englishName', 'countryId'],
   cities: ['code', 'name', 'englishName', 'countryId', 'regionId'],
   airports: [
@@ -353,12 +364,19 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'englishName',
     'countryId',
     'swiftCode',
+    'institutionKind',
+    'publicRelationsPhone',
+    'website',
+    'description',
+    'descriptionEn',
     'logoFileReference',
   ],
   'bank-branches': [
     'code',
     'name',
     'englishName',
+    'swiftCode',
+    'website',
     'bankId',
     'cityId',
     'address',
@@ -486,6 +504,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'currencyId',
     'name',
     'englishName',
+    'identificationCode',
     'cityId',
     'chainId',
     'starRating',
@@ -1162,6 +1181,26 @@ export class MasterDataService {
     @Inject(MasterDataContactCrypto)
     private readonly contactCrypto: MasterDataContactCrypto = undefined as never,
   ) {}
+
+  async publishedHotelProfiles(ids: string[]) {
+    const profiles = await this.repository.publishedHotelProfiles(ids);
+    // Hotel uploads already have a public, content-addressed image route.
+    const publicImage = (value: string) =>
+      /^\/api\/v1\/master-data\/hotel-images\/[a-f0-9]{64}\.webp$/.test(value)
+        ? new URL(value, 'https://avinaofficial.ir').href
+        : value;
+    return profiles.map((profile) => ({
+      ...profile,
+      sourceMainImage: profile.sourceMainImage
+        ? publicImage(profile.sourceMainImage.trim())
+        : null,
+      sourceGalleryImages:
+        profile.sourceGalleryImages
+          ?.split('|')
+          .map((url) => publicImage(url.trim()))
+          .join('|') ?? null,
+    }));
+  }
 
   resource(value: string) {
     return resourceOf(value);
@@ -2852,6 +2891,7 @@ export class MasterDataService {
         throw new BadRequestException('سیاست نمایش ارز معتبر نیست.');
       data.displayPolicy = displayPolicy;
     }
+    if (resource === 'banks') validateBankInstitutionFields(data);
     if (resource === 'banks' && data.swiftCode !== undefined) {
       const swiftCode = String(data.swiftCode).trim().toUpperCase();
       if (swiftCode && !/^[A-Z0-9]{8}([A-Z0-9]{3})?$/.test(swiftCode))
@@ -3127,7 +3167,15 @@ export class MasterDataService {
       data.displayOrder = displayOrder;
     }
     if (resource === 'hotels') {
+      if (
+        Object.hasOwn(data, 'sourceGalleryImages') &&
+        String(data.sourceGalleryImages ?? '')
+          .split('|')
+          .filter((url) => url.trim()).length > 6
+      )
+        throw new BadRequestException('گالری هتل حداکثر ۶ عکس می‌پذیرد.');
       for (const [field, limit] of [
+        ['identificationCode', 160],
         ['serviceLevel', 160],
         ['sourceDestination', 160],
         ['internalNote', 2000],
@@ -3638,6 +3686,7 @@ export class MasterDataService {
         throw new BadRequestException('کلاس پروازی فعال یافت نشد.');
     }
     if (resource === 'bank-branches') {
+      validateBankBranchMetadata(data);
       if (typeof data.cityId === 'string') {
         const city = await this.repository.find('cities', data.cityId);
         if (!city?.isActive)

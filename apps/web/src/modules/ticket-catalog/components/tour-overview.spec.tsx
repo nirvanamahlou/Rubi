@@ -92,7 +92,14 @@ describe('tour overview', () => {
     const html = renderToStaticMarkup(
       <TourOverview
         definitionMode
-        packages={[pack]}
+        packages={[
+          pack,
+          {
+            ...pack,
+            id: 'floating',
+            details: { version: 1, isFloating: true },
+          },
+        ]}
         departures={[]}
         cities={[]}
         loading={false}
@@ -103,6 +110,7 @@ describe('tour overview', () => {
         onRepeat={() => {}}
       />,
     );
+    expect(html.match(/>شناور<\/span>/g)).toHaveLength(1);
     expect(html).toContain('حذف تور');
   });
   it('renders loading placeholders instead of zero KPIs', () => {

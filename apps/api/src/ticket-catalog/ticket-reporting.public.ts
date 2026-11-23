@@ -1,3 +1,4 @@
+import { liveCapacityHolds } from './live-capacity-holds';
 import type { DatabaseClient } from '@nora/database';
 import {
   boundedSource,
@@ -44,7 +45,7 @@ export async function readTicketCapacityReporting(
           select: { quantity: true, createdAt: true },
         },
         capacityHolds: {
-          where: { status: 'ACTIVE', expiresAt: { gt: now } },
+          where: liveCapacityHolds(now),
           select: { quantity: true, createdAt: true },
         },
       },

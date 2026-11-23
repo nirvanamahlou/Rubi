@@ -1,3 +1,4 @@
+import { lineDetails } from './accounting.detail-levels';
 import { ConflictException } from '@nestjs/common';
 import type { Prisma } from '@nora/database';
 import { accountingFinancialEventLabels } from '@nora/contracts';
@@ -39,9 +40,7 @@ export function receiptAllocationLines(
   const reverse = event.kind === 'RECEIPT_ALLOCATION_REVERSAL';
   return [0, 1].map((index) => ({
     accountId: basis.credit.accountId!,
-    detail4Id: basis.credit.detail4Id,
-    detail5Id: basis.credit.detail5Id,
-    detail6Id: basis.credit.detail6Id,
+    ...lineDetails(basis.credit),
     debit: index === 0 ? event.carryingAmount!.toString() : '0',
     credit: index === 1 ? event.carryingAmount!.toString() : '0',
     description: accountingFinancialEventLabels[event.kind] ?? 'تخصیص دریافت',

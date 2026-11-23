@@ -41,6 +41,7 @@ describe('ticket price workspace', () => {
       'مبدأ',
       'مقصد سفر',
       'نوع بلیت',
+      'وضعیت قیمت پایه',
       'فهرست قیمت‌گذاری بلیت‌ها',
       'قیمت کل رفت‌وبرگشت',
       'نام مقصد فروش',
@@ -187,6 +188,14 @@ describe('ticket price workspace', () => {
           isActive: true,
           version: 1,
         },
+        {
+          id: 'other-target',
+          branchId: 'branch',
+          name: 'جهان باستان',
+          code: 'OTHER',
+          isActive: true,
+          version: 1,
+        },
       ],
       '',
       '',
@@ -240,9 +249,16 @@ describe('ticket price workspace', () => {
     expect(oneWays).toContain('بلیت‌های یک‌طرفه');
     expect(oneWays?.match(/<article /g)).toHaveLength(2);
     expect(oneWays).not.toContain('aria-label="رفت‌وبرگشت ');
-    expect(html.match(/کپی درصد برای این مقصد/g)).toHaveLength(4);
+    expect(html.match(/کپی درصد برای این مقصد/g)).toHaveLength(6);
+    expect(roundTrips?.match(/مقصد فروش · کمیسیون ٪ · قیمت/g)).toHaveLength(1);
+    expect(roundTrips).toContain('ثبت درصد مجموعه');
+    expect(roundTrips).toContain('ثبت درصد علی‌بابا');
+    expect(roundTrips).toContain('ثبت درصد جهان باستان');
     expect(html).toContain('9,700,000 IRR');
     expect(html).toContain('24,000,000 IRR');
+    expect(html.indexOf('aria-label="قیمت مقصدهای فروش"')).toBeLessThan(
+      html.indexOf('ثبت قیمت پایه'),
+    );
     expect(html).toContain('value="3"');
     expect(html).toContain('value="4"');
     expect(html).toContain('بلیط برگشت');

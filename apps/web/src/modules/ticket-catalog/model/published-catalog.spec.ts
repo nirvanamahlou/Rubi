@@ -144,11 +144,24 @@ describe('authoritative ticket catalog', () => {
         active: true,
       },
     ] as const;
-    const product = catalogProductsFromOffers([], [offers[0]!], references)[0]!;
+    const saved = {
+      ...offers[0]!,
+      aircraftTypeId: 'aircraft',
+      originAirportId: 'airport-a',
+      destinationAirportId: 'airport-b',
+      scheduledReturnDate: '2099-01-17',
+    };
+    const product = catalogProductsFromOffers([], [saved], references)[0]!;
+    expect(product.definition.scheduledReturnDate).toBe(
+      saved.scheduledReturnDate,
+    );
     expect(product.definition.flightClassId).toBe('economy');
     expect(product.definition.segments[0]).toEqual(
       expect.objectContaining({
         airlineId: 'airline',
+        aircraftId: 'aircraft',
+        originAirportId: 'airport-a',
+        destinationAirportId: 'airport-b',
         originCountryId: 'country-a',
         originCityId: 'a',
         destinationCountryId: 'country-b',

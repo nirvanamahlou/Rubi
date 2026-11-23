@@ -10,7 +10,21 @@ describe('accounting capability scopes', () => {
   it('records every source route without conflating storage and execution', () => {
     expect(
       accountingParityDefinitions.map(accountingRouteCapabilities),
-    ).toHaveLength(97);
+    ).toHaveLength(108);
+    expect(capabilities('tax-accounting/vat/quarterly-mappings')).toMatchObject(
+      { storage: true },
+    );
+    expect(
+      capabilities('tax-accounting/vat/quarterly-sales-report'),
+    ).toMatchObject({
+      reporting: true,
+      storage: true,
+      externalConnected: false,
+      fullSourceParityVerified: false,
+    });
+    expect(
+      capabilities('receipts-payments/base-information/cashier-history'),
+    ).toMatchObject({ reporting: true, storage: false });
     expect(capabilities('taxpayer-system/settings')).toMatchObject({
       storage: true,
       execution: false,

@@ -1,4 +1,6 @@
 'use client';
+import { HotelImageStrip } from './hotel-images';
+import { HotelPublicationAction } from '../../integrations/components/hotel-publication';
 import { HotelProfileInformation } from './hotel-profile-information';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import {
@@ -679,6 +681,7 @@ export function MasterDataAccommodationWorkspace() {
         ...(formMode === 'edit' && selected ? { existing: selected } : {}),
         ...(logoChange ? { logoChange } : {}),
       });
+      setSelected(result.data);
       setNotice(
         result.warning ??
           (resource === 'meal-services'
@@ -747,6 +750,9 @@ export function MasterDataAccommodationWorkspace() {
   function actions(record: MasterDataRecord) {
     return (
       <div className="flex flex-wrap justify-center gap-2">
+        {record.resource === 'hotels' && (
+          <HotelPublicationAction id={record.id} name={record.name} />
+        )}
         <Button
           aria-label={`مشاهده ${record.name}`}
           onClick={() => {
@@ -999,7 +1005,9 @@ export function MasterDataAccommodationWorkspace() {
             {records.map((record) => (
               <tr className="border-t border-border" key={record.id}>
                 <td className="p-4 font-mono" dir="ltr">
-                  {record.code}
+                  {tab === 'hotels'
+                    ? attribute(record, 'identificationCode')
+                    : record.code}
                 </td>
                 <MasterDataLogoCell record={record} />
                 {tab === 'hotels' ? (
@@ -1183,23 +1191,28 @@ export function MasterDataAccommodationWorkspace() {
           />
           <MasterDataDetailItem label="Documents" value="—" />
         </MasterDataDetailSection>
-        <Alert
-          title="منابع فروش در ماژول‌های مالک مدیریت می‌شوند"
-          description="رزرو، موجودی، Voucher و تخصیص مسافر در Reservations و قرارداد و نرخ خرید در Procurement هستند."
-          tone="warning"
-        />
         <div className="grid gap-4 lg:grid-cols-2">
           <Card className="p-5">
             <h3 className="mb-4 flex items-center gap-2 font-black">
               <Hotel className="size-5" /> مشخصات پایه
             </h3>
             <dl className="grid gap-4 sm:grid-cols-2">
-              <Detail label="کد" value={selected.code} />
               <Detail label="درجه" value={stars || '—'} />
               <Detail label="نام فارسی" value={selected.name} />
               <Detail
                 label="نام انگلیسی"
                 value={attribute(selected, 'englishName')}
+              />
+              <MasterDataDetailItem
+                label="کد شناسایی"
+                value={
+                  <span
+                    dir="auto"
+                    className="inline-block max-w-full break-all rounded-lg bg-primary/5 px-3 py-2 font-mono text-sm text-primary"
+                  >
+                    {attribute(selected, 'identificationCode')}
+                  </span>
+                }
               />
               <Detail
                 label="زنجیره"
@@ -1249,13 +1262,11 @@ export function MasterDataAccommodationWorkspace() {
           </Card>
           <Card className="p-5">
             <h3 className="mb-4 flex items-center gap-2 font-black">
-              <ImageIcon className="size-5" /> لوگو و تصاویر با Documents
-              Reference
+              <ImageIcon className="size-5" /> تصاویر هتل
             </h3>
-            <EmptyState
-              description="قرارداد واقعی Documents/Worker هنوز آماده نیست؛ آپلود یا شناسه ساختگی نمایش داده نمی‌شود."
-              icon={ImageIcon}
-              title="در انتظار اتصال Documents"
+            <HotelImageStrip
+              main={String(selected.attributes.sourceMainImage ?? '')}
+              gallery={String(selected.attributes.sourceGalleryImages ?? '')}
             />
           </Card>
         </div>

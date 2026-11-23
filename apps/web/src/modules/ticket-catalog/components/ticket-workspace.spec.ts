@@ -57,7 +57,7 @@ describe('ticket workspace entry points', () => {
     expect(source).toContain('publishedLoadGroups(');
     expect(source).toContain('onClick={() => editPublishedLoad([offer])}');
     expect(source).toContain(
-      "setForm({ mode: 'edit', product, products: grouped, offers })",
+      "current ?? { mode: 'edit', product, products: grouped, offers }",
     );
     expect(source).not.toContain('ویرایش کل جدول');
     expect(source).not.toContain('حذف کل جدول');
@@ -177,9 +177,6 @@ describe('ticket workspace entry points', () => {
     expect(source).not.toContain("from './tour-workspace'");
     expect(source).not.toContain('value="tours"');
     expect(source).toContain('managedOffers()');
-    expect(source).toContain(
-      'publishFlights(inputs, createdIds, allowPastDate)',
-    );
     expect(source).toContain('publishExistingFlights(');
     expect(source).toContain('`ticket-catalog:${product.id}`');
     expect(source).toContain('backfillStarted.current');

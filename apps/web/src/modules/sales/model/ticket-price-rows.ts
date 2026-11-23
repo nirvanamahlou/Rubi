@@ -13,6 +13,8 @@ export type TicketPriceRow = {
   returnOfferId: string | null;
   base?:
     | {
+        childAmount?: string | null | undefined;
+        infantAmount?: string | null | undefined;
         amount: string;
         currencyCode: string;
         revision: number;
@@ -20,6 +22,7 @@ export type TicketPriceRow = {
       }
     | undefined;
 };
+export type TicketPriceStatus = 'ALL' | 'PRICED' | 'UNPRICED';
 export function ticketCabinLabel(code: TicketOfferV1['cabinClassCode']) {
   return (
     ({ ECONOMY: 'اکونومی', BUSINESS: 'بیزینس', FIRST: 'فرست' } as const)[
@@ -78,6 +81,8 @@ export function ticketPriceRows(
         returning: offers.find((o) => o.id === price.returnOfferId),
         base: {
           amount: price.baseAmount ?? price.amount,
+          childAmount: price.childAmount,
+          infantAmount: price.infantAmount,
           currencyCode: price.currencyCode,
           revision: price.revision,
           tiers: price.baseTiers ?? price.tiers,
@@ -135,6 +140,7 @@ export function filterTicketRows(
     originId: string;
     destinationId: string;
     tripType: string;
+    priceStatus?: TicketPriceStatus;
     query: string;
     from: string;
     to: string;
@@ -142,6 +148,11 @@ export function filterTicketRows(
   label: (offer: TicketOfferV1) => string,
 ) {
   return rows.filter((row) => {
+    if (
+      (filters.priceStatus === 'PRICED' && !row.base) ||
+      (filters.priceStatus === 'UNPRICED' && row.base)
+    )
+      return false;
     if (
       !ticketOfferRoutes(row.offer).some(
         (r) =>

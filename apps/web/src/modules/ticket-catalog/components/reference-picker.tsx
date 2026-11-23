@@ -25,8 +25,10 @@ export function ReferencePicker({
   value,
   onSelect,
   countryId,
+  allowAnyCityCountry = false,
   cityId,
   readOnly = false,
+  required = false,
 }: {
   id: string;
   label: string;
@@ -34,13 +36,17 @@ export function ReferencePicker({
   value: Reference | undefined;
   onSelect: (value: Reference | undefined) => void;
   countryId?: string;
+  allowAnyCityCountry?: boolean;
   cityId?: string;
   readOnly?: boolean;
+  required?: boolean;
 }) {
   const [open, setOpen] = useState(false),
     [search, setSearch] = useState(''),
     [attempt, setAttempt] = useState(0);
-  const enabled = !readOnly && (resource !== 'cities' || Boolean(countryId));
+  const needsCountry =
+    resource === 'airports' || (resource === 'cities' && !allowAnyCityCountry);
+  const enabled = !readOnly && (!needsCountry || Boolean(countryId));
   const key = JSON.stringify([resource, search, countryId, cityId, attempt]);
   const [result, setResult] = useState<{
     key: string;
@@ -64,7 +70,7 @@ export function ReferencePicker({
               .filter((item): item is Reference => Boolean(item))
               .filter(
                 (item) =>
-                  (resource !== 'cities' || item.countryId === countryId) &&
+                  (!needsCountry || item.countryId === countryId) &&
                   (resource !== 'airports' ||
                     !cityId ||
                     item.cityId === cityId),
@@ -92,18 +98,20 @@ export function ReferencePicker({
       clearTimeout(timer);
       abort.abort();
     };
-  }, [open, enabled, resource, search, countryId, cityId, key]);
+  }, [open, enabled, resource, search, countryId, cityId, key, needsCountry]);
   const current = result?.key === key ? result : undefined;
   return (
     <div className="min-w-0 space-y-2">
       <label className="text-sm font-semibold" htmlFor={id}>
         {label}
+        {required ? <span className="text-destructive"> *</span> : null}
       </label>
       <div className="flex min-w-0 items-start gap-2">
         <div className="min-w-0 flex-1">
           <SearchCombobox
             id={id}
             label={label}
+            required={required}
             value={value?.id ?? ''}
             selectedLabel={
               value ? ticketReferenceDisplayName(value) : undefined
@@ -130,7 +138,7 @@ export function ReferencePicker({
               ) : undefined
             }
             placeholder={
-              resource === 'cities' && !countryId
+              needsCountry && !countryId
                 ? 'ابتدا کشور را انتخاب کنید'
                 : 'جست‌وجو و انتخاب…'
             }

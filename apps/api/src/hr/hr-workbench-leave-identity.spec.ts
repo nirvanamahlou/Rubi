@@ -86,6 +86,8 @@ describe('workbench leave requester identity', () => {
       expect.any(String),
       actor,
       true,
+      ['employee-id'],
+      ['employee-id'],
     );
   });
   it('rejects missing profiles without guessing a name or using the substitute', async () => {

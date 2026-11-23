@@ -1,17 +1,15 @@
-import catalog from '../../../../../services/assistant/workbench-guides.json';
+import callCenterCatalog from '../../../../../services/assistant/call-center-guides.json';
+import workbenchCatalog from '../../../../../services/assistant/workbench-guides.json';
+import { containsQuestionPhrase, normalizeQuestion } from './question-text';
 
+const catalog = {
+  ...workbenchCatalog,
+  topics: [...workbenchCatalog.topics, ...callCenterCatalog.topics],
+};
 export const workbenchGuideCatalog = catalog;
 export type WorkbenchGuideTopic = (typeof catalog.topics)[number];
 export type WorkbenchGuideGoal = 'steps' | 'troubleshoot' | 'follow-up';
-const normalize = (s: string) =>
-  s
-    .normalize('NFKC')
-    .replace(/ي/g, 'ی')
-    .replace(/ك/g, 'ک')
-    .replace(/[‌ـ]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
+const normalize = normalizeQuestion;
 const followup =
   /^(?:بعدش(?: چی)?|بعدش چیکار کنم|مرحله بعد(?: چیه)?|ادامه بده|حالا چی|بیشتر توضیح بده)[؟?.! ]*$/;
 const family = (topic: WorkbenchGuideTopic) =>
@@ -28,10 +26,17 @@ export function resolveWorkbenchGuide(
   previous?: string,
 ) {
   const text = normalize(message);
+  const callCenter =
+    tab === 'call-center' ||
+    /کال ?سنتر/.test(text) ||
+    /کال سنتر|صف رسیدگی|تماس بدون نتیجه|تماس های بدون نتیجه|تماس مجدد|پرونده مخاطب|ضبط مکالمه|فایل صوتی تماس|ضبط تماس|تماس ضبط شده|بررسی پیگیری|مدیر ایجادکننده|واحد مسئول مخاطب|تماس امروز/.test(
+      text,
+    );
   const explicit = /میز\s*کار|مرخص|جانشین|مساعده|تردد|پیام رسان|یادداشت/.test(
     text,
   );
-  if (/قرارداد|بیمه مسافر|رزرو/.test(text) && !explicit) return undefined;
+  if (/قرارداد|بیمه مسافر|رزرو/.test(text) && !explicit && !callCenter)
+    return undefined;
   const goal: WorkbenchGuideGoal = followup.test(text)
     ? 'follow-up'
     : /چرا|خطا|نمی|نمیشه|نمیاد|گیر|رد شده|متوقف/.test(text)
@@ -47,24 +52,39 @@ export function resolveWorkbenchGuide(
       ? 'substitute'
       : /لغو|حذف/.test(text)
         ? 'request-delete'
-        : /تایید|تأیید|وضعیت|رد شده|ردشده/.test(text)
-          ? 'request-status'
-          : /استعلاجی/.test(text)
-            ? 'leave-medical'
-            : /ساعتی/.test(text)
-              ? 'leave-hourly'
-              : /روزانه/.test(text)
-                ? 'leave-daily'
-                : undefined
+        : /(?:مراحل|روند) (?:تایید|تأیید) مرخصی|(?:تایید|تأیید) و پیگیری مرخصی/.test(
+              text,
+            )
+          ? 'leave-approval'
+          : /تایید|تأیید|وضعیت|رد شده|ردشده/.test(text)
+            ? 'request-status'
+            : /استعلاجی/.test(text)
+              ? 'leave-medical'
+              : /ساعتی/.test(text)
+                ? 'leave-hourly'
+                : /روزانه/.test(text)
+                  ? 'leave-daily'
+                  : undefined
     : undefined;
   const matches = catalog.topics
+    .filter(
+      (topic) =>
+        topic.tab !== 'call-center' ||
+        callCenter ||
+        text === normalize(topic.title),
+    )
     .map((topic) => ({
       topic,
       score: Math.max(
         0,
         leaveIntent === topic.id ? 80 : 0,
+        callCenter &&
+          topic.id === 'call-center-anonymous' &&
+          /شماره مخفی|شماره نامعلوم|اسم را ندارم/.test(text)
+          ? 80
+          : 0,
         ...[topic.title, ...topic.aliases].map((alias) =>
-          text.includes(normalize(alias))
+          containsQuestionPhrase(text, alias)
             ? topic.id === 'home'
               ? 1
               : normalize(alias).length
@@ -78,7 +98,7 @@ export function resolveWorkbenchGuide(
     const top = matches[0]!;
     const matchedPhrase = [top.topic.title, ...top.topic.aliases]
       .map(normalize)
-      .filter((phrase) => text.includes(phrase))
+      .filter((phrase) => containsQuestionPhrase(text, phrase))
       .sort((a, b) => b.length - a.length)[0];
     if (top.topic.id === 'home' && /قرارداد|رزرو|بیمه/.test(text))
       return undefined;
@@ -118,7 +138,9 @@ export function resolveWorkbenchGuide(
     return {
       goal,
       clarification:
-        'راهنمای کدام بخش میزکار من را می‌خواهید: درخواست‌ها و مرخصی، پیام‌ها، فایل‌ها، یادداشت‌ها، تقویم، عملکرد یا حساب و تنظیمات؟',
+        tab === 'call-center'
+          ? 'راهنمای کدام بخش کال سنتر را می‌خواهید؟ کارت‌های تماس، صف رسیدگی، جست‌وجوی مخاطب، پرونده یا گزارش؟'
+          : 'راهنمای کدام بخش میزکار من را می‌خواهید: درخواست‌ها و مرخصی، پیام‌ها، فایل‌ها، یادداشت‌ها، تقویم، عملکرد یا حساب و تنظیمات؟',
     };
   }
   return undefined;
@@ -127,16 +149,35 @@ export function resolveWorkbenchGuide(
 export function renderWorkbenchGuide(
   topic: WorkbenchGuideTopic,
   goal: WorkbenchGuideGoal,
-) {
+  includeTracking = false,
+): string {
+  const approval = workbenchCatalog.topics.find(
+    (item) => item.id === 'leave-approval',
+  );
+  const steps =
+    topic.id.startsWith('leave') &&
+    'related' in topic &&
+    Array.isArray(topic.related) &&
+    topic.related.includes('workbench/leave-approval') &&
+    approval
+      ? [...topic.steps, ...approval.steps]
+      : topic.steps;
+  const tracking = includeTracking
+    ? workbenchCatalog.topics.find((item) => item.id === 'request-status')
+    : undefined;
   return [
     topic.title,
     `مسیر: ${topic.path.join(' ← ')}`,
-    `مراحل:\n${topic.steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}`,
+    `پیش‌نیاز:\n${topic.conditions.join('\n')}`,
+    `مراحل:\n${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}`,
     ...(goal === 'troubleshoot'
       ? [`اگر متوقف شدید:\n${topic.troubleshooting.join('\n')}`]
       : []),
     `محدودیت:\n${topic.limitations.join('\n')}`,
     `اقدام بعدی: ${topic.next}`,
+    ...(tracking && tracking.id !== topic.id
+      ? [renderWorkbenchGuide(tracking, 'steps')]
+      : []),
     `منبع راهنما: ${topic.title} — نسخه ${catalog.version}`,
   ].join('\n\n');
 }
@@ -148,6 +189,10 @@ export async function loadWorkbenchGuide(
   signal: AbortSignal,
   fetcher: typeof fetch = fetch,
 ) {
+  if (topic.tab === 'call-center') {
+    signal.throwIfAborted();
+    return renderWorkbenchGuide(topic, goal);
+  }
   try {
     const response = await fetcher('/api/assistant/workbench-guide', {
       method: 'POST',

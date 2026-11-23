@@ -1,3 +1,4 @@
+import { HotelImagesController } from './hotel-images.controller';
 import { ManifestTemplateController } from './manifest-template.controller';
 import { Module } from '@nestjs/common';
 import { MasterSelectionController } from './master-selection.controller';
@@ -33,6 +34,7 @@ import {
 @Module({
   imports: [IamModule],
   controllers: [
+    HotelImagesController,
     ManifestTemplateController,
     MasterSelectionController,
     PartnerDossierController,

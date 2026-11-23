@@ -7,6 +7,7 @@ import {
   type FloatingTourGroup,
   type FloatingTourSaleRow,
   type FloatingTourImportOptions,
+  type FloatingTourImportPreview,
   type FloatingTourStay,
   type TourPackageInputV1,
 } from '@nora/contracts';
@@ -38,7 +39,13 @@ const digits = (s: string) =>
         : '٠١٢٣٤٥٦٧٨٩'.indexOf(x),
     ),
   );
-export type FloatingCell = { value: string; format: string; numeric: boolean };
+export type FloatingCell = {
+  selectedHotelId?: string;
+  value: string;
+  format: string;
+  numeric: boolean;
+  mergedRows?: { first: number; last: number };
+};
 export function readFloatingWorkbook(bytes: Uint8Array): FloatingCell[][] {
   if (!bytes.length || bytes.length > 5 * 1024 * 1024)
     return fail('فایل اکسل معتبر نیست یا از محدودیت مجاز عبور کرده است.');
@@ -109,12 +116,14 @@ export function readFloatingWorkbook(bytes: Uint8Array): FloatingCell[][] {
         : ''),
   );
   const rows: FloatingCell[][] = [];
-  for (const row of strFromU8(files[path]!).matchAll(
-    /<row\b[^>]*>([\s\S]*?)<\/row>/g,
-  )) {
-    if (rows.length >= 2001) return fail('حداکثر ۲۰۰۰ ردیف قیمت مجاز است.');
+  const sheet = strFromU8(files[path]!);
+  for (const row of sheet.matchAll(/<row\b([^>]*)>([\s\S]*?)<\/row>/g)) {
+    const rowNumber = Number(attr(row[1]!, 'r') || rows.length + 1);
+    if (!Number.isSafeInteger(rowNumber) || rowNumber < 1 || rowNumber > 2001)
+      return fail('حداکثر ۲۰۰۰ ردیف قیمت مجاز است.');
+    if (rows[rowNumber - 1]) return fail('ساختار XLSX قابل خواندن نیست.');
     const cells: FloatingCell[] = [];
-    for (const cell of row[1]!.matchAll(/<c\b([^>]*)>([\s\S]*?)<\/c>/g)) {
+    for (const cell of row[2]!.matchAll(/<c\b([^>]*)>([\s\S]*?)<\/c>/g)) {
       const address = /^[A-Z]+/.exec(attr(cell[1]!, 'r'))?.[0];
       if (!address) return fail('ساختار XLSX قابل خواندن نیست.');
       const column =
@@ -140,12 +149,48 @@ export function readFloatingWorkbook(bytes: Uint8Array): FloatingCell[][] {
         numeric: !type || type === 'n',
       };
     }
-    rows.push(cells);
+    rows[rowNumber - 1] = cells;
   }
-  return rows;
+  const occupied = new Set<string>();
+  for (const merge of sheet.matchAll(/<mergeCell\b([^>]*)\/?\s*>/g)) {
+    const range = /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/.exec(attr(merge[1]!, 'ref'));
+    if (!range) return fail('ساختار XLSX قابل خواندن نیست.');
+    if (range[1] !== range[3]) continue;
+    const column =
+      [...range[1]!].reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0) - 1;
+    const first = Number(range[2]),
+      last = Number(range[4]);
+    if (column > 50 || first < 2 || last <= first || last > rows.length)
+      return fail('محدوده ادغام سلول‌ها معتبر نیست.');
+    const anchor = rows[first - 1]?.[column] ?? {
+      value: '',
+      format: '',
+      numeric: false,
+    };
+    for (let number = first; number <= last; number++) {
+      const key = `${column}:${number}`;
+      if (
+        occupied.has(key) ||
+        (number !== first && rows[number - 1]?.[column]?.value)
+      )
+        return fail('محدوده ادغام سلول‌ها معتبر نیست.');
+      occupied.add(key);
+      rows[number - 1] ??= [];
+      rows[number - 1]![column] = { ...anchor, mergedRows: { first, last } };
+    }
+  }
+  return Array.from({ length: rows.length }, (_, index) => rows[index] ?? []);
 }
+const moneyAmountPattern = /^(?:0|[1-9]\d{0,14})(?:\.\d{1,4})?$/;
+const unavailablePricePattern = /^(?:null|n\/a|na|#n\/a|[-–—])$/i;
+
+const hasPrice = (cell?: FloatingCell) => {
+  const value = cell?.value.trim();
+  return Boolean(value && !unavailablePricePattern.test(value));
+};
+
 export function floatingMoney(cell?: FloatingCell): FloatingTourMoney[] {
-  if (!cell?.value.trim()) return [];
+  if (!cell || !hasPrice(cell)) return [];
   const source = digits(cell.value)
     .replace(/[,،٬\s]/g, '')
     .replace(/٫/g, '.');
@@ -164,12 +209,16 @@ export function floatingMoney(cell?: FloatingCell): FloatingTourMoney[] {
     if (currencies.length > 1)
       return fail('استفاده هم‌زمان از چند ارز خارجی در یک ردیف مجاز نیست.');
     const currency = currencies[0] ?? 'IRR';
-    const amount = part.replace(
+    let amount = part.replace(
       /USD|EUR|TRY|IRR|IRT|دلار|یورو|لیر|تومان|ریال|[$€₺]/gi,
       '',
     );
-    if (!/^(?:0|[1-9]\d{0,14})(?:\.\d{1,4})?$/.test(amount))
-      return fail('مبلغ قیمت معتبر نیست.');
+    if (cell.numeric && /^(?:0|[1-9]\d{0,10})\.\d{5,}$/.test(amount)) {
+      // Excel can serialize binary noise beyond its 15 significant digits.
+      // With at most 11 integer digits, this preserves all four price decimals.
+      amount = String(Number(Number(amount).toPrecision(15)));
+    }
+    if (!moneyAmountPattern.test(amount)) return fail('مبلغ قیمت معتبر نیست.');
     const rial = currency === 'IRR' && !/IRR|ریال/i.test(hints) ? 10n : 1n;
     result.set(
       currency,
@@ -193,10 +242,17 @@ const add = (a: FloatingTourMoney[], b: FloatingTourMoney[]) => {
 export function floatingPrices(
   cells: Record<string, FloatingCell | undefined>,
 ) {
-  const adult = floatingMoney(cells['flight per person']);
-  const child = cells['flight child w bed']?.value
-    ? floatingMoney(cells['flight child w bed'])
-    : adult;
+  const moneyAt = (column: string) => {
+    try {
+      return floatingMoney(cells[column]);
+    } catch (error) {
+      if (!(error instanceof BadRequestException)) throw error;
+      return fail(`${column.toUpperCase()}: ${error.message}`);
+    }
+  };
+  const adult = moneyAt('flight per person');
+  const childRate = moneyAt('flight child w bed');
+  const child = childRate.length ? childRate : adult;
   const groups: [FloatingTourGroup, string][] = [
     ['double', 'dbl'],
     ['single', 'sgl'],
@@ -208,7 +264,7 @@ export function floatingPrices(
   const prices: FloatingTourSaleRow['prices'] = {};
   const foreign = new Set<string>();
   for (const [group, column] of groups) {
-    const base = floatingMoney(cells[column]);
+    const base = moneyAt(column);
     if (!base.length) continue;
     const flight =
       cells[`add_flight_${column}`]?.value.toLowerCase() === 'no' ||
@@ -225,7 +281,7 @@ export function floatingPrices(
   if (foreign.size > 1)
     return fail('استفاده هم‌زمان از چند ارز خارجی در یک ردیف مجاز نیست.');
   if (!Object.keys(prices).length) return fail('حداقل یک قیمت فروش لازم است.');
-  return { prices, commission: floatingMoney(cells.commission) };
+  return { prices, commission: moneyAt('commission') };
 }
 const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 export function floatingDate(cell: FloatingCell): string {
@@ -273,12 +329,105 @@ export interface FloatingHotelReference {
   englishName?: string;
   cityId: string;
 }
+const hotelNames = (hotel: FloatingHotelReference) =>
+  [hotel.name, hotel.englishName ?? ''].filter(Boolean).map(floatingHotelKey);
+
+function matchHotels(
+  cell: FloatingCell | undefined,
+  hotels: FloatingHotelReference[],
+) {
+  const name = floatingHotelKey(cell?.value ?? '');
+  return hotels.filter((hotel) =>
+    cell?.selectedHotelId
+      ? hotel.id === cell.selectedHotelId
+      : name && hotelNames(hotel).includes(name),
+  );
+}
+
+const hotelNamePairs = (value: string) =>
+  new Set(
+    Array.from({ length: Math.max(0, value.length - 1) }, (_, i) =>
+      value.slice(i, i + 2),
+    ),
+  );
+
+export function resolveFloatingHotelCells(
+  workbook: FloatingCell[][],
+  hotels: FloatingHotelReference[],
+  selections: Record<string, string> = {},
+): NonNullable<FloatingTourImportPreview['hotelMatches']> {
+  const columns = (workbook[0] ?? []).flatMap((cell, index) =>
+    /^hotel_name(?:_[12])?$/i.test(cell?.value.trim() ?? '') ? [index] : [],
+  );
+  const issues: NonNullable<FloatingTourImportPreview['hotelMatches']> = [];
+  const suggestions = new Map<string, (typeof issues)[number]['candidates']>();
+  const exactCounts = new Map<string, number>();
+  const directory = hotels.map((hotel) => ({
+    id: hotel.id,
+    name: hotel.englishName || hotel.name,
+    names: [...new Set(hotelNames(hotel))].map((name) => {
+      exactCounts.set(name, (exactCounts.get(name) ?? 0) + 1);
+      return { name, pairs: hotelNamePairs(name) };
+    }),
+  }));
+  for (let index = 1; index < workbook.length; index++) {
+    const cells = workbook[index]!;
+    if (!cells.some((cell) => cell?.value)) continue;
+    for (const column of columns) {
+      const cell = cells[column];
+      const row = index + 1;
+      const key = `${row}:${column + 1}`;
+      const name = cell?.value.trim() ?? '';
+      const normalized = floatingHotelKey(name);
+      if (normalized && exactCounts.get(normalized) === 1) continue;
+      let candidates = suggestions.get(normalized);
+      if (!candidates) {
+        const pairs = hotelNamePairs(normalized);
+        candidates = directory
+          .map((hotel) => ({
+            id: hotel.id,
+            name: hotel.name,
+            score: Math.max(
+              0,
+              ...hotel.names.map(({ name, pairs: reference }) => {
+                if (name === normalized) return 1;
+                let overlap = 0;
+                for (const pair of reference) if (pairs.has(pair)) overlap++;
+                return (2 * overlap) / (pairs.size + reference.size || 1);
+              }),
+            ),
+          }))
+          .sort(
+            (a, b) =>
+              b.score - a.score ||
+              a.name.localeCompare(b.name) ||
+              a.id.localeCompare(b.id),
+          )
+          .slice(0, 3)
+          .map(({ id, name }) => ({ id, name }));
+        suggestions.set(normalized, candidates);
+      }
+      const selected = selections[key];
+      if (selected && candidates.some(({ id }) => id === selected)) {
+        cells[column] = {
+          value: '',
+          format: '',
+          numeric: false,
+          ...cell,
+          selectedHotelId: selected,
+        };
+      } else issues.push({ key, row, name, candidates });
+    }
+  }
+  return issues;
+}
 export function parseFloatingRows(
   workbook: FloatingCell[][],
   options: FloatingTourImportOptions,
   tour: TourPackageInputV1,
   hotels: FloatingHotelReference[],
   previous: FloatingTourSaleRow[] = [],
+  sourceRowNumbers?: number[],
 ): FloatingTourSaleRow[] {
   const headers =
     workbook[0]?.map((c) =>
@@ -307,26 +456,41 @@ export function parseFloatingRows(
     'infant',
     'flight per person',
     'flight child w bed',
-    'extra',
   ])
     if (!headers.includes(h)) return fail(`Missing Excel column: ${h}`);
   if (new Set(headers.filter(Boolean)).size !== headers.filter(Boolean).length)
     return fail('ستون تکراری در فایل مجاز نیست.');
+  if (
+    options.combined &&
+    workbook
+      .slice(1)
+      .some((row) =>
+        ['dbl', 'sgl', 'extra', 'chd w bed', 'child no bed', 'infant'].some(
+          (key) =>
+            hasPrice(row[headers.indexOf(key)]) &&
+            row[headers.indexOf(key)]?.mergedRows,
+        ),
+      )
+  )
+    return parseMergedFloatingRows(
+      workbook,
+      headers,
+      options,
+      tour,
+      hotels,
+      previous,
+    );
   const rows: FloatingTourSaleRow[] = [];
   const duplicate = new Set<string>();
+  const errors: string[] = [];
   for (let index = 1; index < workbook.length; index++) {
     const source = workbook[index]!;
+    const rowNumber = sourceRowNumbers?.[index - 1] ?? index + 1;
     if (!source.some((c) => c?.value)) continue;
     try {
       const fields = Object.fromEntries(headers.map((h, i) => [h, source[i]]));
-      const name = floatingHotelKey(fields.hotel_name?.value ?? '');
-      const matches = hotels.filter((hotel) =>
-        [hotel.name, hotel.englishName ?? ''].some(
-          (n) => floatingHotelKey(n) === name,
-        ),
-      );
-      if (!name || matches.length !== 1)
-        return fail('نام هتل یافت نشد یا مبهم است.');
+      const matches = matchHotels(fields.hotel_name, hotels);
+      if (matches.length !== 1) return fail('نام هتل یافت نشد یا مبهم است.');
       const hotel = matches[0]!;
       const date =
         options.mode === 'DATED'
@@ -359,6 +523,7 @@ export function parseFloatingRows(
       const key = JSON.stringify([date, hotel.id, floatingHotelKey(room)]);
       if (duplicate.has(key))
         return fail('هتل و نوع اتاق در این تاریخ تکراری است.');
+      const prices = floatingPrices(fields);
       duplicate.add(key);
       const stay: FloatingTourStay = {
         hotelId: hotel.id,
@@ -372,23 +537,29 @@ export function parseFloatingRows(
         nights: options.nights,
       };
       rows.push({
-        sourceRows: [index + 1],
+        sourceRows: [rowNumber],
         startsOn: date,
         endsOn: date ? iso(Date.parse(date) + options.nights * 86400000) : null,
         nights: options.nights,
         stays: [stay],
-        ...floatingPrices(fields),
+        ...prices,
       });
     } catch (e) {
-      return fail(
-        `Row ${index + 1}: ${e instanceof Error ? e.message : 'Invalid row'}`,
-      );
+      if (!(e instanceof BadRequestException)) throw e;
+      errors.push(`Row ${rowNumber}: ${e.message}`);
     }
   }
+  if (errors.length) return fail(errors.join('\n'));
   if (!rows.length) return fail('فایل قیمت خالی است.');
   if (!options.combined) return rows;
   const combined: FloatingTourSaleRow[] = [];
-  for (let i = 0; i < rows.length; i += 2) {
+  const destinationNights = options.destinationNights;
+  const count = destinationNights?.length ?? 2;
+  for (let i = 0; i < rows.length; i += count) {
+    if (destinationNights) {
+      combined.push(combineConfiguredRows(rows.slice(i, i + count), options));
+      continue;
+    }
     const a = rows[i]!,
       b = rows[i + 1];
     const definitions = tour.details?.destinations;
@@ -403,7 +574,9 @@ export function parseFloatingRows(
       definitions[0]!.cityId !== a.stays[0]!.cityId ||
       definitions[1]!.cityId !== b.stays[0]!.cityId
     )
-      return fail('ترتیب دو هتل، شب‌ها و قیمت مشترک تور ترکیبی را بررسی کنید.');
+      return fail(
+        `Row ${a.sourceRows.join(', ')}${b ? ', ' + b.sourceRows.join(', ') : ''}: ترتیب دو هتل، شب‌ها و قیمت مشترک تور ترکیبی را بررسی کنید.`,
+      );
     combined.push({
       ...a,
       sourceRows: [...a.sourceRows, ...b.sourceRows],
@@ -414,6 +587,163 @@ export function parseFloatingRows(
     });
   }
   return combined;
+}
+
+/** Hotel references, rather than the saved tour route, own the imported cities. */
+function combineConfiguredRows(
+  rows: FloatingTourSaleRow[],
+  options: FloatingTourImportOptions,
+): FloatingTourSaleRow {
+  const nights = options.destinationNights!;
+  const first = rows[0];
+  if (
+    !first ||
+    nights.length < 2 ||
+    nights.length > 10 ||
+    nights.some((n) => !Number.isInteger(n) || n < 1) ||
+    nights.reduce((sum, n) => sum + n, 0) !== options.nights ||
+    rows.length !== nights.length ||
+    rows.some(
+      (row) =>
+        row.startsOn !== first.startsOn ||
+        JSON.stringify(row.prices) !== JSON.stringify(first.prices) ||
+        JSON.stringify(row.commission) !== JSON.stringify(first.commission),
+    ) ||
+    new Set(rows.map((row) => row.stays[0]!.cityId)).size !== nights.length
+  )
+    return fail(
+      `Row ${[...new Set(rows.flatMap((row) => row.sourceRows))].join(', ')}: تعداد مقصدها، شب‌ها، شهر هتل‌ها و قیمت مشترک تور ترکیبی را بررسی کنید.`,
+    );
+  return {
+    ...first,
+    sourceRows: rows.flatMap((row) => row.sourceRows),
+    stays: rows.map((row, index) => ({
+      ...row.stays[0]!,
+      nights: nights[index]!,
+    })),
+  };
+}
+
+/** Excel's actual price merge defines the package, independently of row count. */
+function parseMergedFloatingRows(
+  workbook: FloatingCell[][],
+  headers: string[],
+  options: FloatingTourImportOptions,
+  tour: TourPackageInputV1,
+  hotels: FloatingHotelReference[],
+  previous: FloatingTourSaleRow[],
+): FloatingTourSaleRow[] {
+  const definitions = tour.details?.destinations ?? [];
+  if (
+    !options.destinationNights &&
+    (!tour.details?.isCombined ||
+      definitions.length < 2 ||
+      definitions.reduce((sum, stop) => sum + stop.nights, 0) !==
+        options.nights)
+  )
+    return fail('مقصدها و مجموع شب‌های تور ترکیبی را بررسی کنید.');
+  const result: FloatingTourSaleRow[] = [];
+  const errors: string[] = [];
+  const identities = new Set<string>();
+  const priceColumns = [
+    'dbl',
+    'sgl',
+    'extra',
+    'chd w bed',
+    'child no bed',
+    'infant',
+  ].map((key) => headers.indexOf(key));
+  for (let index = 1; index < workbook.length; index++) {
+    const source = workbook[index]!;
+    if (!source.some((cell) => cell?.value)) continue;
+    let lastIndex = index;
+    try {
+      const ranges = priceColumns
+        .map((column) =>
+          hasPrice(source[column]) ? source[column]?.mergedRows : undefined,
+        )
+        .filter((range) => range !== undefined);
+      const range = ranges[0];
+      if (
+        !range ||
+        range.first !== index + 1 ||
+        range.last - range.first + 1 !==
+          (options.destinationNights?.length ?? definitions.length) ||
+        ranges.some(
+          (other) => other.first !== range.first || other.last !== range.last,
+        )
+      )
+        return fail(
+          `Row ${index + 1}: ادغام قیمت‌ها باید تمام اقامت‌های همین ترکیب را پوشش دهد.`,
+        );
+      lastIndex = range.last - 1;
+      const members = parseFloatingRows(
+        [workbook[0]!, ...workbook.slice(index, range.last)],
+        { ...options, combined: false },
+        tour,
+        hotels,
+        previous,
+        Array.from(
+          { length: range.last - index },
+          (_, offset) => index + offset + 1,
+        ),
+      );
+      const first = members[0]!;
+      if (options.destinationNights) {
+        const combined = combineConfiguredRows(members, options);
+        const key = JSON.stringify([
+          combined.startsOn,
+          combined.stays.map((s) => [s.hotelId, floatingHotelKey(s.room)]),
+        ]);
+        if (identities.has(key))
+          return fail(`Row ${index + 1}: ترکیب هتل و اتاق تکراری است.`);
+        identities.add(key);
+        result.push({
+          ...combined,
+          sourceRows: members.flatMap((member) => member.sourceRows),
+        });
+        index = range.last - 1;
+        continue;
+      }
+      if (
+        members.length !== definitions.length ||
+        members.some(
+          (row, stop) =>
+            row.startsOn !== first.startsOn ||
+            row.stays[0]!.cityId !== definitions[stop]!.cityId ||
+            JSON.stringify(row.prices) !== JSON.stringify(first.prices) ||
+            JSON.stringify(row.commission) !== JSON.stringify(first.commission),
+        )
+      )
+        return fail(
+          `Row ${index + 1}: ترتیب مقصدها و قیمت مشترک تور ترکیبی را بررسی کنید.`,
+        );
+      const stays = members.map((row, stop) => ({
+        ...row.stays[0]!,
+        nights: definitions[stop]!.nights,
+      }));
+      const key = JSON.stringify([
+        first.startsOn,
+        stays.map((stay) => [stay.hotelId, floatingHotelKey(stay.room)]),
+      ]);
+      if (identities.has(key))
+        return fail(`Row ${index + 1}: ترکیب هتل و اتاق تکراری است.`);
+      identities.add(key);
+      result.push({
+        ...first,
+        stays,
+        sourceRows: members.flatMap((member) => member.sourceRows),
+      });
+      index = range.last - 1;
+    } catch (error) {
+      if (!(error instanceof BadRequestException)) throw error;
+      errors.push(error.message);
+      index = lastIndex;
+    }
+  }
+  if (errors.length) return fail(errors.join('\n'));
+  if (!result.length) return fail('فایل قیمت خالی است.');
+  return result;
 }
 
 /** Explicit two-hotel template: one package row, one price, separate hotel nights. */
@@ -430,6 +760,7 @@ function parseDedicatedFloatingRows(
   if (new Set(headers).size !== headers.length)
     return fail('ستون تکراری در فایل مجاز نیست.');
   const result: FloatingTourSaleRow[] = [];
+  const errors: string[] = [];
   const identities = new Set<string>();
   const baseHeaders = [
     'departure_date',
@@ -448,89 +779,98 @@ function parseDedicatedFloatingRows(
   ];
   for (let i = 1; i < workbook.length; i++) {
     if (!workbook[i]!.some((cell) => cell?.value)) continue;
-    const fields = Object.fromEntries(
-      headers.map((h, j) => [h, workbook[i]![j]]),
-    );
-    const nights = [1, 2].map((n) => Number(fields[`nights_${n}`]?.value));
-    if (
-      nights.some((n) => !Number.isSafeInteger(n) || n < 1) ||
-      nights[0]! + nights[1]! !== options.nights
-    )
-      return fail(
-        `Row ${i + 1}: مجموع شب‌های دو هتل باید با تعداد شب بازه برابر باشد.`,
+    try {
+      const fields = Object.fromEntries(
+        headers.map((h, j) => [h, workbook[i]![j]]),
       );
-    const selected = [1, 2].map((n) => {
-      const name = floatingHotelKey(fields[`hotel_name_${n}`]?.value ?? '');
-      const found = hotels.filter((h) =>
-        [h.name, h.englishName ?? ''].some(
-          (value) => floatingHotelKey(value) === name,
-        ),
-      );
-      if (!name || found.length !== 1)
-        return fail(`Row ${i + 1}: نام هتل یافت نشد یا مبهم است.`);
-      return found[0]!;
-    });
-    const combinedDefinition = {
-      ...tour,
-      details: {
-        ...tour.details,
-        version: 1 as const,
-        destinations: selected.map((h, n) => ({
-          cityId: h.cityId,
-          nights: nights[n]!,
-        })),
-      },
-    };
-    const controls = [
-      'dbl',
-      'sgl',
-      'extra',
-      'chd w bed',
-      'child no bed',
-      'infant',
-    ].map((g) => `add_flight_${g}`);
-    for (const key of controls)
+      const nights = [1, 2].map((n) => Number(fields[`nights_${n}`]?.value));
       if (
-        fields[key]?.value &&
-        !['yes', 'no'].includes(fields[key]!.value.toLowerCase())
+        options.destinationNights &&
+        JSON.stringify(nights) !== JSON.stringify(options.destinationNights)
       )
-        return fail(`Row ${i + 1}: ${key}: YES / NO`);
-    const columns = [...baseHeaders, 'commission', ...controls];
-    const blank: FloatingCell = { value: '', format: '', numeric: false };
-    const paired = [
-      columns.map((value) => ({ ...blank, value })),
-      ...[1, 2].map((n) =>
-        columns.map(
-          (key) =>
-            fields[
-              (
-                {
-                  hotel_name: `hotel_name_${n}`,
-                  loc: `loc_${n}`,
-                  room: `room_${n}`,
-                  service: `service_${n}`,
-                } as Record<string, string>
-              )[key] ?? key
-            ] ?? blank,
+        return fail(
+          `Row ${i + 1}: شب‌های فایل باید با شب‌های مقصدهای فرم برابر باشد.`,
+        );
+      if (
+        nights.some((n) => !Number.isSafeInteger(n) || n < 1) ||
+        nights[0]! + nights[1]! !== options.nights
+      )
+        return fail(
+          `Row ${i + 1}: مجموع شب‌های دو هتل باید با تعداد شب بازه برابر باشد.`,
+        );
+      const selected = [1, 2].map((n) => {
+        const found = matchHotels(fields[`hotel_name_${n}`], hotels);
+        if (found.length !== 1)
+          return fail(`Row ${i + 1}: نام هتل یافت نشد یا مبهم است.`);
+        return found[0]!;
+      });
+      const combinedDefinition = {
+        ...tour,
+        details: {
+          ...tour.details,
+          version: 1 as const,
+          destinations: selected.map((h, n) => ({
+            cityId: h.cityId,
+            nights: nights[n]!,
+          })),
+        },
+      };
+      const controls = [
+        'dbl',
+        'sgl',
+        'extra',
+        'chd w bed',
+        'child no bed',
+        'infant',
+      ].map((g) => `add_flight_${g}`);
+      for (const key of controls)
+        if (
+          fields[key]?.value &&
+          !['yes', 'no'].includes(fields[key]!.value.toLowerCase())
+        )
+          return fail(`Row ${i + 1}: ${key}: YES / NO`);
+      const columns = [...baseHeaders, 'commission', ...controls];
+      const blank: FloatingCell = { value: '', format: '', numeric: false };
+      const paired = [
+        columns.map((value) => ({ ...blank, value })),
+        ...[1, 2].map((n) =>
+          columns.map(
+            (key) =>
+              fields[
+                (
+                  {
+                    hotel_name: `hotel_name_${n}`,
+                    loc: `loc_${n}`,
+                    room: `room_${n}`,
+                    service: `service_${n}`,
+                  } as Record<string, string>
+                )[key] ?? key
+              ] ?? blank,
+          ),
         ),
-      ),
-    ];
-    const row = parseFloatingRows(
-      paired,
-      options,
-      combinedDefinition,
-      hotels,
-      previous,
-    )[0]!;
-    const key = JSON.stringify([
-      row.startsOn,
-      row.stays.map((s) => [s.hotelId, floatingHotelKey(s.room)]),
-    ]);
-    if (identities.has(key))
-      return fail(`Row ${i + 1}: ترکیب هتل و اتاق تکراری است.`);
-    identities.add(key);
-    result.push({ ...row, sourceRows: [i + 1] });
+      ];
+      const row = parseFloatingRows(
+        paired,
+        options,
+        combinedDefinition,
+        hotels,
+        previous,
+        [i + 1, i + 1],
+      )[0]!;
+      const key = JSON.stringify([
+        row.startsOn,
+        row.stays.map((s) => [s.hotelId, floatingHotelKey(s.room)]),
+      ]);
+      if (identities.has(key))
+        return fail(`Row ${i + 1}: ترکیب هتل و اتاق تکراری است.`);
+      identities.add(key);
+      result.push({ ...row, sourceRows: [i + 1] });
+    } catch (error) {
+      if (!(error instanceof BadRequestException)) throw error;
+      errors.push(error.message);
+    }
   }
+  if (errors.length) return fail(errors.join('\n'));
   if (!result.length) return fail('فایل قیمت خالی است.');
   return result;
 }

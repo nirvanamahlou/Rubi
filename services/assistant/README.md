@@ -6,6 +6,19 @@ read-only SQL and sends it to the Sales-owned ERP execution boundary.
 
 ## Agent v3 — 2026-11-14
 
+All Groq consumers now use one process-local credential pool through
+`groqConfigurations()` at startup. `GROQ_KEY_POOL_FILE` selects a private,
+read-only ordered credential file; without it `GROQ_API_KEY` remains supported.
+Never construct separate pools per request or bypass the shared factory in a
+custom runtime. Organization quotas are shared, not multiplied by key count.
+The `organization` value is an operator quota-group alias, not a provider identity
+lookup. Do not place unrelated/unverified accounts in one universal group. On a
+provider organization quota error, actual organization identities additionally
+link provisional aliases through private in-memory equality hashes. See the
+[quota-group correction](../../docs/tasks/NORA-GROQ-QUOTA-GROUPS-1117.md).
+Configuration, scoped failover, budget/auth rules and Nora-only rollback:
+[NORA-GROQ-KEY-POOL-1117](../../docs/tasks/NORA-GROQ-KEY-POOL-1117.md).
+
 Every answer-authoring model entry point shares the module-independent calculation-explanation
 policy. Groq chooses text or table; derived answers require a user-facing method
 summary from current evidence, with at most one bounded formatting repair.
@@ -141,8 +154,18 @@ A Groq adapter is available only through explicit trusted test injection; server
 
 ## Live messages-only opt-in — 2026-10-20
 
-The default remains disabled. The owner has approved Groq for message/session text only. Set ASSISTANT_CONVERSATION_ENABLED=true, ASSISTANT_MODEL_PROVIDER=groq, ASSISTANT_DATA_POLICY=messages-only and a private GROQ_API_KEY in the service environment. This supersedes the earlier synthetic-only runtime gate for this explicit opt-in. No ERP tool result is sent to Groq. REPLY returns plain general conversation; ACTION and CLARIFY preserve the existing fixed contracts. Six-second model deadline, no retries. Quick reports remain usable if the provider fails. See ../../docs/tasks/ASSISTANT-LIVE-CHAT-1020.md.
+The default remains disabled. The owner has approved Groq for message/session text only. Set ASSISTANT_CONVERSATION_ENABLED=true, ASSISTANT_MODEL_PROVIDER=groq, ASSISTANT_DATA_POLICY=messages-only and a private GROQ_API_KEY in the service environment. This supersedes the earlier synthetic-only runtime gate for this explicit opt-in. No ERP tool result is sent to Groq. The current source policy replaces REPLY text with a fixed request for an internal panel, workflow or report. ACTION and CLARIFY preserve the existing fixed contracts. Six-second model deadline, no retries. Quick reports remain usable if the provider fails. See ../../docs/tasks/ASSISTANT-LIVE-CHAT-1020.md.
 
 ## Workbench procedural guidance —2026-11-15
 
 The additive POST /v1/assistant/workbench-guide accepts only version1/topicId/goal and returns a validated tool selection; it does not read Workbench records. The canonical static guide catalog is also rendered by the Web, including the approved internal fallback when Groq is unavailable. Native IAM and request limits still apply. A custom runtime must pass workbenchGuide: workbenchGuideConfiguration() from workbench-guide.mjs to createAssistantServer to enable model selection; without that configuration it stays internal. The configuration reuses Germany-only egress admission. No employee message, document, medical information or free-text question is sent to Groq by this tool. See ../../docs/tasks/NORA-WORKBENCH-GUIDE-1115.md for coverage, acceptance and rollout boundaries.
+
+## Operator request quota exemptions —2026-11-16
+
+ASSISTANT_RATE_LIMIT_EXEMPT_USER_IDS accepts a private comma-separated immutable native IAM UUID allowlist. Matched authenticated accounts bypass application user/IP request quotas and the ordinary concurrency pool; other users retain existing limits. No client username/header grants exemption. Data permissions, SQL safety and provider limits remain enforced. Invalid configuration fails startup. See ../../docs/tasks/NORA-ACCOUNT-RATE-EXEMPTIONS-1116.md.
+
+## Persian contractual-sales period evidence
+
+Explicit plain Persian sales-window questions use runtime calendar resolution and a bounded, same-snapshot reconciliation through the existing authorized Sales query endpoint after model-authored SQL. Unique contracts differ from currency rows. Typed financial facts preserve Groq's choice of table/list/prose while preventing invented dates/counts or discount semantics. This is not accounting revenue or the native active-panel population. See [scope and acceptance](../../docs/tasks/NORA-SALES-EVIDENCE-1117.md).
+
+The same authenticated guide endpoint accepts version 2 and a bounded Sales pre-send checklist question. Setting `ASSISTANT_GUIDE_RAG_ENABLED=true` in the assistant service permits one call through its configured Germany transport. The provider receives the question and three approved Sales sections, and can return only validated step indexes. The web uses the canonical steps and links. A disabled flag, missing transport or invalid result uses the full internal sections. Leave follow-up guidance remains deterministic.

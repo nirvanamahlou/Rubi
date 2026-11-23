@@ -1,5 +1,12 @@
+import {
+  OPENAI_ENDPOINT,
+  OPENAI_MODEL,
+  responsesRequest,
+  responsesResult,
+} from './openai-responses.mjs';
 import { ServiceError } from './errors.mjs';
 import { CALCULATION_POLICY } from './calculation-policy.mjs';
+import { compactMessages, usageCounters } from './token-efficiency.mjs';
 
 const tool = (
   name,
@@ -46,8 +53,15 @@ export const AGENT_TOOLS = Object.freeze([
   ),
   tool(
     'catalog_describe',
-    'Read exact columns, grain and meaning of one authorized source.',
-    { source: text },
+    'Read exact columns, grain and meaning of authorized sources. For multi-source questions describe all needed sources together using a source array; a single source string remains supported.',
+    {
+      source: {
+        type: ['string', 'array'],
+        items: text,
+        minItems: 1,
+        maxItems: 5,
+      },
+    },
   ),
   tool(
     'database_query',
@@ -67,6 +81,15 @@ export const AGENT_TOOLS = Object.freeze([
     ['status', 'text', 'resultIds', 'limitations'],
   ),
 ]);
+
+// A real, advertised final-stage transport tool; never recover rejected generations.
+const finalAnswer = AGENT_TOOLS.find(
+  (entry) => entry.function.name === 'finish_answer',
+);
+const finalJsonTool = {
+  ...finalAnswer,
+  function: { ...finalAnswer.function, name: 'json' },
+};
 
 export async function boundedAgentJson(response, limit = 256 * 1024) {
   if (!response.headers.get('content-type')?.includes('application/json'))
@@ -92,49 +115,247 @@ export async function boundedAgentJson(response, limit = 256 * 1024) {
 
 export function createAgentProvider({
   apiKey,
+  provider = 'groq',
+  transport,
   fetcher = fetch,
   now = Date.now,
 } = {}) {
-  if (typeof apiKey !== 'string' || !apiKey.trim() || /\s/.test(apiKey))
+  if (!['groq', 'openai'].includes(provider))
+    throw new Error('INVALID_AGENT_PROVIDER');
+  const openai = provider === 'openai';
+  const model = openai ? OPENAI_MODEL : 'openai/gpt-oss-120b';
+  if (transport && typeof transport.fetch !== 'function')
+    throw new Error('GROQ_SHARED_POOL_REQUIRED');
+  if (
+    !transport &&
+    (typeof apiKey !== 'string' || !apiKey.trim() || /\s/.test(apiKey))
+  )
     throw new Error('AGENT_PROVIDER_KEY_REQUIRED');
   let unavailableUntil = 0;
   return {
+    model,
     async step(
       messages,
       {
         signal,
         remainingTokens = 40000,
+        requireCalculationExplanation = false,
         allowedTools,
         allowFinalResponse = false,
+        currentResultIds,
+        finalTextChoices,
+        beforeRetry,
+        attemptBudget,
       },
     ) {
-      if (now() < unavailableUntil) {
+      if (!transport && now() < unavailableUntil) {
         const error = new ServiceError(429, 'AGENT_PROVIDER_RATE_LIMITED');
         error.retryAfterMs = unavailableUntil - now();
         throw error;
       }
-      const body = JSON.stringify({
-        model: 'openai/gpt-oss-120b',
+      if (
+        currentResultIds !== undefined &&
+        (!Array.isArray(currentResultIds) ||
+          currentResultIds.length > 6 ||
+          currentResultIds.some(
+            (id) => typeof id !== 'string' || !/^[a-f0-9-]{36}$/.test(id),
+          ))
+      )
+        throw new ServiceError(502, 'INVALID_AGENT_SOURCE');
+      if (
+        finalTextChoices !== undefined &&
+        (!Array.isArray(finalTextChoices) ||
+          !finalTextChoices.length ||
+          finalTextChoices.length > 12 ||
+          finalTextChoices.some(
+            (s) => typeof s !== 'string' || s.length > 300,
+          ) ||
+          !currentResultIds?.length ||
+          !allowFinalResponse ||
+          (allowedTools && !allowedTools.includes('finish_answer')))
+      )
+        throw new ServiceError(502, 'INVALID_AGENT_SOURCE');
+      // Short transport references avoid model transcription of opaque UUIDs.
+      // Only trusted current evidence supplies the mapping; public IDs stay UUIDs.
+      const references = new Map(
+        (currentResultIds ?? []).map((id, index) => [id, `ref_${index + 1}`]),
+      );
+      const originals = new Map([...references].map(([id, ref]) => [ref, id]));
+      const decodeFinal = (final) => {
+        if (currentResultIds !== undefined && Array.isArray(final?.resultIds))
+          return {
+            ...final,
+            resultIds: final.resultIds.map((ref) => {
+              if (originals.has(ref)) return originals.get(ref);
+              if (references.has(ref)) return ref;
+              throw new ServiceError(502, 'INVALID_AGENT_PLAN');
+            }),
+          };
+        return final;
+      };
+      const wireMessages = compactMessages(messages).map((message) => {
+        if (
+          message.role !== 'tool' ||
+          typeof message.content !== 'string' ||
+          !references.size
+        )
+          return message;
+        let output;
+        try {
+          output = JSON.parse(message.content);
+        } catch {
+          return message;
+        }
+        if (references.has(output?.resultId))
+          output = { ...output, resultId: references.get(output.resultId) };
+        if (references.has(output?.verifiedSalesReport?.resultId))
+          output = {
+            ...output,
+            verifiedSalesReport: {
+              ...output.verifiedSalesReport,
+              resultId: references.get(output.verifiedSalesReport.resultId),
+            },
+          };
+        return { ...message, content: JSON.stringify(output) };
+      });
+      if (references.size)
+        wireMessages.push({
+          role: 'system',
+          content:
+            'Transport citation convention: current tool resultId values use short references ' +
+            [...originals.keys()].join(', ') +
+            '. Copy these exact short references into final resultIds only; do not include internal IDs/references in displayed text. Do not reconstruct UUIDs. Record IDs inside rows are data, never citation IDs.',
+        });
+      if (requireCalculationExplanation)
+        wireMessages.push({
+          role: 'system',
+          content:
+            'Current evidence includes a calculation: final calculationExplanation MUST be a nonempty string, never null, even if the same explanation appears in text. This is a public method summary, not private reasoning.',
+        });
+      const tools = AGENT_TOOLS.filter(
+        (t) =>
+          (!allowedTools || allowedTools.includes(t.function.name)) &&
+          (!allowFinalResponse || t.function.name !== 'finish_answer'),
+      );
+      if (
+        allowFinalResponse &&
+        (!allowedTools || allowedTools.includes('finish_answer'))
+      )
+        tools.push(
+          currentResultIds === undefined
+            ? finalJsonTool
+            : {
+                ...finalJsonTool,
+                function: {
+                  ...finalJsonTool.function,
+                  parameters: {
+                    ...finalJsonTool.function.parameters,
+                    ...(finalTextChoices || requireCalculationExplanation
+                      ? {
+                          required: [
+                            'status',
+                            'text',
+                            'resultIds',
+                            'limitations',
+                            'calculationExplanation',
+                          ],
+                        }
+                      : {}),
+                    properties: {
+                      ...finalJsonTool.function.parameters.properties,
+                      status: {
+                        type: 'string',
+                        enum: currentResultIds.length
+                          ? ['ANSWER', 'CLARIFY', 'REPLY']
+                          : ['CLARIFY', 'REPLY'],
+                      },
+                      resultIds: {
+                        type: 'array',
+                        maxItems: currentResultIds.length,
+                        ...(finalTextChoices ? { minItems: 1 } : {}),
+                        items: currentResultIds.length
+                          ? { type: 'string', enum: [...originals.keys()] }
+                          : { type: 'string' },
+                      },
+                      ...(requireCalculationExplanation && !finalTextChoices
+                        ? {
+                            calculationExplanation: {
+                              type: 'string',
+                              minLength: 1,
+                              maxLength: 4000,
+                              description:
+                                'Required nonempty public calculation summary from the cited evidence, even if also included in text. Never null.',
+                            },
+                          }
+                        : {}),
+                      ...(finalTextChoices
+                        ? {
+                            status: { type: 'string', enum: ['ANSWER'] },
+                            text: {
+                              type: 'string',
+                              enum: [...finalTextChoices],
+                            },
+                            calculationExplanation: {
+                              type: 'string',
+                              enum: ['[[sales:method]]'],
+                            },
+                            limitations: {
+                              type: 'array',
+                              maxItems: 0,
+                              items: { type: 'string' },
+                            },
+                          }
+                        : {}),
+                    },
+                  },
+                },
+              },
+        );
+      if (openai)
+        wireMessages.push({
+          role: 'system',
+          content:
+            'SQL identifiers and output aliases must use lowercase ASCII letters, digits and underscores, e.g. contract_count. Keep the displayed answer in the user language. If the user asks about this month without specifying a calendar, ask whether they mean the Persian or Gregorian month before any query. If confirmed payments are requested but payments is absent from the authorized source list, explain that payment data is unavailable in this scope. Contract status and contractual amounts never establish whether a payment happened. Do not query substitute sources for unavailable payment data.',
+        });
+      const request = {
+        model,
         temperature: 0,
-        reasoning_effort: 'low',
+        ...(!openai ? { reasoning_effort: 'low' } : {}),
         max_completion_tokens: 2048,
         stream: false,
         messages: [
-          { role: 'system', content: CALCULATION_POLICY },
-          ...messages,
+          ...(!allowFinalResponse &&
+          allowedTools?.length === 1 &&
+          allowedTools[0] === 'set_plan'
+            ? []
+            : [{ role: 'system', content: CALCULATION_POLICY }]),
+          ...wireMessages,
         ],
-        tools: AGENT_TOOLS.filter(
-          (t) =>
-            (!allowedTools || allowedTools.includes(t.function.name)) &&
-            (!allowFinalResponse || t.function.name !== 'finish_answer'),
-        ),
-        tool_choice: allowFinalResponse
-          ? 'auto'
-          : allowedTools?.length === 1
-            ? { type: 'function', function: { name: allowedTools[0] } }
-            : 'required',
-        parallel_tool_calls: false,
-      });
+        ...(finalTextChoices
+          ? {
+              // Final facts are already complete. Groq's documented constrained
+              // JSON output is separate from tool calling (they cannot be mixed).
+              response_format: {
+                type: 'json_schema',
+                json_schema: {
+                  name: 'verified_sales_answer',
+                  strict: true,
+                  schema: tools.find((t) => t.function.name === 'json').function
+                    .parameters,
+                },
+              },
+            }
+          : {
+              tools,
+              tool_choice: allowFinalResponse
+                ? 'auto'
+                : allowedTools?.length === 1
+                  ? { type: 'function', function: { name: allowedTools[0] } }
+                  : 'required',
+              parallel_tool_calls: false,
+            }),
+      };
+      const body = JSON.stringify(openai ? responsesRequest(request) : request);
       const wireBody = body;
       if (Buffer.byteLength(wireBody) > 256 * 1024)
         throw new ServiceError(503, 'AGENT_CONTEXT_BUDGET_EXCEEDED');
@@ -143,18 +364,26 @@ export function createAgentProvider({
       if (Buffer.byteLength(body) + 3072 > remainingTokens)
         throw new ServiceError(429, 'AGENT_TOKEN_BUDGET_EXCEEDED');
       try {
-        const response = await fetcher(
-          'https://api.groq.com/openai/v1/chat/completions',
+        const response = await (transport?.fetch ?? fetcher)(
+          openai
+            ? OPENAI_ENDPOINT
+            : 'https://api.groq.com/openai/v1/chat/completions',
           {
             method: 'POST',
             headers: {
-              authorization: `Bearer ${apiKey}`,
+              ...(!transport ? { authorization: `Bearer ${apiKey}` } : {}),
               'content-type': 'application/json',
             },
             body: wireBody,
             redirect: 'error',
             cache: 'no-store',
             signal: AbortSignal.any([signal, AbortSignal.timeout(15000)]),
+          },
+          {
+            beforeRetry,
+            attemptBudget,
+            remainingTokens,
+            tokenCharge: Buffer.byteLength(body) + 3072,
           },
         );
         if (!response.ok) {
@@ -164,7 +393,11 @@ export function createAgentProvider({
             response.headers.get('content-type')?.includes('application/json')
           ) {
             const rejected = await boundedAgentJson(response, 65536);
-            if (rejected?.error?.code === 'tool_use_failed') {
+            if (
+              ['tool_use_failed', 'output_parse_failed'].includes(
+                rejected?.error?.code,
+              )
+            ) {
               const error = new ServiceError(
                 503,
                 'AGENT_PROVIDER_TOOL_REJECTED',
@@ -200,13 +433,15 @@ export function createAgentProvider({
           if (status === 429) error.retryAfterMs = unavailableUntil - now();
           throw error;
         }
-        const result = await boundedAgentJson(response, 65536);
+        const payload = await boundedAgentJson(response, 65536);
+        const result = openai ? responsesResult(payload) : payload;
         const choice = result.choices?.[0];
         const calls = choice?.message?.tool_calls;
         if (result.choices?.length !== 1)
           throw new ServiceError(502, 'INVALID_AGENT_PLAN');
         if (
           choice?.finish_reason === 'stop' &&
+          !calls?.length &&
           typeof choice.message?.content === 'string'
         ) {
           if (!allowFinalResponse || calls?.length)
@@ -227,13 +462,19 @@ export function createAgentProvider({
           return {
             id: 'final_' + crypto.randomUUID(),
             name: 'finish_answer',
-            args: final,
+            args: decodeFinal(final),
             tokens,
+            usage: usageCounters(result.usage),
           };
         }
         if (
           result.choices?.length !== 1 ||
-          choice.finish_reason !== 'tool_calls' ||
+          (choice.finish_reason !== 'tool_calls' &&
+            !(
+              openai &&
+              choice.finish_reason === 'stop' &&
+              !choice.message?.content
+            )) ||
           !Array.isArray(calls) ||
           calls.length !== 1
         )
@@ -243,9 +484,7 @@ export function createAgentProvider({
           call.type !== 'function' ||
           typeof call.id !== 'string' ||
           !/^[a-zA-Z0-9_-]{1,128}$/.test(call.id) ||
-          !AGENT_TOOLS.some(
-            (entry) => entry.function.name === call.function?.name,
-          ) ||
+          !tools.some((entry) => entry.function.name === call.function?.name) ||
           typeof call.function.arguments !== 'string' ||
           Buffer.byteLength(call.function.arguments) > 16000
         )
@@ -255,8 +494,14 @@ export function createAgentProvider({
           throw new ServiceError(502, 'INVALID_AGENT_USAGE');
         return {
           id: call.id,
-          name: call.function.name,
-          args: JSON.parse(call.function.arguments),
+          name:
+            call.function.name === 'json'
+              ? 'finish_answer'
+              : call.function.name,
+          args:
+            call.function.name === 'json'
+              ? decodeFinal(JSON.parse(call.function.arguments))
+              : JSON.parse(call.function.arguments),
           tokens,
         };
       } catch (error) {

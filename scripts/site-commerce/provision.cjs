@@ -6,14 +6,28 @@ const load = createRequire('/workspace/apps/api/package.json');
 const { createDatabaseClient } = load('@nora/database');
 const { hash } = load('argon2');
 const db = createDatabaseClient();
-const username = 'nss-site-sales';
+const site = process.env.SITE_COMMERCE_SITE_CODE ?? 'nss';
+if (!['nss', 'jahan-bastan', 'ghestiroo'].includes(site))
+  throw Error('Unknown sales site');
+const isJahan = site === 'jahan-bastan';
+const isGhestiroo = site === 'ghestiroo';
+const username = `${site}-site-sales`;
+const displayName = {
+  nss: 'سایت نیایش',
+  'jahan-bastan': 'سایت جهان باستان',
+  ghestiroo: 'سایت قسطی‌رو',
+}[site];
 const codes = [
   'sales.contracts.create',
   'sales.contracts.read.own',
-  'sales.contracts.confirm',
-  'sales.reservation_request.create',
-  'sales.payments.create',
-  'sales.export',
+  ...(isGhestiroo
+    ? []
+    : [
+        'sales.contracts.confirm',
+        'sales.reservation_request.create',
+        'sales.payments.create',
+        'sales.export',
+      ]),
 ];
 
 async function main() {
@@ -55,14 +69,38 @@ async function main() {
     !issuers.some((e) => e.id === legalEntityId)
   )
     throw Error('Explicit active branch and issuer required');
+  const memberships = [{ branchId, isPrimary: true }];
+  if (isJahan) {
+    const jahanBranch = branches.find(
+      (branch) => branch.code === 'JAHAN_BASTAN',
+    );
+    const primary = branches.find((branch) => branch.id === branchId);
+    const issuer = issuers.find((entity) => entity.id === legalEntityId);
+    if (
+      primary?.code !== 'HQ' ||
+      issuer?.code !== 'JAHAN_BASTAN' ||
+      !jahanBranch
+    )
+      throw Error(
+        'Jahan Bastan requires HQ inventory, its branch and its own issuer',
+      );
+    memberships.push({ branchId: jahanBranch.id, isPrimary: false });
+  }
+  if (
+    isGhestiroo &&
+    (branches.find((branch) => branch.id === branchId)?.code !== 'HQ' ||
+      issuers.find((entity) => entity.id === legalEntityId)?.code !==
+        'GHESATI_RO')
+  )
+    throw Error('Ghestiroo requires HQ inventory and its own legal issuer');
   if (existing || permissions.length !== codes.length)
     throw Error(
       'Existing identity or missing permissions; no modification performed',
     );
-  const roleCode = 'nss-site-commerce-v1';
+  const roleCode = `${site}-site-commerce-v1`;
   if (await db.role.findUnique({ where: { code: roleCode } }))
     throw Error('Role already exists; do not overwrite');
-  const output = '/tmp/nss-site-client.env';
+  const output = `/tmp/${site}-site-client.env`;
   const password = randomBytes(40).toString('base64url') + 'aA1!';
   const passwordHash = await hash(password, {
     type: 2,
@@ -72,7 +110,9 @@ async function main() {
   });
   fs.writeFileSync(
     output,
-    `ERP_COMMERCE_ENABLED=true\nERP_API_URL=https://avinaofficial.ir/api/v1\nERP_USERNAME=${username}\nERP_PASSWORD=${password}\nERP_SITE_CODE=nss\n`,
+    isGhestiroo
+      ? `GHESTIROO_AVINA_API_URL=https://avinaofficial.ir/api/v1\nGHESTIROO_AVINA_USERNAME=${username}\nGHESTIROO_AVINA_PASSWORD=${password}\n`
+      : `ERP_COMMERCE_ENABLED=${!isJahan}\nERP_API_URL=https://avinaofficial.ir/api/v1\nERP_USERNAME=${username}\nERP_PASSWORD=${password}\nERP_SITE_CODE=${site}\n`,
     { mode: 0o600, flag: 'wx' },
   );
   try {
@@ -80,7 +120,7 @@ async function main() {
       const role = await tx.role.create({
         data: {
           code: roleCode,
-          name: 'اتصال فروش سایت نیایش',
+          name: `اتصال فروش ${displayName}`,
           permissions: {
             create: permissions.map((p) => ({ permissionId: p.id })),
           },
@@ -89,10 +129,10 @@ async function main() {
       const user = await tx.user.create({
         data: {
           username,
-          displayName: 'سایت نیایش',
+          displayName,
           passwordHash,
           roles: { create: [{ roleId: role.id }] },
-          branches: { create: [{ branchId, isPrimary: true }] },
+          branches: { create: memberships },
         },
         select: { id: true },
       });
@@ -104,12 +144,13 @@ async function main() {
           actorUserId: null,
           action: 'integrations.site.provisioned',
           entityType: 'website_connection',
-          entityId: 'nss',
+          entityId: site,
           outcome: 'SUCCESS',
           metadata: {
             userId: user.id,
             branchId,
             legalEntityId,
+            branchMemberships: memberships,
             provisioner: 'server-root',
             permissions: codes,
           },

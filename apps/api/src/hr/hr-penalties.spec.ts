@@ -83,6 +83,7 @@ describe('daily attendance penalties', () => {
     ).toBeNull());
   it('exempts only approved hourly leave intervals', async () => {
     const leave = {
+      code: 'LEAVE-TEST',
       employeeId: 'person',
       tab: 'radanLeave',
       status: 'تأییدشده',
@@ -102,6 +103,12 @@ describe('daily attendance penalties', () => {
         ['50000', '60000', '2026-11-01', 'بله', 'خیر', 'بله'],
       )(),
     ).toBe('800000');
+    expect(
+      await setup(
+        [{ ...leave, code: 'WB-LEAVE-TEST' }],
+        ['50000', '60000', '2026-11-01', 'بله', 'خیر', 'بله'],
+      )(),
+    ).toBe('300000');
   });
   it('exempts a confirmed device-error correction only when enabled', async () => {
     const correction = {

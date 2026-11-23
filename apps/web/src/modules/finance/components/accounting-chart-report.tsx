@@ -1,4 +1,5 @@
 'use client';
+import { accountingDetailLevels } from '@nora/contracts';
 
 import { Fragment, useState } from 'react';
 import type {
@@ -247,7 +248,7 @@ export function AccountingChartReport({
                         {row.values.code}-{row.values.title}
                       </th>
                     </tr>
-                    {[4, 5, 6]
+                    {accountingDetailLevels
                       .filter((level) => !!row.values[`detail${level}`])
                       .map((level) => (
                         <tr key={level}>

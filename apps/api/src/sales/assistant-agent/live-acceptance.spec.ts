@@ -1,3 +1,5 @@
+import { createDatabaseClient, type DatabaseClient } from '@nora/database';
+import { readContractCountBreakdown } from './count-breakdown';
 import { writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { tmpdir } from 'node:os';
@@ -89,6 +91,7 @@ const original = {
 let admin: Client;
 let fixture: Client;
 let reader: Client;
+let nativeDatabase: DatabaseClient;
 let created = false;
 let createdLogin = false;
 const service = new SalesAgentQueryService();
@@ -117,7 +120,10 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
     address.pathname = `/${database}`;
     fixture = new Client({ connectionString: address.toString() });
     await fixture.connect();
+    nativeDatabase = createDatabaseClient(address.toString());
     await fixture.query(`
+      CREATE TABLE "ReservationIntake"(id uuid PRIMARY KEY,"contractId" uuid,"contractVersion" integer);
+      CREATE TABLE "ReservationWorkflowRevision"(id uuid PRIMARY KEY,"intakeId" uuid,"version" integer,state jsonb,"createdAt" timestamptz);
       CREATE TABLE sales_contracts(id uuid PRIMARY KEY,contract_number text,branch_id uuid,owner_user_id uuid,legal_entity_id uuid,customer_name_snapshot text,trip_type text,origin_id uuid,destination_id uuid,departure_date date,status text,reservation_status text,created_at timestamptz,confirmed_at timestamptz,cancelled_at timestamptz,updated_at timestamptz,hidden_at timestamptz);
       CREATE TABLE sales_contract_passengers(id uuid,contract_id uuid,display_name_snapshot text,age_category text,passport_secret text);
       CREATE TABLE sales_contract_services(id uuid,contract_id uuid,kind text,status text,metadata jsonb);
@@ -222,6 +228,7 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
   afterAll(async () => {
     await service.onModuleDestroy();
     await reader?.end();
+    await nativeDatabase?.$disconnect();
     await fixture?.end();
     if (created) {
       if (!/^nora_agent_test_[a-f0-9]{32}$/.test(database))
@@ -238,6 +245,32 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
       else process.env[key] = value;
     }
   }, 30000);
+
+  it('native count reader matches independent scoped fixture references without model calls', async () => {
+    for (const selected of [
+      { ...scope, mode: 'all' as const },
+      { ...scope, mode: 'branch' as const },
+      scope,
+      { ...scope, companyId: ids[5]! },
+    ]) {
+      const expected = await fixture.query<{ total: string }>(
+        "SELECT count(*)::text AS total FROM sales_contracts WHERE hidden_at IS NULL AND legal_entity_id=$1 AND ($2='all' OR (branch_id=ANY($3::uuid[]) AND ($2='branch' OR owner_user_id=$4)))",
+        [
+          selected.companyId,
+          selected.mode,
+          selected.branchIds,
+          selected.userId,
+        ],
+      );
+      const result = await readContractCountBreakdown(nativeDatabase, selected);
+      expect(result.rows[0]!.total).toBe(Number(expected.rows[0]!.total));
+      expect(
+        result.rows[0]!.panel_non_cancelled +
+          result.rows[0]!.sales_cancelled +
+          result.rows[0]!.reservation_cancelled_only,
+      ).toBe(result.rows[0]!.total);
+    }
+  });
 
   const cases: Array<readonly [string, string]> = [
     ['all', 'تعداد همه قراردادهای قابل مشاهده چقدر است؟'],
@@ -396,12 +429,16 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
       const results: unknown[] = [];
       let calls = 0,
         queries = 0,
+        nativeCountCalls = 0,
         tokens = 0,
         rejectedTokenReserve = 0;
       const provider = providerRuntime.liveProvider();
       const queryAttempts: Array<{ sql: string; error?: string }> = [];
       const agent = runtime.createDataAgent({
         enabled: true,
+        ...(id === 'month'
+          ? { now: () => new Date('2026-11-23T09:00:00.000Z') }
+          : {}),
         erpBaseUrl: 'http://127.0.0.1:44319/api/v1',
         provider: {
           step: async (...args: unknown[]) => {
@@ -435,6 +472,16 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
               ],
             });
           queries++;
+          if (url.endsWith('/count-breakdown')) {
+            nativeCountCalls++;
+            const result = await readContractCountBreakdown(
+              nativeDatabase,
+              selected,
+            );
+            results.push(result);
+            queryAttempts.push({ sql: '[native authorized count-breakdown]' });
+            return Response.json({ ...result, contextId });
+          }
           const querySql = JSON.parse(options.body!).sql as string;
           try {
             const r = await service.query(
@@ -493,7 +540,8 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
         error,
         retryAfterMs,
         modelCalls: calls,
-        sqlCalls: queries,
+        sqlCalls: queries - nativeCountCalls,
+        nativeCountCalls,
         tokens,
         rejectedTokenReserve,
         durationMs: Date.now() - started,
@@ -510,7 +558,16 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
         expect(JSON.stringify({ response, results })).not.toContain(
           'NEVER_EXPOSE',
         );
-        if (['month', 'unsupported', 'no-payments'].includes(id)) {
+        if (id === 'month') {
+          // Persian month is the default for the native relative-sales route.
+          expect(response?.status).toBe('ANSWER');
+          expect(calls).toBe(0);
+          expect(queryAttempts).toHaveLength(1);
+          expect(queryAttempts[0]?.sql).toContain('2026-11-21T20:30:00.000Z');
+          expect(queryAttempts[0]?.sql).toContain('2026-11-23T09:00:00.000Z');
+          expect(response.sources).toHaveLength(1);
+        }
+        if (['unsupported', 'no-payments'].includes(id)) {
           expect(['CLARIFY', 'REPLY']).toContain(response?.status);
           expect(response.text.length).toBeGreaterThan(20);
         }
@@ -536,7 +593,7 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
           const normalized = normalizeText(response.text);
           if (['hidden', 'missing', 'denied'].includes(id)) {
             expect(normalized).toMatch(
-              /0|نیافت|پیدا نشد|یافت نشد|وجود ندارد|مشاهده نیست|دسترسی/,
+              /0|نیافت|پیدا نشد|یافت نشد|وجود ندارد|موجود نیست|هیچ ردیفی|مشاهده نیست|دسترسی/,
             );
           } else
             for (const value of oracle) {

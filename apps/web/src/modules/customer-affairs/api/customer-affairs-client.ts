@@ -1,3 +1,4 @@
+import type { WorkbenchMissionV1 } from '@nora/contracts';
 import type { WorkbenchLeaveInputV1 } from '@nora/contracts';
 import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
@@ -170,13 +171,25 @@ export const customerAffairsApi = {
       `/workbench/requests/${encodeURIComponent(id)}`,
       { method: 'DELETE' },
     ),
-  workbenchRequests: () =>
-    request<{ data: WorkbenchRequestItemV1[] }>('/workbench/requests'),
+  workbenchRequests: (signal?: AbortSignal) =>
+    request<{ data: WorkbenchRequestItemV1[] }>(
+      '/workbench/requests',
+      signal ? { signal, cache: 'no-store' } : undefined,
+    ),
   reviewLeaveSubstitute: (id: string, version: number, status: string) =>
     request(`/workbench/requests/${encodeURIComponent(id)}/substitute`, {
       method: 'PATCH',
-      body: JSON.stringify({ version, status, overrideSubstitute }),
+      body: JSON.stringify({ version, status }),
     }),
+  updateMissionFinance: (
+    id: string,
+    version: number,
+    finance: NonNullable<WorkbenchMissionV1['finance']>,
+  ) =>
+    request(
+      '/workbench/requests/' + encodeURIComponent(id) + '/mission-finance',
+      { method: 'PATCH', body: JSON.stringify({ version, finance }) },
+    ),
   reviewHrWorkbenchRequest: (
     id: string,
     version: number,
@@ -226,6 +239,7 @@ export const customerAffairsApi = {
         createdAt: string;
         senderId: string;
         senderName: string;
+        mission?: WorkbenchMissionV1;
         leave: WorkbenchLeaveInputV1 | null;
         substituteStatus?: string;
         trackingNumber: string;

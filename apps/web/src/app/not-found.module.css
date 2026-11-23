@@ -1,0 +1,190 @@
+.page {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background:
+    radial-gradient(ellipse at 15% 15%, #dcecfb, transparent 55%), #f4f7fc;
+  color: #10294c;
+}
+.card {
+  width: min(100%, 1000px);
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  direction: ltr;
+  overflow: hidden;
+  border: 1px solid #dbe5f0;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 28px 80px -40px #163e7660;
+}
+.visual {
+  position: relative;
+  display: flex;
+  min-height: 460px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 24px;
+  background:
+    radial-gradient(ellipse at 85% 90%, #168d9b, transparent 70%), #123f8c;
+  color: #8ee4e7;
+}
+.eyebrow {
+  position: absolute;
+  top: 34px;
+  font:
+    600 10px/1.5 Arial,
+    sans-serif;
+  letter-spacing: 3px;
+  color: #dbeafe;
+}
+.number {
+  font:
+    800 clamp(100px, 14vw, 160px)/1 Arial,
+    sans-serif;
+  letter-spacing: -8px;
+  color: white;
+}
+.route {
+  width: 100%;
+  max-width: 360px;
+  margin-top: -24px;
+}
+.visualCaption {
+  font:
+    600 10px/1.5 Arial,
+    sans-serif;
+  letter-spacing: 2px;
+  color: #dbeafe;
+}
+.content {
+  direction: rtl;
+  text-align: start;
+  padding: 48px;
+  align-self: center;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 44px;
+}
+.brandDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #15999e;
+  box-shadow: 0 0 0 5px #15999e12;
+}
+.label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2160b5;
+  margin-bottom: 12px;
+}
+.content h1 {
+  font-size: clamp(25px, 3vw, 34px);
+  line-height: 1.6;
+  font-weight: 800;
+  margin: 0 0 14px;
+  letter-spacing: -0.6px;
+}
+.description {
+  color: #596d86;
+  font-size: 14px;
+  line-height: 2.1;
+  max-width: 40ch;
+  margin: 0;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 46px;
+  padding: 10px 18px;
+  border-radius: 11px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+.primary {
+  color: white;
+  background: #1756b7;
+  border: 1px solid #1756b7;
+}
+.primary:hover {
+  background: #104592;
+}
+.secondary {
+  color: #244c80;
+  border: 1px solid #d8e3f0;
+  background: #f8fafd;
+}
+.secondary:hover {
+  background: #edf3fb;
+}
+.primary:focus-visible,
+.secondary:focus-visible {
+  outline: 3px solid #15999e;
+  outline-offset: 4px;
+}
+.hint {
+  margin: 24px 0 0;
+  color: #6b7e95;
+  font-size: 11px;
+  line-height: 1.9;
+}
+.footer {
+  margin-top: 24px;
+  font-size: 12px;
+  color: #6b7e95;
+}
+@media (max-width: 680px) {
+  .page {
+    padding: 24px 16px;
+  }
+  .card {
+    grid-template-columns: 1fr;
+    border-radius: 22px;
+  }
+  .visual {
+    min-height: 220px;
+    padding: 40px 24px 22px;
+  }
+  .eyebrow {
+    top: 20px;
+  }
+  .number {
+    font-size: 100px;
+  }
+  .route {
+    max-width: 230px;
+    height: 80px;
+    margin-top: -25px;
+  }
+  .visualCaption {
+    font-size: 9px;
+  }
+  .content {
+    padding: 28px 24px;
+  }
+  .brand {
+    margin-bottom: 24px;
+  }
+  .actions > a {
+    flex: 1 1 180px;
+  }
+}

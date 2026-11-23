@@ -1,6 +1,46 @@
 import { displayText } from '../common/i18n/language';
 import type { MasterDataRecord, MasterDataResource } from '@nora/contracts';
 import { strToU8, zipSync } from 'fflate';
+import { HOTEL_IMPORT_HEADERS } from './hotel-import.parser';
+
+function hotelImportValues(record: MasterDataRecord): readonly unknown[] {
+  const a = record.attributes;
+  const pipes = (value: unknown) =>
+    String(value ?? '')
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean)
+      .join('|');
+  const primary = (ids: unknown, values: unknown, selected: unknown) => {
+    const keys = String(ids ?? '').split(',');
+    const labels = String(values ?? '').split(',');
+    const index = keys.indexOf(String(selected ?? ''));
+    return labels[index >= 0 ? index : 0]?.trim() ?? '';
+  };
+  return [
+    record.code,
+    a.englishName || record.name,
+    a.sourceDestination || a.cityName,
+    a.cityName,
+    a.address,
+    a.starRating,
+    a.serviceLevel,
+    primary(a.mealServiceIds, a.mealServiceCodes, a.mealServiceId),
+    primary(a.roomTypeIds, a.roomTypeNames, a.defaultRoomTypeId),
+    pipes(a.facilityNames),
+    a.description,
+    a.sourceRefundRules,
+    a.hotelRules,
+    a.sourceMainImage,
+    a.sourceGalleryImages,
+    record.status === 'active' ? 'منتشرشده' : 'پیش‌نویس',
+    a.sourceFeatured === true ? 'بله' : 'خیر',
+    a.internalNote,
+    a.website,
+    typeof a.freeSale === 'boolean' ? (a.freeSale ? 'بله' : 'خیر') : '',
+    record.name,
+  ];
+}
 
 export const MASTER_DATA_XLSX_MIME =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -257,14 +297,18 @@ export function buildMasterDataXlsx(input: {
     hourCycle: 'h23',
     timeZone: input.timezone,
   });
-  const header = input.columns
+  const hotelTemplate = input.resource === 'hotels';
+  const columns = hotelTemplate ? HOTEL_IMPORT_HEADERS : input.columns;
+  const header = columns
     .map((column, index) =>
       cell(
         `${columnName(index)}1`,
-        displayText(
-          columnLabels[column] ?? column,
-          input.locale === 'en-US' ? 'en' : 'fa',
-        ),
+        hotelTemplate
+          ? column
+          : displayText(
+              columnLabels[column] ?? column,
+              input.locale === 'en-US' ? 'en' : 'fa',
+            ),
         1,
       ),
     )
@@ -272,30 +316,33 @@ export function buildMasterDataXlsx(input: {
   const dataRows = input.records
     .map((record, rowIndex) => {
       const rowNumber = rowIndex + 2;
-      const cells = input.columns
+      const hotelValues = hotelTemplate ? hotelImportValues(record) : [];
+      const cells = columns
         .map((column, columnIndex) =>
           cell(
             `${columnName(columnIndex)}${rowNumber}`,
-            input.locale === 'en-US' &&
-              ['status', 'transportStatus'].includes(column)
-              ? displayText(
-                  String(recordValue(record, column, formatter)),
-                  'en',
-                )
-              : recordValue(record, column, formatter),
+            hotelTemplate
+              ? hotelValues[columnIndex]
+              : input.locale === 'en-US' &&
+                  ['status', 'transportStatus'].includes(column)
+                ? displayText(
+                    String(recordValue(record, column, formatter)),
+                    'en',
+                  )
+                : recordValue(record, column, formatter),
           ),
         )
         .join('');
       return `<row r="${rowNumber}">${cells}</row>`;
     })
     .join('');
-  const lastColumn = columnName(Math.max(0, input.columns.length - 1));
+  const lastColumn = columnName(Math.max(0, columns.length - 1));
   const lastRow = Math.max(1, input.records.length + 1);
   const range = `A1:${lastColumn}${lastRow}`;
   const worksheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <sheetViews><sheetView workbookViewId="0" rightToLeft="${input.locale === 'en-US' ? '0' : '1'}"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
   <dimension ref="${range}"/>
+  <sheetViews><sheetView workbookViewId="0" rightToLeft="${!hotelTemplate && input.locale === 'en-US' ? '0' : '1'}"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
   <sheetData><row r="1">${header}</row>${dataRows}</sheetData>
   <autoFilter ref="${range}"/>
 </worksheet>`;
@@ -321,6 +368,31 @@ export function buildMasterDataXlsx(input: {
     'xl/worksheets/sheet1.xml': worksheet,
     'xl/styles.xml': styles,
   };
+  if (hotelTemplate) {
+    files['xl/workbook.xml'] = workbook.replace(
+      /<sheets>[\s\S]*?<\/sheets>/,
+      '<sheets><sheet name="Hotels" sheetId="1" r:id="rId1"/><sheet name="راهنما" sheetId="2" r:id="rId3"/></sheets>',
+    );
+    files['xl/_rels/workbook.xml.rels'] = files[
+      'xl/_rels/workbook.xml.rels'
+    ].replace(
+      '</Relationships>',
+      '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/></Relationships>',
+    );
+    files['[Content_Types].xml'] = files['[Content_Types].xml'].replace(
+      '</Types>',
+      '<Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>',
+    );
+    Object.assign(files, {
+      'xl/worksheets/sheet2.xml':
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1">' +
+        cell(
+          'A1',
+          'هر هتل یک ردیف؛ شناسه هتل ثابت و یکتا باشد. ستون‌های چندمقداری را با | جدا کنید.',
+        ) +
+        '</row></sheetData></worksheet>',
+    });
+  }
   return zipSync(
     Object.fromEntries(
       Object.entries(files).map(([name, content]) => [name, strToU8(content)]),

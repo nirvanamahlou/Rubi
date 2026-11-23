@@ -153,7 +153,10 @@ describe('accommodation workspace', () => {
     ]);
     expect((mealsCells.match(/<td\b/g) ?? []).length + 3).toBe(headers.length);
     expect(sharedRowPrefix.match(/<td\b/g)).toHaveLength(1);
-    expect(sharedRowPrefix).toContain('{record.code}');
+    expect(sharedRowPrefix).toContain(': record.code}');
+    expect(sharedRowPrefix).toContain(
+      "attribute(record, 'identificationCode')",
+    );
     expect(mealsCells).not.toContain('record.code');
     expect(headers.filter((header) => header === 'کد سرویس')).toHaveLength(1);
   });
@@ -237,7 +240,7 @@ describe('accommodation workspace', () => {
     expect(source).toContain('<MasterDataKpiGrid');
     expect(source).toContain("attribute(record, 'memberHotels', '[]')");
     expect(source).not.toContain('— · Procurement');
-    expect(source).toContain('در انتظار اتصال Documents');
+    expect(source).toContain('<HotelImageStrip');
     expect(source).not.toContain('هتل اسپیناس پالاس');
     expect(source).not.toContain('CTR-881');
   });

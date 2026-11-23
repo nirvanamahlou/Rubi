@@ -1,3 +1,5 @@
+import { WebsiteCheckoutHoldsService } from '../site-commerce/website-checkout-holds.service';
+import { WebsiteCheckoutHoldsController } from '../site-commerce/website-checkout-holds.controller';
 import { SalesDocumentBrandingController } from './sales-document-branding.controller';
 import { SiteCommerceController } from '../site-commerce/site-commerce.controller';
 import { WebsiteCatalogDispatcher } from '../site-commerce/catalog-dispatcher';
@@ -26,6 +28,7 @@ import { FinanceTicketCostModule } from '../finance/finance-ticket-cost.module';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import { Module } from '@nestjs/common';
 import { SalesReferencesController } from './sales-references.controller';
+import { MasterDataLogoModule } from '../master-data/master-data-logo.module';
 import { MasterDataModule } from '../master-data/master-data.module';
 
 import { CustomersModule } from '../customers/customers.module';
@@ -57,6 +60,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
     PassengerCorrectionModule,
     FinanceTicketCostModule,
     MasterDataModule,
+    MasterDataLogoModule,
     IamModule,
     LegalEntitiesModule,
     CustomersModule,
@@ -65,6 +69,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
   ],
   controllers: [
     SiteCommerceController,
+    WebsiteCheckoutHoldsController,
     SalesDocumentBrandingController,
     SalesInsuranceDocumentsController,
     SalesPurchaseDraftController,
@@ -79,6 +84,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
   providers: [
     WebsiteCatalogDispatcher,
     SiteCommerceService,
+    WebsiteCheckoutHoldsService,
     SiteCommerceWriteGuard,
     SalesFloatingPurchases,
     FlightLoadService,

@@ -2368,7 +2368,9 @@ export function canViewScreen(
   if (permissions.includes(MANUAL_ACCESS_VERSION))
     return (
       USER_ACCESS_SCREENS.some((screen) => screen.id === id) &&
-      permissions.includes(screenPermission(id)) &&
+      (permissions.includes(screenPermission(id)) ||
+        (id === 'sales.pricing.floating' &&
+          canViewScreen(permissions, 'sales.pricing.management'))) &&
       !permissions.includes(denyPermission(id))
     );
   if (id === 'assistant.executive') return true;

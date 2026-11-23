@@ -51,24 +51,28 @@ const snapshot: ExecutiveSnapshot = {
   },
 };
 describe('executive reference coverage and evidence states', () => {
-  it('keeps prepared requests in the compact chat without manual filters', () => {
-    const html = renderToStaticMarkup(
-      <LegalEntityProvider>
-        <AssistantComposer t={(text) => text[0]} denied={false} floating />
-      </LegalEntityProvider>,
-    );
-    for (const label of [
-      assistantCopy.quickDaily,
-      assistantCopy.quickSales,
-      assistantCopy.quickReceivables,
-    ]) {
-      expect(html).toContain(label[0]);
-    }
-    expect(html).toContain('tabindex="0"');
-    expect(html).not.toContain('type="date"');
-    expect(html).not.toContain('<select');
-    expect(html).not.toContain('<h1');
-  });
+  it.each([true, false])(
+    'removes quick actions from the chat (floating: %s)',
+    (floating) => {
+      const html = renderToStaticMarkup(
+        <LegalEntityProvider>
+          <AssistantComposer
+            t={(text) => text[0]}
+            denied={false}
+            floating={floating}
+          />
+        </LegalEntityProvider>,
+      );
+      for (const label of ['خلاصه امروز', 'تحلیل فروش', 'پیگیری مطالبات']) {
+        expect(html).not.toContain(label);
+      }
+      expect(html).toContain(assistantCopy.send[0]);
+      expect(html).toContain('tabindex="0"');
+      expect(html).not.toContain('type="date"');
+      expect(html).not.toContain('<select');
+      if (floating) expect(html).not.toContain('<h1');
+    },
+  );
   it('loads the shared workspace for an ordinary authenticated profile and denies a missing identity', () => {
     const ordinary = renderToStaticMarkup(
       <AccessPermissionsProvider value={[]}>

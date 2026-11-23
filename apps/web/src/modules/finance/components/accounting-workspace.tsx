@@ -26,6 +26,11 @@ import { useAccessPermissions } from '@/modules/iam/access-context';
 import { journalDisplayTotals } from '../accounting-money';
 import { accountingApi } from '../api/accounting-api';
 import { AccountingReportWorkspace } from './accounting-report-workspace';
+import { AccountingAccountBrowser } from './accounting-account-browser';
+
+import { SeasonalReportWorkspace } from './seasonal-report-workspace';
+import { TreasuryDefinitionWorkspace } from './treasury-definition-workspace';
+import { treasuryDefinitions } from '@nora/contracts';
 import {
   AccountingSetupNotes,
   parseSetupNotes,
@@ -41,6 +46,7 @@ import { AccountingAccountGroups } from './accounting-account-groups';
 import { AccountingSubsidiaryMapping } from './accounting-subsidiary-mapping';
 import { AccountingLedgerEditor } from './accounting-ledger-editor';
 import { AccountingFiscalDefault } from './accounting-fiscal-default';
+import { AccountingFiscalYearList } from './accounting-fiscal-year-list';
 import { AccountingBaseList } from './accounting-base-list';
 import { AccountingDefinitionToolbar } from './accounting-definition-toolbar';
 import {
@@ -49,7 +55,6 @@ import {
   accountingSaveDisposition,
 } from './accounting-operations';
 import { exportAccountingView } from '../accounting-view-export';
-import type { AccountingListKind } from '../accounting-list-filters';
 import { AccountingAdvancedWorkspace } from './accounting-advanced-workspace';
 import { AccountingSourceWorkspace } from './accounting-source-workspace';
 import { AccountingYearEndWorkspace } from './accounting-year-end-workspace';
@@ -255,6 +260,12 @@ const cell = 'border-t border-border px-3 py-3';
 export function AccountingWorkspace({ pathname }: { pathname: string }) {
   const viewRef = useRef<HTMLDivElement>(null);
   const params = useSearchParams();
+  if (
+    pathname ===
+    '/finance/accounting/general-ledger/base-information/lists/fiscal-years'
+  )
+    return <AccountingFiscalYearList />;
+
   return (
     <AccountingOperations
       key={`${pathname}:${params.get('bookId') ?? ''}:${params.get('new') ?? ''}:${params.get('recordId') ?? ''}`}
@@ -425,10 +436,42 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
       value: r.id,
       label: `${r.code ? `${r.code} — ` : ''}${r.title}`,
     }));
+  const treasury = treasuryDefinitions.find(
+    (d) => 'receipts-payments/' + d.path === section,
+  );
   let content: ReactNode = null;
   if (!home && !sections.some(([route]) => route === section))
     content = <AccountingUnknownRoute route={section} />;
-  else if (booksQuery.isPending || (!!bookId && snapshotQuery.isPending))
+  else if (
+    treasury &&
+    (snapshot || ['banks', 'bank-branches'].includes(treasury.kind))
+  )
+    content = (
+      <TreasuryDefinitionWorkspace
+        key={bookId + section}
+        definition={treasury}
+        book={snapshot}
+        run={run}
+        busy={busy}
+      />
+    );
+  else if (
+    snapshot &&
+    section === 'tax-accounting/vat/quarterly-sales-report'
+  ) {
+    const period = fiscal?.period ?? snapshot.periods[0];
+    content = period ? (
+      <SeasonalReportWorkspace
+        key={bookId + period.id}
+        bookId={bookId}
+        period={period}
+        canManage={can('finance.account.manage')}
+        canFinalize={can('finance.export')}
+      />
+    ) : (
+      <p>دوره مالی گزارش را انتخاب کنید.</p>
+    );
+  } else if (booksQuery.isPending || (!!bookId && snapshotQuery.isPending))
     content = <p role="status">در حال دریافت دفترهای حسابداری…</p>;
   else if (booksQuery.isError || snapshotQuery.isError)
     content = (
@@ -550,6 +593,7 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   else if (snapshot && accountingCompletionRoute(section))
     content = (
       <AccountingCompletionWorkspace
+        canManage={can('finance.account.manage')}
         key={bookId + section}
         book={snapshot}
         route={section}
@@ -802,13 +846,14 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   } else if (
     snapshot &&
     (section === 'general-ledger/reports/legal-reports/lists/standards' ||
-      ['fiscal-years', 'ledgers', 'voucher-types'].some(
-        (kind) => section === `general-ledger/base-information/lists/${kind}`,
-      ))
+      section === 'general-ledger/base-information/lists/ledgers' ||
+      section === 'general-ledger/base-information/lists/voucher-types')
   ) {
-    const kind: AccountingListKind = section.endsWith('/lists/standards')
+    const kind = section.endsWith('/lists/standards')
       ? 'coding-standards'
-      : (section.split('/').at(-1) as AccountingListKind);
+      : section.endsWith('/lists/ledgers')
+        ? 'ledgers'
+        : 'voucher-types';
     content = (
       <AccountingBaseList
         key={`${bookId}:${kind}`}
@@ -936,16 +981,18 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
         }
       />
     );
-  else if (
-    snapshot &&
-    (section === 'general-ledger/reports/trial-balance' ||
-      section === 'general-ledger/reports/account-browser')
-  )
+  else if (snapshot && section === 'general-ledger/reports/account-browser')
+    content = (
+      <AccountingAccountBrowser
+        key={bookId + (fiscal?.period?.id ?? '')}
+        book={snapshot}
+      />
+    );
+  else if (snapshot && section === 'general-ledger/reports/trial-balance')
     content = (
       <AccountingReportWorkspace
-        key={bookId + section}
+        key={bookId + (fiscal?.period?.id ?? '')}
         book={snapshot}
-        turnoverMode={section.endsWith('/account-browser')}
       />
     );
   else if (
@@ -960,6 +1007,7 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
     content = (
       <AccountingYearEndWorkspace
         book={snapshot}
+        periodId={fiscal?.period?.id ?? snapshot.periods[0]?.id}
         run={run}
         busy={busy}
         mode={

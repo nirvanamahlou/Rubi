@@ -2,11 +2,17 @@
 export const accountingFiscalMetadataActions = new Set([
   'save-book',
   'save-configuration',
+  'save-treasury-instrument',
+  'save-beneficiary',
+  'tax-reference-import',
+  'tax-map-save',
   'save-period',
   'delete-period',
   'set-default-period',
   'save-account',
   'save-detail',
+  'save-detail-owner',
+  'setup-finance-coding-types',
   'save-account-group',
   'save-detail-group',
   'save-template',
@@ -32,12 +38,17 @@ export function fiscalYearIndependentRequest(
   if (
     method === 'GET' &&
     (/^\/finance\/source-contracts\/[^/]+\/read$/.test(path) ||
-      /^\/finance\/accounting\/books\/[^/]+\/journals\/[^/]+\/read$/.test(path))
+      /^\/finance\/accounting\/books\/[^/]+\/journals\/[^/]+\/read$/.test(
+        path,
+      ) ||
+      /^\/finance\/accounting\/books\/[^/]+\/detail-code-suggestion$/.test(
+        path,
+      ))
   )
     return true;
   if (action && accountingFiscalMetadataActions.has(action)) return true;
   if (
-    /^\/finance\/accounting\/books\/[^/]+\/reports\/analytical\/standard-mapping$/.test(
+    /^\/finance\/accounting\/books\/[^/]+\/reports\/analytical\/(?:standard-mapping|treasury-instruments|beneficiaries|tax-mapping|detail-owners)$/.test(
       path,
     ) &&
     method === 'GET'

@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDatabaseClient, type DatabaseClient } from '@nora/database';
-import type { AuthenticatedActor } from '@nora/contracts';
+import { FinanceFiscalStorage } from '../src/finance/fiscal-context/finance-fiscal-storage';
+import { fundBroker } from '../src/finance/payments/broker-transfer';
+import type {
+  AuthenticatedActor,
+  FinanceFiscalRequestV1,
+} from '@nora/contracts';
 import { ExchangeOfficeService } from '../src/finance/exchange-offices/exchange-office.service';
 import { MasterProcurementDirectory } from '../src/master-data/master-procurement-directory';
 import { FinanceTicketCostService } from '../src/finance/ticket-cost/finance-ticket-cost.service';
@@ -14,7 +19,12 @@ describe.skipIf(!enabled)(
       offices: ExchangeOfficeService,
       tickets: FinanceTicketCostService,
       actor: AuthenticatedActor,
-      methodId: string;
+      methodId: string,
+      brokerId: string,
+      receiptTypeId: string,
+      scope: FinanceFiscalRequestV1;
+    const scoped = <T>(work: () => Promise<T>) =>
+      new FinanceFiscalStorage().run(scope, work);
     beforeAll(async () => {
       const url = new URL(process.env.DATABASE_URL ?? '');
       if (
@@ -76,6 +86,74 @@ describe.skipIf(!enabled)(
         },
       });
       methodId = method.id;
+      const book = await db.accountingBook.create({
+        data: {
+          branchId: branch.id,
+          code: 'EX',
+          title: 'Exchange test book',
+          baseCurrency: 'IRR',
+        },
+      });
+      const year = await db.accountingConfiguration.create({
+        data: {
+          bookId: book.id,
+          kind: 'fiscal-years',
+          code: '2026',
+          title: '2026',
+          attributes: {},
+        },
+      });
+      const period = await db.accountingPeriod.create({
+        data: {
+          bookId: book.id,
+          fiscalYearId: year.id,
+          isDefault: true,
+          startDate: '2026-01-01',
+          endDate: '2026-12-31',
+        },
+      });
+      if (period.status !== 'OPEN')
+        throw new Error('Expected an open test period');
+      const selection: NonNullable<FinanceFiscalRequestV1['period']> = {
+        ...period,
+        status: period.status,
+        yearActive: true,
+        code: year.code,
+        title: year.title,
+      };
+      scope = {
+        actorId: user.id,
+        issuerCompanyId: null,
+        company: null,
+        companySelection: branch.id,
+        isAggregate: false,
+        bookId: book.id,
+        bookVersion: book.version,
+        defaultPeriodId: period.id,
+        periods: [selection],
+        period: selection,
+        mode: 'default',
+      };
+      brokerId = (
+        await db.masterBroker.create({
+          data: {
+            code: randomUUID().slice(0, 16),
+            name: 'Test broker',
+            createdByUserId: user.id,
+            updatedByUserId: user.id,
+          },
+        })
+      ).id;
+      receiptTypeId = (
+        await db.documentType.create({
+          data: {
+            code: randomUUID(),
+            domain: 'FINANCE',
+            name: 'Test broker receipt',
+            allowedMimeTypes: ['application/pdf'],
+          },
+        })
+      ).id;
     }, 30000);
     afterAll(async () => {
       await db?.$disconnect();
@@ -139,6 +217,59 @@ describe.skipIf(!enabled)(
         },
       };
     }
+    type TicketPurchase = Awaited<ReturnType<typeof purchase>>;
+    function dispatch(p: TicketPurchase, id = randomUUID()) {
+      return scoped(() =>
+        db.$transaction((tx) =>
+          fundBroker(tx, actor, {
+            id,
+            brokerId,
+            kind: 'TICKET',
+            sourceId: p.command.costRevisionId,
+            officeId: p.command.exchangeOfficeId,
+            amount: p.command.paidAmount,
+            rate: p.command.exchangeRateToIrr,
+            sentAt: p.command.transferAt,
+          }),
+        ),
+      );
+    }
+    async function receipt(transferId: string) {
+      const doc = await db.document.create({
+        data: {
+          title: 'Test broker receipt',
+          documentTypeId: receiptTypeId,
+          branchId: actor.branchIds[0]!,
+          ownerUserId: actor.userId,
+          createdByUserId: actor.userId,
+          updatedByUserId: actor.userId,
+          sourceModule: 'FINANCE',
+          sourceEntityType: 'FinanceBrokerTransfer',
+          sourceEntityId: transferId,
+        },
+      });
+      const version = await db.documentVersion.create({
+        data: {
+          documentId: doc.id,
+          versionNumber: 1,
+          storageObjectKey: randomUUID(),
+          originalFileName: 'receipt.pdf',
+          safeDownloadName: 'receipt.pdf',
+          detectedMimeType: 'application/pdf',
+          extension: 'pdf',
+          versionNote: 'Test receipt',
+          sizeBytes: 100n,
+          sha256: randomUUID().replaceAll('-', '').repeat(2),
+          scanStatus: 'CLEAN',
+          createdByUserId: actor.userId,
+        },
+      });
+      await db.document.update({
+        where: { id: doc.id },
+        data: { currentVersionId: version.id, currentVersionNumber: 1 },
+      });
+      return doc.id;
+    }
     async function balance(id: string, currencyCode = 'USD') {
       return (
         await db.financeExchangeBalance.findUniqueOrThrow({
@@ -195,15 +326,36 @@ describe.skipIf(!enabled)(
     it('debits exactly once on concurrent replay and preserves the other currency, with real payment linkage', async () => {
       const row = await office();
       const p = await purchase(row.id);
+      await expect(
+        scoped(() => tickets.recordPayment(p.requestId, p.command, actor)),
+      ).rejects.toThrow('رسید کارگزار');
+      const transferId = randomUUID();
+      await Promise.all([dispatch(p, transferId), dispatch(p, transferId)]);
+      expect(await balance(row.id)).toBe('60');
+      expect(
+        await db.financeTicketPurchasePaymentRevision.count({
+          where: { costRevisionId: p.command.costRevisionId },
+        }),
+      ).toBe(0);
+      const command = {
+        ...p.command,
+        brokerTransferId: transferId,
+        brokerReceiptId: await receipt(transferId),
+      };
       const payments = await Promise.all([
-        tickets.recordPayment(p.requestId, p.command, actor),
-        tickets.recordPayment(p.requestId, p.command, actor),
+        scoped(() => tickets.recordPayment(p.requestId, command, actor)),
+        scoped(() => tickets.recordPayment(p.requestId, command, actor)),
       ]);
+      expect(
+        await db.financeTicketPurchasePaymentRevision.findUniqueOrThrow({
+          where: { id: payments[0]!.id },
+        }),
+      ).toMatchObject({ brokerTransferId: transferId });
       expect(payments[0]).toEqual(payments[1]);
       expect(await balance(row.id)).toBe('60');
       expect(await balance(row.id, 'EUR')).toBe('200');
       const movement = await db.financeExchangeMovement.findUniqueOrThrow({
-        where: { ticketPaymentId: payments[0]!.id },
+        where: { brokerTransferId: transferId },
         include: { balance: true },
       });
       expect(movement.delta.toString()).toBe('-40');
@@ -222,7 +374,7 @@ describe.skipIf(!enabled)(
       await expect(
         tickets.recordPayment(
           p.requestId,
-          { ...p.command, exchangeOfficeId: (await office()).id },
+          { ...command, exchangeOfficeId: (await office()).id },
           actor,
         ),
       ).rejects.toThrow();
@@ -230,9 +382,7 @@ describe.skipIf(!enabled)(
     it('rejects insufficient funds and races without leaving a payment or negative balance', async () => {
       const row = await office('60');
       const excessive = await purchase(row.id, '80');
-      await expect(
-        tickets.recordPayment(excessive.requestId, excessive.command, actor),
-      ).rejects.toThrow('کافی');
+      await expect(dispatch(excessive)).rejects.toThrow('کافی');
       expect(
         await db.financeTicketPurchasePaymentRevision.count({
           where: { costRevisionId: excessive.command.costRevisionId },
@@ -241,16 +391,19 @@ describe.skipIf(!enabled)(
       expect(await balance(row.id)).toBe('60');
       const a = await purchase(row.id),
         b = await purchase(row.id);
-      const results = await Promise.allSettled([
-        tickets.recordPayment(a.requestId, a.command, actor),
-        tickets.recordPayment(b.requestId, b.command, actor),
-      ]);
+      const results = await Promise.allSettled([dispatch(a), dispatch(b)]);
       expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
       expect(await balance(row.id)).toBe('20');
     });
-    it('rolls back the debit if a later financial event fails', async () => {
+    it('keeps a funded transfer open and rolls back receipt confirmation if the accounting event fails', async () => {
       const row = await office();
       const p = await purchase(row.id);
+      const advance = await dispatch(p);
+      const command = {
+        ...p.command,
+        brokerTransferId: advance.id,
+        brokerReceiptId: await receipt(advance.id),
+      };
       const broken = db.$extends({
         query: {
           financeAccountingEvent: {
@@ -267,9 +420,16 @@ describe.skipIf(!enabled)(
         new MasterProcurementDirectory(holder),
       );
       await expect(
-        service.recordPayment(p.requestId, p.command, actor),
-      ).rejects.toThrow();
-      expect(await balance(row.id)).toBe('100');
+        scoped(() => service.recordPayment(p.requestId, command, actor)),
+      ).rejects.toThrow('Synthetic event failure');
+      expect(await balance(row.id)).toBe('60');
+      expect(
+        (
+          await db.financeBrokerTransfer.findUniqueOrThrow({
+            where: { id: advance.id },
+          })
+        ).receiptId,
+      ).toBeNull();
       expect(
         await db.financeTicketPurchasePaymentRevision.count({
           where: { costRevisionId: p.command.costRevisionId },
@@ -277,9 +437,9 @@ describe.skipIf(!enabled)(
       ).toBe(0);
       expect(
         await db.financeExchangeMovement.count({
-          where: { balance: { officeId: row.id }, kind: 'PAYMENT' },
+          where: { brokerTransferId: advance.id },
         }),
-      ).toBe(0);
+      ).toBe(1);
     });
     it('keeps exact currency totals, filters offices and records audited manual corrections', async () => {
       const title = randomUUID();

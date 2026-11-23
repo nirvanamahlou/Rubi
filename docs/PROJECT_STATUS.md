@@ -1,10 +1,215 @@
+## Nora composite guide pilot
+
+PC-C added the Sales pre-send checklist and ordered leave request and follow-up guidance using the approved guide index. The authenticated checklist selector honors the server flag `ASSISTANT_GUIDE_RAG_ENABLED` and the established model transport. It uses only Sales guide excerpts and falls back to the approved steps. Owner approved transfer of the question and approved excerpts for this scope. Three synthetic pre-send variants passed mandatory-step validation against the configured Germany model. The model returned 9, 12 and 9 of 16 canonical steps with 820/122, 816/236 and 818/161 input/output tokens and 1153, 1358 and 1517 ms provider-path latency. Both direct and model paths provided the required next actions with one exchange in these cases. Keep the production flag disabled under the pilot rollout criterion. The leave workflow and simple questions stay direct.
+
+## NORA-INTERNAL-SOURCES-ONLY-1123 — PC-C
+
+Nora serves local internal procedures and verified ERP evidence. Unsupported model prose is replaced by a fixed request for scope in both conversation versions.
+
+## NORA-TRAVEL-DOCUMENT-GUIDANCE-1123 — PC-C
+
+Nora routes procedural ticket and hotel voucher questions to the linked internal Sales guide, even after a report answer. The guide uses the approved Reservations and Finance delivery workflow.
+
+## NORA-CALENDAR-1122 — PC-C
+
+Resolve ordinary Persian sales comparisons on the server using Tehran calendar boundaries and verified Sales evidence. Keep the existing completed-day report limit. Local synthetic acceptance only.
+
+
+## NORA-REMAINING-GUIDE-DOCS-1122 — PC-C
+
+All 109 remaining guide topics across eight domains use linked Markdown. Round-trip structural checks preserve the original instructional copy and resolver data. Authenticated loopback browser acceptance verified an answer, the chat panel destination, exact document heading and fragment, and navigation from the document into each panel.
+
+| Domain | Verified topic |
+| --- | --- |
+| B2B | Agency registration |
+| Tours | Create a tour |
+| Flight pricing | Tier pricing |
+| Reservation reports | Build a report |
+| Finance delivery | Issue a delivery permit |
+| Master Data | Currency reference and Finance section |
+| Service purchases | Save hotel service purchases |
+| Documents | Upload a file |
+
+The browser used a synthetic native IAM account and an isolated database. No contracts, requests, uploads or financial actions were submitted. No production deployment or RAG activation.
+
+## NORA-B2C-GUIDE-DOCS-1122 — PC-C
+
+All 12 B2C topics are generated from linked Markdown. Previous topic content matches develop. Authenticated browser testing verified the registration answer, exact guide anchor and navigation to Customers. Explicit individual-customer guidance resolves from other panels.
+
+## NORA-CALL-CENTER-GUIDE-DOCS-1122 — PC-C
+
+The 22 Call Center topics now use linked Markdown as their source. The generated catalogue retains the original topic IDs, text and panel destinations. Nora links to the corresponding section. The Call Center panel and record reader are unchanged. Authenticated browser testing confirmed the answer, the exact guide anchor, related sections and navigation to the Call Center panel. Structural comparison preserved all 22 original topic payloads.
+
+## NORA-GUIDE-DOCS-1122 — PC-C
+
+Contract and Workbench guide content moved into versioned Markdown and deterministic generated catalogues. The chat uses local replies for migrated topics, with a protected guide route and links to owning panels. Record readers and Call Center UI are preserved. RAG is disabled. Authenticated local browser acceptance passed with a synthetic IAM account and isolated database. The contract and hourly leave replies linked to the correct document sections and panels. The combined leave reply was retested after removing duplicate approval text.
+
+## 2026-11-22 — DETAIL-CODE-SUGGESTIONS-1122 — PC-D
+
+When defining personnel, corporate customer and individual customer details, Accounting suggests the first unused code across all ledgers and accepts a valid manual code on creation. Preview is read-only. The save transaction validates the eight-digit type series and prevents duplicate issuance. PostgreSQL coverage verifies cross-ledger contention, legacy occupancy and manual gaps. See [FIN-CODING-001](tasks/FIN-CODING-001.md).
+
+## 2026-11-22 — FISCAL-YEAR-LIST-1122 — PC-D
+
+The Accounting fiscal-year list is a read-only view of the selected company’s ledger allocations. It shows allocated years and dates through the authorized Accounting snapshot, keeps the company default as a label, and excludes definitions without an allocation. The missing-year prompt directs users to general ledger setup.
+
+## 2026-11-21 — ORGANIZATION-DETAIL-TITLE-1121 — PC-D
+
+The corporate customer title picker opens the existing company form and lists active organization customers for the ledger branch. Save and select links the Customer profile to the eight-digit series-three detail. Web regressions and an isolated PostgreSQL round trip cover the picker action, the native company profile and branch and kind validation. No schema change.
+
+## 2026-11-22 — PERSONNEL-DETAIL-TITLES-1122 — PC-D
+
+The personnel detail title picker supports manual person and site references, with a fixed site position. Accounting validates and persists the reference in the selected ledger and retains series-two accounting detail numbering.
+
+## 2026-11-21 — CUSTOMER-DETAIL-TITLE-1121 — PC-D
+
+Added the compact individual customer title form and linked the native person Customer record to Accounting details in series four. The existing Customer API and eight-digit allocator are reused. See [CUSTOMER-DETAIL-TITLE-1121](tasks/CUSTOMER-DETAIL-TITLE-1121.md).
+
+## 2026-11-21 — GHESTIROO-FLIGHT-PRODUCER-1121 — PC-D
+
+Independent Ghestiroo ticket delivery and draft service-account setup reuse the
+Site Commerce v1 contract. See [the operator and deployment notes](tasks/GHESTIROO-FLIGHT-PRODUCER-1121.md).
+
+## 2026-11-21 — COUNTRY-FLAG-TRANSLATION-1121 — PC-D
+
+Added the missing English label for the country flag in Master Data.
+
+## 2026-11-21 — BANK-REFERENCE-PICKERS-1121 — PC-D
+
+Completed the bank branch, bank account type and Rial pickers in the Accounting bank account form. The new native branch fields use an additive migration. See [BANK-REFERENCE-PICKERS-1121](tasks/BANK-REFERENCE-PICKERS-1121.md).
+
+## 2026-11-21 — BANK-DETAIL-TITLE-1121 — PC-D
+
+Connected the bank-account detail title to native bank and company bank-account forms, including in-place legacy account completion, bank institution types, scoped account references and cheque signers. The additive migration was rehearsed on disposable data. See [BANK-DETAIL-TITLE-1121](tasks/BANK-DETAIL-TITLE-1121.md).
+
+## 2026-11-21 — FIN-CODING-001 — PC-D
+
+Added four fixed Accounting detail type definitions and global eight-digit issuance through existing System Management numbering. Existing ledgers add missing definitions from the native type screen. New ledgers receive them at creation. Existing business codes and financial records are preserved. No migration or live deployment. See [FIN-CODING-001](tasks/FIN-CODING-001.md).
+
+## راهنمای گزارش رزرواسیون در نورا
+
+کاتالوگ گزارش، تاریخ و فیلتر، روش شمارش، ردیف و خروجی را پوشش می‌دهد. پاسخ «همین گزارش» از آخرین خوانش موفق و فیلترهای اعمال‌شده همان پنل ساخته می‌شود. خوانش صریح بازه از API مجاز موجود استفاده می‌کند. گروه‌بندی مسیر شامل ردیف‌های پرواز منطبق است و در پاسخ به صدور، فقط ردیف دارای سند صدور قابل مشاهده شمرده می‌شود. استرداد و ابطال در داده فعلی به‌صورت جداگانه قابل شمارش نیستند. پذیرش مرورگری به نسخه کاندید نیاز دارد.
+
+## 2026-11-18 — Nora final acceptance (PC-C)
+
+Handoff: [draft PR1791](https://github.com/nirvanamahlou/Rubi/pull/1791), code36c7e8f66. Live matrix BLOCKED_PROVIDER_QUOTA; idle runner/helper stopped, cases1–2 receipts verified intact.242 owned fixture databases/roles cleaned; no operational mutation or candidate activation.
+
+Latest fetched develop48d72de41 and the other computer's published Nora work are preserved. The final release receipt at74dec8a71 supersedes the older pending PR1787 statements below: Sales evidence correction is merged, activated and authenticated-browser accepted; PR1785 quota-group hardening is also merged. Independent30-case acceptance has uncovered and corrected citation transcription, schema/FK discovery, calculation formatting, relay connection reuse and quota/resume defects.195 current service regressions,73 SQL/access/PostgreSQL tests, API typecheck/build and scoped lint pass. Full final-source acceptance remains incomplete: cases1–2 pass; subsequent execution waits for provider-confirmed daily TPD capacity on the existing six-key pool. Owner has no additional key. No migration, merge or production activation in this unit. Current source fingerprint, evidence and remaining gate: [NORA-FINAL-ACCEPTANCE-1118](tasks/NORA-FINAL-ACCEPTANCE-1118.md).
+
+## 2026-11-18 — ACCOUNT-DETAIL-LEVELS-1118 — PC-D
+
+Subsidiary account forms expose levels 4–8 by default and add one account-local level at a time up to 12. Independent type selections persist on the account. Additional detail references flow through journal entry, posting, reports, templates and subsidiary mappings. A real PostgreSQL regression posts and reports a level-7 detail with level 6 empty. The full scoped results are in [ACCOUNT-DETAIL-LEVELS-1118](tasks/ACCOUNT-DETAIL-LEVELS-1118.md).
+
+## DETAIL-OWNER-FORMS-1117 — PC-D — IMPLEMENTED
+
+Eight predefined typed detail title lookups and create/edit dialogs, seven-digit defaults for newly introduced types, native fiscal year/bank/cash references, and additive restrictive links. Existing definitions, contract numbers and party codes are preserved. Validation and rollout: [detail owner forms](tasks/DETAIL-OWNER-FORMS-1117.md). Not deployed.
+
+## 2026-11-17 — Nora Sales evidence correction (PC-C)
+
+NORA-SALES-EVIDENCE-1117: reproduced Persian calendar/Tehran-boundary and contract-currency row-count defects. Added deterministic period resolution, same-snapshot authorized reconciliation and typed financial fact binding with model-chosen layout.180 service tests pass; real Groq/Germany plus native-session-scoped PostgreSQL passes in three model calls and two reads, matching independent count/currency oracles. No migration or operational writes. Exact-head CI, Nora-only activation and authenticated browser acceptance remain pending. See [task](tasks/NORA-SALES-EVIDENCE-1117.md).
+## PASSENGER-IDENTITY-PREFLIGHT-1117 — PC-A — VALIDATING
+
+Read-only ERP identity preflight before website review/payment, safe inline passenger errors, and payment-start recheck added. Existing same-national-ID profile sync and passport uniqueness retained. Synthetic tests pass; final build/PR/release gates pending. No data migration or payment replay. Order22 remains pending identity correction. See [task](tasks/PASSENGER-IDENTITY-PREFLIGHT-1117.md).
+
+## NORA-GROQ-QUOTA-GROUPS-1117 — PC-C — VALIDATING
+
+Confirmed private configuration used one unverified alias for all six keys; a primary organization429 therefore suppressed unrelated credentials. Owner corrects account provenance. Independent synthetic Germany probes return200 for all six. Replace universal grouping with provisional per-credential groups; provider-confirmed shared organization identities still coalesce through private equality hashes. Safe quota-unit diagnostics added; no ERP permissions/SQL/model/relay changes. Tests/CI and guarded Nora-only rollout remain required. See [task](tasks/NORA-GROQ-QUOTA-GROUPS-1117.md). Earlier same-organization claims were configuration assumptions, not verified provider identities.
+
+## NORA-GROQ-KEY-POOL-1117 — PC-C — RELEASED
+
+PR1778 merged after all nine exact-head CI checks passed. Main Nora now uses six ordered private credentials with shared-organization quota handling.164 service tests pass locally/CI;142 tests pass against the preserved mounted-source container. Real Germany tool calling/guide selection and authenticated ERP chat/hourly-leave guide succeed. Only Nora replaced; private backup/read-only0600 pool and prior single-key rollback retained. No migration or Web/API/database change. Full release evidence is in the [task](tasks/NORA-GROQ-KEY-POOL-1117.md).
+
+Shared process-local Groq transport covers Agent, chat and guide selection with ordered sticky failover, scoped cooldowns, organization-quota protection and single half-open probes. Retries preserve payload/deadline and revalidate native scope; actual model attempts and failed-call allowance remain in the Agent budget. Synthetic integrated tests prove SQL is not replayed and revoked evidence is not resent. Private-file provisioning, exact-head hosted CI and Nora-only rollout/browser gates are complete as recorded above. No schema, migration or public API changes. See [task](tasks/NORA-GROQ-KEY-POOL-1117.md).
+
+## PAYMENT-HOLD-1117 — PC-A — ACTIVE
+
+COMPUTER_ID=PC-A; branch codex/pc-a-payment-hold-1117 from develop979d435ef. User explicitly requests authoritative ten-minute website payment-stage flight holds, shared ERP/site capacity, protected operator roster with buyer name/phone and no paid-without-capacity race. User explicitly chose: payment-uncertain holds remain counted after ten minutes until bank result is known. Prior invoice15minute quote window remains distinct. Main chat owns SiteCommerce paid/controller and Finance settlement; those files are frozen until owner releases. Schema/migration lease: main confirms no schema/migration/dependency work on its branch; reserve sole additive WebsiteCheckoutSession operational lease, TicketOfferCapacityHold fields and nullable post-payment SalesContract relation in schema plus matching non-destructive migration, subject to rechecking other active locks. No dependency changes.
+
+Producer Ticket Catalog: independent WebsiteCheckoutSession (no real ERP customer/contract before bank), nullable post-payment checkout-contract FK, requesterPhone, paymentPendingAt/attempt binding on native capacity holds; active predicate includes bank-uncertain holds; acquire both flight directions atomically under sorted offer row locks; child seats count, infants without seat do not; idempotent replay never extends ten-minute lease. Native reserve converts only the owning contract holds to permanent allocation under the same transaction, without double counting. Protected roster never goes into public website catalog. Consumer SiteCommerce controller/service in separate files after coordination; website payment-page preparation, bank-start pin, durable verify/result transitions. No release from browser navigation/untrusted callback flags; no fake production buyers/orders/payments. Native all-channel inventory predicates/reporting/restore stay consistent. Validated: eight real PostgreSQL18 cases plus twelve policy/proof cases passed; API388, protected rosterAPI5, Web276/i18n, lint/typecheck/Nest/Next builds passed. No production test order/person/payment. Repository CI and guarded deployment pending. No production activation before all gates, migration verification and source/image CAS.
+
+## NORA-PERSIAN-RESPONSE-1117 — PC-C — VALIDATING
+
+Persian public business wording and localized source/date/time labels; safe actual headings/emphasis/lists/tables replace raw Markdown markers.139 service and282 Assistant/i18n checks pass; scoped lint/format pass. Numbers, permissions, evidence, SQL and private runtime configuration unchanged. Clean hosted and live-browser gates remain separate. See [task](tasks/NORA-PERSIAN-RESPONSE-1117.md).
+
+## NORA-CHAT-SCROLL-1117 — PC-C — implemented
+
+Nora immediately displays submitted user messages and one accessible waiting spinner on all async chat paths. Transcript-only scrolling follows new messages while near the bottom; scrolling up reveals a latest-message arrow. Typing the next draft no longer cancels pending work or gets erased on completion. Scope/navigation safeguards and provider history isolation remain. Synthetic browser UI acceptance completed without ERP/Groq access; clean hosted final-head gates still required. No Production, API, migration, permissions or dependency-version changes. See [task](tasks/NORA-CHAT-SCROLL-1117.md).
+## NORA-CHAT-RECOVERY-1117 — PC-C — VALIDATING
+
+Confirmed production Web client uses legacy v2 despite Agent runtime policy; Germany provider/native tool-planning checks succeed. Prepare a current-source Web-only build with explicit public compile flag and fresh-bundle admission. Five guard regressions pass; no data/migration/dependency/assistant/API replacement. Final browser/rollout evidence belongs to the PR release notes. See [task](tasks/NORA-CHAT-RECOVERY-1117.md).
+
+## NORA-LIVE-MATRIX-1116 — PC-C — IN_PROGRESS
+
+Original final-source live validation stopped at four real Groq cases plus one source-down control because of TPD quota; full30 not certified. All original120 service tests and10 hosted gates passed. User authorizes PR1761 conflict repair/develop merge on2026-11-17. Integration preserves the newly merged token-saving native route and restores per-request evidence IDs in its model options. No production change. See tasks/NORA-LIVE-MATRIX-1116.md.
+
+## AGE-PRICE-BREAKDOWN-1116 — PC-A — ACTIVE
+
+COMPUTER_ID=PC-A; branch codex/pc-a-age-price-breakdown-1116 from origin/develop0c81e9962. Owner asks to verify child/infant age pricing and show each group/per-passenger cost on the same website page. Prior FLIGHT-AGE-FARES-1116 producer owner explicitly released quote scope in coordination on2026-11-16. Reserve apps/api/src/ticket-catalog/ticket-age-fares.ts (additive bounded display helper only), apps/api/src/site-commerce/ticket-quote.ts, site-commerce.service.ts and focused tests. No price policy, native reservation arithmetic, payment, schema/migration, dependency/lockfile changes. Site consumer owned by this task; other site chats notified.
+
+Shared read-only Site Commerce v1 additive compatibility: existing birthDates quote requests remain valid; optional mutually-exclusive passengerCounts supports explicit provisional composition preview without fabricated DOB. Existing per-leg amount/currencyCode unchanged. Optional version1 pricingBreakdown contains authoritative per-passenger rounded amounts; round-trip bundle metadata covers the full pair once. Native draft still derives ages from real DOB and validates exact quote independently. Bounds, branch/publication/sale-stop/100percent-hide controls remain. Producer ERP Site Commerce; consumer Niyayesh website capacity/quote API and passenger page. No new storage or cross-module table access. Standing owner publication approval and all green CI gates required before develop merge/release.
+
+## NORA-ACCOUNT-RATE-EXEMPTIONS-1116 — PC-C — READY_FOR_CI
+
+FLIGHT-PRICE-LAYOUT-1116: base-price save refreshes offer facts without unmounting the list or clearing unrelated drafts; destination groups sit beneath flight details and grow without an inner height limit. Success feedback stays in the save button. 22 targeted regressions, scoped ESLint and formatting pass; hosted checks gate merge.
+
+Native-identity private quota exemption for two owner-selected accounts;122 service tests pass. Other accounts, data authorization, SQL bounds and actual Groq limits preserved. Nora-only rollout pending hosted gates. No migration/API/Web change. See [task](tasks/NORA-ACCOUNT-RATE-EXEMPTIONS-1116.md).
+
+## TICKET-BULK-PUBLICATION-1116 — PC-A
+
+Integrations ticket management adds a bulk publication review using the selected authorized branch, route, one-way/round-trip, search and inclusive Tehran departure dates. Only active priced matching offers are grouped once; missing/unpriced returns are excluded. Website selection and review/cancel perform no writes. Explicit confirmation runs sequential existing publication reads/CAS commands, preserves enabled/stopped publications and metadata, refreshes tiles and reports per-site partial failures without retries. Disconnected websites retain pending intent rather than claimed delivery. Branch/site/permission/source validation, activity audit and durable catalogue delivery remain native; no API/schema/migration/dependency/operational data or deployment change. Focused interaction/model and regression validation precede exact-head full CI and the user-authorized develop merge.
+## NORA-ACCEPTANCE-PACING-1116 — PC-C — READY_FOR_REVIEW
+
+New independent synthetic runner removes the initial hour and all successful-case
+pacing based on assumed daily quota. Healthy30 scenarios run serially without
+sleeps; actual429 retry timing alone delays another attempt. Native Agent and
+SQL/access limits, oracles and the active legacy runner remain unchanged.6 new
+runner tests and all116 service tests pass; no live Groq charge, migration or
+Production change. See [NORA-ACCEPTANCE-PACING-1116](tasks/NORA-ACCEPTANCE-PACING-1116.md).
+
+## NORA-QUESTION-ROUTING-1116 — PC-C — verification
+
+Shared Composer intent arbitration separates data/evidence follow-ups from catalog guidance. Persian lexical boundaries prevent پرسیدم/رسید and analogous alias collisions. Bounded successful-answer context survives navigation, identity/company scopes remain isolated, and mixed questions append trusted guidance only after successful data. New submit-handler HTTP tests cover429/403, topic changes and stale responses. No public API/schema/dependency/Production change; count-breakdown work remains independently preserved. See [task](tasks/NORA-QUESTION-ROUTING-1116.md) for exact validation limits and clean hosted gates.
+## RESERVATION-FORM-SEND-ACCESS-1116 — PC-A
+
+Supplier PDF mail POST accepts a canonical HTTPS browser origin when the TLS proxy forwards the same public Host over HTTP to Next. Foreign, opaque/missing, malformed, credential-bearing and wrong-port origins remain rejected; forwarded header spoofing cannot authorize a request. Native authenticated workflow lookup, branch/permission checks, saved version/PDF signature and mail queue controls remain.15 route regressions and scoped lint pass, including same-host proxy success and unchanged401/403/404 API rejection. No real email sent, grants/data/dependency/schema or production change. Hosted quality/build/tests gates precede the owner-authorized develop merge.
+FLOATING-MERGED-TEMPLATE-1116 CI repair: the latest develop had an undeclared referral override DTO field and missing optional IAM service injection in the existing Nima-only leave-substitute override. Restored only those existing references, preserving fail-closed HR policy and positional constructors.44 focused pricing/Workbench tests and scoped lint pass. Hosted checks remain the final gate.
+
+## 2026-11-17 — FINANCE-RAHKARAN-PARITY-1117
+
+PC-D added ledger-scoped tax reference import and mapping, internal seasonal report validation and snapshots, the analytical account browser, Treasury definitions and year-end readiness. Source inspection used period 1405. See [implementation, evidence and outstanding dependencies](tasks/FINANCE-RAHKARAN-PARITY-1117.md).
+
+## 2026-11-17 — FINANCE-BANK-CONTROLS-1117
+
+Finance now distinguishes dispatch by an exchange office from receipt by a broker. Purchase balances change only on confirmation; the active company's bank register controls direct transfer destinations. Treasury can reconcile imported statements with posted bank lines. Changes, examples, permissions and migration scope: [bank controls](tasks/FINANCE-BANK-CONTROLS-1117.md).
+
+## FLOATING-MERGED-TEMPLATE-1116 — PC-A
+
+Floating tour pricing now exposes a styled template download. Combined templates contain one row per destination and actual vertically merged shared-price/date cells. Import preserves Excel merge boundaries and physical source rows, validates every itinerary stay and counts each common price/commission/flight once. Three-stay and separate equal-price combination round trips pass, including malformed/overlapping merge rejection and branch-scoped read-only template access. Legacy templates remain compatible. No schema/migration/dependency/data/deployment change. Local contracts build,22 API and5 Web/i18n checks plus affected lint pass; full hosted quality/build/tests/migration gates precede the user-authorized develop merge.
+
 SITE-MANAGEMENT-RELEASE-1116 final verification repair: reserve only Marketing intake test fixtures updated for the already-merged single-title form and four missing label catalogue entries. No Marketing/HR behavior change. Preserve source policy and all gate coverage.
+
+SITE-TILES-1116: compact two/four-column named destinations, saved status dot, selected highlight, icon edit, hidden unchanged save, full-width explicit editor and denser resource headings. Checkbox selection now saves immediately with CAS and failure rollback; expanded tour presentation retains explicit save. Stable refresh preserved. Nine targeted publication/model/translation checks pass; hosted checks pending.
 
 SITE-MANAGEMENT-RELEASE-1116 follow-up: peer delivered the chart verification and activated navigation while preparation was running; stale snapshot correctly stopped before build. Latest develop9ee4ca2 includes three unsupported Button variants and an effect-based leave-route state causing clean build/lint failure. Reserve only new-request-dialog variants and derived read-only leave recipient; HR routing policy is unchanged. Preserve peer chart regression, existing runtime overlays and all data.
 
 ## SITE-MANAGEMENT-RELEASE-1116 — PC-A
 
 User authorizes latest develop Avina deployment with all data preserved. Reserve release-only artifacts and a bounded post-merge verification repair: two missing organization-chart zoom translations and read-only regression distinguishes view controls from mutation controls. No HR behavior change; chart owner source untouched. Source-only PR then all green gates, encrypted verified backup, existing overlays/env/mounts and data services retained; additive website migration only after inventory. Shared host lock required.
+
+## NORA-CHAT-SCROLL-RELEASE-1117 — PC-C — VERIFIED
+
+PR1768 UI is active in ERP with PR1769 Persian/source presentation preserved. Published Web build08Ajp-thgUW8QA5lVntoo;291 integrated tests and server compile/type/Agent admission pass. Authenticated browser confirms immediate messages, waiting spinner, transcript bottom scrolling, pause while reading, latest arrow, next-draft and close/reopen retention. No SQL/financial acceptance claim, migration, business writes or non-Web replacement. [Release receipt](tasks/NORA-CHAT-SCROLL-RELEASE-1117.md).
+
+## NORA-SOL-1123 — PC-C
+
+OpenAI Responses write access and Sol function continuation verified. All 217 service tests passed locally and in the isolated server candidate. All 30 synthetic acceptance scenarios passed across the matrix and targeted reruns. Both models encountered transient socket failures. Median duration across 16 paired successful model scenarios: 19.5 seconds Sol, 9.9 seconds GPT-4.1. Persian month default verified from fixed Tehran boundaries without model calls. PR1879 requires final CI and guarded activation.
+
+## NORA-BUDGET-MESSAGE-1123 — PC-C
+
+Production diagnostics for the November 23 incident showed eight successful GPT-4.1 calls before the request failed. The affected actor matched a configured consumption exemption. The Web proxy now keeps Agent analysis-budget exhaustion distinct from admission and provider rate limits without forwarding private upstream error details.
+
+## NORA-PRIVILEGED-FAILOVER-1122 — PC-C
+
+Trusted native danial/demo exemptions verified; hybrid provider quota failover implemented in both directions, including guide selection. Ordinary quotas and all evidence/access/deadline/finite execution guards preserved.213 service tests pass. No migration/dependency/billing or credential changes. Exact-head hosted CI and guarded native-only activation remain required. See docs/tasks/NORA-PRIVILEGED-FAILOVER-1122.md.
 
 ## NORA-COUNT-BREAKDOWN-1116 — PC-C — READY_FOR_CI
 
@@ -17,6 +222,12 @@ and future-tool rules preserve this convention without expanding data access.
 110 service,235 Web and81 API/boundary tests pass; prior head's all10 hosted
 gates passed, with fresh refined-head CI required. No Production change
 or migration. Details: [NORA-COUNT-BREAKDOWN-1116](tasks/NORA-COUNT-BREAKDOWN-1116.md).
+
+## NORA-HOTEL-ANALYSIS-1123 — PC-C
+
+Removed the fixed model-turn stop in Nora v3. Existing request deadline, evidence validation, SQL budget, account admission and provider quota remain enforced. At the SQL budget, the model is offered the final response action only.
+
+A read-only production audit found 469 master hotels, 34 master countries and 193 saved hotel stays with a hotel snapshot and a country link. Nora now uses a native Sales report for supported Persian requests for top hotels by country. The report counts distinct eligible contracts per hotel, uses the existing public Master Data lookup and excludes Sales and Reservations cancellations. Deploy the API endpoint before enabling the consumer. No database migration is needed.
 
 ## SITE-MANAGEMENT-1116 — PC-A — READY_FOR_CI
 
@@ -696,6 +907,19 @@ Combined tours hide both legacy top route fields; regular tours retain them. One
 ## TERMS-PDF-JUSTIFY-1110 — PC-A — READY_FOR_CI
 
 The shared two-page static terms PDF now justifies37 wrapped body lines with PDF word spacing. Paragraph-final lines, headings, headers, footers, font bytes, legal text glyphs, metadata and page geometry are preserved. Reproducible source-hash-guarded script verifies glyph/font/page/metadata identity and produces identical output bytes on repeat. Both pages rendered and visually checked. Original SHA256 8ed0c34f4e94f9802a5ca4f9f0cf45de9ae49fcb92e1018b4ae30d56206767dc; output256a5be58e1926fa6e2ebddae1de76563b041c9b9f35534c7b15ebde240c25ba. No API, permissions, schema, dependency or runtime/deployment changes. Full hosted gates required before owner-authorized develop merge; source reservation releases upon verified merge.
+
+
+## SITE-TICKET-LAYOUT-1116 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-site-ticket-layout-1116 from latest origin/develop. Owner requests compact ticket-pricing-style facts, two ticket cards per desktop row and four small website tiles in place of the price panel, a colored tidy filter panel, immediate checkbox save and pencil-only editing, followed by develop merge. Reserve Integrations site-management.tsx presentation, new scoped CSS/facts leaf and focused tests only. Prior SITE-TICKET-FILTERS-1116 source is frozen/merged via PR1744; retain its explicit refresh, filters, branch/access and complete flight facts. User explicitly supersedes the prior Save button for ticket website choices: checkbox changes auto-save their own site with CAS; errors revert to stored state, concurrent toggles are guarded, and tours retain the immediate-save behavior merged in PR1747. Preserve disconnected-site status and commission editing. No API, schema, dependency, real publication, business-data or deployment changes. No active overlapping source edits found. Bounded source lease releases upon verified merge.
+
+SITE-TICKET-LAYOUT-1116 validation:34 focused publication/auto-save/facts/navigation tests and scoped ESLint pass. Reuse the ticket-pricing date/cabin rules with read-only country/city references; retain outbound/return IDs and offer-level publication scope. Synthetic desktop/mobile preview inspection; no real publication or server deployment. Full exact-head gates required for the authorized merge.
+
+## FLOATING-PRICING-BREADCRUMB-1116 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-floating-breadcrumb-1116 from latest develop dabf4e80c. Owner requests removal of the incorrect unavailable breadcrumb above Floating Packages and develop merge. Reserve bounded central navigation.ts alias/breadcrumb logic and its regression spec only; no active overlapping owner found (Nora navigation task owns assistant state, not central breadcrumbs). Include own task/status notes before the stable FAMILY-ROOM-CHILD-1029 section. Preserve route access, sidebar permission rules and pricing behavior. No API, schema, dependency, translations, data writes or deployment. Source reservation releases after verified merge.
+
+FLOATING-PRICING-BREADCRUMB-1116 validation:25 navigation and Floating Pricing tests pass; scoped ESLint passes. The exact route now has a localized title and linked Sales/Package Management parents, while Sales active navigation and other aliases remain unchanged. Full exact-head hosted checks gate the owner-authorized merge.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
@@ -1659,6 +1883,8 @@ Reservations replaces the full Sales contract-profit action with a hotel-only co
 
 Flight pricing uses compact responsive two-column cards, smaller summaries and channel rows, a collapsed manual pair editor, and directly selectable all/one-way/round-trip modes. Unpriced reverse legs from the same published load, branch and cabin within an explicit return window are offered automatically; saved/manual prices take precedence and are not duplicated. This is a pricing candidate projection, not a persisted new fare. Older offers without load identity remain available through the manual editor. Fifteen focused model/render regressions pass. No API/schema/migration/dependency or live price mutations. Full quality/build checks gate the user-authorized develop merge.
 
+Flight pricing displays a single sales-destination panel per ticket card. The saved-base-price filter applies independently to one-way and round-trip rows and follows the same filtered rows in Excel export.
+
 ## 2026-10-13 — HOTEL-IMPORT-CITY-NORMALIZE-1013 — PC-B
 
 Hotel Excel import accepts equivalent city spelling across whitespace/joiners,
@@ -2420,6 +2646,10 @@ Migration افزایشی است و هنوز روی دیتابیس محلی یا 
 ## 2026-09-23 — HEADER-DATE-CLOCK-0923 — READY_FOR_REVIEW
 
 ساعت جاری کنار تاریخ سربرگ با timezone و نوع ارقام تنظیم‌شده سامانه و بدون نمایش ثانیه اضافه شد و در مرز هر دقیقه تازه می‌شود. ۸ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۲ مسیر موفق‌اند؛ Web روی `3100` و API روی `4191` با پاسخ سلامت `200` اجرا شدند. API، داده، Schema/Migration و Dependency/Lockfile تغییر نکردند.
+
+## 2026-11-22 — PACKAGE-GENERATOR-AZAR-CI-1122 — PC-D
+
+Updated the English catalogues and country-picker test for the Azar package templates introduced in PR #1861.
 
 ## 2026-09-23 — PACKAGE-GENERATOR-TEMPLATE-REFRESH-0923 — READY_FOR_REVIEW
 
@@ -5230,6 +5460,17 @@ Individual agreed package totals per passenger/currency are persisted with exact
 - Handoff با PR شماره ۱۲ و Merge Commit `0af31c2` وارد `develop` شد.
 
 HR-INBOX-REQUEST-TITLE-1109 shows the original request subject in the HR inbox while keeping type filtering and the review action. Scoped Web lint passed.
+
+
+## RESERVATION-MAIL-WAKEUP-1116 — PC-A — READY_FOR_CI
+
+Post-commit asynchronous mail wake eliminates the next five-second poll wait; coalesces concurrent wakes and drains due rows serially. Recovery interval/claims/retry/UNKNOWN/off switch and form/PDF UI are preserved.48 synthetic tests and scoped lint pass; typecheck/build and exact-head hosted gates pending. No actual email; API-only rollout requires an empty sendable queue, encrypted backup, deploy lock and Worker namespace rebind. See tasks/RESERVATION-MAIL-WAKEUP-1116.md.
+
+## RESERVATION-MAIL-ORIGIN-1116 — PC-A — READY_FOR_CI
+
+Runtime verified10:18 UTC: bounded two-file Web overlay published against current image with eight successful checks, explicit private canonical Origin, encrypted backup and rollback. Public Origin passes the synthetic invalid-command gate; foreign/missing origins rejected. API/Web healthy, keys/UI/old static assets and owner SMTP test preserved; API/Worker not restarted; no agent-submitted email. Source integrates upstream1752 same-host proxy fallback/tests and current peer HR repairs; final source gates pending.
+
+Production supplier PDF POST rejects public HTTPS Origin against the internal container URL before API authorization. Synthetic invalid-command probe on the real handler reproduces400 for internal origin versus403 for public origin, without auth/PDF/queue/email. New module-local validation uses explicit private RESERVATION_MAIL_WEB_ORIGIN and never trusts forwarded headers.65 mail-route/PDF/price-save checks pass; preserve all authorization, HMAC, saved snapshots, form/PDF appearance and enabled owner test. Web-only repair must preserve the live image overlays/static assets/config, use protected origin configuration, encrypted backup and rollback, and pass exact-head gates. No API/IAM/schema/dependency/data mutation or agent-submitted email. See tasks/RESERVATION-MAIL-ORIGIN-1116.md.
 
 ## برنامه اجرایی Sprint دوم
 
@@ -10109,6 +10350,9 @@ HISTORY-ACTION-LABELS-1114: history shows Persian action labels instead of HTTP 
 
 DEPLOY-FORMAT-1114: repair Prisma alignment only for section contract visibility fields. Prisma format/validate and diff checks pass. Hosted quality, tests, build and migrations gate final publication; owner requests deployment without a fresh backup.
 
+## SITE-COMMERCE-PUBLICATION-BRANCH-1118 — PC-A — IN_PROGRESS
+
+Found new-flight creation implicitly selected the first authorized branch, causing a Niyayesh website flag to be invisible when its source belonged to HQ. Local correction adds explicit branch selection, current-session validation and server-side publication binding checks. API/Web scoped tests, lint and types pass; refreshed Prisma client resolves the local generated-client mismatch. Production synthetic tour/ticket flow and exact-head hosted checks remain pending. No payment moved or privileged account created. See docs/tasks/SITE-COMMERCE-1114.md.
 PR1700 CI integration on2026-11-14: preserve PR1693 legacy evidence and v3 together, fix second-turn history to send role/content only, and retain abort/version/permission guards.185 focused Web/English checks pass; four earlier HR translation failures are resolved by consuming develop. User authorizes green develop merge; no Agent activation or operational migration. Live Germany/model/browser gates remain open.
 
 
@@ -10185,6 +10429,177 @@ HR-MANAGER-OVERRIDE-1116: sales manager identity corrected, aggregate branch act
 SITE-TICKET-FILTERS-1116: stable branch-scope effect dependencies stop session-refresh reloads. Reuses native pricing route/trip/search/date filters; master-data city labels, Tehran flight timestamps, cabin/capacity and separate one-way/return fare details. Web only; no data migration. 91 focused regressions passed; release checks pending.
 
 REQUEST-PROGRESS-1116: restrict substitutes to active colleagues in same department/company, hide empty assignment banner and show leave progress with green completed nodes/connectors. Scoped ESLint passed; local tests blocked by missing contracts build.
+
+FLIGHT-AGE-FARES-1116 — PC-A: optional child/infant rates inside the native ticket-pricing base card; immutable standalone/pair revisions, net target projections and birthday-derived website/native final quote guards. Legacy null semantics and financial history preserved.57 focused API checks and isolated PostgreSQL18 migration proof passed; final Web/hosted gates precede release.
+
+## 2026-11-16 — NORA-TOKEN-EFFICIENCY-1116
+
+PC-C implemented provider usage counters, exact native total-count route with unchanged IAM/freshness gates, lossless tool-table compaction and published final-tool/citation protections on codex/pc-c-nora-token-efficiency-1116.136 service tests and scoped lint pass. Live synthetic40-row Groq input1496->1072 (28.3%); total1648->1237 (24.9%);4-row input362->334. Sample-specific, not full30-case certification. No model downgrade/history truncation, cross-user cache, migration or deployment. See docs/tasks/NORA-TOKEN-EFFICIENCY-1116.md.
+
+
+## NSS-BANK-SETTLEMENT-1117 — verified gateway exception
+Owner explicitly authorizes automatic Finance confirmation only for bank-verified NSS gateway receipts bound by a server-only signature to the linked order and configured SEP terminal/account. Ordinary BANK_TRANSFER/unsigned receipts retain manual Finance review. Finance validates the active branch/IRR/BANK account and emits the existing native receipt confirmation; it preserves accounting events, audit, idempotency, correction/void rejection and real settlement. SiteCommerce uses the existing fresh full-settlement document release, retaining explicit revocation/cancellation. No new generic site Finance permission or direct cross-module table write. No migration or dependency change. See tasks/NSS-BANK-SETTLEMENT-1117.md; validation/release pending.
+## 2026-11-17 — TICKET-COUNTRY-AIRPORTS-1117 — PC-A
+
+Flight creation, combined segments and published single/weekday edits now require both selected airports. Airport search is disabled until the route country is known and sends countryId through the existing active selection API; returned rows are also country-checked. A country change clears its stale airport, while another commercial city in the same country retains the choice. Published edit/view hydrates stored airport names through the authorized selection-detail endpoint and edits the existing airport IDs, preserving native offer versions and dated identities. Existing ticket document readers already consume those saved IDs; their regressions pass. Legacy records remain readable; no schema, dependency, operational data or deployment changes.
+
+Validation: 60 focused form/reference/document/weekday/i18n tests pass, then 21 edit/reference tests pass after the final interaction and hydration additions. Affected ESLint passes. Local full Web typecheck encounters stale linked shared-contract artifacts and missing API dependency resolution; it is not reported as successful. Clean hosted quality, full tests, PostgreSQL and production-build gates are mandatory on the final PR head before the owner-authorized develop merge. Branch codex/pc-a-ticket-country-airports-1117 from8dcc6f464.
+
+## SOLDOUT-SITE-STOP-1117
+The owner requests automatic stop/hide for exhausted tickets on connected sites. Catalog derives effective salesStopped from authoritative remainingCapacity<=0 while retaining an additive capacityStopped marker. Persistent manual stop/unpublish flags are not rewritten; newly available capacity clears only the derived state in a newer full snapshot. Existing capacity-change triggers, independent signed delivery/retries and timed refresh on unpinned hold expiry are reused. Site local reads also fail closed for zero/invalid ticket stock; normal search excludes stopped tickets, and native purchase capacity guards remain. No migration, dependency, business inventory mutation or polling added. Validation/release tracked in tasks/SOLDOUT-SITE-STOP-1117.md.
+
+## ZERO-CAPACITY-HOLD-ROSTER-1117 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-zero-capacity-hold-roster-1117 from merged develop e604d522ab9adc9c4c4268f485847b4958cac037. Same user requests observing website holds and develop merge. Producer owner explicitly released only roster entry/submit UI hunks and their tests after PR1772 merge. Reserve bounded ticket-workspace controls, a small control leaf and interaction regressions. A zero remaining capacity must allow inspecting a future active offer's holds, while creating a new hold stays disabled; retain original inactive/past view guards, permissions and native atomic hold validation. Use refreshed management inventory in local submit checks. No backend/schema/hold arithmetic/payment/dependency or deployment change. Producer owns its independent core release; deliver this follow-up SHA to that authorized releaser, preserving live overlays and host lock.
+
+Validation:32 focused control/roster/workspace/i18n tests pass; active/past inspection restrictions and busy create guard remain. Six interaction checks include zero/negative stock, restored stock, no creation when sold out and no duplicate create while busy. No operational writes or deployment. Full exact-head hosted gates precede authorized develop merge.
+
+ZERO-CAPACITY-HOLD-ROSTER-1117 compatibility: historical single-edit regression now verifies the extracted inspection control receives catalogNow and still contains the past-flight guard; its independent edit/date/version assertions remain unchanged. No historical editing policy changes.
+
+MANAGER-SENT-LEAVE-1117: manager-approved leave stays in manager sent list and transfers to Nima HR inbox atomically. Historic approved reviewer participation is derived from timeline. Scoped ESLint passed; request tests could not collect due to missing contracts build.
+
+WORKBENCH-MISSION-1117: workbench mission template routes to active Nima HR account. Schedule and purpose are fixed after creation. After scheduled return, sender submits expense fields and restricted PDF/image evidence; mission returns to HR with notification. HR forwards the structured mission and amount to Finance, whose general details show all fields and authenticated receipt previews. 59 API tests + 3 UI tests and Web typecheck passed. API full typecheck blocked only by missing pg/pgsql-ast-parser/sharp dependencies. Scoped lint passed; live workflow not exercised.
+## 2026-11-17 — SITE-TICKET-TYPE-FILTER-1117 — PC-A
+
+Site-management ticket cards now retain the exact native fare-row filter results when displaying return legs. A one-way selection renders only the independently priced flight even if the canonical offer also has paired fares; round-trip/search selection renders only the matched saved returns. The shared matcher continues producing the same deduplicated canonical resource IDs for bulk publication, and commission/publication commands still receive the unmodified authoritative offers. All-fares display retains saved returns. No API/schema/dependency, operational data or deployment changes.
+
+Validation:36 focused matching/bulk-publication/facts/price-row tests and affected ESLint pass. Regression coverage includes an offer carrying both fare types, query-specific returns, clearing the type filter, unchanged source objects, paired-only fares, branch/status scope and native date bounds. Final-head full hosted quality/test/PostgreSQL/production-build gates precede the owner-authorized develop merge. Source lease releases on verified merge; branch codex/pc-a-site-ticket-type-filter-1117 from a27328ecd.
+
+## HOTEL-IMAGES-1117
+Hotel create/edit forms now support one main image and a six-image gallery. Uploads are decoded and re-encoded to WebP in persistent public-hotel-images storage under DOCUMENTS_STORAGE_ROOT. Profiles show direct downloadable thumbnails; uploaded image downloads are public. Existing hotel image attributes are reused. 13 focused API and 37 Web tests and affected ESLint pass. No migration.
+
+
+## CHECKOUT-ADVISORY-1117 — PC-A — ACTIVE
+
+COMPUTER_ID=PC-A; branch codex/pc-a-checkout-advisory-1117 from develop4d1182948. User reports ERP checkout connection failure and requests real flight/passenger confirmation before Saman payment, with ten-minute inventory acquisition only on the explicit payment action. Reserve only WebsiteCheckoutHoldsService prepare advisory command, one isolated PostgreSQL regression and own append-only task/status notes. Production read-only diagnostic proved P2010: pg_advisory_xact_lock returns PostgreSQL void, which Prisma queryRaw cannot deserialize. Use executeRaw for this command, preserving the identical transaction-scoped lock key and all ownership/replay/capacity/quote/expiry rules. No schema, migration, dependency, permission or financial mutation. Site consumer/UI changes are separate files; no active overlapping writer found. Merge/release use existing user publication authorization and exact-head quality/test/build/DB gates, latest-runtime source/image CAS and shared deployment lock. No live synthetic orders/holds/payments.
+## 2026-11-19 — Nora hybrid provider (PC-C)
+
+Implemented opt-in Groq/OpenAI routing and organization-aware OpenAI key failover. CI and operational activation remain separate. The current production relay does not establish an OpenAI HTTP connection. See [release prerequisites](tasks/NORA-HYBRID-PRODUCTION-1119.md).
+
+# 2026-11-18 — FLOATING-PACKAGE-RESTORE-1118 — PC-A
+
+Reproduced missing floating-package card on current production code as a manual-v3 access inheritance defect, not missing source/controller/migration. Owner approves only sales.pricing.management -> sales.pricing.floating inheritance with explicit denial and native write permissions preserved. Five focused access cases,40 API import/service/manual-policy tests and3 Web floating/hub tests pass. Separate feature-only main backport and guarded Web-only publication are pending their own validation; no business-data or live-grant changes. See [task](tasks/FLOATING-PACKAGE-RESTORE-1118.md).
+
+
+
+## HOTEL-IDENTIFICATION-1118 — PC-B
+
+Optional identificationCode (up to160 characters) is editable directly below English name in both hotel create/edit forms and shown in the profile basic-information card. Leading zeroes and mixed text are preserved; blank clears to null. Existing internal hotel code and UUID remain unchanged. Additive migration20261118110000_hotel_identification_code required before API rollout.22 focused Web/API tests and scoped lint passed; Web production build (including TypeScript) and API typecheck passed. Prisma validation/generation and contracts/database builds passed. API required a larger Node heap after the default2GB run exhausted memory. No production changes. PR1792.
+
+SITE-COMMERCE-PUBLICATION-BRANCH-1118: production HQ synthetic publication/unpaid checkout verified; owner-approved private payment simulator completed native ticket/tour contracts120123/120124, exact2,345,000/17,380,000IRR settlement, seller/issuer, replay/ownership checks and four original ERP PDFs (five pages visually reviewed). Added selected-cabin baggage alias and five public-catalogue regressions; no production financial writes or real PSP/provider request. Final develop integration and exact-head CI/PR1795 merge pending; details in docs/tasks/SITE-COMMERCE-1114.md.
+## FLOATING-DESTINATION-NIGHTS-1118 — PC-A
+
+Combined floating-price imports accept destination count (2–10) and ordered nights per destination. Web computes the total; API validates the sum and resolves destination cities from active saleable hotel references in Excel, independently of the saved tour itinerary. Flat and merged multi-hotel groups use one shared per-person price; template merge height follows the selected count. Legacy imports remain supported. Preview digest/CAS, permissions, currencies and passenger-age price rules remain intact. No migration/dependency or operational-data changes; scoped develop merge requested by owner.
+
+Validation: 46 focused API tests and 6 Web/i18n tests passed, including configured three/four-stop imports, monthly dates, invalid sums, merged group height, master-data filters and preview/commit. Scoped Web/API lint and API build passed. Generated English mirrors retain all existing translations.
+
+## FORM-SAVE-SHORTCUT — PC-B
+
+Alt+S activates the save or register control of the focused form or active dialog using its existing submission path. Disabled and ambiguous actions are skipped.
+
+HOTEL-EXPORT-TEMPLATE-1119 — PC-A: hotel XLSX now uses canonical HOTEL_IMPORT_HEADERS and Hotels/راهنما sheets independently of generic UI columns/language. Preserves city-filtered pagination, original hotel codes, English/Persian names and imported profile fields; other resource exports unchanged. Native parser roundtrip and101-row city/audit pagination acceptance pass;86 focused tests. Owner authorizes tested develop merge and guarded API-only publication. No migration/dependency/data mutation.
+## 2026-11-19 — Nora operational guides (PC-C)
+
+The shared assistant guide catalog now includes Call Center and updated Workbench workflows, including unit-manager and HR leave approval and post-mission expense referral. See [operator guide](tasks/NORA-OPERATION-GUIDES-1119.md). Assistant-only routing and documentation; pending review.
+
+راهنمای قرارداد، تاریخ میلادی فهرست و مبنای روز ثبت/سفر را توضیح می‌دهد. راهنمای میزکار من، ثبت مأموریت و ارسال هزینه پس از پایان و اثر مرخصی مصوب بر تردد را پوشش می‌دهد. راهنمای کال‌سنتر، مسیر سوابق تماس، مجوز و شرایط دریافت فایل صوتی را توضیح می‌دهد.
+
+## راهنمای اسناد و فایل‌ها در نورا
+
+شاخهٔ PC-C راهنمای تب‌های آرشیو، چهار ابزار مدیریت، نماهای شخصی و عملیات فایل را اضافه می‌کند. برای پرسش دربارهٔ سند مشخص، مرورگر کد آرشیو، لینک داخلی یا عنوان داخل گیومه را از طریق API خواندنی موجود و با نشست جاری بررسی می‌کند. پاسخ تنها فرادادهٔ لازم را نمایش می‌دهد. اسناد محرمانه یا محدود از پاسخ وضعیت کنار گذاشته می‌شوند و پیش‌نمایش، دانلود و تأیید دومرحله‌ای در پنل انجام می‌شوند. پذیرش مرورگری روی نسخهٔ کاندید و CI دروازهٔ انتشار هستند.
+
+## تکمیل راهنمای کال‌سنتر نورا
+
+کاتالوگ با فیلترهای تماس امروز و واحد مسئول مخاطب، دریافت صوت از ایزابل، و گردش جداگانهٔ مسئول اجرا و بررسی مدیر هماهنگ شد. نورا شمارش کارت‌های کال‌سنتر را در محدودهٔ مجاز همان حساب می‌خواند. برای عنوان یا شناسهٔ درخواست، جست‌وجو حداکثر سه صفحه است و برای مورد مشخص، جزئیات مجاز درخواست پیش از پاسخ دوباره خوانده می‌شود. برای موارد مبهم، صف مجاز و درخواست شناسه راهنمای کاربر است. پذیرش حساب واقعی به نسخهٔ کاندید همان کامیت نیاز دارد.
+Tehran relative-day boundaries are computed once per request and exposed as runtime constants, with SQL placeholders bound before authorized query execution. Midnight regression and data-agent suite pass 26 tests.
+
+Runtime enforcement now accepts only the anchored reviewed contract-count SQL grammar for today/yesterday requests. Comments, joins, OR, UNION, arbitrary dates and mixed day tokens are rejected before querying. All-time count tool is refused for relative-day questions. Today is capped at the request observation instant. Other relative-day metrics/filters require clarification until a reviewed query contract exists. 39 regression tests and authenticated production comparison pass; both day counts match 3 and 2 in the selected company. Main health is 200.
+
+HOTEL-IMPORT-PRESERVE-1119: Excel UPDATE preserves existing room, service and facility assignments and keeps blank profile values. Same-city guard and explicit check-in/out extraction are applied in the existing audited transaction. 86 focused tests, scoped lint and API TypeScript passed. No schema or dependency changes.
+
+## NSS tour previews
+
+Scheduled tours can be previewed on the destination site before prices are published. The publication projects the existing itinerary, flights, and hotel profiles while keeping website sales disabled.
+
+### Dated website preview hotel rates
+
+The existing preview publication accepts an optional dated, display-only room rate with a positive rial amount. Checkout continues to use actual room publications.
+
+### Website passenger rates
+
+Fixed package projections expose single and double per-person amounts, child-with-bed rates from marked bands, and third-person supplements when a double and a triple share the same room and board. Preview amounts remain display-only.
+The defined-tour list displays the existing floating-tour flag next to the tour name.
+The floating package pricing picker and URL preselection require an explicitly floating tour definition.
+
+Floating package price imports report Excel row numbers for validation errors and preview warnings.
+
+Floating tour Excel prices accept numeric precision artifacts while retaining monetary scale validation. Unavailable optional rates can be blank or use the Niyayesh Seir placeholders, and the EXTRA column may be omitted. Explicit zero remains a price. Adult airfare is added to DBL, SGL and EXTRA. Effective child airfare is added to CHD W BED and foreign-currency child no bed. Toman child no bed and infant retain their supplied rates, and commission is stored separately. The website consumes the final prices published by ERP.
+
+Dated floating price imports attach outbound and inbound flight details to Excel-derived periods and include the schedule in the opt-in website catalog. Monthly and older catalog rows remain compatible.
+
+Niyayesh floating checkout consumes dated periods with matching room references and an approved rial rate. ERP freezes the selected itinerary and price before bank payment, then creates the native contract from the bank-verified quote without allocating charter seats. Monthly periods remain available to existing catalog clients.
+
+## راهنمای تعریف تور و خدمات در نورا
+
+راهنمای تعریف، مسیر ترکیبی، ویرایش، نوبت، ظرفیت، نرخ و انتشار در نورا اضافه شد. پرسش درباره تور مشخص با APIهای خواندنی پنل و در شعب مجاز پاسخ می‌گیرد. وضعیت تعریف و ظرفیت نوبت از قیمت و انتشار مستقل گزارش می‌شوند. پذیرش حساب واقعی به نسخهٔ کاندید نیاز دارد.
+
+
+The Nora purchase guide covers the reservation purchase dashboard, filters, registration, finance and seat pricing. Exact contract status uses the authorized purchase inbox with the current session.
+
+Nora B2C guidance documents customer panel workflows and reads scoped metrics and record status through the existing authenticated customer API.
+
+### Country flags (2026-11-21)
+Country create/edit now uses the existing logo uploader and geography logo column. The additive migration stores an optional logo document reference.
+
+## راهنمای تحویل مدارک نورا
+
+کاتالوگ راهنمای جست‌وجو، مبانی صدور و لغو و خواندن وضعیت از API مجاز پنل مالی به نورا اضافه شد. این مسیر تنها خواندنی است. پذیرش با قرارداد واقعی در نسخهٔ کاندید باقی است.
+
+Nora flight pricing guidance covers list filters, base and age fares, return pairs, tier pricing, destination commissions, Excel and site publication. Live lookups use the authenticated managed-offer projection.
+
+Nora now guides the eight Master Data sections and reads exact authorized reference codes with a restricted result projection.
+
+Nora guides B2B workflows and reads authorized status and filtered directory metrics using existing organization reads.
+
+Nora customer acceptance follow-up: explicit B2B questions use the organization guide, and B2C lookups use the supported minimum page size and existing customer query normalization.
+
+B2B directory reads and flight pricing references recover an expired access session once through the existing authenticated refresh flow.
+
+## 2026-11-22 — FLOATING-IMPORT-MATCHING-1122
+
+Floating Excel imports treat NULL price cells as absent. Preview proposes up to three similar catalog hotel names per unresolved cell and accepts explicit selections with the same file. Commit validates the choices within the existing catalog scope and requires a fresh valid preview digest.
+
+## 2026-11-22 — TICKET-VOUCHER-1122 — PC-A
+
+Sales passenger-document modal now renders hotel vouchers and their pending notice only when the saved contract snapshot contains a hotel selection or HOTEL service. Ticket-only contracts omit both, including stale voucherIssued state. Existing floating-contract exemption, ticket controls, branding flags and financial document authorization remain unchanged. Eight component tests, scoped ESLint and Web typecheck pass. No API/schema/migration/dependency/data/deployment change. User authorizes develop merge; all final-head hosted checks must pass first.
+
+## 2026-11-22 — LOAD-EDIT-FIELDS-1122
+
+Published load editing resolves saved city, country, airport, carrier, aircraft and cabin references before initializing the form. The Ticket Catalog now stores the optional aircraft type per published flight through an additive foreign key. Existing offers without this metadata keep their prior browser-based aircraft fallback.
+
+### Package generator Azar templates (2026-11-22)
+Antalya Iran Airtour and Kuala Lumpur plus Singapore XLSX formats now import to editable poster profiles. Validated the four supplied files with PNG and PDF exports.
+
+## اتصال تور قسطی‌رو (PC-D)
+
+اتصال موجود قسطی‌رو بستهٔ تاریخ‌دار یا دورهٔ شناور را با تأیید مستقل مقصد در
+کاتالوگ امضاشده تحویل می‌دهد. تنظیم‌های پیش‌نمایش، توقف فروش و اجازهٔ انتشار
+پروفایل هتل برای همان مقصد ذخیره می‌شوند. دریافت، ذخیره و نمایش در قسطی‌رو
+از مسیر نسخه‌بندی‌شده بررسی می‌شود. دریافت سفارش تور در اتصال قسطی‌رو غیرفعال است.
+
+## 2026-11-23 — ACCOUNTING-NAV-CONTRAST-1123 — PC-D
+
+The compact General Ledger menu uses legible labels and icons, distinct group and list colors, an inline marker for the current page, and a visible keyboard focus outline in both themes. The existing menu structure, dimensions, and destinations are preserved.
+
+Chromium verified selected and unselected rows, group and list toggles, keyboard focus and responsive widths. The visible label contrast on the fiscal-year route measured at least 5.10:1 in light mode and 6.05:1 in dark mode.
+
+## NORA-REMOVE-QUICK-ACTIONS-1123 — PC-C
+
+Removed the three quick-action buttons from the shared Nora chat composer. The message input and existing report/evidence paths remain available.
+
+## GHESTIROO-PROFILES-1123 — PC-D
+
+Hotel, country and city publication in Master Data supports Ghestiroo alongside Jahan Bastan. The Ghestiroo request includes an ISO alpha-2 country code when available and signs the existing profile payload with the Ghestiroo catalog secret. Each destination uses the existing branch and permission checks and shows its own publication receipt.
 
 CALL-CENTER-TODAY-FILTER-STYLE-1116: exclude shared combobox options from generic dialog button styling so direction, outcome and destination options retain the contact-filter selected, hover and spacing styles. Source change only.
 

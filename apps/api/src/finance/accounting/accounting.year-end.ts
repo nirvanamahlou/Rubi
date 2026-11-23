@@ -1,3 +1,4 @@
+import { accountingDetailLevels } from '@nora/contracts';
 import { DecimalValue } from '../finance.money';
 import * as v from './accounting.validation';
 
@@ -56,6 +57,12 @@ export interface ClosingLot {
   detail4Id: string | null;
   detail5Id: string | null;
   detail6Id: string | null;
+  detail7Id?: string | null;
+  detail8Id?: string | null;
+  detail9Id?: string | null;
+  detail10Id?: string | null;
+  detail11Id?: string | null;
+  detail12Id?: string | null;
   balance: string;
   permanent: boolean;
 }
@@ -64,6 +71,12 @@ export interface ClosingSelection {
   detail4Id: string | null;
   detail5Id: string | null;
   detail6Id: string | null;
+  detail7Id?: string | null;
+  detail8Id?: string | null;
+  detail9Id?: string | null;
+  detail10Id?: string | null;
+  detail11Id?: string | null;
+  detail12Id?: string | null;
   include: boolean;
   side: string;
 }
@@ -74,8 +87,8 @@ export function selectClosingLots<T extends ClosingLot>(
 ) {
   const matches = (lot: T, line: ClosingSelection) =>
     lot.accountId === line.accountId &&
-    [4, 5, 6].every((level) => {
-      const key = `detail${level}Id` as 'detail4Id' | 'detail5Id' | 'detail6Id';
+    accountingDetailLevels.every((level) => {
+      const key = `detail${level}Id` as const;
       return !line[key] || line[key] === lot[key];
     }) &&
     (DecimalValue.parse(lot.balance).isNegative

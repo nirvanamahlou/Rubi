@@ -10,6 +10,7 @@ export async function paymentSource(
     accountId?: string | null;
     payingSupplierId?: string | null;
     exchangeOfficeId?: string | null;
+    brokerTransferId?: string | null;
   },
   currencyCode: string,
   branchId: string,
@@ -25,6 +26,25 @@ export async function paymentSource(
       input.payingSupplierId
     )
       throw new BadRequestException('منبع پرداخت معتبر نیست.');
+    if (input.brokerTransferId) {
+      const funded = await tx.financeBrokerTransfer.findFirst({
+        where: {
+          id: input.brokerTransferId,
+          officeId: input.exchangeOfficeId,
+          currency: currencyCode,
+          book: { branchId },
+        },
+        select: { office: { select: { title: true } } },
+      });
+      if (!funded) throw new BadRequestException('حواله کارگزار پیدا نشد.');
+      return {
+        account: null,
+        payingSupplierId: null,
+        payingSupplierName: null,
+        exchangeOfficeId: input.exchangeOfficeId,
+        exchangeOfficeName: funded.office.title,
+      };
+    }
     return exchangePaymentSource(tx, input.exchangeOfficeId, currencyCode);
   }
   if (
@@ -61,6 +81,8 @@ export async function paymentSource(
           ? { in: [currencyCode, 'IRR'] }
           : currencyCode,
       isActive: true,
+      isExternal: false,
+      deletedAt: null,
     },
   });
   if (!account || account.currencyCode === null || account.branchId === null)

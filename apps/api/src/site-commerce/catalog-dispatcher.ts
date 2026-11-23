@@ -5,9 +5,18 @@ import type { AuthenticatedActor } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 import { SiteCommerceService } from './site-commerce.service';
 
+import {
+  commerceSites,
+  deliverySites,
+  type CommerceSite,
+} from './commerce-sites';
+
 @Injectable()
 export class WebsiteCatalogDispatcher implements OnModuleInit, OnModuleDestroy {
-  private timer?: ReturnType<typeof setTimeout>;
+  private readonly timers = new Map<
+    CommerceSite,
+    ReturnType<typeof setTimeout>
+  >();
   private stopped = false;
   private readonly logger = new Logger(WebsiteCatalogDispatcher.name);
   constructor(
@@ -16,34 +25,52 @@ export class WebsiteCatalogDispatcher implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit() {
-    this.schedule(1000);
+    for (const site of deliverySites) this.schedule(site, 1000);
   }
   onModuleDestroy() {
     this.stopped = true;
-    clearTimeout(this.timer);
+    for (const timer of this.timers.values()) clearTimeout(timer);
   }
-  private schedule(delay: number) {
+  private schedule(site: CommerceSite, delay: number) {
     if (!this.stopped)
-      this.timer = setTimeout(() => {
-        void this.tick();
-      }, delay);
+      this.timers.set(
+        site,
+        setTimeout(() => {
+          void this.tick(site);
+        }, delay),
+      );
   }
-  private async tick() {
+  private async tick(site: CommerceSite = 'nss') {
     let delay = 3000;
+    let pending: bigint | undefined;
+    let errorCode = 'catalog_preparation_failed';
     try {
-      const secret = process.env.NSS_CATALOG_WEBHOOK_SECRET;
-      if (!secret || secret.length < 32) return;
-      const binding = JSON.parse(
+      const config = commerceSites[site];
+      const secret = process.env[config.signingKey];
+      if (!secret) return;
+      const bindings = JSON.parse(
         process.env.SITE_COMMERCE_BINDINGS ?? '{}',
-      ).nss;
+      ) as Record<string, { branchId?: string; userId?: string }>;
+      const binding = bindings[site];
       if (!binding?.branchId || !binding.userId) return;
+      if (
+        site === 'ghestiroo' &&
+        Object.entries(bindings).some(
+          ([other, value]) =>
+            other !== site && value?.userId === binding.userId,
+        )
+      ) {
+        this.logger.warn('Ghestiroo requires a dedicated site user');
+        delay = 20000;
+        return;
+      }
       await this.db.client.websiteCatalogDelivery.upsert({
-        where: { siteCode: 'nss' },
-        create: { siteCode: 'nss', branchId: binding.branchId },
+        where: { siteCode: site },
+        create: { siteCode: site, branchId: binding.branchId },
         update: {},
       });
       let state = await this.db.client.websiteCatalogDelivery.findUniqueOrThrow(
-        { where: { siteCode: 'nss' } },
+        { where: { siteCode: site } },
       );
       if (
         state.revision <= state.deliveredRevision &&
@@ -51,14 +78,26 @@ export class WebsiteCatalogDispatcher implements OnModuleInit, OnModuleDestroy {
         state.nextRefreshAt <= new Date()
       ) {
         await this.db.client.websiteCatalogDelivery.updateMany({
-          where: { siteCode: 'nss', revision: state.revision },
+          where: { siteCode: site, revision: state.revision },
           data: { revision: { increment: 1 }, nextRefreshAt: null },
         });
         state = await this.db.client.websiteCatalogDelivery.findUniqueOrThrow({
-          where: { siteCode: 'nss' },
+          where: { siteCode: site },
         });
       }
       if (state.revision <= state.deliveredRevision) return;
+      pending = state.revision;
+      if (
+        secret.length < 32 ||
+        (site === 'jahan-bastan' &&
+          secret === process.env.NSS_CATALOG_WEBHOOK_SECRET) ||
+        (site === 'ghestiroo' &&
+          (secret === process.env.NSS_CATALOG_WEBHOOK_SECRET ||
+            secret === process.env.JAHAN_BASTAN_CATALOG_WEBHOOK_SECRET))
+      ) {
+        errorCode = 'invalid_site_key';
+        throw Error(errorCode);
+      }
       if (state.branchId !== binding.branchId)
         throw Error('Catalog branch binding changed');
       // Trusted in-process read adapter: no end-user impersonation, writes or financial permissions.
@@ -75,10 +114,12 @@ export class WebsiteCatalogDispatcher implements OnModuleInit, OnModuleDestroy {
       const nextRefreshAt = await this.commerce.nextCatalogCapacityChange(
         binding.branchId,
       );
-      const catalog = await this.commerce.catalog('nss', actor);
+      const catalog = await (config.floatingTours
+        ? this.commerce.catalog(site, actor, true)
+        : this.commerce.catalog(site, actor));
       const body = JSON.stringify({
         ...catalog,
-        site: 'nss',
+        site,
         revision: Number(state.revision),
       });
       if (Buffer.byteLength(body) > 4 * 1024 * 1024)
@@ -87,8 +128,13 @@ export class WebsiteCatalogDispatcher implements OnModuleInit, OnModuleDestroy {
       const signature = createHmac('sha256', secret)
         .update(timestamp + '.' + body)
         .digest('hex');
+      await this.db.client.websiteCatalogDelivery.updateMany({
+        where: { siteCode: site, attemptedRevision: { lte: state.revision } },
+        data: { attemptedRevision: state.revision },
+      });
+      errorCode = 'delivery_failed';
       const response = await fetch(
-        'https://niyayeshseir.ir/api/v1/erp/catalog-delivery',
+        config.origin + '/api/v1/erp/catalog-delivery',
         {
           method: 'POST',
           redirect: 'error',
@@ -102,6 +148,7 @@ export class WebsiteCatalogDispatcher implements OnModuleInit, OnModuleDestroy {
         },
       );
       if (!response.ok) throw Error('Catalog delivery rejected');
+      errorCode = 'invalid_receipt';
       const receipt = (await response.json()) as {
         accepted?: boolean;
         revision?: number;
@@ -112,19 +159,34 @@ export class WebsiteCatalogDispatcher implements OnModuleInit, OnModuleDestroy {
       )
         throw Error('Invalid catalog receipt');
       await this.db.client.websiteCatalogDelivery.updateMany({
-        where: { siteCode: 'nss', deliveredRevision: { lt: state.revision } },
+        where: { siteCode: site, deliveredRevision: { lt: state.revision } },
         data: {
           deliveredRevision: state.revision,
           deliveredAt: new Date(),
+          lastError: null,
           nextRefreshAt,
         },
       });
     } catch {
       // Keep the durable revision pending. Never log payloads, credentials or private upstream errors.
-      this.logger.warn('Website catalog delivery pending; retry scheduled');
+      if (pending !== undefined) {
+        await this.db.client.websiteCatalogDelivery
+          .updateMany({
+            where: {
+              siteCode: site,
+              deliveredRevision: { lt: pending },
+              attemptedRevision: { lte: pending },
+            },
+            data: { lastError: errorCode },
+          })
+          .catch(() =>
+            this.logger.warn(`Could not persist delivery error for ${site}`),
+          );
+      }
+      this.logger.warn(`Catalog delivery pending for ${site}`);
       delay = 20000;
     } finally {
-      this.schedule(delay);
+      this.schedule(site, delay);
     }
   }
 }

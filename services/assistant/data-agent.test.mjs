@@ -1,3 +1,4 @@
+import { internalSourceFallback } from './source-policy.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDataAgent, validateDataAgentMessage } from './data-agent.mjs';
@@ -142,7 +143,7 @@ test('successful JSON final answer retains evidence validation by the agent', as
   assert.deepEqual(step.args.resultIds, []);
 });
 const resultId = '12345678-1234-1234-1234-123456789abc';
-const message = { version: 1, message: 'فروش این ماه چقدر بوده؟', history: [] };
+const message = { version: 1, message: 'فروش چقدر بوده؟', history: [] };
 const signal = () => new AbortController().signal;
 const catalog = {
   version: 1,
@@ -197,6 +198,8 @@ const result = {
 function harness(steps = [plan, describe, query, finish], override) {
   const calls = [];
   const payloads = [];
+  const providerOptions = [];
+  const providerFlags = [];
   const audits = [];
   let index = 0;
   const agent = createDataAgent({
@@ -204,7 +207,9 @@ function harness(steps = [plan, describe, query, finish], override) {
     erpBaseUrl: 'http://127.0.0.1:4301/api/v1',
     audit: (value) => audits.push(value),
     provider: {
-      async step(messages) {
+      async step(messages, options) {
+        providerOptions.push(structuredClone(options.currentResultIds));
+        providerFlags.push(options.requireCalculationExplanation);
         payloads.push(structuredClone(messages));
         const next = steps[index++];
         if (next instanceof Error) throw next;
@@ -219,8 +224,122 @@ function harness(steps = [plan, describe, query, finish], override) {
       );
     },
   });
-  return { agent, calls, payloads, audits };
+  return { agent, calls, payloads, audits, providerOptions, providerFlags };
 }
+
+test('only validated current calculated evidence enables the provider explanation requirement', async () => {
+  const h = harness(
+    [
+      plan,
+      describe,
+      query,
+      step(
+        'finish_answer',
+        {
+          ...finish.args,
+          calculationExplanation:
+            'منبع مبالغ قراردادی؛ جمع USD در همه زمان‌ها برای دامنه مجاز برابر 100 است.',
+        },
+        4,
+      ),
+    ],
+    (url) =>
+      url.endsWith('/catalog')
+        ? undefined
+        : Response.json({
+            ...result,
+            calculation: { required: true, operations: ['sum'] },
+          }),
+  );
+  assert.equal(
+    (
+      await h.agent(message, {
+        cookie: 'nora_access=synthetic',
+        signal: signal(),
+      })
+    ).status,
+    'ANSWER',
+  );
+  assert.deepEqual(h.providerFlags, [false, false, false, true]);
+});
+
+test('fresh native schemas permit a planned query without redundant model discovery turns', async () => {
+  const h = harness([plan, query, finish]);
+  assert.equal(
+    (
+      await h.agent(message, {
+        cookie: 'nora_access=synthetic',
+        signal: signal(),
+      })
+    ).status,
+    'ANSWER',
+  );
+  assert.equal(h.payloads.length, 3);
+  assert.ok(
+    h.payloads[0].some(
+      (value) =>
+        value.role === 'system' &&
+        value.content.includes('authorizedSourceDefinitions') &&
+        value.content.includes('currency_code'),
+    ),
+  );
+  assert.equal(
+    h.calls.filter((call) => call.options.method === 'POST').length,
+    1,
+  );
+});
+
+test('batched source descriptions preserve single-source compatibility and reject unauthorized members atomically', async () => {
+  const batch = step(
+    'catalog_describe',
+    { source: ['amounts', 'contracts'] },
+    2,
+  );
+  const expanded = {
+    ...catalog,
+    sources: [
+      ...catalog.sources,
+      {
+        id: 'contracts',
+        columns: ['id', 'contract_number'],
+        description: 'Visible contract identity',
+        grain: 'contract',
+      },
+    ],
+  };
+  const h = harness([plan, batch, query, finish], (url) =>
+    url.endsWith('/catalog') ? Response.json(expanded) : undefined,
+  );
+  assert.equal(
+    (
+      await h.agent(message, {
+        cookie: 'nora_access=synthetic',
+        signal: signal(),
+      })
+    ).status,
+    'ANSWER',
+  );
+  const tool = h.payloads[2].findLast((value) => value.role === 'tool');
+  assert.deepEqual(
+    JSON.parse(tool.content).map((value) => value.id),
+    ['amounts', 'contracts'],
+  );
+  const denied = harness([
+    plan,
+    step('catalog_describe', { source: ['amounts', 'payments'] }, 2),
+  ]);
+  await assert.rejects(
+    denied.agent(message, {
+      cookie: 'nora_access=synthetic',
+      signal: signal(),
+    }),
+    /SOURCE_NOT_ALLOWED/,
+  );
+  assert.equal(
+    denied.calls.filter((call) => call.options.method === 'POST').length,
+    0,
+  );
+});
 
 test('provider protocol repair is bounded, charged and never executed as evidence', async () => {
   const rejection = () =>
@@ -344,7 +463,97 @@ test('material ambiguity returns clarification without querying', async () => {
     signal: signal(),
   });
   assert.equal(response.status, 'CLARIFY');
+  assert.equal(response.text, internalSourceFallback);
+  assert.deepEqual(response.sources, []);
   assert.ok(h.calls.every((call) => call.options.method === 'GET'));
+});
+
+test('an evidence-free greeting is corrected by the model, never automatically relabelled', async () => {
+  const ungrounded = step(
+    'finish_answer',
+    {
+      status: 'ANSWER',
+      text: 'Synthetic greeting',
+      resultIds: [],
+      limitations: [],
+    },
+    2,
+  );
+  const reply = step(
+    'finish_answer',
+    {
+      status: 'REPLY',
+      text: 'Synthetic corrected greeting',
+      resultIds: [],
+      limitations: [],
+    },
+    3,
+  );
+  const h = harness([plan, ungrounded, reply]);
+  const response = await h.agent(
+    { ...message, message: 'سلام' },
+    {
+      cookie: 'nora_access=synthetic',
+      signal: signal(),
+    },
+  );
+  assert.equal(response.status, 'REPLY');
+  assert.equal(response.text, internalSourceFallback);
+  assert.deepEqual(response.sources, []);
+  assert.equal(h.payloads.length, 3);
+  assert.match(
+    h.payloads[2].at(-1).content,
+    /not released: AGENT_EVIDENCE_REQUIRED/,
+  );
+  assert.ok(h.calls.every((call) => call.options.method === 'GET'));
+});
+
+test('repeated evidence-free ANSWER remains rejected after a single bounded correction', async () => {
+  const bad = {
+    status: 'ANSWER',
+    text: 'Unverified count is 123',
+    resultIds: [],
+    limitations: [],
+  };
+  const h = harness([
+    plan,
+    step('finish_answer', bad, 2),
+    step('finish_answer', bad, 3),
+  ]);
+  await assert.rejects(
+    h.agent(message, { cookie: 'nora_access=synthetic', signal: signal() }),
+    /AGENT_EVIDENCE_REQUIRED/,
+  );
+  assert.equal(h.payloads.length, 3);
+  assert.equal(h.calls.length, 4);
+  assert.ok(h.calls.every((call) => call.options.method === 'GET'));
+});
+
+test('a corrected greeting still rechecks context and cannot survive revoked access', async () => {
+  const bad = {
+    status: 'ANSWER',
+    text: 'Greeting',
+    resultIds: [],
+    limitations: [],
+  };
+  const h = harness(
+    [
+      plan,
+      step('finish_answer', bad, 2),
+      step('finish_answer', { ...bad, status: 'REPLY' }, 3),
+    ],
+    (_url, _options, calls) =>
+      calls.length >= 5 ? new Response('', { status: 403 }) : undefined,
+  );
+  await assert.rejects(
+    h.agent(
+      { ...message, message: 'سلام' },
+      { cookie: 'nora_access=synthetic', signal: signal() },
+    ),
+    /FORBIDDEN/,
+  );
+  assert.equal(h.payloads.length, 3);
+  assert.equal(h.calls.length, 5);
 });
 test('source denial and company/context changes prevent additional model transmission', async () => {
   for (const status of [401, 403]) {
@@ -386,7 +595,51 @@ test('SQL rejection permits bounded repair and truncation becomes an explicit li
   assert.equal(queries, 2);
   assert.match(response.limitations.join(' '), /limited/);
 });
-test('step, query, token and cancellation budgets fail closed', async () => {
+test('reads the reported hotel ranking in native scope and uses current evidence', async () => {
+  const h = harness([], (url) =>
+    !url.endsWith('/hotel-ranking')
+      ? undefined
+      : Response.json({
+          version: 1,
+          contextId,
+          resultId: result.resultId,
+          observedAt: result.observedAt,
+          rows: [{ hotel: 'Example Hotel', country: 'کشور نمونه', count: 2 }],
+          truncated: false,
+          missing: 0,
+        }),
+  );
+  const response = await h.agent(
+    {
+      ...message,
+      message: 'پرفروش ترین هتل های یک ماه اخیر به تفکیک کشور ها بنویس',
+    },
+    { cookie: 'nora_access=x', signal: signal() },
+  );
+  assert.equal(response.status, 'ANSWER');
+  assert.match(response.text, /Example Hotel/);
+  assert.equal(h.payloads.length, 0);
+  assert.deepEqual(
+    h.calls.map(({ url }) => url.split('/').at(-1)),
+    ['catalog', 'hotel-ranking', 'catalog'],
+  );
+  assert.equal(JSON.parse(h.calls[1].options.body).contextId, contextId);
+});
+test('releases a verified answer after the eighth model turn', async () => {
+  const h = harness([
+    plan,
+    describe,
+    ...Array.from({ length: 6 }, (_, i) => ({ ...query, id: `query_${i}` })),
+    finish,
+  ]);
+  const response = await h.agent(message, {
+    cookie: 'nora_access=x',
+    signal: signal(),
+  });
+  assert.equal(response.status, 'ANSWER');
+  assert.equal(h.payloads.length, 9);
+});
+test('query, token and cancellation budgets fail closed', async () => {
   const repeated = [
     plan,
     describe,
@@ -397,7 +650,7 @@ test('step, query, token and cancellation budgets fail closed', async () => {
       cookie: 'nora_access=x',
       signal: signal(),
     }),
-    /AGENT_STEP_BUDGET_EXCEEDED/,
+    /AGENT_QUERY_BUDGET_EXCEEDED/,
   );
   await assert.rejects(
     harness([{ ...plan, tokens: 40001 }]).agent(message, {
@@ -502,6 +755,7 @@ test('native counts reach the model and retain its own prose/calculation layout'
     { ...message, message: 'تعداد قراردادها چقدر است؟' },
     { cookie: 'nora_access=synthetic', signal: signal() },
   );
+  assert.deepEqual(h.providerOptions, [[], [], [resultId]]);
   assert.match(response.text, /۷ \+ ۲ \+ ۳ = ۱۲/);
   assert.doesNotMatch(response.text, /100.0000 USD/);
   assert.doesNotMatch(response.text, /\| وضعیت \|/);

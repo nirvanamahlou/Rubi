@@ -59,6 +59,14 @@ export function applySaleCommissions(
             isHidden: row.percent.eq(100),
             amount: commissionAmount(fare.amount, row.percent.toString()),
             currencyCode: fare.currencyCode,
+            childAmount:
+              fare.childAmount == null
+                ? null
+                : commissionAmount(fare.childAmount, row.percent.toString()),
+            infantAmount:
+              fare.infantAmount == null
+                ? null
+                : commissionAmount(fare.infantAmount, row.percent.toString()),
             ...(fare.tiers?.length
               ? {
                   tiers: fare.tiers.map((tier) => ({
@@ -90,6 +98,8 @@ export function applySaleCommissions(
         revision: price.revision,
         amount: price.amount,
         currencyCode: price.currencyCode,
+        childAmount: price.childAmount,
+        infantAmount: price.infantAmount,
         ...(price.tiers?.length ? { tiers: price.tiers } : {}),
         salePriceTarget: row.target,
       });
@@ -105,7 +115,13 @@ export function applySaleCommissions(
     standaloneSalePrice: direct?.isHidden
       ? null
       : base && direct
-        ? { ...base, amount: direct.amount, tiers: direct.tiers }
+        ? {
+            ...base,
+            amount: direct.amount,
+            childAmount: direct.childAmount,
+            infantAmount: direct.infantAmount,
+            tiers: direct.tiers,
+          }
         : base,
     targetedStandaloneSalePrices: [...targeted.values()]
       .filter(
@@ -123,6 +139,8 @@ export function applySaleCommissions(
               ...price,
               amount: c.amount,
               currencyCode: c.currencyCode,
+              childAmount: c.childAmount,
+              infantAmount: c.infantAmount,
               tiers: c.tiers,
             }
           : price;
@@ -147,6 +165,8 @@ export function applySaleCommissions(
           baseAmount: price.amount,
           baseTiers: price.tiers,
           amount: c?.amount ?? price.amount,
+          childAmount: c ? c.childAmount : price.childAmount,
+          infantAmount: c ? c.infantAmount : price.infantAmount,
           tiers: c?.tiers ?? price.tiers,
         };
       }),

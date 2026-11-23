@@ -1,3 +1,4 @@
+import { internalSourceFallback } from './source-policy.mjs';
 import { ServiceError } from './errors.mjs';
 import { filterQuery, resolveReportFilters } from './report-filters.mjs';
 
@@ -97,7 +98,7 @@ export function createOrchestrator({
   timeoutMs = 1500,
   now = () => new Date(),
 } = {}) {
-  return async function orchestrate(input, { signal, runAction }) {
+  return async function orchestrate(input, { signal, runAction, beforeRetry }) {
     if (!enabled || typeof provider?.plan !== 'function')
       throw new ServiceError(503, 'CONVERSATION_DISABLED');
     const message = validateMessage(input);
@@ -121,7 +122,7 @@ export function createOrchestrator({
         Promise.resolve().then(() =>
           provider.plan(
             { ...message, actions: CONVERSATION_ACTIONS },
-            { signal: combined, maxOutputTokens: 512 },
+            { signal: combined, maxOutputTokens: 512, beforeRetry },
           ),
         ),
         deadline,
@@ -135,7 +136,7 @@ export function createOrchestrator({
         plan.text.trim() &&
         plan.text.length <= 2000
       ) {
-        return { version: 1, status: 'REPLY', text: plan.text.trim() };
+        return { version: 1, status: 'REPLY', text: internalSourceFallback };
       }
       if (
         shape(plan, ['kind', 'field']) &&

@@ -471,6 +471,31 @@ export class CustomerAffairsController {
     return this.service.updateCorrectiveAction(id, dto, req.actor);
   }
 
+  @Patch('workbench/requests/:id/mission-finance')
+  updateMissionFinance(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: unknown,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.updateMissionFinance(id, body, req.actor);
+  }
+  @Get('workbench/requests/:id/mission-evidence/:documentId')
+  async missionEvidence(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('documentId', new ParseUUIDPipe()) documentId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const result = await this.service.missionEvidence(
+      id,
+      documentId,
+      req.actor,
+    );
+    return new StreamableFile(result.stream, {
+      type: result.mimeType,
+      disposition: 'inline',
+      length: result.sizeBytes,
+    });
+  }
   @Post('workbench/requests')
   createWorkbenchRequest(
     @Body() dto: WorkbenchRequestDto,

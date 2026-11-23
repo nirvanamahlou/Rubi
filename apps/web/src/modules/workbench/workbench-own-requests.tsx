@@ -1,4 +1,5 @@
 'use client';
+import { MissionDetails, MissionFinanceEditor } from './mission-fields';
 import { leaveDescription } from '@/modules/workbench/leave-description';
 import { hrRequest } from '@/modules/hr/hr-api';
 
@@ -31,6 +32,7 @@ import { workbenchDate } from './model';
 import { workbenchRequestPriorityLabel } from './workbench-request-priority';
 import {
   shouldShowWorkbenchRequestStatus,
+  workbenchApprovalProgressLabel,
   workbenchRequestStatusLabel,
 } from './workbench-request-status';
 
@@ -449,6 +451,25 @@ export function WorkbenchOwnRequests() {
                     </dd>
                   </div>
                 </dl>
+                {selected.mission && (
+                  <>
+                    <MissionDetails
+                      mission={selected.mission}
+                      id={selected.id}
+                    />
+                    {selected.direction !== 'incoming' &&
+                      selected.branchId &&
+                      selected.version && (
+                        <MissionFinanceEditor
+                          mission={selected.mission}
+                          id={selected.id}
+                          version={selected.version}
+                          branchId={selected.branchId}
+                          onSaved={() => setRefresh((v) => v + 1)}
+                        />
+                      )}
+                  </>
+                )}
                 {selected.leave && (
                   <ol
                     aria-label="روند درخواست مرخصی"
@@ -484,7 +505,7 @@ export function WorkbenchOwnRequests() {
                           />
                           <span>{label}</span>
                           <span className="sr-only">
-                            {done[index] ? 'انجام‌شده' : 'در انتظار'}
+                            {workbenchApprovalProgressLabel(done[index])}
                           </span>
                         </li>
                       );

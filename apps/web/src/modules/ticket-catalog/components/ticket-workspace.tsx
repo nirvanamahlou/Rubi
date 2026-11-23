@@ -1,4 +1,6 @@
 'use client';
+import { TicketCapacityHoldRoster } from './ticket-capacity-hold-roster';
+import { TicketCapacityHoldAction } from './ticket-capacity-hold-action';
 import { loadWeekdayOffers } from '../model/load-weekday-edit';
 import { flightCabinCode } from '../model/flight-cabins';
 
@@ -57,6 +59,7 @@ import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
 import { toursApi } from '../api/tours';
 import { getActiveCityReference } from '../api/references';
+import { loadEditReferences } from '../model/load-edit-references';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 
@@ -68,6 +71,8 @@ import {
   samePublishedFlight,
 } from '../model/published-catalog';
 import { PublishedOfferForm } from './published-offer-form';
+import { TicketCreationBranch } from './ticket-creation-branch';
+import { ticketCreationBranch } from '../model/publication-branch';
 
 const actor = 'کاربر جاری';
 
@@ -114,6 +119,9 @@ export function flightOfferInput(
   );
   const cabinClassCode = flightCabinCode(cabin);
   return {
+    ...(definition.segments.length === 1
+      ? { aircraftTypeId: firstSegment.aircraftId || null }
+      : {}),
     originAirportId: firstSegment.originAirportId || null,
     destinationAirportId: lastSegment.destinationAirportId || null,
     saleRoutes: definition.saleRoutes ?? [],
@@ -214,6 +222,8 @@ export function TicketWorkspace() {
 }
 
 function TicketCatalogWorkspace() {
+  const [creationBranch, setCreationBranch] = useState('');
+  const [formSaving, setFormSaving] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [references, setReferences] = useState<Reference[]>([]);
   const [hydrated, setHydrated] = useState(false);
@@ -342,7 +352,10 @@ function TicketCatalogWorkspace() {
         capacityHold.quantity < 1
       )
         throw new Error('تعداد نفرات رزرو باید حداقل ۱ باشد.');
-      if (capacityHold.quantity > capacityHold.offer.remainingCapacity)
+      const currentOffer =
+        publishedOffers.find((offer) => offer.id === capacityHold.offer.id) ??
+        capacityHold.offer;
+      if (capacityHold.quantity > currentOffer.remainingCapacity)
         throw new Error('تعداد واردشده از ظرفیت باقی‌مانده بیشتر است.');
       if (!capacityHold.requesterName.trim())
         throw new Error('نام درخواست‌کننده رزرو را وارد کنید.');
@@ -382,6 +395,7 @@ function TicketCatalogWorkspace() {
     inputs: readonly ProductInput[],
     productIds: readonly string[],
     allowPastDate = false,
+    selectedBranch?: string,
   ) => {
     const publishable = inputs
       .map((input, index) => ({
@@ -399,7 +413,10 @@ function TicketCatalogWorkspace() {
     const base = getPublicApiBaseUrl();
     if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
     const session = await refreshAuthenticatedSession(base);
-    const branchId = session?.user.branches[0]?.id;
+    const branchId =
+      selectedBranch === undefined
+        ? session?.user.branches[0]?.id
+        : ticketCreationBranch(session?.user.branches ?? [], selectedBranch);
     if (!branchId) throw new Error('شعبه مجاز برای ثبت بلیط پیدا نشد.');
     // Settle each bounded group before exposing a retry; a failed request must
     // not leave other in-flight writes racing with the next submission.
@@ -645,7 +662,7 @@ function TicketCatalogWorkspace() {
     if (current && inputs.length !== 1)
       throw new Error('ویرایش باید روی همان بلیط انجام شود.');
     let updated = products;
-    const signature = JSON.stringify(inputs);
+    const signature = JSON.stringify({ inputs, branchId: creationBranch });
     if (!current && pendingCreate.current?.signature !== signature) {
       const groupId = browserRandomUuid();
       pendingCreate.current = {
@@ -697,7 +714,7 @@ function TicketCatalogWorkspace() {
     }
     if (!current) {
       try {
-        await publishFlights(inputs, createdIds, allowPastDate);
+        await publishFlights(inputs, createdIds, allowPastDate, creationBranch);
       } catch (error) {
         await refreshPublishedOffers();
         throw error;
@@ -910,7 +927,9 @@ function TicketCatalogWorkspace() {
       );
     }
   }
-  const editPublishedLoad = (visibleOffers: readonly TicketOfferV1[]) => {
+  const [loadingLoadEditor, setLoadingLoadEditor] = useState(false);
+  const editPublishedLoad = async (visibleOffers: readonly TicketOfferV1[]) => {
+    if (loadingLoadEditor) return;
     const offers = publishedLoadGroups(
       visibleOffers,
       publishedOffers,
@@ -921,40 +940,61 @@ function TicketCatalogWorkspace() {
       setPublishedProblem('ردیفی برای ویرایش در این جدول وجود ندارد.');
       return;
     }
-    const selected = displayedProducts.find(
-      (item) => item.id === `offer:${offer.id}`,
-    );
-    const selectedSegment = selected?.definition.segments[0];
-    const grouped = offers.flatMap((item) => {
-      const product = displayedProducts.find(
-        (candidate) => candidate.id === `offer:${item.id}`,
+    setLoadingLoadEditor(true);
+    try {
+      const loaded = await loadEditReferences(offers, references);
+      setReferences((current) => {
+        const combined = new Map(
+          current.map((ref) => [`${ref.kind}:${ref.id}`, ref]),
+        );
+        for (const ref of loaded) combined.set(`${ref.kind}:${ref.id}`, ref);
+        return [...combined.values()];
+      });
+      const editProducts = catalogProductsFromOffers(products, offers, loaded);
+      const selected = editProducts.find(
+        (item) => item.id === `offer:${offer.id}`,
       );
-      if (!product || !selectedSegment) return [];
-      const segment = product.definition.segments[0]!;
-      const sameDirection =
-        segment.originCityId === selectedSegment.originCityId &&
-        segment.destinationCityId === selectedSegment.destinationCityId;
-      return [
-        {
-          ...product,
-          definition: {
-            ...product.definition,
-            journeyRole: sameDirection
-              ? ('outbound' as const)
-              : ('return' as const),
+      const selectedSegment = selected?.definition.segments[0];
+      const grouped = offers.flatMap((item) => {
+        const product = editProducts.find(
+          (candidate) => candidate.id === `offer:${item.id}`,
+        );
+        if (!product || !selectedSegment) return [];
+        const segment = product.definition.segments[0]!;
+        const sameDirection =
+          segment.originCityId === selectedSegment.originCityId &&
+          segment.destinationCityId === selectedSegment.destinationCityId;
+        return [
+          {
+            ...product,
+            definition: {
+              ...product.definition,
+              journeyRole: sameDirection
+                ? ('outbound' as const)
+                : ('return' as const),
+            },
           },
-        },
-      ];
-    });
-    const product = grouped.find((item) => item.id === `offer:${offer.id}`);
-    if (!product || grouped.length !== offers.length) {
+        ];
+      });
+      const product = grouped.find((item) => item.id === `offer:${offer.id}`);
+      if (!product || grouped.length !== offers.length) {
+        setPublishedProblem(
+          'اطلاعات فرم این لود آماده نیست؛ فهرست را به‌روزرسانی کنید.',
+        );
+        return;
+      }
+      setOfferForm(null);
+      setForm(
+        (current) =>
+          current ?? { mode: 'edit', product, products: grouped, offers },
+      );
+    } catch {
       setPublishedProblem(
         'اطلاعات فرم این لود آماده نیست؛ فهرست را به‌روزرسانی کنید.',
       );
-      return;
+    } finally {
+      setLoadingLoadEditor(false);
     }
-    setOfferForm(null);
-    setForm({ mode: 'edit', product, products: grouped, offers });
   };
   const renderOfferActions = (offer: TicketOfferV1) => (
     <div className="flex flex-wrap gap-2">
@@ -969,6 +1009,7 @@ function TicketCatalogWorkspace() {
         size="sm"
         variant="outline"
         onClick={() => editPublishedLoad([offer])}
+        disabled={loadingLoadEditor}
       >
         ویرایش لود
       </Button>
@@ -985,29 +1026,14 @@ function TicketCatalogWorkspace() {
       >
         ویرایش روز هفته
       </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={
-          offer.status !== 'ACTIVE' ||
-          offer.remainingCapacity < 1 ||
-          new Date(offer.departureAt).getTime() <= catalogNow
-        }
-        title={
-          offer.status !== 'ACTIVE'
-            ? 'غیرفعال'
-            : new Date(offer.departureAt).getTime() <= catalogNow
-              ? 'تاریخ گذشته'
-              : offer.remainingCapacity < 1
-                ? 'ظرفیت تکمیل شده'
-                : undefined
-        }
-        onClick={() =>
+      <TicketCapacityHoldAction
+        mode="inspect"
+        offer={offer}
+        now={catalogNow}
+        onAction={() =>
           updateCapacityHold({ offer, quantity: 1, requesterName: '' })
         }
-      >
-        رزرو ظرفیت
-      </Button>
+      />
       <Button
         size="sm"
         variant="outline"
@@ -1129,6 +1155,14 @@ function TicketCatalogWorkspace() {
           ) : null}
           {form ? (
             <div className="mt-5">
+              {form.mode === 'create' &&
+              (!form.initial || form.initial.transport === 'flight') ? (
+                <TicketCreationBranch
+                  value={creationBranch}
+                  onChange={setCreationBranch}
+                  disabled={formSaving}
+                />
+              ) : null}
               {form.mode === 'view' && form.product ? (
                 <TicketDetails
                   product={form.product}
@@ -1144,7 +1178,14 @@ function TicketCatalogWorkspace() {
                   editing={form.mode === 'edit'}
                   references={references}
                   onReference={rememberReference}
-                  onSave={save}
+                  onSave={async (...args) => {
+                    setFormSaving(true);
+                    try {
+                      await save(...args);
+                    } finally {
+                      setFormSaving(false);
+                    }
+                  }}
                   onCancel={() => setForm(null)}
                 />
               ) : (
@@ -1154,7 +1195,14 @@ function TicketCatalogWorkspace() {
                   }
                   references={references}
                   onReference={rememberReference}
-                  onSave={save}
+                  onSave={async (...args) => {
+                    setFormSaving(true);
+                    try {
+                      await save(...args);
+                    } finally {
+                      setFormSaving(false);
+                    }
+                  }}
                   onCancel={() => setForm(null)}
                   allowRoundTrip={form.mode === 'create' && !form.initial}
                   allowMultipleClasses={form.mode === 'create'}
@@ -1188,7 +1236,10 @@ function TicketCatalogWorkspace() {
           if (!open && !capacityHoldSaving) updateCapacityHold(undefined);
         }}
       >
-        <DialogContent dir="rtl" className="start-auto! left-1/2!">
+        <DialogContent
+          dir="rtl"
+          className="start-auto! left-1/2! max-h-[85vh] overflow-y-auto"
+        >
           <DialogTitle>رزرو موقت ظرفیت</DialogTitle>
           <DialogDescription>
             ظرفیت تا زمان انقضا برای این بلیت نگه داشته می‌شود و پس از آن خودکار
@@ -1199,8 +1250,13 @@ function TicketCatalogWorkspace() {
             {capacityHold?.offer.carrierName} ·{' '}
             <span dir="ltr">{capacityHold?.offer.serviceNumber}</span> · ظرفیت
             باقی‌مانده:{' '}
-            {capacityHold?.offer.remainingCapacity.toLocaleString('fa-IR')}
+            {(
+              publishedOffers.find(
+                (offer) => offer.id === capacityHold?.offer.id,
+              )?.remainingCapacity ?? capacityHold?.offer.remainingCapacity
+            )?.toLocaleString('fa-IR')}
           </p>
+
           <FormField
             label="تعداد نفرات"
             id="ticket-capacity-hold-quantity"
@@ -1210,7 +1266,13 @@ function TicketCatalogWorkspace() {
               id="ticket-capacity-hold-quantity"
               type="number"
               min={1}
-              max={capacityHold?.offer.remainingCapacity ?? 1}
+              max={
+                publishedOffers.find(
+                  (offer) => offer.id === capacityHold?.offer.id,
+                )?.remainingCapacity ??
+                capacityHold?.offer.remainingCapacity ??
+                1
+              }
               value={capacityHold?.quantity ?? 1}
               onChange={(event) =>
                 capacityHold &&
@@ -1241,12 +1303,17 @@ function TicketCatalogWorkspace() {
             />
           </FormField>
           <div className="mt-2 flex gap-2">
-            <Button
-              disabled={capacityHoldSaving}
-              onClick={() => void submitCapacityHold()}
-            >
-              {capacityHoldSaving ? 'در حال ثبت…' : 'ثبت رزرو موقت'}
-            </Button>
+            <TicketCapacityHoldAction
+              mode="create"
+              offer={
+                publishedOffers.find(
+                  (offer) => offer.id === capacityHold?.offer.id,
+                ) ?? capacityHold?.offer
+              }
+              now={catalogNow}
+              busy={capacityHoldSaving}
+              onAction={() => void submitCapacityHold()}
+            />
             <Button
               disabled={capacityHoldSaving}
               variant="outline"
@@ -1255,6 +1322,16 @@ function TicketCatalogWorkspace() {
               انصراف
             </Button>
           </div>
+          {capacityHold ? (
+            <TicketCapacityHoldRoster
+              key={capacityHold.offer.id}
+              offerId={capacityHold.offer.id}
+              loadPage={toursApi.capacityHolds}
+              onCapacityChange={() => {
+                void refreshPublishedOffers();
+              }}
+            />
+          ) : null}
         </DialogContent>
       </Dialog>
       <Dialog

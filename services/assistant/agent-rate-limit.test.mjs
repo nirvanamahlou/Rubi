@@ -45,6 +45,29 @@ test('tool rejection exposes only a bounded charge, never the failed generation'
   );
   assert.equal(calls, 1);
 });
+
+test('output parse rejection uses the same bounded repair classification without recovering failed output', async () => {
+  const provider = createAgentProvider({
+    apiKey: 'synthetic',
+    fetcher: async () =>
+      Response.json(
+        {
+          error: {
+            code: 'output_parse_failed',
+            failed_generation: 'NEVER_EXECUTE_FAILED_OUTPUT',
+          },
+        },
+        { status: 400 },
+      ),
+  });
+  await assert.rejects(
+    provider.step([], options()),
+    (error) =>
+      error.message === 'AGENT_PROVIDER_TOOL_REJECTED' &&
+      Number.isSafeInteger(error.tokenCharge) &&
+      !JSON.stringify(error).includes('NEVER_EXECUTE_FAILED_OUTPUT'),
+  );
+});
 test('429 respects Retry-After, suppresses repeated calls, and permits a later request', async () => {
   let clock = 100000,
     calls = 0;

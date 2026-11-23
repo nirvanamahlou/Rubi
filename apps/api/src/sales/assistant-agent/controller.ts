@@ -25,6 +25,7 @@ import {
 } from './catalog';
 import { SalesAgentQueryService, type AgentScope } from './query.service';
 import { DatabaseService } from '../../database/database.service';
+import { readHotelRanking } from './hotel-ranking';
 import { readContractCountBreakdown } from './count-breakdown';
 
 @UseGuards(AuthGuard)
@@ -129,6 +130,52 @@ export class SalesAgentController {
     }
     const release = await this.context(request);
     if (release.contextId !== context.contextId)
+      throw new ForbiddenException('AGENT_CONTEXT_CHANGED');
+    return { ...result, contextId: context.contextId };
+  }
+
+  @Post('hotel-ranking')
+  @Header('Cache-Control', 'private, no-store')
+  async hotelRanking(
+    @Req() request: AuthenticatedRequest,
+    @Body() body: unknown,
+  ) {
+    const value = body as Record<string, unknown> | null;
+    if (
+      !value ||
+      Object.keys(value).length !== 3 ||
+      typeof value.contextId !== 'string' ||
+      typeof value.start !== 'string' ||
+      typeof value.end !== 'string' ||
+      ![value.start, value.end].every((date) =>
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(date),
+      )
+    )
+      throw new BadRequestException('INVALID_QUERY');
+    const start = new Date(value.start);
+    const end = new Date(value.end);
+    const span = end.getTime() - start.getTime();
+    if (
+      !(span > 0 && span <= 367 * 86400000) ||
+      start.toISOString() !== value.start ||
+      end.toISOString() !== value.end
+    )
+      throw new BadRequestException('INVALID_QUERY');
+    const context = await this.context(request);
+    if (context.contextId !== value.contextId)
+      throw new ForbiddenException('AGENT_CONTEXT_CHANGED');
+    let result;
+    try {
+      result = await readHotelRanking(
+        this.database.client,
+        context.scope,
+        start,
+        end,
+      );
+    } catch {
+      throw new ServiceUnavailableException('AGENT_SOURCE_UNAVAILABLE');
+    }
+    if ((await this.context(request)).contextId !== context.contextId)
       throw new ForbiddenException('AGENT_CONTEXT_CHANGED');
     return { ...result, contextId: context.contextId };
   }

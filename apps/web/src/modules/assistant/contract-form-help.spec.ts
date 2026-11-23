@@ -2,6 +2,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readContractFormHelp } from './contract-form-help';
 afterEach(() => vi.unstubAllGlobals());
 describe('live draft guidance', () => {
+  it('does not read a saved receipt marker just because the user wrote پرسیدم', () => {
+    vi.stubGlobal('document', {
+      querySelector: () => ({ dataset: { noraSaved: 'synthetic' } }),
+    });
+    expect(readContractFormHelp('پرسیدم چجور قرارداد بزنم؟')).toBeUndefined();
+  });
   it('distinguishes create success from an unconfirmed reservation handoff', () => {
     vi.stubGlobal('document', {
       querySelector: (key: string) =>

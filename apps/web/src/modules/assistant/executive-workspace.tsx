@@ -1,8 +1,105 @@
 'use client';
 
+import {
+  retrieveCompositeGuides,
+  selectCompositeChecklist,
+} from './composite-guide';
+
+import { documentGuideLink } from './assistant-guide-registry';
+
+import {
+  purchaseGuideLink,
+  readPurchaseGuide,
+  renderPurchaseGuide,
+  resolvePurchaseQuestion,
+} from './purchase-guides';
+import {
+  customerGuideLink,
+  readCustomerGuide,
+  renderCustomerGuide,
+  resolveCustomerQuestion,
+} from './customer-guides';
+import {
+  flightPricingLink,
+  flightPricingTopicLink,
+  readFlightPricing,
+  renderFlightPricingGuide,
+  resolveFlightPricingQuestion,
+} from './flight-pricing-guide';
+import { canUseMasterDataResource } from '@nora/contracts';
+import {
+  masterDataGuideLink,
+  readMasterDataGuide,
+  renderMasterDataGuide,
+  resolveMasterDataQuestion,
+} from './master-data-guide';
+import {
+  b2bDirectoryContext,
+  b2bGuideLink,
+  readB2bGuide,
+  renderB2bGuide,
+  resolveB2bQuestion,
+} from './b2b-guide';
+import {
+  resolveDocumentQuestion,
+  renderDocumentGuide,
+  readDocumentGuide,
+} from './document-guides';
+
+import { canViewScreen } from '@nora/contracts';
+import {
+  readTourGuideStatus,
+  renderTourGuide,
+  resolveTourGuideQuestion,
+  tourGuideDestination,
+  tourGuideHref,
+  tourGuideUnavailable,
+  type TourGuideTopic,
+} from './tour-guide';
+import {
+  financeDeliveryCopy,
+  financeDeliveryHref,
+  readFinanceDeliveryStatus,
+  renderFinanceDeliveryGuide,
+  resolveFinanceDeliveryQuestion,
+} from './finance-delivery-guide';
+import {
+  getReservationReport,
+  reservationReportHref,
+} from '@/modules/ticket-catalog/model/reservation-report-context';
+import {
+  readReservationReportAnswer,
+  reservationReportPermissionMessage,
+  renderReservationReportGuide,
+  resolveReservationReportQuestion,
+  type ReservationReportTopic,
+} from './reservation-report-guide';
+import { normalizeQuestion } from './question-text';
 import { AssistantResponseContent } from './response-content';
+import { formatAssistantSources } from './response-presentation';
+import { useChatScroll } from './use-chat-scroll';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { resolveWorkbenchGuide, loadWorkbenchGuide } from './workbench-guides';
+import contractGuideCatalog from './contract-guide.generated.json';
+import {
+  resolveWorkbenchGuide,
+  loadWorkbenchGuide,
+  renderWorkbenchGuide,
+} from './workbench-guides';
+import {
+  asksWorkbenchRequestStatus,
+  describeWorkbenchRequest,
+} from './workbench-request-guide';
+import {
+  callCenterIntent,
+  callCenterQueueHref,
+  readCallCenterMetric,
+  readCallCenterRequestStatus,
+} from './call-center-request-guide';
+import { CallCenterHttpError } from '@/modules/call-center/client';
+import {
+  customerAffairsApi,
+  CustomerAffairsApiError,
+} from '@/modules/customer-affairs/api/customer-affairs-client';
 import {
   assistantConversationScopeKey,
   appendChatExchange,
@@ -20,6 +117,7 @@ import {
 import {
   normalizeContractQuestion,
   resolveContractGuide,
+  formatContractGuide,
 } from './contract-guides';
 import { currencySymbol } from '@/lib/currency-symbol';
 
@@ -37,6 +135,8 @@ import {
   Activity,
   ArrowUpLeft,
   ArrowUp,
+  ArrowDown,
+  LoaderCircle,
   BarChart3,
   BellRing,
   BookOpen,
@@ -73,8 +173,6 @@ import { assistantCopy as c, type AssistantText } from '@/i18n/assistant-copy';
 import {
   assistantViews,
   loadExecutiveSnapshot,
-  loadAssistantAction,
-  type AssistantAction,
   type AssistantActionResult,
   type AssistantLoadState,
   type AssistantView,
@@ -83,6 +181,7 @@ import {
 import styles from './executive-workspace.module.css';
 import { conversationResponseSchema } from './conversation';
 import { agentResponseSchema, conversationHistory } from './agent-response';
+import { routeAssistantQuestion, type AnswerContext } from './question-routing';
 import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
 import { useAccessActor } from '@/modules/iam/access-context';
 
@@ -278,6 +377,7 @@ function AssistantComposerContent({
   floating?: boolean;
   agentMode?: boolean;
 }) {
+  const actor = useAccessActor();
   const inputId = useId();
   const input = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState('');
@@ -288,7 +388,6 @@ function AssistantComposerContent({
     field.style.height = `${Math.min(field.scrollHeight, 132)}px`;
   }, [draft]);
 
-  const [filterError, setFilterError] = useState(false);
   const [messages, setMessages] = useState<
     Array<{
       role: 'user' | 'assistant';
@@ -297,7 +396,8 @@ function AssistantComposerContent({
       agent?: boolean;
       links?: ContractLink[];
       targets?: { id: string; label: string }[];
-      guideLink?: { href: string; label: string };
+      guideLink?: { href: string; label: string; guideHref?: string };
+      submissionId?: number;
     }>
   >([]);
   const [chatError, setChatError] = useState<string | null>(null);
@@ -306,6 +406,15 @@ function AssistantComposerContent({
   const [actionState, setActionState] = useState<AssistantLoadState | null>(
     null,
   );
+  const submissionSequence = useRef(0);
+  const submitting = useRef(false);
+  const {
+    viewport: chatViewportRef,
+    content: chatContentRef,
+    showLatest,
+    updatePosition,
+    scrollToLatest,
+  } = useChatScroll(messages, actionState, actionResult, chatError);
   const pending = useRef<AbortController | null>(null);
   const inspecting = useRef<AbortController | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
@@ -314,26 +423,70 @@ function AssistantComposerContent({
   const workbenchTab =
     pathname === '/workbench'
       ? (searchParams.get('tab') ?? 'today')
-      : undefined;
+      : pathname === '/customer-affairs/call-center'
+        ? 'call-center'
+        : undefined;
+  const tourTopic = useRef<{ topic: TourGuideTopic; href: string } | undefined>(
+    undefined,
+  );
+  const purchaseTopic = useRef<
+    | Extract<
+        ReturnType<typeof resolvePurchaseQuestion>,
+        { kind: 'guide' }
+      >['topic']['id']
+    | 'status'
+    | undefined
+  >(undefined);
+  const customerTopic = useRef<string | undefined>(undefined);
+  const customerLookup = useRef<AbortController | null>(null);
+  const customerLocation = pathname + '?' + searchParams.toString();
+  useEffect(() => () => customerLookup.current?.abort(), [customerLocation]);
+  const financeDeliveryTopic = useRef<
+    | Extract<
+        ReturnType<typeof resolveFinanceDeliveryQuestion>,
+        { kind: 'guide' }
+      >['topic']
+    | undefined
+  >(undefined);
+  const flightPricingTopic = useRef<string | undefined>(undefined);
+  const flightPricingRead = useRef<AbortController | null>(null);
+  useEffect(() => () => flightPricingRead.current?.abort(), [pathname]);
+  const masterDataPermissions = useAccessPermissions();
+  const masterDataTopic = useRef<string | undefined>(undefined);
+  const masterDataRead = useRef<AbortController | null>(null);
+  useEffect(() => () => masterDataRead.current?.abort(), [pathname]);
+  const b2bTopic = useRef<string | undefined>(undefined);
+  const b2bRead = useRef<AbortController | null>(null);
+  useEffect(() => () => b2bRead.current?.abort(), [pathname]);
+  const reportTopic = useRef<ReservationReportTopic | undefined>(undefined);
+  const documentTopic = useRef<string | undefined>(undefined);
   const workbenchTopic = useRef<string | undefined>(undefined);
   const lastVersion = useRef<number | undefined>(undefined);
   const contractId = useRef<string | undefined>(undefined);
   const guideTopic = useRef<string | undefined>(undefined);
+  const previousAnswer = useRef<AnswerContext | undefined>(undefined);
+  useEffect(() => {
+    if (denied) previousAnswer.current = undefined;
+  }, [denied]);
   useEffect(() => {
     const resetRecord = () => {
-      workbenchTopic.current = undefined;
       inspecting.current?.abort();
       pending.current?.abort();
       setActionState(null);
       lastVersion.current = undefined;
       contractId.current = undefined;
-      guideTopic.current = undefined;
     };
     resetRecord();
     let selection = selectedSalesContract();
     const observer = new MutationObserver(() => {
       const current = selectedSalesContract();
       if (current !== selection) {
+        if (
+          current &&
+          previousAnswer.current?.contractId &&
+          previousAnswer.current.contractId !== current
+        )
+          previousAnswer.current = undefined;
         selection = current;
         resetRecord();
       }
@@ -352,58 +505,61 @@ function AssistantComposerContent({
     };
   }, [pathname, workbenchTab, agentMode]);
 
-  const prompts: readonly [AssistantText, AssistantAction][] = [
-    [c.quickDaily, 'daily-summary'],
-    [c.quickSales, 'sales-analysis'],
-    [c.quickReceivables, 'receivables-follow-up'],
-  ];
-  const run = async (action: AssistantAction) => {
-    if (denied) return;
-    pending.current?.abort();
-    const controller = new AbortController();
-    pending.current = controller;
-    setActionResult(null);
-    setChatError(null);
-    setActionState('loading');
-    setFilterError(false);
+  const submit = async () => {
+    if (
+      denied ||
+      !draft.trim() ||
+      actionState === 'loading' ||
+      submitting.current
+    )
+      return;
+    submitting.current = true;
     try {
-      const result = await loadAssistantAction(action, controller.signal);
-      if (!controller.signal.aborted) {
-        setActionResult(result);
-        setActionState(null);
-      }
-    } catch (error) {
-      if (!controller.signal.aborted) {
-        const message = error instanceof Error ? error.message : '';
-        if (message === 'HTTP_400') {
-          setFilterError(true);
-          setActionState(null);
-          return;
-        }
-        setActionState(
-          message === 'HTTP_401'
-            ? 'unauthenticated'
-            : message === 'HTTP_403'
-              ? 'forbidden'
-              : message === 'HTTP_429'
-                ? 'rate-limited'
-                : 'unavailable',
-        );
-      }
+      await sendMessage();
+    } finally {
+      submitting.current = false;
     }
   };
-  const submit = async () => {
-    if (denied || !draft.trim() || actionState === 'loading') return;
+  const sendMessage = async () => {
     const message = draft.trim();
+    const submissionId = ++submissionSequence.current;
+    scrollToLatest();
+    // Visible immediately; not provider history until a response succeeds.
+    setMessages((previous) =>
+      appendChatExchange(previous, [
+        {
+          role: 'user' as const,
+          content: message,
+          local: true,
+          submissionId,
+        },
+      ]),
+    );
+    setDraft('');
+    setChatError(null);
+    setActionResult(null);
+    const decision = routeAssistantQuestion(
+      message,
+      previousAnswer.current,
+      Boolean(pathname?.startsWith('/sales')),
+      workbenchTab === 'call-center',
+    );
+    const guideQuestion = decision.guideQuestion ?? message;
+    const guidanceAllowed = decision.kind === 'guide';
     const replyLocally = (
       content: string,
       links?: ContractLink[],
       targets?: { id: string; label: string }[],
-      guideLink?: { href: string; label: string },
+      guideLink?: { href: string; label: string; guideHref?: string },
+      answerContext?: AnswerContext,
     ) => {
+      if (answerContext)
+        previousAnswer.current = {
+          ...answerContext,
+          question: answerContext.question.slice(0, 1000),
+        };
       setMessages((previous) =>
         appendChatExchange(previous, [
-          { role: 'user' as const, content: message, local: true },
           {
             role: 'assistant' as const,
             content,
@@ -417,13 +573,661 @@ function AssistantComposerContent({
       setChatError(null);
       setActionResult(null);
       setActionState(null);
-      setDraft('');
     };
-    const workbenchHelp = resolveWorkbenchGuide(
+    const composite =
+      guidanceAllowed && !decision.guideTopicId
+        ? retrieveCompositeGuides(message, decision.domain)
+        : [];
+    if (composite.length && !pathname?.startsWith('/sales/contracts/new')) {
+      pending.current?.abort();
+      const controller = new AbortController();
+      pending.current = controller;
+      const selected =
+        decision.domain === 'sales'
+          ? await selectCompositeChecklist(message, controller.signal)
+          : null;
+      if (controller.signal.aborted) return;
+      for (const section of composite) {
+        const indices = selected?.[section.id];
+        const steps =
+          Array.isArray(indices) &&
+          indices.length &&
+          indices.every(
+            (index, i) =>
+              Number.isInteger(index) &&
+              index >= 0 &&
+              index < section.steps.length &&
+              (i === 0 || indices[i - 1]! < index),
+          )
+            ? indices.map((index) => section.steps[index]!)
+            : section.steps;
+        const conditions = 'conditions' in section ? section.conditions : [];
+        replyLocally(
+          [
+            section.title,
+            ...steps.map((step, i) => `${i + 1}. ${step}`),
+            ...conditions,
+          ].join('\n'),
+          undefined,
+          undefined,
+          {
+            href: section.href,
+            label: english ? 'Open panel' : 'باز کردن پنل',
+            guideHref: section.guideHref,
+          },
+        );
+      }
+      return;
+    }
+    if (decision.guideTopicId === 'travel-document-workflow') {
+      pending.current?.abort();
+      const section = contractGuideCatalog.topics.find(
+        ({ id }) => id === decision.guideTopicId,
+      );
+      if (!section) {
+        replyLocally(t(c.internalGuideUnavailable));
+        return;
+      }
+      guideTopic.current = section.id;
+      contractId.current = undefined;
+      tourTopic.current = undefined;
+      documentTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      replyLocally(
+        formatContractGuide(section),
+        undefined,
+        undefined,
+        documentGuideLink(
+          {
+            href: section.href,
+            label: english ? 'Open panel' : 'باز کردن پنل',
+          },
+          'sales',
+          section.id,
+        ),
+        {
+          kind: 'guide',
+          domain: 'sales',
+          question:
+            previousAnswer.current?.topicId === section.id
+              ? previousAnswer.current.question
+              : message,
+          topicId: section.id,
+        },
+      );
+      return;
+    }
+    const previousTour = tourTopic.current;
+    const tourQuestion = resolveTourGuideQuestion(
       message,
-      workbenchTab,
-      workbenchTopic.current,
+      pathname === tourGuideHref,
+      previousTour?.topic,
     );
+    tourTopic.current = undefined;
+    if (tourQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      workbenchTopic.current = undefined;
+      documentTopic.current = undefined;
+      guideTopic.current = undefined;
+      const label = 'تعریف تور و خدمات';
+      if (tourQuestion.kind === 'guide') {
+        const href =
+          tourQuestion.followUp && previousTour
+            ? previousTour.href
+            : tourGuideDestination(
+                tourQuestion.topic,
+                tourQuestion.floatingPrice,
+              );
+        tourTopic.current = { topic: tourQuestion.topic, href };
+        replyLocally(
+          renderTourGuide(tourQuestion.topic, tourQuestion.followUp),
+          undefined,
+          undefined,
+          documentGuideLink({ href, label }, 'tour', tourQuestion.topic),
+        );
+      } else if (tourQuestion.kind === 'clarify') {
+        replyLocally(tourQuestion.text, undefined, undefined, {
+          href: tourGuideHref,
+          label,
+        });
+      } else if (
+        !actor ||
+        !canViewScreen(actor.permissions, 'ticket-catalog.tab.tours')
+      ) {
+        replyLocally(tourGuideUnavailable, undefined, undefined, {
+          href: tourGuideHref,
+          label,
+        });
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readTourGuideStatus(
+            tourQuestion,
+            actor,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer.text, undefined, undefined, {
+              href: answer.href,
+              label,
+            });
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
+        }
+      }
+      return;
+    }
+    const purchaseQuestion = resolvePurchaseQuestion(
+      message,
+      pathname === '/ticket-purchases',
+      purchaseTopic.current,
+    );
+    purchaseTopic.current = undefined;
+    if (purchaseQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      documentTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      guideTopic.current = undefined;
+      if (purchaseQuestion.kind === 'guide') {
+        purchaseTopic.current = purchaseQuestion.topic.id;
+        replyLocally(
+          renderPurchaseGuide(purchaseQuestion.topic),
+          undefined,
+          undefined,
+          documentGuideLink(
+            purchaseGuideLink,
+            'purchase',
+            purchaseQuestion.topic.id,
+          ),
+        );
+      } else {
+        if (!purchaseQuestion.code) purchaseTopic.current = 'status';
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readPurchaseGuide(
+            purchaseQuestion.code,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer.text, undefined, undefined, answer.link);
+        } catch {
+          if (!controller.signal.aborted)
+            replyLocally(
+              'دریافت خریدهای رزرواسیون ناموفق بود.',
+              undefined,
+              undefined,
+              purchaseGuideLink,
+            );
+        }
+      }
+      return;
+    }
+    customerLookup.current?.abort();
+    const customerQuestion = resolveCustomerQuestion(
+      message,
+      pathname === '/customers',
+      customerTopic.current,
+    );
+    customerTopic.current = undefined;
+    if (customerQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      documentTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      guideTopic.current = undefined;
+      if (customerQuestion.kind === 'guide') {
+        customerTopic.current = customerQuestion.topic.id;
+        replyLocally(
+          renderCustomerGuide(customerQuestion.topic),
+          undefined,
+          undefined,
+          { ...customerGuideLink, guideHref: customerQuestion.topic.guideHref },
+        );
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        customerLookup.current = controller;
+        setActionState('loading');
+        const filters = new URLSearchParams(
+          pathname === '/customers' ? searchParams.toString() : '',
+        );
+        const currentSearch = () =>
+          pathname === '/customers'
+            ? ((
+                document.getElementById(
+                  'customer-search-live',
+                ) as HTMLInputElement | null
+              )?.value ?? '')
+            : '';
+        const selectedSearch = currentSearch();
+        filters.set('search', selectedSearch);
+        try {
+          const answer = await readCustomerGuide(
+            customerQuestion,
+            filters,
+            controller.signal,
+          );
+          if (!controller.signal.aborted && currentSearch() === selectedSearch)
+            replyLocally(answer.text, undefined, undefined, {
+              ...customerGuideLink,
+              href: answer.href,
+            });
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
+        } finally {
+          if (pending.current === controller) setActionState(null);
+        }
+      }
+      return;
+    }
+    const deliveryQuestion = resolveFinanceDeliveryQuestion(
+      message,
+      pathname === financeDeliveryHref,
+      financeDeliveryTopic.current,
+    );
+    financeDeliveryTopic.current = undefined;
+    if (deliveryQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      workbenchTopic.current = undefined;
+      documentTopic.current = undefined;
+      guideTopic.current = undefined;
+      const link = { href: financeDeliveryHref, label: 'تحویل مدارک' };
+      if (deliveryQuestion.kind === 'guide') {
+        financeDeliveryTopic.current = deliveryQuestion.topic;
+        replyLocally(
+          renderFinanceDeliveryGuide(
+            deliveryQuestion.topic,
+            deliveryQuestion.followUp,
+          ),
+          undefined,
+          undefined,
+          documentGuideLink(link, 'finance-delivery', deliveryQuestion.topic),
+        );
+      } else if (deliveryQuestion.kind === 'clarify') {
+        replyLocally(financeDeliveryCopy.identify, undefined, undefined, link);
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readFinanceDeliveryStatus(
+            deliveryQuestion.number,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer, undefined, undefined, link);
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
+        }
+      }
+      return;
+    }
+    flightPricingRead.current?.abort();
+    const flightPricingIntent = resolveFlightPricingQuestion(
+      message,
+      pathname === flightPricingLink.href,
+      flightPricingTopic.current,
+    );
+    flightPricingTopic.current = undefined;
+    if (flightPricingIntent) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      documentTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      guideTopic.current = undefined;
+      if (flightPricingIntent.kind === 'guide') {
+        flightPricingTopic.current = flightPricingIntent.topic.id;
+        replyLocally(
+          renderFlightPricingGuide(flightPricingIntent.topic),
+          undefined,
+          undefined,
+          documentGuideLink(
+            flightPricingTopicLink(flightPricingIntent.topic),
+            'flight-pricing',
+            flightPricingIntent.topic.id,
+          ),
+        );
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        flightPricingRead.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readFlightPricing(
+            flightPricingIntent,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer, undefined, undefined, flightPricingLink);
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
+        } finally {
+          if (pending.current === controller) setActionState(null);
+        }
+      }
+      return;
+    }
+    masterDataRead.current?.abort();
+    const masterDataIntent = resolveMasterDataQuestion(
+      message,
+      pathname ?? '',
+      masterDataTopic.current,
+    );
+    masterDataTopic.current = undefined;
+    if (masterDataIntent) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      documentTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      guideTopic.current = undefined;
+      const link = { ...masterDataGuideLink, href: masterDataIntent.href };
+      if (masterDataIntent.kind === 'guide') {
+        masterDataTopic.current = masterDataIntent.topics[0]?.id;
+        replyLocally(
+          renderMasterDataGuide(masterDataIntent.topics),
+          undefined,
+          undefined,
+          documentGuideLink(
+            link,
+            'master-data',
+            masterDataIntent.topics[0]?.id,
+          ),
+        );
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        masterDataRead.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readMasterDataGuide(
+            masterDataIntent,
+            controller.signal,
+            (resource) =>
+              Array.isArray(masterDataPermissions) &&
+              canUseMasterDataResource(masterDataPermissions, resource),
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer, undefined, undefined, link);
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
+        } finally {
+          if (pending.current === controller) setActionState(null);
+        }
+      }
+      return;
+    }
+    b2bRead.current?.abort();
+    const b2bIntent = resolveB2bQuestion(
+      message,
+      pathname === b2bGuideLink.href,
+      b2bTopic.current,
+    );
+    b2bTopic.current = undefined;
+    if (b2bIntent) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      documentTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      guideTopic.current = undefined;
+      if (b2bIntent.kind === 'guide') {
+        b2bTopic.current = b2bIntent.topic.id;
+        replyLocally(
+          renderB2bGuide(b2bIntent.topic),
+          undefined,
+          undefined,
+          documentGuideLink(b2bGuideLink, 'b2b', b2bIntent.topic.id),
+        );
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        b2bRead.current = controller;
+        const snapshot = b2bDirectoryContext();
+        const snapshotKey = JSON.stringify(snapshot);
+        const isCurrent = () =>
+          !controller.signal.aborted &&
+          JSON.stringify(b2bDirectoryContext()) === snapshotKey;
+        setActionState('loading');
+        try {
+          const answer = await readB2bGuide(b2bIntent, snapshot, isCurrent);
+          if (isCurrent())
+            replyLocally(answer, undefined, undefined, b2bGuideLink);
+        } finally {
+          if (pending.current === controller) setActionState(null);
+        }
+      }
+      return;
+    }
+    const reportQuestion = resolveReservationReportQuestion(
+      message,
+      pathname === reservationReportHref,
+      reportTopic.current,
+    );
+    reportTopic.current = undefined;
+    if (reportQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      workbenchTopic.current = undefined;
+      documentTopic.current = undefined;
+      guideTopic.current = undefined;
+      const link = { href: reservationReportHref, label: 'گزارش رزرواسیون' };
+      if (reportQuestion.kind === 'guide') {
+        reportTopic.current = reportQuestion.topic;
+        replyLocally(
+          renderReservationReportGuide(
+            reportQuestion.topic,
+            reportQuestion.followUp,
+          ),
+          undefined,
+          undefined,
+          documentGuideLink(link, 'reservation-report', reportQuestion.topic),
+        );
+      } else if (reportQuestion.kind === 'clarify') {
+        replyLocally(reportQuestion.text, undefined, undefined, link);
+      } else if (
+        !actor ||
+        !canViewScreen(actor.permissions, 'ticket-catalog.tab.issued')
+      ) {
+        replyLocally(
+          reservationReportPermissionMessage,
+          undefined,
+          undefined,
+          link,
+        );
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readReservationReportAnswer(
+            reportQuestion,
+            pathname === reservationReportHref
+              ? getReservationReport()
+              : undefined,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer, undefined, undefined, link);
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
+        }
+      }
+      return;
+    }
+    const documentQuestion = resolveDocumentQuestion(
+      message,
+      pathname === '/documents',
+      documentTopic.current,
+      pathname === '/documents' ? searchParams.get('document') : undefined,
+    );
+    documentTopic.current = undefined;
+    if (documentQuestion) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      workbenchTopic.current = undefined;
+      guideTopic.current = undefined;
+      if (documentQuestion.kind === 'guide') {
+        documentTopic.current = documentQuestion.topic.title;
+        replyLocally(
+          renderDocumentGuide(
+            documentQuestion.topic,
+            documentQuestion.continuation,
+          ),
+          undefined,
+          undefined,
+          documentGuideLink(
+            { href: '/documents', label: 'اسناد و فایل‌ها' },
+            'documents',
+            documentQuestion.topic.id,
+          ),
+        );
+      } else if (documentQuestion.kind === 'clarify') {
+        replyLocally(documentQuestion.text);
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readDocumentGuide(documentQuestion);
+          if (!controller.signal.aborted)
+            replyLocally(answer.text, undefined, undefined, {
+              href: answer.href,
+              label: 'اسناد و فایل‌ها',
+            });
+        } catch {
+          if (!controller.signal.aborted)
+            replyLocally(
+              'وضعیت سند در دسترس نیست. نشست و دسترسی خود را در پنل اسناد بررسی کنید یا دوباره تلاش کنید.',
+              undefined,
+              undefined,
+              {
+                href: '/documents',
+                label: 'اسناد و فایل‌ها',
+              },
+            );
+        }
+      }
+      return;
+    }
+    const callCenterStatus = callCenterIntent(
+      message,
+      workbenchTab === 'call-center',
+    );
+    if (callCenterStatus === 'report') {
+      replyLocally(
+        'این شمارش به بازه، کارشناس یا فیلتر تماس بستگی دارد. فیلترهای تماس امروز یا گزارش عملکرد کارشناسان را در کال‌سنتر بررسی کنید.',
+        undefined,
+        undefined,
+        {
+          href: '/customer-affairs/call-center',
+          label: 'کال‌سنتر',
+        },
+      );
+      return;
+    }
+    const workbenchStatus = asksWorkbenchRequestStatus(
+      message,
+      pathname === '/workbench',
+    );
+    if (
+      !callCenterStatus &&
+      workbenchStatus &&
+      pathname !== '/workbench' &&
+      /^(?:درخواستم|درخواست من)\s+(?:الان )?(?:دست|کجا|به کجا)/.test(
+        normalizeQuestion(message),
+      )
+    ) {
+      replyLocally('درخواست مربوط به «میزکار من» است یا «کال‌سنتر»؟');
+      return;
+    }
+    if (callCenterStatus || workbenchStatus) {
+      pending.current?.abort();
+      const controller = new AbortController();
+      pending.current = controller;
+      setActionState('loading');
+      try {
+        if (callCenterStatus) {
+          const answer = actor
+            ? callCenterStatus === 'request'
+              ? await readCallCenterRequestStatus(
+                  message,
+                  actor,
+                  controller.signal,
+                )
+              : await readCallCenterMetric(
+                  callCenterStatus,
+                  actor,
+                  controller.signal,
+                )
+            : 'اطلاعات دسترسی حساب برای خواندن کال‌سنتر آماده نیست.';
+          if (!controller.signal.aborted) {
+            previousAnswer.current = undefined;
+            workbenchTopic.current = undefined;
+            replyLocally(answer, undefined, undefined, {
+              href:
+                callCenterStatus === 'request'
+                  ? callCenterQueueHref
+                  : '/customer-affairs/call-center',
+              label: 'کال‌سنتر',
+            });
+          }
+          return;
+        }
+        const { data } = await customerAffairsApi.workbenchRequests(
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
+        const answer = describeWorkbenchRequest(
+          message,
+          data,
+          pathname === '/workbench' ? searchParams.get('request') : undefined,
+        );
+        previousAnswer.current = undefined;
+        workbenchTopic.current = undefined;
+        replyLocally(answer.text, undefined, undefined, {
+          href: answer.href,
+          label: 'کارتابل درخواست‌ها',
+        });
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        if (
+          (error instanceof CustomerAffairsApiError ||
+            error instanceof CallCenterHttpError) &&
+          [401, 403].includes(error.status)
+        ) {
+          setMessages([]);
+          previousAnswer.current = undefined;
+          setActionState(
+            error.status === 403 ? 'forbidden' : 'unauthenticated',
+          );
+        } else {
+          replyLocally(
+            callCenterStatus
+              ? 'دریافت وضعیت صف کال‌سنتر انجام نشد. دوباره تلاش کنید یا صف را باز کنید.'
+              : 'دریافت وضعیت از کارتابل انجام نشد. دوباره تلاش کنید یا کارتابل درخواست‌ها را باز کنید.',
+          );
+        }
+      }
+      return;
+    }
+    if (decision.kind === 'clarify') {
+      replyLocally(decision.clarification!);
+      return;
+    }
+    const workbenchHelp =
+      guidanceAllowed &&
+      decision.domain !== 'sales' &&
+      resolveWorkbenchGuide(
+        guideQuestion,
+        workbenchTab,
+        workbenchTopic.current,
+      );
     if (workbenchHelp) {
       if ('clarification' in workbenchHelp) {
         replyLocally(workbenchHelp.clarification);
@@ -435,21 +1239,49 @@ function AssistantComposerContent({
       setActionState('loading');
       setChatError(null);
       try {
-        const answer = await loadWorkbenchGuide(
-          workbenchHelp.topic,
-          workbenchHelp.goal,
-          controller.signal,
-        );
+        const answer =
+          'guideHref' in workbenchHelp.topic
+            ? renderWorkbenchGuide(
+                workbenchHelp.topic,
+                workbenchHelp.goal,
+                workbenchHelp.topic.id.startsWith('leave') &&
+                  /پیگیری/.test(guideQuestion) &&
+                  /چطور|چگونه|از کجا/.test(guideQuestion),
+              )
+            : await loadWorkbenchGuide(
+                workbenchHelp.topic,
+                workbenchHelp.goal,
+                controller.signal,
+              );
         if (!controller.signal.aborted) {
           workbenchTopic.current = workbenchHelp.topic.id;
-          replyLocally(answer, undefined, undefined, {
-            label: workbenchHelp.topic.title,
-            href: workbenchHelp.topic.href,
-          });
+          replyLocally(
+            answer,
+            undefined,
+            undefined,
+            {
+              label: workbenchHelp.topic.title,
+              href: workbenchHelp.topic.href,
+              ...('guideHref' in workbenchHelp.topic &&
+              typeof workbenchHelp.topic.guideHref === 'string'
+                ? {
+                    label: english ? 'Open panel' : 'باز کردن پنل',
+                    guideHref: workbenchHelp.topic.guideHref,
+                  }
+                : {}),
+            },
+            {
+              kind: 'guide',
+              domain: 'workbench',
+              question: guideQuestion,
+              topicId: workbenchHelp.topic.id,
+            },
+          );
         }
       } catch (error) {
         if (!controller.signal.aborted) {
           setMessages([]);
+          previousAnswer.current = undefined;
           setActionState(
             error instanceof Error && error.message === 'HTTP_403'
               ? 'forbidden'
@@ -459,52 +1291,96 @@ function AssistantComposerContent({
       }
       return;
     }
-    workbenchTopic.current = undefined;
-    const formHelp = readContractFormHelp(message);
+    if (guidanceAllowed && decision.domain === 'workbench') {
+      replyLocally(
+        'راهنمای کدام بخش میزکار من را می‌خواهید: درخواست‌ها و مرخصی، پیام‌ها، فایل‌ها، یادداشت‌ها، تقویم، عملکرد یا حساب و تنظیمات؟',
+      );
+      return;
+    }
+    const formHelp = guidanceAllowed && readContractFormHelp(guideQuestion);
     if (formHelp) {
-      replyLocally(formHelp, undefined, formCorrectionTargets());
+      replyLocally(formHelp, undefined, formCorrectionTargets(), undefined, {
+        kind: 'guide',
+        domain: 'sales',
+        question: guideQuestion,
+      });
       return;
     }
     const selectionAtSubmit = selectedSalesContract();
-    const selectedContract = selectionAtSubmit ?? contractId.current;
-    const guide = resolveContractGuide(
-      message,
-      pathname === '/sales' ||
-        Boolean(pathname?.startsWith('/sales/contracts/')),
-      guideTopic.current,
-      false,
-      agentMode,
-    );
+    const selectedContract =
+      selectionAtSubmit ??
+      contractId.current ??
+      (decision.kind === 'follow-up'
+        ? previousAnswer.current?.contractId
+        : undefined);
+    const guide =
+      guidanceAllowed || decision.kind === 'data-with-guide'
+        ? resolveContractGuide(
+            guideQuestion === `قرارداد: ${message}` ? message : guideQuestion,
+            decision.domain === 'sales' ||
+              pathname === '/sales' ||
+              Boolean(pathname?.startsWith('/sales/contracts/')),
+            guideTopic.current,
+            guidanceAllowed && Boolean(selectedContract),
+            agentMode,
+          )
+        : undefined;
     const recordFollowup =
+      !guidanceAllowed &&
       selectedContract &&
       /حالا|همین|این قرارداد|اصلاحش|وضعیتش|بعدش/.test(
         normalizeContractQuestion(message),
       );
     const liveReport =
-      /قرارداد\s*(?:شماره\s*)?[a-z0-9]/i.test(
+      !guidanceAllowed &&
+      (/قرارداد\s*(?:شماره\s*)?[a-z0-9]/i.test(
         normalizeContractQuestion(message),
       ) ||
-      portfolioKind(message) ||
-      /قرارداد(?:\s*های)?\s+(?:مشتری|به نام)/.test(
-        normalizeContractQuestion(message),
-      ) ||
-      (selectedContract && isContractReportQuestion(message));
+        portfolioKind(message) ||
+        /قرارداد(?:\s*های)?\s+(?:مشتری|به نام)/.test(
+          normalizeContractQuestion(message),
+        ) ||
+        (selectedContract && isContractReportQuestion(message)));
     const advice =
+      guidanceAllowed &&
       !liveReport &&
       !recordFollowup &&
       contractAdvice(
-        message,
+        guideQuestion,
         Boolean(pathname?.startsWith('/sales')),
         agentMode,
       );
     if (advice) {
-      replyLocally(advice);
+      replyLocally(advice, undefined, undefined, undefined, {
+        kind: 'guide',
+        domain: 'sales',
+        question: guideQuestion,
+        topicId: guide?.topicId,
+      });
       return;
     }
-    if (guide && !recordFollowup && !liveReport) {
+    if (guidanceAllowed && guide && !recordFollowup && !liveReport) {
       guideTopic.current = guide.topicId;
       if (guide.topicId === 'create') contractId.current = undefined;
-      replyLocally(guide.text);
+      const section = contractGuideCatalog.topics.find(
+        (topic) => topic.id === guide.topicId,
+      );
+      replyLocally(
+        guide.text,
+        undefined,
+        undefined,
+        section && {
+          href: section.href,
+          label: english ? 'Open panel' : 'باز کردن پنل',
+          guideHref: section.guideHref,
+        },
+        {
+          kind: 'guide',
+          domain: 'sales',
+          question: guideQuestion,
+          topicId: guide.topicId,
+        },
+      );
       return;
     }
     pending.current?.abort();
@@ -515,7 +1391,7 @@ function AssistantComposerContent({
     const inspection = agentMode
       ? undefined
       : await inspectContractQuestion(
-          message,
+          decision.dataMessage,
           selectedContract,
           contractId.current === selectedContract
             ? lastVersion.current
@@ -535,12 +1411,50 @@ function AssistantComposerContent({
       lastVersion.current = inspection.version;
       contractId.current = inspection.contractId;
       guideTopic.current = undefined;
-      replyLocally(inspection.text, inspection.links);
+      replyLocally(
+        inspection.text +
+          (decision.kind === 'data-with-guide' && guide && inspection.contractId
+            ? '\n\n' + guide.text
+            : ''),
+        inspection.links,
+        undefined,
+        undefined,
+        inspection.contractId
+          ? {
+              kind: 'data',
+              domain: 'sales',
+              question: message,
+              contractId: inspection.contractId,
+            }
+          : undefined,
+      );
       return;
     }
-    if (guide && !agentMode) {
+    if (guidanceAllowed && guide && !agentMode) {
       guideTopic.current = guide.topicId;
-      replyLocally(guide.text);
+      const section = contractGuideCatalog.topics.find(
+        (topic) => topic.id === guide.topicId,
+      );
+      replyLocally(
+        guide.text,
+        undefined,
+        undefined,
+        section && {
+          href: section.href,
+          label: english ? 'Open panel' : 'باز کردن پنل',
+          guideHref: section.guideHref,
+        },
+        {
+          kind: 'guide',
+          domain: 'sales',
+          question: guideQuestion,
+          topicId: guide.topicId,
+        },
+      );
+      return;
+    }
+    if (guidanceAllowed) {
+      replyLocally(t(c.internalSourceFallback));
       return;
     }
     pending.current?.abort();
@@ -561,7 +1475,7 @@ function AssistantComposerContent({
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             version: 1,
-            message,
+            message: decision.dataMessage,
             ...(agentMode &&
             selectedContract &&
             /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(
@@ -577,6 +1491,7 @@ function AssistantComposerContent({
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
           setMessages([]);
+          previousAnswer.current = undefined;
           setActionResult(null);
         }
         const body = (await response.json().catch(() => null)) as {
@@ -588,7 +1503,9 @@ function AssistantComposerContent({
           )
             ? 'disabled'
             : response.status === 429
-              ? 'rate'
+              ? body?.error?.code === 'ANALYSIS_LIMIT_REACHED'
+                ? 'analysis-limit'
+                : 'rate'
               : 'unavailable',
         );
       }
@@ -596,14 +1513,18 @@ function AssistantComposerContent({
       if (controller.signal.aborted) return;
       if (agentMode) {
         const result = agentResponseSchema.parse(body);
-        const sourceText = result.sources
-          .map(
-            (source) =>
-              `${source.kind === 'panel-count-breakdown' ? 'sales.panel-count-breakdown + reservations.latest-lifecycle' : source.sources.map((id) => 'nora_agent.' + id).join(', ')} — ${new Date(source.observedAt).toLocaleString(english ? 'en-GB' : 'fa-IR', { timeZone: 'Asia/Tehran' })}`,
-          )
-          .join('\n');
+        if (result.status === 'REPLY' || !result.sources.length) {
+          replyLocally(t(c.internalSourceFallback));
+          return;
+        }
+        const sourceText = formatAssistantSources(result.sources, english);
         const answer = [
           result.text,
+          result.status === 'ANSWER' &&
+          decision.kind === 'data-with-guide' &&
+          guide
+            ? guide.text
+            : '',
           sourceText ? `${t(c.agentSources)}:\n${sourceText}` : '',
           result.limitations.length
             ? `${t(c.agentLimitations)}:\n${result.limitations.join('\n')}`
@@ -611,32 +1532,64 @@ function AssistantComposerContent({
         ]
           .filter(Boolean)
           .join('\n\n');
+        if (result.status === 'ANSWER')
+          previousAnswer.current = {
+            kind: 'data',
+            domain: 'sales',
+            question:
+              decision.kind === 'follow-up'
+                ? (previousAnswer.current?.question ?? message)
+                : message,
+            contractId: selectedContract,
+            resultIds: result.sources.map((source) => source.resultId),
+          };
         setMessages((previous) =>
-          appendChatExchange(previous, [
-            { role: 'user' as const, content: message, agent: true },
-            { role: 'assistant' as const, content: answer, agent: true },
-          ]),
+          appendChatExchange(
+            previous.map((item) =>
+              item.submissionId === submissionId
+                ? { ...item, local: false, agent: true }
+                : item,
+            ),
+            [{ role: 'assistant' as const, content: answer, agent: true }],
+          ),
         );
-        setDraft('');
         setActionState(null);
         return;
       }
       const result = conversationResponseSchema.parse(body);
+      if (result.status === 'REPLY') {
+        replyLocally(t(c.internalSourceFallback));
+        return;
+      }
       const answer =
-        result.status === 'REPLY'
-          ? result.text
-          : result.status === 'CLARIFY'
-            ? t(c.conversationClarification[result.field])
-            : t(c.conversationEvidence);
+        (result.status === 'CLARIFY'
+          ? t(c.conversationClarification[result.field])
+          : t(c.conversationEvidence)) +
+        (result.status === 'ANSWER' &&
+        decision.kind === 'data-with-guide' &&
+        guide
+          ? '\n\n' + guide.text
+          : '');
       // ERP evidence is rendered separately and never enters model history.
       setMessages((previous) =>
-        appendChatExchange(previous, [
-          { role: 'user' as const, content: message },
-          { role: 'assistant' as const, content: answer },
-        ]),
+        appendChatExchange(
+          previous.map((item) =>
+            item.submissionId === submissionId
+              ? { ...item, local: false }
+              : item,
+          ),
+          [{ role: 'assistant' as const, content: answer }],
+        ),
       );
-      if (result.status === 'ANSWER') setActionResult(result.evidence);
-      setDraft('');
+      if (result.status === 'ANSWER') {
+        setActionResult(result.evidence);
+        previousAnswer.current = {
+          kind: 'data',
+          domain: 'sales',
+          question: message,
+          contractId: selectedContract,
+        };
+      }
       setActionState(null);
     } catch (error) {
       if (!controller.signal.aborted) {
@@ -670,11 +1623,7 @@ function AssistantComposerContent({
           value={draft}
           disabled={denied}
           onChange={(event) => {
-            pending.current?.abort();
-            setActionResult(null);
-            setActionState(null);
             setDraft(event.target.value);
-            setChatError(null);
           }}
           onKeyDown={(event) => {
             if (
@@ -715,577 +1664,625 @@ function AssistantComposerContent({
           </button>
         </div>
       </form>
-      <div className={styles.composerPrompts}>
-        {prompts.map(([prompt, action]) => (
-          <button
-            key={prompt[1]}
-            type="button"
-            disabled={denied}
-            onClick={() => {
-              setDraft(t(prompt));
-              setChatError(null);
-              input.current?.focus();
-              void run(action);
-            }}
-          >
-            {t(prompt)}
-          </button>
-        ))}
-      </div>
-      <div
-        className={styles.composerResponse}
-        role="region"
-        aria-label={t(c.widgetResponse)}
-        tabIndex={0}
-      >
-        {!denied && (
-          <div
-            className={styles.chatMessages}
-            role="log"
-            aria-label={t(c.conversationLabel)}
-          >
-            {messages.map((item, index) => (
+      <div className={styles.composerTranscript}>
+        <div
+          ref={chatViewportRef}
+          onScroll={updatePosition}
+          className={styles.composerResponse}
+          role="region"
+          aria-label={t(c.widgetResponse)}
+          tabIndex={0}
+        >
+          <div ref={chatContentRef}>
+            {!denied && (
               <div
-                key={index}
-                data-role={item.role}
-                dir="auto"
-                className="whitespace-pre-wrap"
+                className={styles.chatMessages}
+                role="log"
+                aria-label={t(c.conversationLabel)}
               >
-                {item.role === 'assistant' ? (
-                  <AssistantResponseContent text={item.content} />
-                ) : (
-                  item.content
-                )}
-                {item.guideLink && (
-                  <Link className="block underline" href={item.guideLink.href}>
-                    {item.guideLink.label}
-                  </Link>
-                )}
-                {item.local &&
-                  item.targets?.map((target) => (
-                    <button
-                      type="button"
-                      className="block underline"
-                      key={target.id}
-                      onClick={() => {
-                        const section = document.getElementById(target.id);
-                        section?.focus();
-                        section?.scrollIntoView({ block: 'center' });
-                      }}
-                    >
-                      {target.label}
-                    </button>
-                  ))}
-                {item.local &&
-                  item.links?.map((link) => (
-                    <a
-                      className="block underline"
-                      key={link.id}
-                      href={
-                        '/sales?' +
-                        new URLSearchParams({
-                          contract: link.contractNumber,
-                          record: link.id,
-                        })
-                      }
-                    >
-                      {link.contractNumber}
-                    </a>
-                  ))}
-              </div>
-            ))}
-          </div>
-        )}
-        {!denied && chatError && (
-          <p role="alert">
-            {t(
-              chatError === 'disabled'
-                ? c.chatDisabled
-                : chatError === 'rate'
-                  ? c.states['rate-limited']
-                  : c.conversationUnavailable,
-            )}
-          </p>
-        )}
-        {!denied && agentMode && actionState === 'loading' && (
-          <p role="status">{t(c.agentReading)}</p>
-        )}
-        {filterError && <p role="alert">{t(c.filterInvalid)}</p>}
-        {!denied && actionResult && 'filters' in actionResult && (
-          <div className={styles.composerHint}>
-            <p>
-              {t(c.filteredPeriod)}:{' '}
-              {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                timeZone: 'Asia/Tehran',
-                dateStyle: 'medium',
-              }).format(new Date(actionResult.filters.startDate))}{' '}
-              —{' '}
-              {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                timeZone: 'Asia/Tehran',
-                dateStyle: 'medium',
-              }).format(new Date(actionResult.filters.endDate))}
-            </p>
-            {actionResult.action !== 'sales-analysis' && (
-              <p>{t(c.balanceAsOf)}</p>
-            )}
-            {actionResult.action === 'sales-analysis' &&
-              (actionResult.filters.originId ||
-                actionResult.filters.destinationId) && (
-                <p>{t(c.routeConversionUnavailable)}</p>
-              )}
-          </div>
-        )}
-        {!denied && actionState && (
-          <p role="status" className={styles.composerHint}>
-            {t(c.states[actionState])}
-          </p>
-        )}
-        {!denied && actionResult?.status === 'BLOCKED' && (
-          <p role="status" className={styles.composerHint}>
-            {t(
-              actionResult.reason === 'SALES_SOURCE_UNAVAILABLE'
-                ? c.salesDefinitionGate
-                : c.receivablesSourceGate,
-            )}
-          </p>
-        )}
-        {!denied &&
-          actionResult?.status === 'BLOCKED' &&
-          (actionResult.action === 'sales-analysis' ||
-            actionResult.action === 'receivables-follow-up') &&
-          actionResult.failure && (
-            <p role="status" className={styles.composerHint}>
-              {t(c.sourceFailure[actionResult.failure])}
-            </p>
-          )}
-        {!denied && actionResult?.action === 'daily-summary' && (
-          <div className={styles.actionResult}>
-            <h2>{t(c.dailyTitle)}</h2>
-            <p className={styles.composerHint}>
-              <time dateTime={actionResult.snapshot.generatedAt}>
-                {t(c.asOf)}:{' '}
-                {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                  dateStyle: 'short',
-                  timeStyle: 'short',
-                  timeZone: 'Asia/Tehran',
-                }).format(new Date(actionResult.snapshot.generatedAt))}
-              </time>
-            </p>
-            <p className={styles.composerHint}>{t(c.dailyCoverage)}</p>
-            {actionResult.snapshot.sources.some(
-              (source) => source.status === 'READY',
-            ) && (
-              <dl className={styles.actionCounts}>
-                {[
-                  [c.visibleCount, actionResult.counts.visible],
-                  [c.overdueCount, actionResult.counts.overdue],
-                  [c.dueSoonCount, actionResult.counts.dueSoon],
-                  [c.assignedCount, actionResult.counts.assigned],
-                ].map(([label, count]) => (
-                  <div key={(label as AssistantText)[1]}>
-                    <dt>{t(label as AssistantText)}</dt>
-                    <dd>
-                      {new Intl.NumberFormat(
-                        english ? 'en-GB' : 'fa-IR',
-                      ).format(count as number)}
-                    </dd>
+                {messages.map((item, index) => (
+                  <div
+                    key={index}
+                    data-role={item.role}
+                    dir="auto"
+                    className="whitespace-pre-wrap"
+                  >
+                    {item.role === 'assistant' ? (
+                      <AssistantResponseContent
+                        text={item.content}
+                        english={english}
+                      />
+                    ) : (
+                      item.content
+                    )}
+                    {item.guideLink?.guideHref && (
+                      <Link
+                        className="block underline"
+                        href={item.guideLink.guideHref}
+                      >
+                        {english ? 'Read guide' : 'خواندن راهنما'}
+                      </Link>
+                    )}
+                    {item.guideLink && (
+                      <Link
+                        className="block underline"
+                        href={item.guideLink.href}
+                      >
+                        {item.guideLink.label}
+                      </Link>
+                    )}
+                    {item.local &&
+                      item.targets?.map((target) => (
+                        <button
+                          type="button"
+                          className="block underline"
+                          key={target.id}
+                          onClick={() => {
+                            const section = document.getElementById(target.id);
+                            section?.focus();
+                            section?.scrollIntoView({ block: 'center' });
+                          }}
+                        >
+                          {target.label}
+                        </button>
+                      ))}
+                    {item.local &&
+                      item.links?.map((link) => (
+                        <a
+                          className="block underline"
+                          key={link.id}
+                          href={
+                            '/sales?' +
+                            new URLSearchParams({
+                              contract: link.contractNumber,
+                              record: link.id,
+                            })
+                          }
+                        >
+                          {link.contractNumber}
+                        </a>
+                      ))}
                   </div>
                 ))}
-              </dl>
+              </div>
             )}
-            <PersonalFollowUps
-              t={t}
-              snapshot={actionResult.snapshot}
-              english={english}
-            />
-            {actionResult.corporate && (
-              <section>
-                <h3>
-                  {t(
-                    actionResult.version === 2
-                      ? c.salesAnalysis
-                      : c.weeklySales,
+            {!denied && chatError && (
+              <p role="alert">
+                {t(
+                  chatError === 'disabled'
+                    ? c.chatDisabled
+                    : chatError === 'rate'
+                      ? c.states['rate-limited']
+                      : chatError === 'analysis-limit'
+                        ? c.conversationAnalysisLimit
+                        : c.conversationUnavailable,
+                )}
+              </p>
+            )}
+            {!denied && actionResult && 'filters' in actionResult && (
+              <div className={styles.composerHint}>
+                <p>
+                  {t(c.filteredPeriod)}:{' '}
+                  {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                    timeZone: 'Asia/Tehran',
+                    dateStyle: 'medium',
+                  }).format(new Date(actionResult.filters.startDate))}{' '}
+                  —{' '}
+                  {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                    timeZone: 'Asia/Tehran',
+                    dateStyle: 'medium',
+                  }).format(new Date(actionResult.filters.endDate))}
+                </p>
+                {actionResult.action !== 'sales-analysis' && (
+                  <p>{t(c.balanceAsOf)}</p>
+                )}
+                {actionResult.action === 'sales-analysis' &&
+                  (actionResult.filters.originId ||
+                    actionResult.filters.destinationId) && (
+                    <p>{t(c.routeConversionUnavailable)}</p>
                   )}
-                </h3>
-                <p className={styles.composerHint}>{t(c.salesCoverage)}</p>
-                {actionResult.corporate.sales.status === 'READY' ? (
-                  <>
-                    <p className={styles.composerHint}>
-                      {t(
-                        actionResult.version === 2
-                          ? c.filteredPeriod
-                          : c.currentPeriod,
-                      )}
-                      :{' '}
-                      {
-                        actionResult.corporate.sales.report.current
-                          .contractCount
-                      }{' '}
-                      /{' '}
-                      {t(
-                        actionResult.version === 2
-                          ? c.filteredPrevious
-                          : c.previousPeriod,
-                      )}
-                      :{' '}
-                      {
-                        actionResult.corporate.sales.report.previous
-                          .contractCount
-                      }
-                    </p>
+              </div>
+            )}
+            {!denied && actionState && (
+              <p role="status" className={styles.composerHint}>
+                {actionState === 'loading' && (
+                  <LoaderCircle
+                    className={styles.chatSpinner}
+                    size={18}
+                    aria-hidden="true"
+                  />
+                )}
+                {t(c.states[actionState])}
+              </p>
+            )}
+            {!denied && actionResult?.status === 'BLOCKED' && (
+              <p role="status" className={styles.composerHint}>
+                {t(
+                  actionResult.reason === 'SALES_SOURCE_UNAVAILABLE'
+                    ? c.salesDefinitionGate
+                    : c.receivablesSourceGate,
+                )}
+              </p>
+            )}
+            {!denied &&
+              actionResult?.status === 'BLOCKED' &&
+              (actionResult.action === 'sales-analysis' ||
+                actionResult.action === 'receivables-follow-up') &&
+              actionResult.failure && (
+                <p role="status" className={styles.composerHint}>
+                  {t(c.sourceFailure[actionResult.failure])}
+                </p>
+              )}
+            {!denied && actionResult?.action === 'daily-summary' && (
+              <div className={styles.actionResult}>
+                <h2>{t(c.dailyTitle)}</h2>
+                <p className={styles.composerHint}>
+                  <time dateTime={actionResult.snapshot.generatedAt}>
+                    {t(c.asOf)}:{' '}
+                    {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                      dateStyle: 'short',
+                      timeStyle: 'short',
+                      timeZone: 'Asia/Tehran',
+                    }).format(new Date(actionResult.snapshot.generatedAt))}
+                  </time>
+                </p>
+                <p className={styles.composerHint}>{t(c.dailyCoverage)}</p>
+                {actionResult.snapshot.sources.some(
+                  (source) => source.status === 'READY',
+                ) && (
+                  <dl className={styles.actionCounts}>
                     {[
-                      [
-                        'current',
+                      [c.visibleCount, actionResult.counts.visible],
+                      [c.overdueCount, actionResult.counts.overdue],
+                      [c.dueSoonCount, actionResult.counts.dueSoon],
+                      [c.assignedCount, actionResult.counts.assigned],
+                    ].map(([label, count]) => (
+                      <div key={(label as AssistantText)[1]}>
+                        <dt>{t(label as AssistantText)}</dt>
+                        <dd>
+                          {new Intl.NumberFormat(
+                            english ? 'en-GB' : 'fa-IR',
+                          ).format(count as number)}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+                <PersonalFollowUps
+                  t={t}
+                  snapshot={actionResult.snapshot}
+                  english={english}
+                />
+                {actionResult.corporate && (
+                  <section>
+                    <h3>
+                      {t(
                         actionResult.version === 2
-                          ? c.filteredPeriod
-                          : c.currentPeriod,
-                      ],
-                      [
-                        'previous',
-                        actionResult.version === 2
-                          ? c.filteredPrevious
-                          : c.previousPeriod,
-                      ],
-                    ].map(([key, label]) => {
-                      const sales = actionResult.corporate!.sales;
-                      if (sales.status !== 'READY') return null;
-                      const period =
-                        sales.report[key as 'current' | 'previous'];
-                      const format = new Intl.DateTimeFormat(
-                        english ? 'en-GB' : 'fa-IR',
-                        { timeZone: 'Asia/Tehran', dateStyle: 'short' },
-                      );
-                      return (
-                        <p className={styles.composerHint} key={key as string}>
-                          {t(label as AssistantText)}:{' '}
-                          <time dateTime={period.startUtc}>
-                            {format.format(new Date(period.startUtc))}
-                          </time>{' '}
-                          —{' '}
-                          <time dateTime={period.endUtc}>
-                            {format.format(
-                              new Date(Date.parse(period.endUtc) - 1),
-                            )}
-                          </time>
+                          ? c.salesAnalysis
+                          : c.weeklySales,
+                      )}
+                    </h3>
+                    <p className={styles.composerHint}>{t(c.salesCoverage)}</p>
+                    {actionResult.corporate.sales.status === 'READY' ? (
+                      <>
+                        <p className={styles.composerHint}>
+                          {t(
+                            actionResult.version === 2
+                              ? c.filteredPeriod
+                              : c.currentPeriod,
+                          )}
+                          :{' '}
+                          {
+                            actionResult.corporate.sales.report.current
+                              .contractCount
+                          }{' '}
+                          /{' '}
+                          {t(
+                            actionResult.version === 2
+                              ? c.filteredPrevious
+                              : c.previousPeriod,
+                          )}
+                          :{' '}
+                          {
+                            actionResult.corporate.sales.report.previous
+                              .contractCount
+                          }
                         </p>
-                      );
-                    })}
-                    <SourceUpdated
-                      value={
-                        actionResult.corporate.sales.report.sourceUpdatedAt
-                      }
-                      english={english}
-                      t={t}
-                    />
-                    {[
-                      ...new Set([
-                        ...(
-                          actionResult.corporate.sales.report.current
-                            .contractAmountsBeforeRefunds ?? []
-                        ).map((row) => row.currencyCode),
-                        ...(
-                          actionResult.corporate.sales.report.previous
-                            .contractAmountsBeforeRefunds ?? []
-                        ).map((row) => row.currencyCode),
-                      ]),
-                    ]
-                      .sort()
-                      .map((currency) => {
-                        const report = actionResult.corporate!.sales;
-                        if (report.status !== 'READY') return null;
-                        const current =
-                          report.report.current.contractAmountsBeforeRefunds;
-                        const previous =
-                          report.report.previous.contractAmountsBeforeRefunds;
-                        return (
-                          <p className={styles.composerHint} key={currency}>
-                            {t(c.contractAmount)} —{' '}
-                            {t(
-                              actionResult.version === 2
-                                ? c.filteredPeriod
-                                : c.currentPeriod,
-                            )}
-                            :{' '}
+                        {[
+                          [
+                            'current',
+                            actionResult.version === 2
+                              ? c.filteredPeriod
+                              : c.currentPeriod,
+                          ],
+                          [
+                            'previous',
+                            actionResult.version === 2
+                              ? c.filteredPrevious
+                              : c.previousPeriod,
+                          ],
+                        ].map(([key, label]) => {
+                          const sales = actionResult.corporate!.sales;
+                          if (sales.status !== 'READY') return null;
+                          const period =
+                            sales.report[key as 'current' | 'previous'];
+                          const format = new Intl.DateTimeFormat(
+                            english ? 'en-GB' : 'fa-IR',
+                            { timeZone: 'Asia/Tehran', dateStyle: 'short' },
+                          );
+                          return (
+                            <p
+                              className={styles.composerHint}
+                              key={key as string}
+                            >
+                              {t(label as AssistantText)}:{' '}
+                              <time dateTime={period.startUtc}>
+                                {format.format(new Date(period.startUtc))}
+                              </time>{' '}
+                              —{' '}
+                              <time dateTime={period.endUtc}>
+                                {format.format(
+                                  new Date(Date.parse(period.endUtc) - 1),
+                                )}
+                              </time>
+                            </p>
+                          );
+                        })}
+                        <SourceUpdated
+                          value={
+                            actionResult.corporate.sales.report.sourceUpdatedAt
+                          }
+                          english={english}
+                          t={t}
+                        />
+                        {[
+                          ...new Set([
+                            ...(
+                              actionResult.corporate.sales.report.current
+                                .contractAmountsBeforeRefunds ?? []
+                            ).map((row) => row.currencyCode),
+                            ...(
+                              actionResult.corporate.sales.report.previous
+                                .contractAmountsBeforeRefunds ?? []
+                            ).map((row) => row.currencyCode),
+                          ]),
+                        ]
+                          .sort()
+                          .map((currency) => {
+                            const report = actionResult.corporate!.sales;
+                            if (report.status !== 'READY') return null;
+                            const current =
+                              report.report.current
+                                .contractAmountsBeforeRefunds;
+                            const previous =
+                              report.report.previous
+                                .contractAmountsBeforeRefunds;
+                            return (
+                              <p className={styles.composerHint} key={currency}>
+                                {t(c.contractAmount)} —{' '}
+                                {t(
+                                  actionResult.version === 2
+                                    ? c.filteredPeriod
+                                    : c.currentPeriod,
+                                )}
+                                :{' '}
+                                <bdi>
+                                  {current
+                                    ? (current.find(
+                                        (row) => row.currencyCode === currency,
+                                      )?.amount ?? '0')
+                                    : '—'}{' '}
+                                  {currency}
+                                </bdi>
+                                {' / '}
+                                {t(
+                                  actionResult.version === 2
+                                    ? c.filteredPrevious
+                                    : c.previousPeriod,
+                                )}
+                                :{' '}
+                                <bdi>
+                                  {previous
+                                    ? (previous.find(
+                                        (row) => row.currencyCode === currency,
+                                      )?.amount ?? '0')
+                                    : '—'}{' '}
+                                  {currency}
+                                </bdi>
+                              </p>
+                            );
+                          })}
+                      </>
+                    ) : (
+                      <p className={styles.composerHint}>
+                        {t(
+                          actionResult.corporate.sales.status === 'DENIED'
+                            ? c.states.forbidden
+                            : c.salesDefinitionGate,
+                        )}
+                      </p>
+                    )}
+                    <h3>{t(c.contractBalances)}</h3>
+                    <p className={styles.composerHint}>
+                      {t(c.balanceRecommendationsDeferred)}
+                    </p>
+                    <p className={styles.composerHint}>
+                      {t(c.balanceLimitations)}
+                    </p>
+                    {actionResult.corporate.balances.status === 'READY' && (
+                      <SourceUpdated
+                        value={
+                          actionResult.corporate.balances.report.sourceUpdatedAt
+                        }
+                        english={english}
+                        t={t}
+                      />
+                    )}
+                    {actionResult.corporate.balances.status === 'READY' ? (
+                      actionResult.corporate.balances.report.totals.map(
+                        (balance) => (
+                          <p
+                            className={styles.composerHint}
+                            key={balance.currencyCode}
+                          >
+                            {t(c.outstandingBalance)}:{' '}
                             <bdi>
-                              {current
-                                ? (current.find(
-                                    (row) => row.currencyCode === currency,
-                                  )?.amount ?? '0')
-                                : '—'}{' '}
-                              {currency}
-                            </bdi>
-                            {' / '}
-                            {t(
-                              actionResult.version === 2
-                                ? c.filteredPrevious
-                                : c.previousPeriod,
-                            )}
-                            :{' '}
-                            <bdi>
-                              {previous
-                                ? (previous.find(
-                                    (row) => row.currencyCode === currency,
-                                  )?.amount ?? '0')
-                                : '—'}{' '}
-                              {currency}
+                              {balance.outstanding}{' '}
+                              {currencySymbol(balance.currencyCode ?? '')}
                             </bdi>
                           </p>
-                        );
-                      })}
-                  </>
-                ) : (
-                  <p className={styles.composerHint}>
-                    {t(
-                      actionResult.corporate.sales.status === 'DENIED'
-                        ? c.states.forbidden
-                        : c.salesDefinitionGate,
-                    )}
-                  </p>
-                )}
-                <h3>{t(c.contractBalances)}</h3>
-                <p className={styles.composerHint}>
-                  {t(c.balanceRecommendationsDeferred)}
-                </p>
-                <p className={styles.composerHint}>{t(c.balanceLimitations)}</p>
-                {actionResult.corporate.balances.status === 'READY' && (
-                  <SourceUpdated
-                    value={
-                      actionResult.corporate.balances.report.sourceUpdatedAt
-                    }
-                    english={english}
-                    t={t}
-                  />
-                )}
-                {actionResult.corporate.balances.status === 'READY' ? (
-                  actionResult.corporate.balances.report.totals.map(
-                    (balance) => (
-                      <p
-                        className={styles.composerHint}
-                        key={balance.currencyCode}
-                      >
-                        {t(c.outstandingBalance)}:{' '}
-                        <bdi>
-                          {balance.outstanding}{' '}
-                          {currencySymbol(balance.currencyCode ?? '')}
-                        </bdi>
+                        ),
+                      )
+                    ) : (
+                      <p className={styles.composerHint}>
+                        {t(
+                          actionResult.corporate.balances.status === 'DENIED'
+                            ? c.states.forbidden
+                            : c.receivablesSourceGate,
+                        )}
                       </p>
-                    ),
-                  )
-                ) : (
-                  <p className={styles.composerHint}>
-                    {t(
-                      actionResult.corporate.balances.status === 'DENIED'
-                        ? c.states.forbidden
-                        : c.receivablesSourceGate,
                     )}
-                  </p>
+                  </section>
                 )}
-              </section>
+              </div>
             )}
-          </div>
-        )}
-        {!denied &&
-          actionResult?.action === 'receivables-follow-up' &&
-          actionResult.status === 'PARTIAL' && (
-            <div className={styles.actionResult}>
-              <h2>{t(c.contractBalances)}</h2>
-              <SourceUpdated
-                value={actionResult.report.sourceUpdatedAt}
-                english={english}
-                t={t}
-              />
-              <p className={styles.composerHint}>{t(c.balanceLimitations)}</p>
-              <p className={styles.composerHint}>
-                {t(c.asOf)}:{' '}
-                <time dateTime={actionResult.report.observedAt}>
-                  {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                    dateStyle: 'short',
-                    timeStyle: 'short',
-                    timeZone: 'Asia/Tehran',
-                  }).format(new Date(actionResult.report.observedAt))}
-                </time>
-              </p>
-              {actionResult.report.totals.map((balance) => (
-                <dl className={styles.actionCounts} key={balance.currencyCode}>
-                  {[
-                    [c.contractAmount, balance.amount],
-                    [c.confirmedReceipts, balance.confirmedPaid],
-                    [c.pendingReceipts, balance.pendingFinance],
-                    [c.outstandingBalance, balance.outstanding],
-                  ].map(([label, amount]) => (
-                    <div key={(label as AssistantText)[1]}>
-                      <dt>{t(label as AssistantText)}</dt>
-                      <dd>
-                        <bdi>
-                          {amount as string}{' '}
-                          {currencySymbol(balance.currencyCode ?? '')}
-                        </bdi>
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              ))}
-              {actionResult.report.coverage.itemsTruncated && (
-                <p className={styles.composerHint}>{t(c.partialBalanceList)}</p>
-              )}
-              {actionResult.report.items.map((item) => (
-                <p className={styles.composerHint} key={item.contractId}>
-                  <bdi>{item.contractNumber}</bdi>:{' '}
-                  {item.balances.map((balance) => (
-                    <bdi key={balance.currencyCode}>
-                      {' '}
-                      {balance.outstanding}{' '}
-                      {currencySymbol(balance.currencyCode ?? '')}{' '}
-                    </bdi>
-                  ))}{' '}
-                  <Link href={item.href}>{t(c.reviewContract)}</Link>
-                </p>
-              ))}
-            </div>
-          )}
-        {!denied &&
-          actionResult?.action === 'sales-analysis' &&
-          actionResult.status === 'PARTIAL' && (
-            <div className={styles.actionResult}>
-              <h2>
-                {t(
-                  actionResult.version === 2 ? c.salesAnalysis : c.weeklySales,
-                )}
-              </h2>
-              <p className={styles.composerHint}>{t(c.salesCoverage)}</p>
-              <p className={styles.composerHint}>
-                {t(c.asOf)}:{' '}
-                <time dateTime={actionResult.report.observedAt}>
-                  {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                    dateStyle: 'short',
-                    timeStyle: 'short',
-                    timeZone: 'Asia/Tehran',
-                  }).format(new Date(actionResult.report.observedAt))}
-                </time>
-              </p>
-              <p className={styles.composerHint}>{t(c.salesMissing)}</p>
-              <SourceUpdated
-                value={actionResult.report.sourceUpdatedAt}
-                english={english}
-                t={t}
-              />
-              {actionResult.conversion?.status === 'READY' ? (
-                <section>
-                  <h3>{t(c.callConversion)}</h3>
-                  <p className={styles.composerHint}>{t(c.callCoverage)}</p>
+            {!denied &&
+              actionResult?.action === 'receivables-follow-up' &&
+              actionResult.status === 'PARTIAL' && (
+                <div className={styles.actionResult}>
+                  <h2>{t(c.contractBalances)}</h2>
                   <SourceUpdated
-                    value={actionResult.conversion.report.sourceUpdatedAt}
+                    value={actionResult.report.sourceUpdatedAt}
                     english={english}
                     t={t}
                   />
-                  {[
-                    actionResult.conversion.report.current,
-                    actionResult.conversion.report.previous,
-                  ].map((period, index) => (
-                    <p className={styles.composerHint} key={period.startUtc}>
-                      {t(
-                        index === 0
-                          ? actionResult.version === 2
-                            ? c.filteredPeriod
-                            : c.currentPeriod
-                          : actionResult.version === 2
-                            ? c.filteredPrevious
-                            : c.previousPeriod,
-                      )}
-                      : {t(c.contactedLeads)} {period.contactedLeads} /{' '}
-                      {t(c.convertedLeads)} {period.convertedLeads} —{' '}
-                      <bdi>
-                        {period.conversionBasisPoints === null
-                          ? '—'
-                          : `${period.conversionBasisPoints / 100}%`}
-                      </bdi>
+                  <p className={styles.composerHint}>
+                    {t(c.balanceLimitations)}
+                  </p>
+                  <p className={styles.composerHint}>
+                    {t(c.asOf)}:{' '}
+                    <time dateTime={actionResult.report.observedAt}>
+                      {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                        dateStyle: 'short',
+                        timeStyle: 'short',
+                        timeZone: 'Asia/Tehran',
+                      }).format(new Date(actionResult.report.observedAt))}
+                    </time>
+                  </p>
+                  {actionResult.report.totals.map((balance) => (
+                    <dl
+                      className={styles.actionCounts}
+                      key={balance.currencyCode}
+                    >
+                      {[
+                        [c.contractAmount, balance.amount],
+                        [c.confirmedReceipts, balance.confirmedPaid],
+                        [c.pendingReceipts, balance.pendingFinance],
+                        [c.outstandingBalance, balance.outstanding],
+                      ].map(([label, amount]) => (
+                        <div key={(label as AssistantText)[1]}>
+                          <dt>{t(label as AssistantText)}</dt>
+                          <dd>
+                            <bdi>
+                              {amount as string}{' '}
+                              {currencySymbol(balance.currencyCode ?? '')}
+                            </bdi>
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ))}
+                  {actionResult.report.coverage.itemsTruncated && (
+                    <p className={styles.composerHint}>
+                      {t(c.partialBalanceList)}
+                    </p>
+                  )}
+                  {actionResult.report.items.map((item) => (
+                    <p className={styles.composerHint} key={item.contractId}>
+                      <bdi>{item.contractNumber}</bdi>:{' '}
+                      {item.balances.map((balance) => (
+                        <bdi key={balance.currencyCode}>
+                          {' '}
+                          {balance.outstanding}{' '}
+                          {currencySymbol(balance.currencyCode ?? '')}{' '}
+                        </bdi>
+                      ))}{' '}
+                      <Link href={item.href}>{t(c.reviewContract)}</Link>
                     </p>
                   ))}
-                </section>
-              ) : (
-                <p className={styles.composerHint}>
-                  {t(c.noConversionEvidence)}
-                </p>
+                </div>
               )}
-              {!actionResult.report.routeNamesComplete && (
-                <p className={styles.composerHint}>{t(c.missingCityNames)}</p>
-              )}
-              {[
-                [
-                  actionResult.version === 2
-                    ? c.filteredPeriod
-                    : c.currentPeriod,
-                  actionResult.report.current,
-                ],
-                [
-                  actionResult.version === 2
-                    ? c.filteredPrevious
-                    : c.previousPeriod,
-                  actionResult.report.previous,
-                ],
-              ].map(([label, period]) => {
-                const value = period as typeof actionResult.report.current;
-                return (
-                  <div key={(label as AssistantText)[1]}>
-                    <h3>{t(label as AssistantText)}</h3>
+            {!denied &&
+              actionResult?.action === 'sales-analysis' &&
+              actionResult.status === 'PARTIAL' && (
+                <div className={styles.actionResult}>
+                  <h2>
+                    {t(
+                      actionResult.version === 2
+                        ? c.salesAnalysis
+                        : c.weeklySales,
+                    )}
+                  </h2>
+                  <p className={styles.composerHint}>{t(c.salesCoverage)}</p>
+                  <p className={styles.composerHint}>
+                    {t(c.asOf)}:{' '}
+                    <time dateTime={actionResult.report.observedAt}>
+                      {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                        dateStyle: 'short',
+                        timeStyle: 'short',
+                        timeZone: 'Asia/Tehran',
+                      }).format(new Date(actionResult.report.observedAt))}
+                    </time>
+                  </p>
+                  <p className={styles.composerHint}>{t(c.salesMissing)}</p>
+                  <SourceUpdated
+                    value={actionResult.report.sourceUpdatedAt}
+                    english={english}
+                    t={t}
+                  />
+                  {actionResult.conversion?.status === 'READY' ? (
+                    <section>
+                      <h3>{t(c.callConversion)}</h3>
+                      <p className={styles.composerHint}>{t(c.callCoverage)}</p>
+                      <SourceUpdated
+                        value={actionResult.conversion.report.sourceUpdatedAt}
+                        english={english}
+                        t={t}
+                      />
+                      {[
+                        actionResult.conversion.report.current,
+                        actionResult.conversion.report.previous,
+                      ].map((period, index) => (
+                        <p
+                          className={styles.composerHint}
+                          key={period.startUtc}
+                        >
+                          {t(
+                            index === 0
+                              ? actionResult.version === 2
+                                ? c.filteredPeriod
+                                : c.currentPeriod
+                              : actionResult.version === 2
+                                ? c.filteredPrevious
+                                : c.previousPeriod,
+                          )}
+                          : {t(c.contactedLeads)} {period.contactedLeads} /{' '}
+                          {t(c.convertedLeads)} {period.convertedLeads} —{' '}
+                          <bdi>
+                            {period.conversionBasisPoints === null
+                              ? '—'
+                              : `${period.conversionBasisPoints / 100}%`}
+                          </bdi>
+                        </p>
+                      ))}
+                    </section>
+                  ) : (
                     <p className={styles.composerHint}>
-                      {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                        timeZone: 'Asia/Tehran',
-                      }).format(new Date(value.startUtc))}{' '}
-                      —{' '}
-                      {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                        timeZone: 'Asia/Tehran',
-                      }).format(new Date(new Date(value.endUtc).getTime() - 1))}
+                      {t(c.noConversionEvidence)}
                     </p>
-                    <dl className={styles.actionCounts}>
-                      <div>
-                        <dt>{t(c.contractsCount)}</dt>
-                        <dd>
-                          {new Intl.NumberFormat(
+                  )}
+                  {!actionResult.report.routeNamesComplete && (
+                    <p className={styles.composerHint}>
+                      {t(c.missingCityNames)}
+                    </p>
+                  )}
+                  {[
+                    [
+                      actionResult.version === 2
+                        ? c.filteredPeriod
+                        : c.currentPeriod,
+                      actionResult.report.current,
+                    ],
+                    [
+                      actionResult.version === 2
+                        ? c.filteredPrevious
+                        : c.previousPeriod,
+                      actionResult.report.previous,
+                    ],
+                  ].map(([label, period]) => {
+                    const value = period as typeof actionResult.report.current;
+                    return (
+                      <div key={(label as AssistantText)[1]}>
+                        <h3>{t(label as AssistantText)}</h3>
+                        <p className={styles.composerHint}>
+                          {new Intl.DateTimeFormat(
                             english ? 'en-GB' : 'fa-IR',
-                          ).format(value.contractCount)}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>{t(c.passengersCount)}</dt>
-                        <dd>
-                          {new Intl.NumberFormat(
+                            {
+                              timeZone: 'Asia/Tehran',
+                            },
+                          ).format(new Date(value.startUtc))}{' '}
+                          —{' '}
+                          {new Intl.DateTimeFormat(
                             english ? 'en-GB' : 'fa-IR',
-                          ).format(value.passengerCount)}
-                        </dd>
+                            {
+                              timeZone: 'Asia/Tehran',
+                            },
+                          ).format(
+                            new Date(new Date(value.endUtc).getTime() - 1),
+                          )}
+                        </p>
+                        <dl className={styles.actionCounts}>
+                          <div>
+                            <dt>{t(c.contractsCount)}</dt>
+                            <dd>
+                              {new Intl.NumberFormat(
+                                english ? 'en-GB' : 'fa-IR',
+                              ).format(value.contractCount)}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>{t(c.passengersCount)}</dt>
+                            <dd>
+                              {new Intl.NumberFormat(
+                                english ? 'en-GB' : 'fa-IR',
+                              ).format(value.passengerCount)}
+                            </dd>
+                          </div>
+                        </dl>
+                        {value.contractAmountsBeforeRefunds?.map((amount) => (
+                          <p
+                            className={styles.composerHint}
+                            key={amount.currencyCode}
+                          >
+                            {t(c.contractAmount)}:{' '}
+                            <bdi>
+                              {amount.amount}{' '}
+                              {currencySymbol(amount.currencyCode ?? '')}
+                            </bdi>
+                          </p>
+                        ))}
+                        {value.routes.map((route) => (
+                          <p
+                            className={styles.composerHint}
+                            key={`${route.originId}:${route.destinationId}`}
+                          >
+                            {t(c.primaryRoute)}:{' '}
+                            <bdi>
+                              {route.originName ?? t(c.unknown)} →{' '}
+                              {route.destinationName ?? t(c.unknown)}
+                            </bdi>{' '}
+                            — {t(c.contractsCount)}: {route.contractCount} —{' '}
+                            {t(c.passengersCount)}: {route.passengerCount}
+                          </p>
+                        ))}
                       </div>
-                    </dl>
-                    {value.contractAmountsBeforeRefunds?.map((amount) => (
-                      <p
-                        className={styles.composerHint}
-                        key={amount.currencyCode}
-                      >
-                        {t(c.contractAmount)}:{' '}
-                        <bdi>
-                          {amount.amount}{' '}
-                          {currencySymbol(amount.currencyCode ?? '')}
-                        </bdi>
-                      </p>
-                    ))}
-                    {value.routes.map((route) => (
-                      <p
-                        className={styles.composerHint}
-                        key={`${route.originId}:${route.destinationId}`}
-                      >
-                        {t(c.primaryRoute)}:{' '}
-                        <bdi>
-                          {route.originName ?? t(c.unknown)} →{' '}
-                          {route.destinationName ?? t(c.unknown)}
-                        </bdi>{' '}
-                        — {t(c.contractsCount)}: {route.contractCount} —{' '}
-                        {t(c.passengersCount)}: {route.passengerCount}
-                      </p>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                    );
+                  })}
+                </div>
+              )}
+          </div>
+        </div>
+        {!denied && showLatest && (
+          <button
+            type="button"
+            className={styles.chatLatest}
+            onClick={() => scrollToLatest(true)}
+            aria-label={t(c.chatLatest)}
+            title={t(c.chatLatest)}
+          >
+            <ArrowDown size={20} aria-hidden="true" />
+          </button>
+        )}
       </div>
     </section>
   );

@@ -42,6 +42,10 @@ export function configureApplication(app: INestApplication): void {
   // A bounded 500-row worksheet can exceed Express's default 100 KiB JSON limit.
   // Register before Nest's default parser; all other routes retain their limit.
   app.use(`/${apiPrefix}/hr/payroll-worksheets`, boundedJson('2mb'));
+  app.use(
+    `/${apiPrefix}/finance/accounting/books/:bookId/actions/tax-reference-import`,
+    boundedJson('3mb'),
+  );
   app.use(boundedJson('100kb'));
   app.setGlobalPrefix(apiPrefix);
   app.enableCors({

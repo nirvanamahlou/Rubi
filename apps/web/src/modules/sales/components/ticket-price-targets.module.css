@@ -1,15 +1,5 @@
 .panel {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-  grid-column: 1 / -1;
-  align-content: start;
-  max-height: 12rem;
-  overflow-y: auto;
-  gap: 0.5rem;
-  min-width: 0;
-}
-
-.group {
+  margin-top: 0.5rem;
   container-type: inline-size;
   min-width: 0;
   border: 1px solid var(--border);
@@ -62,11 +52,5 @@
 
   .actions {
     grid-column: auto;
-  }
-}
-
-@media (min-width: 1024px) and (max-width: 1279px) {
-  .panel {
-    grid-column: 1 / -1;
   }
 }

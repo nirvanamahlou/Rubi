@@ -1,5 +1,7 @@
+import type { VerifiedGatewayProof } from '../finance/payments/verified-gateway-receipt.public';
 import {
   Body,
+  BadRequestException,
   Controller,
   Get,
   Header,
@@ -29,6 +31,9 @@ import {
 } from './site-commerce.policy';
 import { SiteCommerceService } from './site-commerce.service';
 import { SiteCommerceWriteGuard } from './site-commerce-write.guard';
+import type { FloatingWebsiteBooking } from './floating-tour-booking';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { PassengerPreflightDto } from './passenger-preflight.dto';
 
 @Controller('sales/site-commerce/v1/:site')
 @UseGuards(AuthGuard, SiteCommerceWriteGuard)
@@ -46,8 +51,16 @@ export class SiteCommerceController {
     @Param('resourceId', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
     @Query('branchId') branchId?: string,
+    @Query('periodKey') periodKey?: string,
   ) {
-    return this.service.publication(site, kind, id, req.actor, branchId);
+    return this.service.publication(
+      site,
+      kind,
+      id,
+      req.actor,
+      branchId,
+      periodKey,
+    );
   }
   @Post('publications/:kind/:resourceId')
   async publish(
@@ -61,6 +74,7 @@ export class SiteCommerceController {
       version: number;
       branchId?: string;
       presentation?: unknown;
+      periodKey?: string;
     },
     @Req() req: AuthenticatedRequest,
   ) {
@@ -77,18 +91,87 @@ export class SiteCommerceController {
   }
   @Get('catalog')
   @Header('Cache-Control', 'private, no-store')
-  catalog(@Param('site') site: string, @Req() req: AuthenticatedRequest) {
-    return this.service.catalog(site, req.actor);
+  catalog(
+    @Param('site') site: string,
+    @Req() req: AuthenticatedRequest,
+    @Query('floatingTours') floatingTours?: string,
+  ) {
+    return floatingTours === 'only'
+      ? this.service.catalog(site, req.actor, true, true)
+      : this.service.catalog(site, req.actor, floatingTours === 'true');
+  }
+  @Post('hotel-profiles/:id')
+  @Header('Cache-Control', 'private, no-store')
+  publishHotel(
+    @Param('site') site: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.publishHotelProfile(site, id, req.actor);
+  }
+  @Post('geography-profiles/:kind/:id')
+  publishGeography(
+    @Param('site') site: string,
+    @Param('kind') kind: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.publishGeography(site, kind, id, req.actor);
   }
   @Post('flight-quote')
   @Header('Cache-Control', 'private, no-store')
   flightQuote(
     @Param('site') site: string,
-    @Body() body: { productIds: string[]; birthDates: string[] },
+    @Body()
+    body: {
+      productIds: string[];
+      birthDates?: string[];
+      passengerCounts?: { adults: number; children: number; infants: number };
+    },
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.flightQuote(site, body, req.actor);
   }
+  @Post('people/check')
+  @Header('Cache-Control', 'private, no-store')
+  async checkPeople(
+    @Param('site') site: string,
+    @Body() body: PassengerPreflightDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const binding = siteBinding(site, req.actor);
+    const duplicate = (person: CustomerMutationDto, at: number) =>
+      body.passengers.some(
+        (other, index) =>
+          index !== at &&
+          ((!!person.nationalId && person.nationalId === other.nationalId) ||
+            (!!person.passportNumber &&
+              person.passportNumber === other.passportNumber)),
+      );
+    const data = await Promise.all(
+      body.passengers.map(async (person, index) => {
+        try {
+          const result = await this.customers.checkWebsitePassenger(
+            person,
+            { ...req.actor, branchIds: [binding.branchId] },
+            binding.branchId,
+          );
+          return {
+            index,
+            ...(duplicate(person, index)
+              ? { valid: false, code: 'DUPLICATE_PASSENGER' }
+              : result),
+          };
+        } catch (error) {
+          if (error instanceof BadRequestException)
+            return { index, valid: false, code: 'INVALID_PASSENGER' };
+          throw error;
+        }
+      }),
+    );
+    return { data };
+  }
+
   @Post('people')
   async person(
     @Param('site') site: string,
@@ -146,14 +229,53 @@ export class SiteCommerceController {
   ) {
     return this.service.status(site, id, req.actor);
   }
+  @Post('floating-orders/:externalId')
+  @Header('Cache-Control', 'private, no-store')
+  floatingDraft(
+    @Param('site') site: string,
+    @Param('externalId') id: string,
+    @Body() body: FloatingWebsiteBooking,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.draftFloating(site, id, body, req.actor);
+  }
+  @Post('floating-preview')
+  @Header('Cache-Control', 'private, no-store')
+  floatingPreview(
+    @Param('site') site: string,
+    @Body() body: FloatingWebsiteBooking,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.previewFloating(site, body, req.actor);
+  }
+  @Post('floating-holds/:externalId')
+  @Header('Cache-Control', 'private, no-store')
+  floatingHold(
+    @Param('site') site: string,
+    @Param('externalId') id: string,
+    @Body() body: Parameters<SiteCommerceService['holdFloating']>[2],
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.holdFloating(site, id, body, req.actor);
+  }
   @Post('orders/:externalId/paid')
   paid(
     @Param('site') site: string,
     @Param('externalId') id: string,
-    @Body() body: { payments: SalesPaymentCreateRequest[] },
+    @Body()
+    body: {
+      payments: SalesPaymentCreateRequest[];
+      gatewayReceipt?: VerifiedGatewayProof;
+    },
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.service.paid(site, id, body?.payments, req.actor);
+    return this.service.paid(
+      site,
+      id,
+      body?.payments,
+      req.actor,
+      body?.gatewayReceipt,
+    );
   }
   @Get('orders/:externalId/contract')
   @Header('Cache-Control', 'private, no-store')

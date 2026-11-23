@@ -1,14 +1,17 @@
 import { expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { strToU8, zipSync, unzipSync } from 'fflate';
+import { strFromU8, strToU8, zipSync, unzipSync } from 'fflate';
 import {
   floatingDate,
+  floatingMoney,
   floatingPrices,
   parseFloatingRows,
   readFloatingWorkbook,
+  resolveFloatingHotelCells,
   type FloatingCell,
 } from './floating-tour-import';
 import type { TourPackageInputV1 } from '@nora/contracts';
+import { buildFloatingTourTemplate } from './floating-tour-template';
 const c = (value: string, format = '', numeric = false): FloatingCell => ({
   value,
   format,
@@ -59,6 +62,141 @@ const tour = {
 } satisfies TourPackageInputV1;
 const hotels = [{ id: 'h1', name: 'Hotel One', cityId: 'city' }];
 const options = { nights: 7, mode: 'DATED' as const };
+it('treats NULL price cells as absent and preserves explicitly free prices', () => {
+  const [row] = parseFloatingRows(
+    book({ SGL: ' Null ', 'CHD W BED': 'NULL', infant: '0' }),
+    options,
+    tour,
+    hotels,
+  );
+  expect(row?.prices.single).toBeUndefined();
+  expect(row?.prices.childBed).toBeUndefined();
+  expect(row?.prices.infant).toEqual([{ currency: 'IRR', amount: '0' }]);
+});
+
+it('suggests up to three names and uses only an explicitly selected candidate', () => {
+  const refs = [
+    ...hotels,
+    { id: 'h2', name: 'Hotel Two', cityId: 'city' },
+    { id: 'h3', name: 'Other Resort', cityId: 'city' },
+    { id: 'h4', name: 'Beach Palace', cityId: 'city' },
+  ];
+  const workbook = book({ hotel_name: 'Hotel Onne' });
+  const [match] = resolveFloatingHotelCells(workbook, refs, {
+    '2:2': 'invalid',
+  });
+  expect(match).toMatchObject({ row: 2, name: 'Hotel Onne' });
+  expect(match?.candidates).toHaveLength(3);
+  expect(match?.candidates[0]?.id).toBe('h1');
+  expect(resolveFloatingHotelCells(workbook, refs, { '2:2': 'h1' })).toEqual(
+    [],
+  );
+  expect(
+    parseFloatingRows(workbook, options, tour, refs)[0]?.stays[0],
+  ).toMatchObject({ hotelId: 'h1', hotelName: 'Hotel One' });
+});
+it('reports invalid Excel rows together and preserves their original numbers', () => {
+  const workbook = [
+    book()[0]!,
+    book({ hotel_name: 'Unknown' })[1]!,
+    [],
+    book({ departure_date: 'invalid' })[1]!,
+  ];
+  expect(() => parseFloatingRows(workbook, options, tour, hotels)).toThrow(
+    /Row 2: نام هتل[^\n]*\nRow 4: تاریخ حرکت/,
+  );
+});
+it('infers three destination cities from Excel hotels and assigns form nights without changing the saved route', () => {
+  const refs = [1, 2, 3].map((n) => ({
+    id: `h${n}`,
+    name: `Hotel ${n}`,
+    cityId: `city${n}`,
+  }));
+  const workbook = [
+    headers.map((h) => c(h)),
+    ...refs.map((h) => book({ hotel_name: h.name })[1]!),
+  ];
+  const input = { ...options, combined: true, destinationNights: [2, 3, 2] };
+  const row = parseFloatingRows(workbook, input, tour, refs)[0]!;
+  expect(row.stays.map((s) => [s.cityId, s.nights])).toEqual([
+    ['city1', 2],
+    ['city2', 3],
+    ['city3', 2],
+  ]);
+  expect(row.prices).toEqual(
+    parseFloatingRows(book({ hotel_name: 'Hotel 1' }), options, tour, refs)[0]!
+      .prices,
+  );
+  expect(row.endsOn).toBe('2026-08-08');
+  expect(tour.destinationId).toBe('city');
+  const monthly = parseFloatingRows(
+    workbook,
+    { ...input, mode: 'MONTHLY', calendar: 'PERSIAN', months: [1] },
+    tour,
+    refs,
+  )[0]!;
+  expect(monthly.startsOn).toBeNull();
+  expect(monthly.stays.map((s) => s.nights)).toEqual([2, 3, 2]);
+  expect(() =>
+    parseFloatingRows(
+      workbook,
+      { ...input, destinationNights: [2, 2] },
+      tour,
+      refs,
+    ),
+  ).toThrow();
+  expect(() =>
+    parseFloatingRows(
+      workbook,
+      { ...input, destinationNights: [2, 2, 2] },
+      tour,
+      refs,
+    ),
+  ).toThrow();
+  expect(() =>
+    parseFloatingRows(
+      workbook,
+      input,
+      tour,
+      refs.map((h) => ({ ...h, cityId: 'same' })),
+    ),
+  ).toThrow();
+});
+it('uses the configured destination count for merged Excel groups', () => {
+  const refs = [1, 2, 3, 4].map((n) => ({
+    id: `h${n}`,
+    name: `Hotel ${n}`,
+    cityId: `city${n}`,
+  }));
+  const workbook = [
+    headers.map((h) => c(h)),
+    ...refs.map((h) => book({ hotel_name: h.name })[1]!),
+  ];
+  workbook.slice(1).forEach((row) => {
+    row[5]!.mergedRows = { first: 2, last: 5 };
+  });
+  const input = { ...options, combined: true, destinationNights: [1, 2, 3, 1] };
+  expect(
+    parseFloatingRows(workbook, input, tour, refs)[0]!.stays.map(
+      (s) => s.nights,
+    ),
+  ).toEqual([1, 2, 3, 1]);
+  expect(() =>
+    parseFloatingRows(
+      workbook,
+      { ...input, destinationNights: [3, 4] },
+      tour,
+      refs,
+    ),
+  ).toThrow();
+  const template = readFloatingWorkbook(
+    buildFloatingTourTemplate(
+      { ...tour, details: { ...tour.details, isCombined: true } },
+      4,
+    ),
+  );
+  expect(template[1]?.[5]?.mergedRows).toEqual({ first: 2, last: 5 });
+});
 it('reads the actual customer template, keeping guide content out of data', () => {
   expect(
     readFloatingWorkbook(
@@ -114,6 +252,57 @@ it('detects formatted currencies and rejects mixed foreign currencies, negative 
   expect(() => floatingPrices({ dbl: c('$100'), sgl: c('€100') })).toThrow();
   expect(() => floatingPrices({ 'flight per person': c('100') })).toThrow();
   expect(() => floatingPrices({ dbl: c('-20') })).toThrow();
+});
+it('accepts Excel numeric precision noise while rejecting genuine extra decimals', () => {
+  const euroFormat = '[$€-2]\\ #,##0';
+  expect(
+    floatingPrices({
+      sgl: c('513.70000000000005', euroFormat, true),
+      'chd w bed': c('115.69999999999999', euroFormat, true),
+      'child no bed': c('55900000', '#,##0', true),
+      infant: c('5990000', '#,##0', true),
+      'flight per person': c('49900000', '#,##0', true),
+    }).prices,
+  ).toEqual({
+    single: [
+      { currency: 'EUR', amount: '513.7' },
+      { currency: 'IRR', amount: '499000000' },
+    ],
+    childBed: [
+      { currency: 'EUR', amount: '115.7' },
+      { currency: 'IRR', amount: '499000000' },
+    ],
+    childNoBed: [{ currency: 'IRR', amount: '559000000' }],
+    infant: [{ currency: 'IRR', amount: '59900000' }],
+  });
+  expect(floatingMoney(c('12.345600000000001', euroFormat, true))).toEqual([
+    { currency: 'EUR', amount: '12.3456' },
+  ]);
+  expect(() => floatingMoney(c('12.34567', euroFormat, true))).toThrow();
+  expect(() => floatingMoney(c('115.69999999999999 EUR'))).toThrow();
+});
+it('treats unavailable rates as empty, and treats zero child airfare as a rate', () => {
+  const unavailable = book({ SGL: 'N/A', 'flight child w bed': '–' }).map(
+    (row) => row.slice(0, -1),
+  );
+  unavailable[1]![7] = c('€115.7');
+  const [row] = parseFloatingRows(unavailable, options, tour, hotels);
+  expect(row?.prices.single).toBeUndefined();
+  expect(row?.prices.extra).toBeUndefined();
+  expect(row?.prices.childBed).toEqual([
+    { currency: 'EUR', amount: '115.7' },
+    { currency: 'IRR', amount: '500000000' },
+  ]);
+  expect(
+    floatingPrices({
+      'chd w bed': c('€115.7'),
+      'flight child w bed': c('0'),
+      'flight per person': c('50000000'),
+    }).prices.childBed,
+  ).toEqual([
+    { currency: 'EUR', amount: '115.7' },
+    { currency: 'IRR', amount: '0' },
+  ]);
 });
 it('requires unique registered hotels and date-room entries and only preserves an unambiguous previous room', () => {
   expect(() => parseFloatingRows(book(), options, tour, [])).toThrow();
@@ -274,4 +463,153 @@ it('stores commission separately and never subtracts it from sale prices', () =>
   const result = floatingPrices({ dbl: c('100'), commission: c('10') });
   expect(result.prices.double).toEqual([{ currency: 'IRR', amount: '1000' }]);
   expect(result.commission).toEqual([{ currency: 'IRR', amount: '100' }]);
+});
+
+const threeStopTour: TourPackageInputV1 = {
+  ...tour,
+  details: {
+    ...tour.details,
+    isCombined: true,
+    destinations: [
+      { cityId: 'city', nights: 2 },
+      { cityId: 'city2', nights: 3 },
+      { cityId: 'city3', nights: 2 },
+    ],
+  },
+};
+const threeHotels = [
+  ...hotels,
+  { id: 'h2', name: 'Hotel Two', cityId: 'city2' },
+  { id: 'h3', name: 'Hotel Three', cityId: 'city3' },
+];
+function mergedWorkbook(
+  changes: Record<string, string> = {},
+  transform = (sheet: string) => sheet,
+) {
+  const files = unzipSync(buildFloatingTourTemplate(threeStopTour));
+  const values: Record<string, string> = {
+    A2: '2027-01-12',
+    B2: 'Hotel One',
+    B3: 'Hotel Two',
+    B4: 'Hotel Three',
+    D2: 'Standard',
+    D3: 'Suite',
+    D4: 'Sea View',
+    E2: 'UALL',
+    E3: 'BB',
+    E4: 'ALL',
+    F2: '300 EUR',
+    G2: '500 EUR',
+    K2: '1000000',
+    N2: '10 EUR',
+    ...changes,
+  };
+  const sheet = strFromU8(files['xl/worksheets/sheet1.xml']!).replace(
+    /<c r="([A-Z]+\d+)"([^>]*)><is><t><\/t><\/is><\/c>/g,
+    (source, address: string, attrs: string) =>
+      address in values
+        ? `<c r="${address}"${attrs}><is><t>${values[address]}</t></is></c>`
+        : source,
+  );
+  return zipSync({
+    ...files,
+    'xl/worksheets/sheet1.xml': strToU8(transform(sheet)),
+  });
+}
+it('downloads a three-stay template and imports merged prices once for the whole itinerary', () => {
+  const workbook = readFloatingWorkbook(mergedWorkbook());
+  expect(workbook[3]?.[5]).toMatchObject({
+    value: '300 EUR',
+    mergedRows: { first: 2, last: 4 },
+  });
+  const rows = parseFloatingRows(
+    workbook,
+    { ...options, combined: true },
+    threeStopTour,
+    threeHotels,
+  );
+  expect(rows).toHaveLength(1);
+  expect(rows[0]).toMatchObject({
+    sourceRows: [2, 3, 4],
+    nights: 7,
+    startsOn: '2027-01-12',
+    endsOn: '2027-01-19',
+  });
+  expect(rows[0]?.stays.map((stay) => [stay.hotelId, stay.nights])).toEqual([
+    ['h1', 2],
+    ['h2', 3],
+    ['h3', 2],
+  ]);
+  expect(rows[0]?.prices.double).toEqual([
+    { currency: 'EUR', amount: '300' },
+    { currency: 'IRR', amount: '10000000' },
+  ]);
+  expect(rows[0]?.commission).toEqual([{ currency: 'EUR', amount: '10' }]);
+});
+it('uses separate merge ranges as separate packages even when their shared amounts match', () => {
+  const bytes = mergedWorkbook({}, (sheet) => {
+    const data = /<sheetData>([\s\S]*?)<\/sheetData>/.exec(sheet)![1]!;
+    const copy = data
+      .replace(/<row r="1"[\s\S]*?<\/row>/, '')
+      .replace(
+        /r="([A-Z]*)([234])"/g,
+        (_, col: string, row: string) => `r="${col}${Number(row) + 3}"`,
+      )
+      .replace('Sea View', 'Garden View');
+    const merges = /<mergeCells[^>]*>([\s\S]*?)<\/mergeCells>/.exec(sheet)![1]!;
+    return sheet
+      .replace('</sheetData>', copy + '</sheetData>')
+      .replace('count="10"', 'count="20"')
+      .replace(
+        '</mergeCells>',
+        merges.replace(/([A-Z]+)[24]/g, (address) =>
+          address.replace(/[24]$/, (n) => String(Number(n) + 3)),
+        ) + '</mergeCells>',
+      );
+  });
+  const rows = parseFloatingRows(
+    readFloatingWorkbook(bytes),
+    { ...options, combined: true },
+    threeStopTour,
+    threeHotels,
+  );
+  expect(rows.map((row) => row.sourceRows)).toEqual([
+    [2, 3, 4],
+    [5, 6, 7],
+  ]);
+  expect(rows.every((row) => row.prices.double?.[0]?.amount === '300')).toBe(
+    true,
+  );
+});
+it('rejects hidden non-anchor prices, overlapping ranges and inconsistent package boundaries', () => {
+  expect(() =>
+    readFloatingWorkbook(mergedWorkbook({ F3: '900 EUR' })),
+  ).toThrow();
+  expect(() =>
+    readFloatingWorkbook(
+      mergedWorkbook({}, (sheet) =>
+        sheet.replace('</mergeCells>', '<mergeCell ref="F3:F4"/></mergeCells>'),
+      ),
+    ),
+  ).toThrow();
+  expect(() =>
+    parseFloatingRows(
+      readFloatingWorkbook(
+        mergedWorkbook({}, (sheet) => sheet.replace('G2:G4', 'G2:G3')),
+      ),
+      { ...options, combined: true },
+      threeStopTour,
+      threeHotels,
+    ),
+  ).toThrow();
+  expect(() =>
+    parseFloatingRows(
+      readFloatingWorkbook(
+        mergedWorkbook({ B3: 'Hotel Three', B4: 'Hotel Two' }),
+      ),
+      { ...options, combined: true },
+      threeStopTour,
+      threeHotels,
+    ),
+  ).toThrow();
 });
