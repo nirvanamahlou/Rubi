@@ -1,3 +1,8 @@
+## NORA-CALENDAR-1122 — PC-C
+
+Resolve ordinary Persian sales comparisons on the server using Tehran calendar boundaries and verified Sales evidence. Keep the existing completed-day report limit. Local synthetic acceptance only.
+
+
 ## NORA-REMAINING-GUIDE-DOCS-1122 — PC-C
 
 All 109 remaining guide topics across eight domains use linked Markdown. Round-trip structural checks preserve the original instructional copy and resolver data. Authenticated loopback browser acceptance verified an answer, the chat panel destination, exact document heading and fragment, and navigation from the document into each panel.

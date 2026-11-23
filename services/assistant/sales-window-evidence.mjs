@@ -1,6 +1,7 @@
 import {
   normalizeSalesText,
   resolvePersianSalesPeriod,
+  resolveRelativeSalesPeriods,
 } from './persian-sales-period.mjs';
 import { ServiceError } from './errors.mjs';
 
@@ -291,4 +292,111 @@ export function renderSalesWindow(answer, report, request) {
   if (displayed.length > 6000)
     throw new ServiceError(502, 'SALES_FACT_BINDING_REQUIRED');
   return displayed;
+}
+
+export function relativeSalesRequest(request, now) {
+  const text = normalizeSalesText(request.message);
+  const words = text.replace(/[؟?،.]/g, '').split(' ');
+  const allowed = new Set(
+    'فروش فروشمون شرکت ما امروز دیروز پریروز این هفته ی ماه سال قبل قبلی تر پیش گذشته هفت 7 روز شمسی میلادی نسبت به در مقایسه با چقدر چطوره چطور چقدره بوده بود شد است هست تا همین موقع زمان بگو و'.split(
+      ' ',
+    ),
+  );
+  if (words.some((word) => !allowed.has(word))) return null;
+  const previous = request.history.at(-2);
+  if (
+    !/^فروش(?:مون)? /.test(text) &&
+    !(
+      previous?.role === 'user' &&
+      /^فروش(?:مون)? /.test(normalizeSalesText(previous.content)) &&
+      normalizeSalesText(previous.content)
+        .replace(/[؟?،.]/g, '')
+        .split(' ')
+        .every((word) => allowed.has(word))
+    )
+  )
+    return null;
+  const periods = resolveRelativeSalesPeriods(text, now);
+  if (periods?.length === 1 && /نسبت|مقایسه/.test(text)) return [];
+  return periods;
+}
+
+export function renderRelativeSales(periods, reports) {
+  const labels = periods.map((p) => {
+    const formatter = new Intl.DateTimeFormat(
+      p.calendar === 'persian' ? 'fa-IR-u-ca-persian' : 'fa-IR-u-ca-gregory',
+      {
+        timeZone: 'Asia/Tehran',
+        dateStyle: 'long',
+      },
+    );
+    const from = formatter.format(new Date(p.startUtc));
+    const to = formatter.format(
+      new Date(Date.parse(p.endExclusiveUtc) - (p.partial ? 0 : 1)),
+    );
+    const cutoff = p.partial
+      ? '، تا ساعت ' +
+        new Intl.DateTimeFormat('fa-IR', {
+          timeZone: 'Asia/Tehran',
+          timeStyle: 'medium',
+        }).format(new Date(p.endExclusiveUtc)) +
+        ' (دورهٔ ناقص)'
+      : '';
+    return from + ' تا ' + to + cutoff;
+  });
+  const currencies = [
+    ...new Set(reports.flatMap((r) => r.totals.map((t) => t.currency_code))),
+  ];
+  const asDecimal = (n) => {
+    const digits = (n < 0n ? -n : n).toString().padStart(13, '0');
+    const fraction = digits.slice(-12).replace(/0+$/, '');
+    return (
+      (n < 0n ? '-' : '') +
+      digits.slice(0, -12) +
+      (fraction ? '.' + fraction : '')
+    );
+  };
+  const lines = currencies.map((code) => {
+    const values = reports.map(
+      (r) =>
+        r.totals.find((t) => t.currency_code === code)?.amount ??
+        (r.missing === '0' ? '0' : null),
+    );
+    const delta =
+      values.length === 2 && reports.every((r) => r.missing === '0')
+        ? exact(values[0]) - exact(values[1])
+        : null;
+    const base = delta === null ? 0n : exact(values[1]);
+    const percent = base > 0n ? (delta * 10000n) / base : null;
+    const percentage =
+      percent === null
+        ? ''
+        : '، تغییر ' + amount(asDecimal(percent * 10000000000n)) + '٪';
+    return (
+      '- ' +
+      (currencyNames[code] ?? code) +
+      ' — ' +
+      values
+        .map(
+          (v, i) =>
+            'بازهٔ ' +
+            digits(i + 1) +
+            ': ' +
+            (v === null ? 'ناموجود' : amount(v)),
+        )
+        .join('، ') +
+      (delta === null
+        ? ''
+        : '، اختلاف: ' + amount(asDecimal(delta)) + percentage)
+    );
+  });
+  return (
+    labels.map((l, i) => '**بازهٔ ' + digits(i + 1) + '** ' + l).join('\n') +
+    '\n\n' +
+    (lines.join('\n') || 'مبلغی در منبع گزارش یافت نشد.') +
+    (reports.some((r) => r.missing !== '0')
+      ? '\nپوشش مبالغ کامل نیست. اختلاف و درصد برای دادهٔ ناقص محاسبه نشده است.'
+      : '') +
+    '\n\n**روش محاسبه**\nفروش قراردادی پس از تخفیف، بر اساس زمان ایجاد قرارداد به وقت تهران، با فیلتر وضعیت یکسان و در محدودهٔ دسترسی فعلی. درصد تغییر بر اساس اختلاف تقسیم بر مبلغ بازهٔ دوم محاسبه می‌شود.'
+  );
 }
