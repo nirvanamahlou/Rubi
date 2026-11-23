@@ -436,6 +436,9 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
       const queryAttempts: Array<{ sql: string; error?: string }> = [];
       const agent = runtime.createDataAgent({
         enabled: true,
+        ...(id === 'month'
+          ? { now: () => new Date('2026-11-23T09:00:00.000Z') }
+          : {}),
         erpBaseUrl: 'http://127.0.0.1:44319/api/v1',
         provider: {
           step: async (...args: unknown[]) => {
@@ -555,7 +558,16 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
         expect(JSON.stringify({ response, results })).not.toContain(
           'NEVER_EXPOSE',
         );
-        if (['month', 'unsupported', 'no-payments'].includes(id)) {
+        if (id === 'month') {
+          // Persian month is the default for the native relative-sales route.
+          expect(response?.status).toBe('ANSWER');
+          expect(calls).toBe(0);
+          expect(queryAttempts).toHaveLength(1);
+          expect(queryAttempts[0].sql).toContain('2026-11-21T20:30:00.000Z');
+          expect(queryAttempts[0].sql).toContain('2026-11-23T09:00:00.000Z');
+          expect(response.sources).toHaveLength(1);
+        }
+        if (['unsupported', 'no-payments'].includes(id)) {
           expect(['CLARIFY', 'REPLY']).toContain(response?.status);
           expect(response.text.length).toBeGreaterThan(20);
         }
