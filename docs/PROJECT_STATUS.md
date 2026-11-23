@@ -191,6 +191,10 @@ User authorizes latest develop Avina deployment with all data preserved. Reserve
 
 PR1768 UI is active in ERP with PR1769 Persian/source presentation preserved. Published Web build08Ajp-thgUW8QA5lVntoo;291 integrated tests and server compile/type/Agent admission pass. Authenticated browser confirms immediate messages, waiting spinner, transcript bottom scrolling, pause while reading, latest arrow, next-draft and close/reopen retention. No SQL/financial acceptance claim, migration, business writes or non-Web replacement. [Release receipt](tasks/NORA-CHAT-SCROLL-RELEASE-1117.md).
 
+## NORA-SOL-1123 — PC-C
+
+OpenAI Responses write access and Sol function continuation verified. All 217 service tests passed locally and in the isolated server candidate. All 30 synthetic acceptance scenarios passed across the matrix and targeted reruns. Both models encountered transient socket failures. Median duration across 16 paired successful model scenarios: 19.5 seconds Sol, 9.9 seconds GPT-4.1. Persian month default verified from fixed Tehran boundaries without model calls. PR1879 requires final CI and guarded activation.
+
 ## NORA-PRIVILEGED-FAILOVER-1122 — PC-C
 
 Trusted native danial/demo exemptions verified; hybrid provider quota failover implemented in both directions, including guide selection. Ordinary quotas and all evidence/access/deadline/finite execution guards preserved.213 service tests pass. No migration/dependency/billing or credential changes. Exact-head hosted CI and guarded native-only activation remain required. See docs/tasks/NORA-PRIVILEGED-FAILOVER-1122.md.

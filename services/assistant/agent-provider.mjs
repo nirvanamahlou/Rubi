@@ -1,3 +1,9 @@
+import {
+  OPENAI_ENDPOINT,
+  OPENAI_MODEL,
+  responsesRequest,
+  responsesResult,
+} from './openai-responses.mjs';
 import { ServiceError } from './errors.mjs';
 import { CALCULATION_POLICY } from './calculation-policy.mjs';
 import { compactMessages, usageCounters } from './token-efficiency.mjs';
@@ -117,7 +123,7 @@ export function createAgentProvider({
   if (!['groq', 'openai'].includes(provider))
     throw new Error('INVALID_AGENT_PROVIDER');
   const openai = provider === 'openai';
-  const model = openai ? 'gpt-4.1' : 'openai/gpt-oss-120b';
+  const model = openai ? OPENAI_MODEL : 'openai/gpt-oss-120b';
   if (transport && typeof transport.fetch !== 'function')
     throw new Error('GROQ_SHARED_POOL_REQUIRED');
   if (
@@ -311,7 +317,7 @@ export function createAgentProvider({
           content:
             'SQL identifiers and output aliases must use lowercase ASCII letters, digits and underscores, e.g. contract_count. Keep the displayed answer in the user language. If the user asks about this month without specifying a calendar, ask whether they mean the Persian or Gregorian month before any query. If confirmed payments are requested but payments is absent from the authorized source list, explain that payment data is unavailable in this scope. Contract status and contractual amounts never establish whether a payment happened. Do not query substitute sources for unavailable payment data.',
         });
-      const body = JSON.stringify({
+      const request = {
         model,
         temperature: 0,
         ...(!openai ? { reasoning_effort: 'low' } : {}),
@@ -348,7 +354,8 @@ export function createAgentProvider({
                   : 'required',
               parallel_tool_calls: false,
             }),
-      });
+      };
+      const body = JSON.stringify(openai ? responsesRequest(request) : request);
       const wireBody = body;
       if (Buffer.byteLength(wireBody) > 256 * 1024)
         throw new ServiceError(503, 'AGENT_CONTEXT_BUDGET_EXCEEDED');
@@ -359,7 +366,7 @@ export function createAgentProvider({
       try {
         const response = await (transport?.fetch ?? fetcher)(
           openai
-            ? 'https://api.openai.com/v1/chat/completions'
+            ? OPENAI_ENDPOINT
             : 'https://api.groq.com/openai/v1/chat/completions',
           {
             method: 'POST',
@@ -426,7 +433,8 @@ export function createAgentProvider({
           if (status === 429) error.retryAfterMs = unavailableUntil - now();
           throw error;
         }
-        const result = await boundedAgentJson(response, 65536);
+        const payload = await boundedAgentJson(response, 65536);
+        const result = openai ? responsesResult(payload) : payload;
         const choice = result.choices?.[0];
         const calls = choice?.message?.tool_calls;
         if (result.choices?.length !== 1)
