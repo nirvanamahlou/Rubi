@@ -1,3 +1,7 @@
+## Master Data stale edit recovery
+
+A version conflict during a hotel, city, or country save loads the latest record and retries once with the recorded form changes. A competing edit on the same field, changed city geography, or replaced logo retains conflict protection.
+
 ## Nora composite guide pilot
 
 PC-C added the Sales pre-send checklist and ordered leave request and follow-up guidance using the approved guide index. The authenticated checklist selector honors the server flag `ASSISTANT_GUIDE_RAG_ENABLED` and the established model transport. It uses only Sales guide excerpts and falls back to the approved steps. Owner approved transfer of the question and approved excerpts for this scope. Three synthetic pre-send variants passed mandatory-step validation against the configured Germany model. The model returned 9, 12 and 9 of 16 canonical steps with 820/122, 816/236 and 818/161 input/output tokens and 1153, 1358 and 1517 ms provider-path latency. Both direct and model paths provided the required next actions with one exchange in these cases. Keep the production flag disabled under the pilot rollout criterion. The leave workflow and simple questions stay direct.
