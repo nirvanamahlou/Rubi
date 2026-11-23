@@ -189,7 +189,7 @@ export class SiteCommerceService {
     actor: AuthenticatedActor,
   ) {
     if (
-      (site !== 'jahan-bastan' && site !== 'ghestiroo') ||
+      (site !== 'jahan-bastan' && site !== 'ghestiroo' && site !== 'nss') ||
       (kind !== 'countries' && kind !== 'cities')
     )
       throw new BadRequestException();
@@ -287,6 +287,8 @@ export class SiteCommerceService {
           : 'سایت مقصد ثبت اطلاعات را تأیید نکرد.',
       );
     const slug = encodeURIComponent(receipt.slug);
+    if (site === 'nss' && payload.kind === 'countries')
+      return { url: origin + '/tours/country/' + slug };
     return {
       url:
         origin +

@@ -13413,6 +13413,10 @@ Reserve the site-commerce profile sender and Integrations profile publication co
 
 Reserve the Master Data Web client, focused client tests, and linked geography edit path. Recover hotel, city, and country saves from a stale version by retrying a nonconflicting patch against the latest record. Preserve optimistic locking for competing changes. No migration or dependency change.
 
+CALL-CENTER-TODAY-FILTER-STYLE-1116 — PC-C: reserve only without-outcome-dialog.module.css button selector scope and own status notes on codex/pc-c-call-center-today-filter-style-1116. User authorizes matching today KPI filter option appearance to existing contact filters. Shared combobox owns option visuals and selection. No API, dependency or migration change.
+
+CALL-CENTER-TODAY-FILTER-STYLE-1116 follow-up reserves WithoutOutcomeDialog initial focus. Explicit user request: today dropdowns stay closed on modal open. Focus the accessible title before keyboard navigation; retain select focus and click behavior.
+
 ## AUTOMATIC-HOTEL-IDENTIFICATION-1123 — PC-D — READY_FOR_CI
 
 Reserve the Master Data hotel creation and Excel-create paths, the create form, focused tests, and one additive PostgreSQL sequence migration. Reuse established city prefixes and serialize code allocation with explicit hotel code writes. Historical hotel codes and internal import identities are retained. The requested release is limited to the Avina API and Web.
