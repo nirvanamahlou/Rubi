@@ -1,5 +1,9 @@
 export type AssistantText = readonly [string, string];
 export const assistantCopy = {
+  internalSourceFallback: [
+    'این پاسخ از منابع داخلی روبی قابل تأیید نیست. نام پنل، مرحلهٔ کار یا گزارش موردنظر را مشخص کنید.',
+    'This answer could not be verified from internal Rubi sources. Specify the panel, workflow step, or report.',
+  ],
   internalGuideUnavailable: [
     'راهنمای داخلی این گردش‌کار در دسترس نیست.',
     'The internal guide for this workflow is unavailable.',

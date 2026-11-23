@@ -1,3 +1,4 @@
+import { internalSourceFallback } from './source-policy.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDataAgent, validateDataAgentMessage } from './data-agent.mjs';
@@ -462,6 +463,8 @@ test('material ambiguity returns clarification without querying', async () => {
     signal: signal(),
   });
   assert.equal(response.status, 'CLARIFY');
+  assert.equal(response.text, internalSourceFallback);
+  assert.deepEqual(response.sources, []);
   assert.ok(h.calls.every((call) => call.options.method === 'GET'));
 });
 
@@ -495,7 +498,7 @@ test('an evidence-free greeting is corrected by the model, never automatically r
     },
   );
   assert.equal(response.status, 'REPLY');
-  assert.equal(response.text, 'Synthetic corrected greeting');
+  assert.equal(response.text, internalSourceFallback);
   assert.deepEqual(response.sources, []);
   assert.equal(h.payloads.length, 3);
   assert.match(

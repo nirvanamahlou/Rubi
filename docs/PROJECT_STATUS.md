@@ -1,8 +1,7 @@
-## NORA-HOTEL-ANALYSIS-1123 — PC-C
+## NORA-INTERNAL-SOURCES-ONLY-1123 — PC-C
 
-Removed the fixed model-turn stop in Nora v3. Existing request deadline, evidence validation, SQL budget, account admission and provider quota remain enforced. At the SQL budget, the model is offered the final response action only.
+Nora serves local internal procedures and verified ERP evidence. Unsupported model prose is replaced by a fixed request for scope in both conversation versions.
 
-A read-only production audit found 469 master hotels, 34 master countries and 193 saved hotel stays with a hotel snapshot and a country link. Nora now uses a native Sales report for supported Persian requests for top hotels by country. The report counts distinct eligible contracts per hotel, uses the existing public Master Data lookup and excludes Sales and Reservations cancellations. Deploy the API endpoint before enabling the consumer. No database migration is needed.
 ## NORA-TRAVEL-DOCUMENT-GUIDANCE-1123 — PC-C
 
 Nora routes procedural ticket and hotel voucher questions to the linked internal Sales guide, even after a report answer. The guide uses the approved Reservations and Finance delivery workflow.
@@ -195,6 +194,16 @@ User authorizes latest develop Avina deployment with all data preserved. Reserve
 ## NORA-CHAT-SCROLL-RELEASE-1117 — PC-C — VERIFIED
 
 PR1768 UI is active in ERP with PR1769 Persian/source presentation preserved. Published Web build08Ajp-thgUW8QA5lVntoo;291 integrated tests and server compile/type/Agent admission pass. Authenticated browser confirms immediate messages, waiting spinner, transcript bottom scrolling, pause while reading, latest arrow, next-draft and close/reopen retention. No SQL/financial acceptance claim, migration, business writes or non-Web replacement. [Release receipt](tasks/NORA-CHAT-SCROLL-RELEASE-1117.md).
+
+## NORA-SOL-1123 — PC-C
+
+OpenAI Responses write access and Sol function continuation verified. All 217 service tests passed locally and in the isolated server candidate. All 30 synthetic acceptance scenarios passed across the matrix and targeted reruns. Both models encountered transient socket failures. Median duration across 16 paired successful model scenarios: 19.5 seconds Sol, 9.9 seconds GPT-4.1. Persian month default verified from fixed Tehran boundaries without model calls. PR1879 requires final CI and guarded activation.
+
+## NORA-HOTEL-ANALYSIS-1123 — PC-C
+
+Removed the fixed model-turn stop in Nora v3. Existing request deadline, evidence validation, SQL budget, account admission and provider quota remain enforced. At the SQL budget, the model is offered the final response action only.
+
+A read-only production audit found 469 master hotels, 34 master countries and 193 saved hotel stays with a hotel snapshot and a country link. Nora now uses a native Sales report for supported Persian requests for top hotels by country. The report counts distinct eligible contracts per hotel, uses the existing public Master Data lookup and excludes Sales and Reservations cancellations. Deploy the API endpoint before enabling the consumer. No database migration is needed.
 
 ## NORA-PRIVILEGED-FAILOVER-1122 — PC-C
 
@@ -10569,3 +10578,9 @@ Antalya Iran Airtour and Kuala Lumpur plus Singapore XLSX formats now import to 
 کاتالوگ امضاشده تحویل می‌دهد. تنظیم‌های پیش‌نمایش، توقف فروش و اجازهٔ انتشار
 پروفایل هتل برای همان مقصد ذخیره می‌شوند. دریافت، ذخیره و نمایش در قسطی‌رو
 از مسیر نسخه‌بندی‌شده بررسی می‌شود. دریافت سفارش تور در اتصال قسطی‌رو غیرفعال است.
+
+## 2026-11-23 — ACCOUNTING-NAV-CONTRAST-1123 — PC-D
+
+The compact General Ledger menu uses legible labels and icons, distinct group and list colors, an inline marker for the current page, and a visible keyboard focus outline in both themes. The existing menu structure, dimensions, and destinations are preserved.
+
+Chromium verified selected and unselected rows, group and list toggles, keyboard focus and responsive widths. The visible label contrast on the fiscal-year route measured at least 5.10:1 in light mode and 6.05:1 in dark mode.

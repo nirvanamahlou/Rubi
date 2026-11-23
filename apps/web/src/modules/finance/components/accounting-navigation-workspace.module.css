@@ -210,13 +210,16 @@
   background-color: rgb(108 167 225 / 0.15);
   color: #fff;
 }
-.workspace :global([data-accounting-navigation] [class*='text-cyan']) {
+.workspace:where(:not(.sourceLayout))
+  :global([data-accounting-navigation] [class*='text-cyan']) {
   color: #b5d1f4;
 }
-.workspace :global([data-accounting-navigation] [class*='text-slate-400']) {
+.workspace:where(:not(.sourceLayout))
+  :global([data-accounting-navigation] [class*='text-slate-400']) {
   color: #b0c5e1;
 }
-.workspace :global([data-accounting-navigation] [class*='border-amber']) {
+.workspace:where(:not(.sourceLayout))
+  :global([data-accounting-navigation] [class*='border-amber']) {
   border-color: rgb(255 255 255 / 0.14);
   background: rgb(255 255 255 / 0.035);
   color: #d3e1f5;
@@ -538,14 +541,30 @@
 }
 
 .sourceLayout :global([data-accounting-navigation]) {
-  border-radius: 0;
+  --accounting-nav-list-text: #185d63;
+  --accounting-nav-hover: color-mix(
+    in srgb,
+    var(--primary) 11%,
+    var(--surface)
+  );
+  --accounting-nav-active: color-mix(
+    in srgb,
+    var(--primary) 17%,
+    var(--surface)
+  );
+  border-color: var(--border);
+  border-radius: 0.65rem;
   background: var(--surface);
   color: var(--foreground);
   box-shadow: none;
 }
+:global(.dark) .sourceLayout :global([data-accounting-navigation]) {
+  --accounting-nav-list-text: #a5e0dd;
+}
 .sourceLayout :global([data-accounting-navigation] > div:first-child) {
   min-height: 2rem;
   padding: 0.25rem 0.5rem;
+  border-color: var(--border);
   background: var(--secondary);
 }
 .sourceLayout
@@ -553,10 +572,8 @@
   display: none;
 }
 .sourceLayout :global([data-accounting-navigation] > div:first-child p),
-.sourceLayout :global([data-accounting-navigation] button),
-.sourceLayout :global([data-accounting-navigation] a),
-.sourceLayout :global([data-accounting-navigation] svg) {
-  color: var(--foreground);
+.sourceLayout :global([data-accounting-navigation] > div:first-child button) {
+  color: var(--primary);
 }
 .sourceLayout :global([data-accounting-navigation] nav) {
   padding: 0;
@@ -564,14 +581,55 @@
 .sourceLayout :global([data-accounting-navigation] nav button),
 .sourceLayout :global([data-accounting-navigation] nav a) {
   min-height: 1.75rem;
-  border-radius: 0;
+  border-radius: 0.35rem;
   padding-block: 0.2rem;
   font-size: 0.6875rem;
   border-bottom: 1px solid var(--border);
-  font-weight: 400;
+  color: var(--foreground);
+  font-weight: 500;
 }
 .sourceLayout :global([data-accounting-navigation] nav section > button) {
   background: var(--secondary);
+  color: var(--secondary-foreground);
+  font-weight: 700;
+}
+.sourceLayout
+  :global(
+    [data-accounting-navigation] nav section > button[aria-expanded='true']
+  ) {
+  background: var(--accounting-nav-active);
+  color: var(--primary);
+}
+.sourceLayout
+  :global([data-accounting-navigation] nav section > div > div > button) {
+  color: var(--secondary-foreground);
+  font-weight: 600;
+}
+.sourceLayout
+  :global(
+    [data-accounting-navigation]
+      nav
+      section
+      > div
+      > div
+      > button[aria-expanded='true']
+  ) {
+  background: color-mix(in srgb, var(--secondary) 65%, var(--surface));
+}
+.sourceLayout
+  :global(
+    [data-accounting-navigation]
+      nav
+      :is(button:where(:has(> svg:first-child)), summary)
+  ) {
+  --accounting-nav-icon: var(--accounting-nav-list-text);
+  background: color-mix(
+    in srgb,
+    var(--accounting-nav-list-text) 9%,
+    var(--surface)
+  );
+  color: var(--accounting-nav-list-text);
+  font-weight: 600;
 }
 .sourceLayout
   :global([data-accounting-navigation] nav button > span:first-child) {
@@ -582,15 +640,37 @@
 .sourceLayout :global([data-accounting-navigation] nav svg) {
   width: 0.875rem;
   height: 0.875rem;
+  color: var(--accounting-nav-icon, var(--primary));
 }
-.sourceLayout :global([data-accounting-navigation] a[aria-current='page']) {
-  background: var(--secondary);
+.sourceLayout :global([data-accounting-navigation] nav a[aria-current='page']) {
+  position: relative;
+  background: var(--accounting-nav-active);
+  color: var(--primary);
+  font-weight: 700;
+}
+.sourceLayout
+  :global([data-accounting-navigation] nav a[aria-current='page']::before) {
+  position: absolute;
+  inset-block: 0.25rem;
+  inset-inline-start: 0;
+  width: 0.1875rem;
+  border-radius: 0.1875rem;
+  background: currentColor;
+  content: '';
+}
+.sourceLayout
+  :global(
+    [data-accounting-navigation]
+      :is(button, summary, a:not([aria-current='page'])):hover
+  ) {
+  background-color: var(--accounting-nav-hover);
   color: var(--primary);
 }
-.sourceLayout :global([data-accounting-navigation] a:hover),
-.sourceLayout :global([data-accounting-navigation] button:hover) {
-  background: var(--secondary);
-  color: var(--primary);
+.sourceLayout
+  :global([data-accounting-navigation] :is(button, summary, a):focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+  box-shadow: none;
 }
 .sourceLayout :global([data-accounting-navigation] nav div) {
   margin-block: 0;
