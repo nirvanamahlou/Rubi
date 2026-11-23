@@ -169,6 +169,12 @@ export function workbenchGuideConfiguration(
   if (env.ASSISTANT_AGENT_ENABLED !== 'true') return {};
   dataAgentConfiguration(env, { transport, openaiTransport });
   return transport
-    ? { transport, openaiTransport }
+    ? {
+        transport,
+        openaiTransport,
+        ...(env.ASSISTANT_GUIDE_RAG_ENABLED === 'true'
+          ? { compositeEnabled: true }
+          : {}),
+      }
     : { apiKey: env.GROQ_API_KEY };
 }

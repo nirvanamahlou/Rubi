@@ -1,3 +1,7 @@
+## NORA-COMPOSITE-GUIDES-1123 — PC-C — ACTIVE
+
+Reserve the Nora Composer composite guide dispatch, scoped Sales and Workbench retrieval, focused tests and status. Base develop ac92b6e91. Preserve producer routes and authenticated record reads.
+
 ## NORA-INTERNAL-SOURCES-ONLY-1123 — PC-C — ACTIVE
 
 Reserve the Nora Composer fallback, data-agent and legacy planner output policy, and focused tests. Base develop a45b0e5ea plus PR #1876. Preserve native data reads, document links and response contracts. No deployment, migration or dependency change.
