@@ -33,6 +33,10 @@ import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 
 import { DatabaseService } from '../database/database.service';
+import {
+  allocateHotelIdentificationCode,
+  lockHotelIdentificationCodes,
+} from './hotel-identification-code';
 import type { HotelImportCommitDto } from './hotel-import.dto';
 import {
   HOTEL_IMPORT_TEMPLATE_VERSION,
@@ -419,6 +423,7 @@ export class HotelImportService implements OnModuleDestroy {
           string,
           Awaited<ReturnType<HotelImportService['resolveReferences']>>
         >();
+        await lockHotelIdentificationCodes(tx);
         for (const row of parsed.rows) {
           const existing = await tx.masterHotel.findUnique({
             where: { code: row.code },
@@ -504,6 +509,10 @@ export class HotelImportService implements OnModuleDestroy {
             const hotel = await tx.masterHotel.create({
               data: {
                 code: normalizedCode(row.code),
+                identificationCode: await allocateHotelIdentificationCode(
+                  tx,
+                  session.cityId,
+                ),
                 name: row.persianName || row.englishName,
                 englishName: row.englishName,
                 website: row.website,

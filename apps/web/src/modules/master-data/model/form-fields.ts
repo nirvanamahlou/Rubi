@@ -38,6 +38,8 @@ export function getMasterDataFormFields(
   let fields: readonly MasterDataFieldDefinition[] = hidden
     ? definition.fields.filter((field) => !hidden.has(field.key))
     : definition.fields;
+  if (definition.key === 'hotels' && mode === 'create')
+    fields = fields.filter((field) => field.key !== 'identificationCode');
   if (
     (mode === 'create' || mode === 'edit') &&
     (definition.key === 'insurers' || definition.key === 'brokers')

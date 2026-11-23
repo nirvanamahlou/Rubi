@@ -13,6 +13,15 @@ import { getMasterDataFormFields } from './form-fields';
 import { validateMasterDataDraft } from './validation';
 
 describe('payment-method form fields', () => {
+  it('leaves new hotel identification to the server and keeps the saved field visible', () => {
+    const definition = getMasterDataDefinition('hotels');
+    expect(
+      getMasterDataFormFields(definition, 'create').map((field) => field.key),
+    ).not.toContain('identificationCode');
+    expect(
+      getMasterDataFormFields(definition, 'edit').map((field) => field.key),
+    ).toContain('identificationCode');
+  });
   it.each(['rail-companies', 'bus-companies'] as const)(
     'creates %s without an organization selector or required organization',
     (resource) => {

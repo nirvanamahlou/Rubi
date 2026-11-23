@@ -13412,3 +13412,7 @@ Reserve the site-commerce profile sender and Integrations profile publication co
 ## MASTER-DATA-STALE-EDIT-1123 — PC-D — READY_FOR_CI
 
 Reserve the Master Data Web client, focused client tests, and linked geography edit path. Recover hotel, city, and country saves from a stale version by retrying a nonconflicting patch against the latest record. Preserve optimistic locking for competing changes. No migration or dependency change.
+
+## AUTOMATIC-HOTEL-IDENTIFICATION-1123 — PC-D — READY_FOR_CI
+
+Reserve the Master Data hotel creation and Excel-create paths, the create form, focused tests, and one additive PostgreSQL sequence migration. Reuse established city prefixes and serialize code allocation with explicit hotel code writes. Historical hotel codes and internal import identities are retained. The requested release is limited to the Avina API and Web.

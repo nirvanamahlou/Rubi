@@ -158,7 +158,15 @@ describe('HotelImportService commit persistence', () => {
         skippedCount: 0,
         committedAt: null,
       };
+      let nextIdentificationNumber = 147;
       const tx = {
+        $queryRaw: vi.fn(async (parts: TemplateStringsArray) => {
+          const query = parts.join(' ');
+          if (query.includes('pg_advisory_xact_lock')) return [];
+          if (query.includes('GROUP BY'))
+            return [{ prefix: supplied ? 'KUS' : 'BJV' }];
+          return [{ number: String(nextIdentificationNumber++) }];
+        }),
         masterHotelImportSession: {
           updateMany: vi.fn().mockResolvedValue({ count: 1 }),
           update: vi.fn().mockResolvedValue({
@@ -281,6 +289,15 @@ describe('HotelImportService commit persistence', () => {
         );
         expect(tx.masterHotel.create).toHaveBeenCalledTimes(
           expectedHotels.length,
+        );
+        expect(
+          tx.masterHotel.create.mock.calls.map(
+            ([args]) => args.data.identificationCode,
+          ),
+        ).toEqual(
+          expectedHotels.map(
+            (_, index) => `HTL-${supplied ? 'KUS' : 'BJV'}-${147 + index}`,
+          ),
         );
         if (supplied)
           expect(tx.masterHotel.create).toHaveBeenNthCalledWith(1, {
