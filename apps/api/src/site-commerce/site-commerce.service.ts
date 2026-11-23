@@ -281,6 +281,11 @@ export class SiteCommerceService {
         id,
         name: data.name,
         flag,
+        ...((site === 'ghestiroo' ||
+          (site === 'nss' && kind === 'countries')) &&
+        data.attributes.englishName
+          ? { englishName: data.attributes.englishName }
+          : {}),
         countryName: parent?.name || data.attributes.countryName || undefined,
         ...(parent
           ? {
@@ -376,21 +381,30 @@ export class SiteCommerceService {
     if (
       !response.ok ||
       typeof receipt?.slug !== 'string' ||
+      !receipt.slug.trim() ||
       (payload.kind === 'hotel-profile' &&
-        receipt.identificationCode !== payload.identificationCode)
+        receipt.identificationCode !== payload.identificationCode) ||
+      (payload.kind === 'visa-profile' && receipt.code !== payload.code)
     )
       throw new BadRequestException(
         typeof receipt?.detail === 'string'
           ? receipt.detail
           : 'سایت مقصد ثبت اطلاعات را تأیید نکرد.',
       );
-    if (payload.kind === 'visa-profile') {
-      const path = typeof receipt.urlPath === 'string' ? receipt.urlPath : '';
-      const url = /^\/[^/\\]/.test(path) ? URL.parse(path, origin) : null;
+    if (receipt.urlPath !== undefined || payload.kind === 'visa-profile') {
+      const publicPath =
+        typeof receipt.urlPath === 'string' ? receipt.urlPath : '';
+      const url =
+        /^\/[^/\\]/.test(publicPath) && !/[\\\s\p{Cc}]/u.test(publicPath)
+          ? URL.parse(publicPath, origin)
+          : null;
       if (
-        receipt.code !== payload.code ||
         !url ||
-        url.origin !== new URL(origin).origin
+        url.origin !== new URL(origin).origin ||
+        !/^\/(?:destinations|hotels|tours|visas|services)(?:\/|$)/.test(
+          url.pathname,
+        ) ||
+        /%(?:2f|5c|00)/i.test(url.pathname)
       )
         throw new BadRequestException('سایت مقصد ثبت اطلاعات را تأیید نکرد.');
       return { url: url.href };

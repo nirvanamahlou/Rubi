@@ -1,3 +1,7 @@
+## Public links for published profiles
+
+After a profile is published, Avina uses the canonical public path returned by the destination. A receiver that only returns a slug continues to use its established path.
+
 ## Niyayesh Seir city publication
 
 City publication sends the stable parent country reference and available English names to Niyayesh Seir. The receipt links directly to the native destination page.

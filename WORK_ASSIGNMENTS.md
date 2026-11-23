@@ -1,3 +1,7 @@
+## AVINA-PUBLICATION-SLUGS-1123 — PC-D — ACTIVE
+
+Own validation and use of the canonical public path returned by Avina profile receivers. Preserve the existing receipt checks, links for older receivers and site publication permissions.
+
 ## NSS-CITY-PUBLICATION-1123 — PC-D — ACTIVE
 
 Own the signed city publication payload and native destination link for Niyayesh Seir. Preserve the publication contracts for other sites and coordinate the receiver fix.
