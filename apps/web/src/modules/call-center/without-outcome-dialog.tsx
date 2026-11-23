@@ -45,6 +45,7 @@ export function WithoutOutcomeDialog({
       ? 'تماس‌های ازدست‌رفته نیازمند تماس مجدد'
       : 'تماس‌های بدون نتیجه';
   const restoreFocus = useDialogReturnFocus();
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<TodayCallFilters>({
     direction: '',
@@ -123,8 +124,19 @@ export function WithoutOutcomeDialog({
         if (!open) onClose();
       }}
     >
-      <DialogContent className={styles.dialog} onCloseAutoFocus={restoreFocus}>
-        <DialogTitle>{title}</DialogTitle>
+      <DialogContent
+        className={styles.dialog}
+        onCloseAutoFocus={restoreFocus}
+        onOpenAutoFocus={(event) => {
+          if (mode === 'today') {
+            event.preventDefault();
+            titleRef.current?.focus();
+          }
+        }}
+      >
+        <DialogTitle ref={titleRef} tabIndex={-1}>
+          {title}
+        </DialogTitle>
         <DialogDescription>
           {period
             ? mode === 'today'

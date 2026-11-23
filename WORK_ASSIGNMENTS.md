@@ -8,6 +8,10 @@ Reserve the Nora Composer fallback, data-agent and legacy planner output policy,
 
 ## NORA-TRAVEL-DOCUMENT-GUIDANCE-1123 — PC-C — ACTIVE
 
+## NORA-HOTEL-RANKING-PHRASING-1123 — PC-C — ACTIVE
+
+Reserve Nora hotel-ranking intent in the Web and assistant service, focused regressions and status. Preserve existing authorized Sales report contract and scopes.
+
 ## NORA-HOTEL-ANALYSIS-1123 — PC-C — ACTIVE
 
 Reserve bounded Nora data-agent loop and Sales assistant read endpoint, additive report helper/tests and own status. Reuse the Master Data public country projection. No migration, dependencies, publication or operational data writes.
@@ -13413,6 +13417,6 @@ Reserve the site-commerce profile sender and Integrations profile publication co
 
 Reserve the Master Data Web client, focused client tests, and linked geography edit path. Recover hotel, city, and country saves from a stale version by retrying a nonconflicting patch against the latest record. Preserve optimistic locking for competing changes. No migration or dependency change.
 
-## NORA-HOTEL-RANKING-PHRASING-1123 — PC-C — ACTIVE
+CALL-CENTER-TODAY-FILTER-STYLE-1116 — PC-C: reserve only without-outcome-dialog.module.css button selector scope and own status notes on codex/pc-c-call-center-today-filter-style-1116. User authorizes matching today KPI filter option appearance to existing contact filters. Shared combobox owns option visuals and selection. No API, dependency or migration change.
 
-Reserve Nora hotel-ranking intent in the Web and assistant service, focused regressions and status. Preserve existing authorized Sales report contract and scopes.
+CALL-CENTER-TODAY-FILTER-STYLE-1116 follow-up reserves WithoutOutcomeDialog initial focus. Explicit user request: today dropdowns stay closed on modal open. Focus the accessible title before keyboard navigation; retain select focus and click behavior.
