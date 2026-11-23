@@ -112,6 +112,7 @@ import {
 import {
   normalizeContractQuestion,
   resolveContractGuide,
+  formatContractGuide,
 } from './contract-guides';
 import { currencySymbol } from '@/lib/currency-symbol';
 
@@ -611,6 +612,44 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    if (decision.guideTopicId === 'travel-document-workflow') {
+      pending.current?.abort();
+      const section = contractGuideCatalog.topics.find(
+        ({ id }) => id === decision.guideTopicId,
+      );
+      if (!section) {
+        replyLocally(t(c.internalGuideUnavailable));
+        return;
+      }
+      guideTopic.current = section.id;
+      contractId.current = undefined;
+      tourTopic.current = undefined;
+      documentTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      replyLocally(
+        formatContractGuide(section),
+        undefined,
+        undefined,
+        documentGuideLink(
+          {
+            href: section.href,
+            label: english ? 'Open panel' : 'باز کردن پنل',
+          },
+          'sales',
+          section.id,
+        ),
+        {
+          kind: 'guide',
+          domain: 'sales',
+          question:
+            previousAnswer.current?.topicId === section.id
+              ? previousAnswer.current.question
+              : message,
+          topicId: section.id,
+        },
+      );
+      return;
+    }
     const previousTour = tourTopic.current;
     const tourQuestion = resolveTourGuideQuestion(
       message,
@@ -1270,8 +1309,9 @@ function AssistantComposerContent({
     const guide =
       guidanceAllowed || decision.kind === 'data-with-guide'
         ? resolveContractGuide(
-            guideQuestion,
-            pathname === '/sales' ||
+            guideQuestion === `قرارداد: ${message}` ? message : guideQuestion,
+            decision.domain === 'sales' ||
+              pathname === '/sales' ||
               Boolean(pathname?.startsWith('/sales/contracts/')),
             guideTopic.current,
             guidanceAllowed && Boolean(selectedContract),
@@ -1406,6 +1446,10 @@ function AssistantComposerContent({
       );
       return;
     }
+    if (guidanceAllowed) {
+      replyLocally(t(c.internalSourceFallback));
+      return;
+    }
     pending.current?.abort();
     const controller = new AbortController();
     pending.current = controller;
@@ -1462,6 +1506,10 @@ function AssistantComposerContent({
       if (controller.signal.aborted) return;
       if (agentMode) {
         const result = agentResponseSchema.parse(body);
+        if (result.status === 'REPLY' || !result.sources.length) {
+          replyLocally(t(c.internalSourceFallback));
+          return;
+        }
         const sourceText = formatAssistantSources(result.sources, english);
         const answer = [
           result.text,
@@ -1502,12 +1550,14 @@ function AssistantComposerContent({
         return;
       }
       const result = conversationResponseSchema.parse(body);
+      if (result.status === 'REPLY') {
+        replyLocally(t(c.internalSourceFallback));
+        return;
+      }
       const answer =
-        (result.status === 'REPLY'
-          ? result.text
-          : result.status === 'CLARIFY'
-            ? t(c.conversationClarification[result.field])
-            : t(c.conversationEvidence)) +
+        (result.status === 'CLARIFY'
+          ? t(c.conversationClarification[result.field])
+          : t(c.conversationEvidence)) +
         (result.status === 'ANSWER' &&
         decision.kind === 'data-with-guide' &&
         guide

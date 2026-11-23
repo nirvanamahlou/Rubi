@@ -1,3 +1,4 @@
+import { internalSourceFallback } from './source-policy.mjs';
 import { tehranDayContext, enforceRelativeDayQuery } from './tehran-days.mjs';
 import { randomUUID } from 'node:crypto';
 import { ServiceError } from './errors.mjs';
@@ -238,7 +239,7 @@ export function createDataAgent({
       };
     }
     const finalProtocol =
-      'For final output call the advertised json function or return ONLY a JSON object with status,text,resultIds,limitations and optional calculationExplanation; no wrapper or other keys. status: ANSWER for data findings (including no match), CLARIFY for ambiguity, REPLY for unsupported/non-data questions. ANSWER requires current evidence references. A single-contract request by customer name requires an authorized candidate lookup first; if multiple match, CLARIFY with fresh resultIds, candidate numbers and an explicit selection question. Listing candidates alone is not an ANSWER to inspecting one contract; explicit list requests may be answered. text: nonempty string, combined displayed text <=6000 characters. resultIds and limitations: arrays of strings. Copy exact current evidence references; never invent facts, IDs or columns. calculationExplanation: string <=4000 characters, mandatory if cited calculation.required=true, otherwise omitted/null. Explain source, metric, scope/filters/period and exact computation using current evidence, in the chosen prose/table layout. Use only offered tools, never commentary/final/analysis. Tool arguments must be valid JSON: SQL single quotes inside a JSON string need no backslash escaping. ';
+      'For final output call the advertised json function or return ONLY a JSON object with status,text,resultIds,limitations and optional calculationExplanation; no wrapper or other keys. status: ANSWER for data findings (including no match), CLARIFY for ambiguity, REPLY only to signal unsupported questions; never supply general knowledge or invent ERP workflow or company policy. ANSWER requires current evidence references. A single-contract request by customer name requires an authorized candidate lookup first; if multiple match, CLARIFY with fresh resultIds, candidate numbers and an explicit selection question. Listing candidates alone is not an ANSWER to inspecting one contract; explicit list requests may be answered. text: nonempty string, combined displayed text <=6000 characters. resultIds and limitations: arrays of strings. Copy exact current evidence references; never invent facts, IDs or columns. calculationExplanation: string <=4000 characters, mandatory if cited calculation.required=true, otherwise omitted/null. Explain source, metric, scope/filters/period and exact computation using current evidence, in the chosen prose/table layout. Use only offered tools, never commentary/final/analysis. Tool arguments must be valid JSON: SQL single quotes inside a JSON string need no backslash escaping. ';
     const dayContext = tehranDayContext(reference);
     const messages = [
       {
@@ -398,7 +399,7 @@ export function createDataAgent({
         messages[0].content +=
           ' ' +
           finalProtocol +
-          ' Greetings, connection checks and general non-data conversation use REPLY with empty resultIds; they must not be labelled ANSWER and do not need SQL. ANSWER is reserved for organizational findings backed by fresh evidence from this request.';
+          ' Use authorized tools for ERP data, including complex questions. Unsupported questions use REPLY with empty resultIds; supply no general answer. Internal procedures without document evidence are unsupported here. ANSWER is reserved for organizational findings backed by fresh evidence from this request.';
         output = { accepted: true };
       } else if (step.name === 'catalog_search') {
         if (
@@ -649,9 +650,25 @@ export function createDataAgent({
           messages.push({
             role: 'system',
             content:
-              'The response was not released: AGENT_EVIDENCE_REQUIRED. ANSWER needs current query resultIds. For greetings or general non-data replies use REPLY with empty resultIds; use CLARIFY for material ambiguity. Organizational facts still require authorized tools and fresh evidence. Never invent evidence or claim execution. Correct the final response within the existing remaining turn/token budget.',
+              'The response was not released: AGENT_EVIDENCE_REQUIRED. ANSWER needs current query resultIds. For unsupported questions use REPLY with empty resultIds; do not provide general advice; use CLARIFY for material ambiguity. Organizational facts still require authorized tools and fresh evidence. Never invent evidence or claim execution. Correct the final response within the existing remaining turn/token budget.',
           });
           continue;
+        }
+        if (
+          !financialRequest &&
+          (args.status === 'REPLY' ||
+            (args.status === 'CLARIFY' && !args.resultIds.length))
+        ) {
+          await call('catalog');
+          return {
+            version: 3,
+            status: args.status,
+            text: internalSourceFallback,
+            plan,
+            sources: [],
+            limitations: [],
+            requestId,
+          };
         }
         const selected = args.resultIds.map((id) => evidence.get(id));
         let text;

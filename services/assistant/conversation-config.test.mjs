@@ -1,3 +1,4 @@
+import { internalSourceFallback } from './source-policy.mjs';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { conversationConfiguration } from './conversation-config.mjs';
@@ -34,7 +35,7 @@ test('live provider requires explicit activation, provider and messages-only con
     true,
   );
 });
-test('general reply executes no ERP tool and rejects oversized or forged reply properties', async () => {
+test('unsupported requests return fixed guidance without executing an ERP tool and rejects oversized or forged reply properties', async () => {
   let calls = 0;
   for (const plan of [
     { kind: 'REPLY', text: 'Hello' },
@@ -58,7 +59,7 @@ test('general reply executes no ERP tool and rejects oversized or forged reply p
       assert.deepEqual(await promise, {
         version: 1,
         status: 'REPLY',
-        text: 'Hello',
+        text: internalSourceFallback,
       });
     else await assert.rejects(promise, /INVALID_PLAN/);
   }

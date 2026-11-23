@@ -2,13 +2,35 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createAgentProvider } from './agent-provider.mjs';
 
-test('OpenAI accepts a single offered function call with stop and no text', async () => {
+test('OpenAI Responses accepts a completed offered function call', async () => {
   const adapter = (provider) =>
     createAgentProvider({
       provider,
       apiKey: 'synthetic',
-      fetcher: async () =>
-        Response.json({
+      fetcher: async (url, init) => {
+        if (provider === 'openai') {
+          assert.equal(url, 'https://api.openai.com/v1/responses');
+          const request = JSON.parse(init.body);
+          assert.deepEqual(request.tool_choice, {
+            type: 'function',
+            name: 'set_plan',
+          });
+          assert.equal(request.store, false);
+          return Response.json({
+            status: 'completed',
+            output: [
+              {
+                type: 'function_call',
+                status: 'completed',
+                call_id: 'call_plan',
+                name: 'set_plan',
+                arguments: '{"steps":["Inspect allowed data"]}',
+              },
+            ],
+            usage: { total_tokens: 12 },
+          });
+        }
+        return Response.json({
           choices: [
             {
               finish_reason: 'stop',
@@ -28,7 +50,8 @@ test('OpenAI accepts a single offered function call with stop and no text', asyn
             },
           ],
           usage: { total_tokens: 12 },
-        }),
+        });
+      },
     });
   const options = {
     signal: AbortSignal.timeout(2000),
