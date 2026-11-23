@@ -1,3 +1,7 @@
+## COUNTRY-FLAG-PERSISTENCE-1123 — PC-D — ACTIVE
+
+Own country flag saves through the Geography workspace and the focused regression. Reuse the existing document upload endpoint and keep the data model unchanged.
+
 ## VISA-SITE-PUBLICATION-1123 — PC-D — ACTIVE
 
 Own Visa Services image fields and additive Prisma migration, signed website delivery, the Avina publication action, and focused tests. Coordinate the receiving endpoints with Jahan Bastan, Ghestiroo and Niyayesh Seir.

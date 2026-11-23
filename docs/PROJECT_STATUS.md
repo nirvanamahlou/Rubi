@@ -1,3 +1,7 @@
+## Country flag saves
+
+Geography saves country records through the existing logo upload and attachment flow. It sends only country fields during the record save and attaches the selected flag using the returned record version.
+
 ## Visa service website publication
 
 Avina stores one main visa photo and up to six gallery photos. The Visa Services row action sends the saved public profile to Jahan Bastan, Ghestiroo, or Niyayesh Seir using the signed publication API. The payload includes document names and excludes guidance attachments and supplier references.
