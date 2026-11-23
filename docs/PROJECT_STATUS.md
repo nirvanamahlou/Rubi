@@ -226,6 +226,10 @@ Production diagnostics for the November 23 incident showed eight successful GPT-
 
 Trusted native danial/demo exemptions verified; hybrid provider quota failover implemented in both directions, including guide selection. Ordinary quotas and all evidence/access/deadline/finite execution guards preserved.213 service tests pass. No migration/dependency/billing or credential changes. Exact-head hosted CI and guarded native-only activation remain required. See docs/tasks/NORA-PRIVILEGED-FAILOVER-1122.md.
 
+## NORA-ANSWER-REVEAL-1123 — PC-C
+
+Nora chat presents completed responses progressively while retaining full text, table semantics, reading order and reduced-motion support. The renderer regression suite passes.
+
 ## NORA-COUNT-BREAKDOWN-1116 — PC-C — READY_FOR_CI
 
 Added authorized all-time contract count reconciliation with disjoint native

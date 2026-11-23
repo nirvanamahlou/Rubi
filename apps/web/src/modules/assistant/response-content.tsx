@@ -1,8 +1,12 @@
 import { Fragment, type ReactNode } from 'react';
+import styles from './response-reveal.module.css';
 import { persianAssistantTerms } from './response-presentation';
 
 /** Explicit formatting only. HTML, links, images and executable Markdown stay text. */
-function inline(text: string): ReactNode[] {
+function renderInline(
+  text: string,
+  revealText: (text: string) => ReactNode,
+): ReactNode[] {
   const nodes: ReactNode[] = [];
   const tokens = /\*\*([^*\n]+)\*\*|__([^_\n]+)__|`([^`\n]+)`/g;
   let start = 0;
@@ -10,21 +14,26 @@ function inline(text: string): ReactNode[] {
     if (match.index! > start)
       nodes.push(
         <Fragment key={`text-${start}`}>
-          {text.slice(start, match.index)}
+          {revealText(text.slice(start, match.index))}
         </Fragment>,
       );
     const value = match[1] ?? match[2] ?? match[3];
+    if (value === undefined) continue;
     nodes.push(
       match[3] === undefined ? (
-        <strong key={`token-${match.index}`}>{value}</strong>
+        <strong key={`token-${match.index}`}>{revealText(value)}</strong>
       ) : (
-        <span key={`token-${match.index}`}>{value}</span>
+        <span key={`token-${match.index}`}>{revealText(value)}</span>
       ),
     );
     start = match.index! + match[0].length;
   }
   if (start < text.length)
-    nodes.push(<Fragment key={`text-${start}`}>{text.slice(start)}</Fragment>);
+    nodes.push(
+      <Fragment key={`text-${start}`}>
+        {revealText(text.slice(start))}
+      </Fragment>,
+    );
   return nodes;
 }
 
@@ -45,12 +54,37 @@ const listItem = (line: string) => {
 export function AssistantResponseContent({
   text,
   english = false,
+  reveal = false,
 }: {
   text: string;
   english?: boolean;
+  reveal?: boolean;
 }) {
   const lines = (english ? text : persianAssistantTerms(text)).split('\n');
   const blocks: ReactNode[] = [];
+  const wordCount = text.match(/\S+/g)?.length ?? 1;
+  const interval = Math.min(45, 1800 / wordCount);
+  let wordIndex = 0;
+  const inline = (value: string) =>
+    renderInline(value, (plain) =>
+      reveal
+        ? plain.split(/(\s+)/).map((word, index) =>
+            word && !/^\s+$/.test(word) ? (
+              <span
+                key={index}
+                className={styles.word}
+                style={{
+                  animationDelay: Math.min(1800, wordIndex++ * interval) + 'ms',
+                }}
+              >
+                {word}
+              </span>
+            ) : (
+              word
+            ),
+          )
+        : plain,
+    );
   const cells = (line: string) =>
     line
       .trim()
