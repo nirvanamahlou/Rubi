@@ -223,6 +223,12 @@ and future-tool rules preserve this convention without expanding data access.
 gates passed, with fresh refined-head CI required. No Production change
 or migration. Details: [NORA-COUNT-BREAKDOWN-1116](tasks/NORA-COUNT-BREAKDOWN-1116.md).
 
+## NORA-HOTEL-ANALYSIS-1123 — PC-C
+
+Removed the fixed model-turn stop in Nora v3. Existing request deadline, evidence validation, SQL budget, account admission and provider quota remain enforced. At the SQL budget, the model is offered the final response action only.
+
+A read-only production audit found 469 master hotels, 34 master countries and 193 saved hotel stays with a hotel snapshot and a country link. Nora now uses a native Sales report for supported Persian requests for top hotels by country. The report counts distinct eligible contracts per hotel, uses the existing public Master Data lookup and excludes Sales and Reservations cancellations. Deploy the API endpoint before enabling the consumer. No database migration is needed.
+
 ## SITE-MANAGEMENT-1116 — PC-A — READY_FOR_CI
 
 Base b6fff7d2a; reserve Integrations two-entry workspace and new site-publication manager, site-commerce publication branch/site policy and tests, TourOverview/TicketPrices referral controls and bounded i18n labels. User authorizes selectable destinations for published tours/priced tickets, disconnected-site intent retained without claiming delivery, hotels placeholder, all old Integrations under monitoring and green develop merge. Reuse WebsitePublication/CAS and public catalogue APIs; optional branchId is backward compatible, scoped to actor and existing nss binding. Per-site tour title, description and commission metadata use a nullable presentation field; explicit selection replaces prior auto-publication triggers, existing selections preserved. Native ticket commission commands retain target/base/CAS validation. Package-owned candidates filter draft prices out. No dependency/operational-data/deployment changes. 26 focused Web checks and30 API checks pass; scoped API/Web lint passes. Full Web types and clean hosted production/API checks remain final gates. Tour commission is exported per-site alongside the canonical price, not added to passenger fares; title/description override only the site projection. Native ticket commission updates the existing target prices. Prior connector scopes delivered; no active overlapping writer found.

@@ -14,7 +14,7 @@ export async function reportingCityLabels(
 
 /** Country labels are derived from the canonical city-to-country FK. */
 export async function reportingCityCountries(
-  client: DatabaseClient,
+  client: Pick<DatabaseClient, 'masterCity'>,
   ids: readonly string[],
 ) {
   const rows = await client.masterCity.findMany({

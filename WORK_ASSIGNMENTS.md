@@ -8,6 +8,10 @@ Reserve the Nora Composer fallback, data-agent and legacy planner output policy,
 
 ## NORA-TRAVEL-DOCUMENT-GUIDANCE-1123 — PC-C — ACTIVE
 
+## NORA-HOTEL-ANALYSIS-1123 — PC-C — ACTIVE
+
+Reserve bounded Nora data-agent loop and Sales assistant read endpoint, additive report helper/tests and own status. Reuse the Master Data public country projection. No migration, dependencies, publication or operational data writes.
+
 Reserve the Nora Sales guide source and generated catalogue, document-workflow intent, bounded Composer dispatch, focused tests and status. Use existing Sales, Reservations and Finance delivery policy. No producer, provider, schema or deployment change.
 
 ## NORA-CALENDAR-1122 — PC-C — READY_FOR_REVIEW

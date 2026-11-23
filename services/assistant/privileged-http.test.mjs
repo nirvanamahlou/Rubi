@@ -53,8 +53,10 @@ test('HTTP trusts only native identity for model quota policy; forged body/heade
         return {
           step: async (_messages, parameters) => {
             assert.equal(
-              parameters.attemptBudget.maxAttempts,
-              options.consumptionExempt ? Number.MAX_SAFE_INTEGER : undefined,
+              parameters.remainingTokens,
+              options.consumptionExempt
+                ? Number.MAX_SAFE_INTEGER - (step ? 50001 : 0)
+                : 40000,
             );
             return ++step === 1
               ? {
