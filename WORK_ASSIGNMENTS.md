@@ -13370,3 +13370,7 @@ Reserve the Ghestiroo destination policy and its signed tour delivery on
 `codex/pc-d-ghestiroo-tours-1122` from develop. The producer extends the existing
 v1 snapshot for the Ghestiroo consumer and keeps its tour order intake disabled.
 Other destinations retain their product policy, credentials and checkout.
+
+## NORA-SOL-1123 — PC-C — IN_PROGRESS
+
+Isolated branch codex/pc-c-nora-sol-1123 from develop a45b0e5ea. Reserve Nora OpenAI adapter, agent and guide integration, provider-pool endpoint, targeted tests and status. No migration or dependency changes.

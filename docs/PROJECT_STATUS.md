@@ -10560,3 +10560,7 @@ Antalya Iran Airtour and Kuala Lumpur plus Singapore XLSX formats now import to 
 کاتالوگ امضاشده تحویل می‌دهد. تنظیم‌های پیش‌نمایش، توقف فروش و اجازهٔ انتشار
 پروفایل هتل برای همان مقصد ذخیره می‌شوند. دریافت، ذخیره و نمایش در قسطی‌رو
 از مسیر نسخه‌بندی‌شده بررسی می‌شود. دریافت سفارش تور در اتصال قسطی‌رو غیرفعال است.
+
+## NORA-SOL-1123 — PC-C — LIVE_GATE_PENDING
+
+OpenAI analytics and privileged guide fallback use GPT-6.2 Sol via Responses API in the candidate. All 217 local assistant tests pass. The configured production OpenAI credential returned HTTP 401 for a synthetic Responses test and needs api.responses.write. Live acceptance, merge and activation are pending.
