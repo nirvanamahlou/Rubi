@@ -12,6 +12,10 @@ Reserve the Nora Composer fallback, data-agent and legacy planner output policy,
 
 ## NORA-TRAVEL-DOCUMENT-GUIDANCE-1123 — PC-C — ACTIVE
 
+## NORA-HOTEL-RANKING-PHRASING-1123 — PC-C — ACTIVE
+
+Reserve Nora hotel-ranking intent in the Web and assistant service, focused regressions and status. Preserve existing authorized Sales report contract and scopes.
+
 ## NORA-HOTEL-ANALYSIS-1123 — PC-C — ACTIVE
 
 Reserve bounded Nora data-agent loop and Sales assistant read endpoint, additive report helper/tests and own status. Reuse the Master Data public country projection. No migration, dependencies, publication or operational data writes.

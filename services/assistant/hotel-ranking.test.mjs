@@ -43,3 +43,15 @@ test('rendered ranking cites evidence and discloses missing labels', () => {
   assert.equal(report.sources[0].resultId, resultId);
   assert.match(report.limitations[0], /فاقد نام/);
 });
+test('resolves both Workbench hotel questions to the recent contract report', () => {
+  const now = new Date('2026-11-23T08:00:00Z');
+  for (const question of [
+    'پرفروش ترین هتل هارا که باهاشون قرارداد بستیمو بده',
+    'هتل هایی که بیشترین قرارداد را دارندو بده',
+  ]) {
+    const period = hotelRankingRequest(question, now);
+    assert.equal(period?.defaultPeriod, true, question);
+    assert.equal(period?.endExclusiveUtc, now.toISOString());
+  }
+  assert.equal(hotelRankingRequest('چطور قرارداد هتل ببندیم؟', now), null);
+});

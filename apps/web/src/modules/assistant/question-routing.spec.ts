@@ -171,3 +171,13 @@ describe('shared intent arbitration before every guide', () => {
     expect(result.dataMessage).toContain('شواهد تازه');
   });
 });
+it.each([
+  'پرفروش ترین هتل هارا که باهاشون قرارداد بستیمو بده',
+  'هتل هایی که بیشترین قرارداد را دارندو بده',
+])('routes informal hotel rankings from Workbench to Sales: %s', (message) => {
+  expect(routeAssistantQuestion(message)).toEqual({
+    kind: 'data',
+    domain: 'sales',
+    dataMessage: message,
+  });
+});

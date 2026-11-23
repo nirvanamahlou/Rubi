@@ -230,6 +230,10 @@ and future-tool rules preserve this convention without expanding data access.
 gates passed, with fresh refined-head CI required. No Production change
 or migration. Details: [NORA-COUNT-BREAKDOWN-1116](tasks/NORA-COUNT-BREAKDOWN-1116.md).
 
+## NORA-HOTEL-RANKING-PHRASING-1123 — PC-C
+
+Workbench now routes informal questions about most-contracted hotels to the authorized Sales hotel report. Without a date, use and disclose a recent 30-day window. Explicit ranking windows and data scope remain supported. No API contract or database change.
+
 ## NORA-HOTEL-ANALYSIS-1123 — PC-C
 
 Removed the fixed model-turn stop in Nora v3. Existing request deadline, evidence validation, SQL budget, account admission and provider quota remain enforced. At the SQL budget, the model is offered the final response action only.
