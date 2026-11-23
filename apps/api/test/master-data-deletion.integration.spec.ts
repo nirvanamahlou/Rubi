@@ -91,6 +91,7 @@ describe('Master Data DELETE HTTP contract', () => {
       3,
       actor,
       actor.branchIds[0],
+      undefined,
     );
   });
 

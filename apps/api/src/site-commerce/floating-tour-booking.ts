@@ -103,6 +103,7 @@ export async function floatingWebsiteRooms(
   product: Product,
   rates: Record<string, string>,
   references: Pick<MasterDataService, 'detail'>,
+  includePast = false,
 ) {
   const hotels = new Map<string, ReturnType<MasterDataService['detail']>>();
   const rooms = new Map<string, ReturnType<MasterDataService['detail']>>();
@@ -155,7 +156,8 @@ export async function floatingWebsiteRooms(
       !schedule ||
       !row.startsOn ||
       !row.endsOn ||
-      Date.parse(schedule.outbound.departureAt) <= Date.now() ||
+      (!includePast &&
+        Date.parse(schedule.outbound.departureAt) <= Date.now()) ||
       schedule.outbound.originAirport.countryId !==
         schedule.inbound.destinationAirport.countryId ||
       schedule.outbound.destinationAirport.countryId !==

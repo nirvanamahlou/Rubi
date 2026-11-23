@@ -41,6 +41,7 @@ function setup(patch = {}) {
     ...patch,
   };
   const tx = {
+    websitePublication: { findMany: vi.fn().mockResolvedValue([]) },
     $queryRaw: vi.fn(),
     ticketPublishedOffer: {
       findFirst: vi.fn().mockResolvedValue(row),
@@ -532,6 +533,7 @@ describe('published ticket revision', () => {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         createMany: vi.fn(),
       },
+      websitePublication: { findMany: vi.fn().mockResolvedValue([]) },
       ticketOfferAudit: { create: vi.fn(), createMany: vi.fn() },
     };
     const service = new TicketPublicService(

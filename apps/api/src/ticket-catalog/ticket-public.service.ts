@@ -42,6 +42,10 @@ import type {
 import { DatabaseService } from '../database/database.service';
 import { ProcurementPublicService } from '../procurement/procurement-public.service';
 import { MasterDataService } from '../master-data/master-data.service';
+import {
+  confirmDeletionSites,
+  publishedSites,
+} from '../site-commerce/site-deletion';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 
 import {
@@ -1115,13 +1119,30 @@ export class TicketPublicService {
     return { data: { id: row.id, version: row.version } };
   }
 
+  async deletionSites(id: string, actor: AuthenticatedActor) {
+    this.require(actor, 'ticket_catalog.manage');
+    if (uuid.validate(id).error) throw new BadRequestException();
+    const row = await this.database.client.ticketPublishedOffer.findFirst({
+      where: { id, branchId: { in: actor.branchIds } },
+      select: { branchId: true },
+    });
+    if (!row) throw new ForbiddenException();
+    const sites = await publishedSites(this.database.client, {
+      branchId: row.branchId,
+      kind: 'ticket',
+      resourceId: id,
+    });
+    return { data: sites.map(({ siteCode }) => siteCode) };
+  }
+
   async archiveExpired(
     id: string,
     expectedVersion: number,
     actor: AuthenticatedActor,
+    siteCodes?: unknown,
   ) {
     const result = await this.archiveBatch(
-      { items: [{ id, expectedVersion }] },
+      { items: [{ id, expectedVersion }], siteCodes },
       actor,
     );
     return { data: { id: result.data.ids[0]! } };
@@ -1130,6 +1151,7 @@ export class TicketPublicService {
   async archiveBatch(
     input: {
       items: readonly { id: string; expectedVersion: number }[];
+      siteCodes?: unknown;
     },
     actor: AuthenticatedActor,
   ) {
@@ -1189,6 +1211,29 @@ export class TicketPublicService {
           throw new ConflictException(
             'حداقل یک ردیف لود رزرو ظرفیت فعال یا تور متصل دارد و قابل حذف نیست؛ هیچ ردیفی حذف نشد.',
           );
+        const publicationWhere = {
+          kind: 'ticket',
+          resourceId: { in: ids },
+          branchId: { in: [...new Set(rows.map((row) => row.branchId))] },
+          enabled: true,
+        };
+        const sites = confirmDeletionSites(
+          await tx.websitePublication.findMany({
+            where: publicationWhere,
+            select: { siteCode: true },
+            distinct: ['siteCode'],
+          }),
+          input.siteCodes,
+        );
+        if (sites.length)
+          await tx.websitePublication.updateMany({
+            where: { ...publicationWhere, siteCode: { in: sites } },
+            data: {
+              enabled: false,
+              salesStopped: true,
+              version: { increment: 1 },
+            },
+          });
         const archived = await tx.ticketPublishedOffer.updateMany({
           where: { id: { in: ids } },
           data: { status: 'PAUSED', version: { increment: 1 } },
@@ -1959,6 +2004,20 @@ export class TicketPublicService {
 
         if (removed.length) {
           const removedIds = removed.map(({ id }) => id);
+          const sites = await tx.websitePublication.findMany({
+            where: {
+              branchId,
+              kind: 'ticket',
+              resourceId: { in: removedIds },
+              enabled: true,
+            },
+            select: { siteCode: true },
+            take: 1,
+          });
+          if (sites.length)
+            throw new ConflictException(
+              'ردیف‌های منتشرشده را از گزینهٔ حذف بلیت و با تأیید همهٔ سایت‌ها حذف کنید.',
+            );
           const archived = await tx.ticketPublishedOffer.updateMany({
             where: { id: { in: removedIds } },
             data: { status: 'PAUSED', version: { increment: 1 } },

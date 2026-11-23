@@ -70,6 +70,19 @@ import {
 
 type ProfileSite = 'jahan-bastan' | 'ghestiroo' | 'nss';
 
+function pastDeparture(day?: string | null) {
+  return (
+    !!day &&
+    day <
+      new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Tehran',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date())
+  );
+}
+
 function ghestirooCountryCode(
   value: unknown,
   countryName: unknown,
@@ -163,6 +176,7 @@ export class SiteCommerceService {
       'sourceGalleryImages',
     ];
     let hotelCountryCode: string | undefined;
+    let hotelGeography: Record<string, string> = {};
     if (site === 'ghestiroo' && fields.countryId) {
       const country = await this.references.detail(
         'countries',
@@ -173,13 +187,32 @@ export class SiteCommerceService {
         country.data.name,
       );
     }
-    return this.sendProfile(site, secret, '/hotel-profile', {
-      site,
-      kind: 'hotel-profile',
-      name: data.name,
-      ...(hotelCountryCode ? { countryCode: hotelCountryCode } : {}),
-      ...Object.fromEntries(allowed.map((key) => [key, fields[key] ?? null])),
-    });
+    if (site === 'nss' && fields.cityId && fields.countryId) {
+      const [city, country] = await Promise.all([
+        this.references.detail('cities', String(fields.cityId)),
+        this.references.detail('countries', String(fields.countryId)),
+      ]);
+      hotelGeography = {
+        cityId: city.data.id,
+        countryId: country.data.id,
+        ...(city.data.attributes.englishName
+          ? { cityEnglishName: String(city.data.attributes.englishName) }
+          : {}),
+        ...(country.data.attributes.englishName
+          ? { countryEnglishName: String(country.data.attributes.englishName) }
+          : {}),
+      };
+    }
+    return this.references.withProfilePublication(data, () =>
+      this.sendProfile(site, secret, '/hotel-profile', {
+        site,
+        kind: 'hotel-profile',
+        name: data.name,
+        ...hotelGeography,
+        ...(hotelCountryCode ? { countryCode: hotelCountryCode } : {}),
+        ...Object.fromEntries(allowed.map((key) => [key, fields[key] ?? null])),
+      }),
+    );
   }
 
   async publishGeography(
@@ -236,15 +269,17 @@ export class SiteCommerceService {
             kind === 'countries' ? data.name : data.attributes.countryName,
           )
         : undefined;
-    return this.sendProfile(site, secret, '/geography-profile', {
-      site,
-      kind,
-      id,
-      name: data.name,
-      flag,
-      countryName: data.attributes.countryName || undefined,
-      ...(geographyCountryCode ? { countryCode: geographyCountryCode } : {}),
-    });
+    return this.references.withProfilePublication(data, () =>
+      this.sendProfile(site, secret, '/geography-profile', {
+        site,
+        kind,
+        id,
+        name: data.name,
+        flag,
+        countryName: data.attributes.countryName || undefined,
+        ...(geographyCountryCode ? { countryCode: geographyCountryCode } : {}),
+      }),
+    );
   }
 
   async publishVisaProfile(
@@ -516,6 +551,7 @@ export class SiteCommerceService {
       branchId?: string;
       presentation?: unknown;
       periodKey?: string;
+      confirmPastDeparture?: boolean;
     },
     actor: AuthenticatedActor,
   ) {
@@ -524,6 +560,8 @@ export class SiteCommerceService {
       !['nss', 'jahan-bastan', 'ghestiroo', 'jahan-academy'].includes(site) ||
       typeof input?.enabled !== 'boolean' ||
       !Number.isInteger(input.version) ||
+      (input.confirmPastDeparture !== undefined &&
+        typeof input.confirmPastDeparture !== 'boolean') ||
       (input.salesStopped !== undefined &&
         typeof input.salesStopped !== 'boolean')
     )
@@ -532,6 +570,50 @@ export class SiteCommerceService {
       throw new ForbiddenException();
     const branchId = this.publicationBranch(site, actor, input.branchId);
     const periodKey = this.publicationPeriod(kind, input.periodKey ?? '');
+    return this.db.client.$transaction(
+      async (tx) => {
+        const table =
+          kind === 'ticket'
+            ? '"TicketPublishedOffer"'
+            : kind === 'tour'
+              ? '"TourDeparture"'
+              : '"TourPackage"';
+        const locked = await tx.$queryRaw<{ id: string }[]>(
+          Prisma.sql`SELECT "id" FROM ${Prisma.raw(table)}
+          WHERE "id" = ${resourceId}::uuid AND "branchId" = ${branchId}::uuid FOR UPDATE`,
+        );
+        if (!locked.length) throw new NotFoundException();
+        return this.storePublication(
+          tx,
+          site,
+          kind,
+          resourceId,
+          branchId,
+          periodKey,
+          input,
+          actor,
+        );
+      },
+      { timeout: 20_000 },
+    );
+  }
+
+  private async storePublication(
+    tx: Prisma.TransactionClient,
+    site: string,
+    kind: string,
+    resourceId: string,
+    branchId: string,
+    periodKey: string,
+    input: {
+      enabled: boolean;
+      salesStopped?: boolean;
+      version: number;
+      presentation?: unknown;
+      confirmPastDeparture?: boolean;
+    },
+    actor: AuthenticatedActor,
+  ) {
     const key = {
       siteCode: site,
       kind,
@@ -539,9 +621,10 @@ export class SiteCommerceService {
       branchId,
       periodKey,
     };
-    const row = await this.db.client.websitePublication.findUnique({
+    const row = await tx.websitePublication.findUnique({
       where: { siteCode_branchId_kind_resourceId_periodKey: key },
     });
+    let startsOn: string | null | undefined;
     if ((row?.version ?? 0) !== input.version)
       throw new ConflictException('وضعیت انتشار تغییر کرده است.');
     const incoming =
@@ -577,16 +660,19 @@ export class SiteCommerceService {
             : undefined,
         );
     } else if (kind === 'floating-tour') {
-      await this.floatingProduct(
+      const floating = await this.floatingProduct(
         resourceId,
         [branchId],
         periodKey,
         input.enabled,
       );
+      startsOn = floating.dated[0]?.startsOn;
     } else {
       const departure = await this.tours.pricingDeparture(resourceId, [
         branchId,
       ]);
+      if (departure.isDeleted && input.enabled) throw new NotFoundException();
+      startsOn = departure.startsOn;
       const hotelRates = incoming?.previewHotelRate?.breakdown?.hotels;
       if (hotelRates) {
         const expected = new Set(departure.package.hotelIds);
@@ -616,35 +702,47 @@ export class SiteCommerceService {
       )
         throw new BadRequestException('قیمت منتشرشده پکیج الزامی است.');
     }
+    const past = input.enabled && pastDeparture(startsOn);
+    if (past && input.confirmPastDeparture !== true)
+      throw new ConflictException({
+        code: 'PAST_TOUR_PUBLICATION_CONFIRMATION',
+        message: 'تاریخ حرکت تور گذشته است.',
+      });
     const ghestirooTour = site === 'ghestiroo' && kind !== 'ticket';
-    const storedPresentation = ghestirooTour
-      ? {
-          ...(presentation ??
-            currentPresentation ?? {
-              title: '',
-              description: '',
-              commissionPercent: '0',
-            }),
-          operatorApproved: true,
-        }
-      : presentation;
+    const storedPresentation =
+      ghestirooTour ||
+      past ||
+      (row?.presentation as { pastDepartureDate?: string } | null)
+        ?.pastDepartureDate
+        ? {
+            ...(presentation ??
+              currentPresentation ?? {
+                title: '',
+                description: '',
+                commissionPercent: '0',
+              }),
+            ...(ghestirooTour ? { operatorApproved: true } : {}),
+            ...(past && startsOn ? { pastDepartureDate: startsOn } : {}),
+          }
+        : presentation;
     if (!row)
       return {
-        data: await this.db.client.websitePublication.create({
+        data: await tx.websitePublication.create({
           data: {
             ...key,
             ...(storedPresentation ? { presentation: storedPresentation } : {}),
             enabled: input.enabled,
-            salesStopped: previewOnly || (input.salesStopped ?? false),
+            salesStopped: past || previewOnly || (input.salesStopped ?? false),
           },
         }),
       };
-    const changed = await this.db.client.websitePublication.updateMany({
+    const changed = await tx.websitePublication.updateMany({
       where: { id: row.id, version: input.version },
       data: {
         enabled: input.enabled,
         ...(storedPresentation ? { presentation: storedPresentation } : {}),
         salesStopped:
+          past ||
           previewOnly ||
           (input.salesStopped ??
             (ghestirooTour && currentPresentation?.previewOnly
@@ -656,7 +754,7 @@ export class SiteCommerceService {
     if (!changed.count)
       throw new ConflictException('وضعیت انتشار تغییر کرده است.');
     return {
-      data: await this.db.client.websitePublication.findUniqueOrThrow({
+      data: await tx.websitePublication.findUniqueOrThrow({
         where: { id: row.id },
       }),
     };
@@ -848,6 +946,15 @@ export class SiteCommerceService {
         }
         const floatingTour =
           'floatingTour' in product ? product.floatingTour : undefined;
+        const startsOn =
+          'tour' in product
+            ? product.tour?.startsOn
+            : floatingTour?.dated[0]?.startsOn;
+        const past = pastDeparture(startsOn);
+        const pastDepartureApproved =
+          past &&
+          (row.presentation as { pastDepartureDate?: string } | null)
+            ?.pastDepartureDate === startsOn;
         const floatingRooms = floatingTour?.dated.some(
           (price) => price.flightSchedule,
         )
@@ -855,29 +962,25 @@ export class SiteCommerceService {
               floatingTour,
               await this.packages.buyRates(),
               this.references,
+              pastDepartureApproved,
             )
           : [];
-        const hotels =
-          floatingTour && (site === 'ghestiroo' || floatingRooms.length)
-            ? await this.references.publishedHotelProfiles(
-                site === 'ghestiroo'
-                  ? [
-                      ...floatingTour.dated,
-                      ...(floatingTour.monthly?.rows ?? []),
-                    ].flatMap((row) => row.stays.map((stay) => stay.hotelId))
-                  : floatingRooms.flatMap((room) =>
-                      room.stays.map((stay) => stay.hotelId),
-                    ),
-              )
-            : 'tour' in product && product.tour && product.rooms
-              ? await this.references.publishedHotelProfiles([
-                  ...product.tour.package.hotelIds,
-                  ...product.rooms.flatMap((room) => [
-                    room.hotelId,
-                    ...(room.stays ?? []).map((stay) => stay.hotelId),
-                  ]),
-                ])
-              : undefined;
+        const hotels = floatingTour
+          ? await this.references.publishedHotelProfiles(
+              [
+                ...floatingTour.dated,
+                ...(floatingTour.monthly?.rows ?? []),
+              ].flatMap((row) => row.stays.map((stay) => stay.hotelId)),
+            )
+          : 'tour' in product && product.tour && product.rooms
+            ? await this.references.publishedHotelProfiles([
+                ...product.tour.package.hotelIds,
+                ...product.rooms.flatMap((room) => [
+                  room.hotelId,
+                  ...(room.stays ?? []).map((stay) => stay.hotelId),
+                ]),
+              ])
+            : undefined;
         if (presentation && 'tour' in product && product.tour) {
           const previewRate = presentation.previewHotelRate;
           if (previewOnly && previewRate?.breakdown) {
@@ -963,12 +1066,19 @@ export class SiteCommerceService {
             previewOnly ||
             floatingPriceOnly ||
             row.salesStopped ||
+            past ||
             capacityStopped,
+          ...(pastDepartureApproved ? { pastDepartureApproved: true } : {}),
           ...(previewOnly || floatingPriceOnly ? { previewOnly: true } : {}),
           ...(capacityStopped ? { capacityStopped: true } : {}),
           version: row.version,
           ...product,
-          ...(floatingTour ? { floatingRooms } : {}),
+          ...(floatingTour
+            ? {
+                floatingRooms,
+                floatingRoute: await this.floatingRoute(floatingTour.package),
+              }
+            : {}),
           ...(hotels ? { hotels } : {}),
           ...(presentation ? { presentation } : {}),
         });
@@ -1029,6 +1139,21 @@ export class SiteCommerceService {
       ...(tour.returning
         ? { returning: await this.flight(tour.returning.id, actor.branchIds) }
         : {}),
+    };
+  }
+
+  private async floatingRoute(pack: {
+    originId: string;
+    destinationId: string;
+  }) {
+    if (!pack.originId || !pack.destinationId) return undefined;
+    const [origin, destination] = await Promise.all([
+      this.references.detail('cities', pack.originId),
+      this.references.detail('cities', pack.destinationId),
+    ]);
+    return {
+      originName: origin.data.name,
+      destinationName: destination.data.name,
     };
   }
 

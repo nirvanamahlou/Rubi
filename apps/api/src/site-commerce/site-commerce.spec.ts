@@ -125,6 +125,8 @@ function fixture() {
   let saved = false;
   const db = {
     client: {
+      $queryRaw: vi.fn().mockResolvedValue([{ id: ids.offer }]),
+      $transaction: <T>(callback: (tx: unknown) => T): T => callback(db.client),
       websiteCatalogDelivery: {
         findUnique: vi.fn().mockResolvedValue({
           branchId: ids.branch,

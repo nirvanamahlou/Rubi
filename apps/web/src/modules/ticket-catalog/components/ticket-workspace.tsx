@@ -7,7 +7,8 @@ import { flightCabinCode } from '../model/flight-cabins';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useScreenAccess } from '@/modules/iam/access-context';
 import type { TicketOfferCreateV1, TicketOfferV1 } from '@nora/contracts';
-import { Power, Plus } from 'lucide-react';
+import { Power, Plus, Trash2 } from 'lucide-react';
+import { SiteDeleteDialog } from './site-delete-dialog';
 import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import {
   Alert,
@@ -1063,6 +1064,31 @@ function TicketCatalogWorkspace() {
       >
         ویرایش
       </Button>
+      <SiteDeleteDialog
+        trigger={
+          <Button size="sm" variant="destructive" aria-label="حذف بلیت">
+            <Trash2 aria-hidden className="size-4" />
+          </Button>
+        }
+        title="حذف بلیت"
+        description="بلیت از فهرست فروش خارج می‌شود و سوابق آن در آوینا باقی می‌ماند."
+        loadSites={() => toursApi.offerDeletionSites(offer.id)}
+        onConfirm={(sites) => {
+          setPublishedNotice('');
+          setPublishedProblem('');
+          void toursApi
+            .archiveOffer(offer.id, offer.version, sites)
+            .then(async () => {
+              await refreshPublishedOffers();
+              setPublishedNotice('بلیت از فهرست فروش خارج شد.');
+            })
+            .catch((cause: unknown) => {
+              setPublishedProblem(
+                cause instanceof Error ? cause.message : 'حذف بلیت انجام نشد.',
+              );
+            });
+        }}
+      />
     </div>
   );
   return (

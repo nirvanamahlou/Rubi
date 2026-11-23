@@ -164,6 +164,17 @@ export class MasterDataController {
     );
   }
 
+  @Get(':resource/:id/deletion-sites')
+  @RequirePermissions('master_data.delete')
+  deletionSites(
+    @Param('resource') resource: string,
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-branch-id') branchId?: string,
+  ) {
+    return this.service.deletionSites(resource, id, request.actor, branchId);
+  }
+
   @Delete(':resource/:id')
   @HttpCode(200)
   @RequirePermissions('master_data.delete')
@@ -180,6 +191,7 @@ export class MasterDataController {
       dto.version,
       request.actor,
       branchId,
+      dto.siteCodes,
     );
   }
 

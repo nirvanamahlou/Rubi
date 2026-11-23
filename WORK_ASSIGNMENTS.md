@@ -13429,6 +13429,14 @@ Verified the fiscal-year route in Chromium with synthetic company context at des
 
 Reserve the shared Nora composer quick-action row, its dedicated styles and labels, and the corresponding render regression. Existing report APIs and chat evidence are out of scope.
 
+## SELECTED-SITE-WITHDRAWAL-1123 — PC-B — LOCAL VERIFICATION
+
+Scope: site confirmation on Avina ticket, tour and profile deletion, the signed
+withdrawal consumers, focused regression checks and the additive tour archive
+timestamp. Preserve published operations, historical prices, orders and
+contracts. Deployment order and compatibility are recorded in
+[Site withdrawal](docs/tasks/SELECTED-SITE-WITHDRAWAL-1123.md).
+
 ## GHESTIROO-PROFILES-1123 — PC-D
 
 Reserve the site-commerce profile sender and Integrations profile publication controls for the user-authorized Ghestiroo hotel, city and country integration. Coordinate the additive Ghestiroo-only ISO alpha-2 country code with the Ghestiroo receiver and preserve the Jahan Bastan payload and branch checks. No schema or dependency changes.

@@ -4,6 +4,10 @@ import { useEffect, useState } from 'react';
 import { Button, Card, Input } from '@/components/ui';
 import { localizedFetch } from '@/i18n/localized-fetch';
 import { getPublicApiBaseUrl } from '@/lib/environment';
+import {
+  PastTourPublicationConfirmation,
+  requiresPastTourConfirmation,
+} from '@/modules/site-commerce/past-tour-publication-confirmation';
 
 const hotelFields = [
   ['double', 'دو تخته'],
@@ -88,6 +92,7 @@ export function WebsiteTourPreviewPrices({
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [confirmPast, setConfirmPast] = useState(false);
   const endpoint =
     getPublicApiBaseUrl() +
     '/sales/site-commerce/v1/' +
@@ -150,7 +155,7 @@ export function WebsiteTourPreviewPrices({
       },
     );
 
-  async function save() {
+  async function save(confirmPastDeparture = false) {
     if (
       !publication ||
       !presentation?.previewOnly ||
@@ -176,6 +181,7 @@ export function WebsiteTourPreviewPrices({
         body: JSON.stringify({
           branchId,
           enabled: publication.enabled,
+          ...(confirmPastDeparture ? { confirmPastDeparture: true } : {}),
           salesStopped: publication.salesStopped,
           version: publication.version,
           presentation: {
@@ -197,6 +203,13 @@ export function WebsiteTourPreviewPrices({
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
+        if (
+          !confirmPastDeparture &&
+          requiresPastTourConfirmation(response.status, body)
+        ) {
+          setConfirmPast(true);
+          return;
+        }
         const message = body?.error?.message ?? body?.message;
         throw Error(
           typeof message === 'string'
@@ -219,6 +232,16 @@ export function WebsiteTourPreviewPrices({
 
   return (
     <Card className="space-y-4 p-5">
+      {confirmPast && (
+        <PastTourPublicationConfirmation
+          site={site === 'ghestiroo' ? 'قسطی‌رو' : 'نیایش سیر'}
+          onCancel={() => setConfirmPast(false)}
+          onConfirm={() => {
+            setConfirmPast(false);
+            void save(true);
+          }}
+        />
+      )}
       <h2 className="text-lg font-black">
         قیمت نمایشی تور در سایت {site === 'ghestiroo' ? 'قسطی‌رو' : 'نیایش سیر'}
       </h2>

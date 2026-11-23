@@ -42,13 +42,16 @@ describe('ticket workspace entry points', () => {
     expect(weekly).toContain('allowPastDate');
   });
 
-  it('restores selected-leg view and edit actions without delete controls', () => {
+  it('keeps selected-leg actions and requires publication confirmation to delete a ticket', () => {
     const source = readFileSync(
       new URL('./ticket-workspace.tsx', import.meta.url),
       'utf8',
     );
     expect(source).not.toContain('toursApi.archiveOfferBatch(');
-    expect(source).not.toContain('toursApi.archiveOffer(');
+    expect(source).toContain('toursApi.offerDeletionSites(offer.id)');
+    expect(source).toMatch(
+      /toursApi\s*\.archiveOffer\(offer.id, offer.version, sites\)/,
+    );
     expect(source).toContain('toursApi.reviseOfferBatch(');
     expect(source).toContain('toursApi.resizeOfferBatch(');
     expect(source).not.toContain(

@@ -2,7 +2,7 @@ export const commerceSites = {
   nss: {
     origin: 'https://niyayeshseir.ir',
     signingKey: 'NSS_CATALOG_WEBHOOK_SECRET',
-    floatingTours: false,
+    floatingTours: true,
   },
   'jahan-bastan': {
     origin: 'https://jahanbastan.ir',

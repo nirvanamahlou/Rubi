@@ -4449,6 +4449,7 @@ model SalesContractStatusHistory {
 // Published tour definitions and occurrences are immutable; revisions create new definitions.
 model TourPackage {
   floatingSaleCatalog FloatingTourSaleCatalog?
+  archivedAt          DateTime?                @db.Timestamptz(3)
   id                  String                   @id @default(uuid()) @db.Uuid
   version             Int                      @default(1)
   branchId            String                   @db.Uuid

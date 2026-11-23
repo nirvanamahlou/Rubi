@@ -8,6 +8,7 @@ const actor = {
 } as const;
 function fixture(status = 'ACTIVE', version = 1) {
   const tx = {
+    websitePublication: { findMany: vi.fn().mockResolvedValue([]) },
     tourDeparture: {
       findMany: vi.fn().mockResolvedValue([]),
       findFirst: vi.fn().mockResolvedValue({

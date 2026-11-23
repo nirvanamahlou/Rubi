@@ -3,6 +3,10 @@ import { useEffect, useState } from 'react';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { localizedFetch } from '@/i18n/localized-fetch';
 import {
+  PastTourPublicationConfirmation,
+  requiresPastTourConfirmation,
+} from './past-tour-publication-confirmation';
+import {
   Button,
   Dialog,
   DialogContent,
@@ -60,6 +64,9 @@ function PublicationSwitch({
   const [saving, setSaving] = useState(false);
   const [open, setOpen] = useState(false);
   const [siteId, setSiteId] = useState('');
+  const [pastConfirmation, setPastConfirmation] = useState<boolean | null>(
+    null,
+  );
   const path = `${getPublicApiBaseUrl()}/sales/site-commerce/v1/nss/publications/${kind}/${resourceId}`;
   useEffect(() => {
     const abort = new AbortController();
@@ -84,7 +91,11 @@ function PublicationSwitch({
       });
     return () => abort.abort();
   }, [path]);
-  async function change(enabled: boolean, salesStopped = false) {
+  async function change(
+    enabled: boolean,
+    salesStopped = false,
+    confirmPastDeparture = false,
+  ) {
     if (
       !state ||
       saving ||
@@ -106,15 +117,31 @@ function PublicationSwitch({
           enabled,
           ...(salesStopped || state.salesStopped ? { salesStopped } : {}),
           version: state.version,
+          ...(confirmPastDeparture ? { confirmPastDeparture: true } : {}),
         }),
       });
-      if (!response.ok)
+      if (!response.ok) {
+        if (
+          response.status === 409 &&
+          !confirmPastDeparture &&
+          requiresPastTourConfirmation(
+            response.status,
+            await response
+              .clone()
+              .json()
+              .catch(() => null),
+          )
+        ) {
+          setPastConfirmation(salesStopped);
+          return;
+        }
         throw Error(
           await publicationError(
             response,
             'ثبت انتشار سایت ناموفق بود؛ وضعیت را دوباره دریافت کنید.',
           ),
         );
+      }
       const result = await response.json();
       setState(result.data);
       setOpen(false);
@@ -165,8 +192,18 @@ function PublicationSwitch({
           {error}
         </p>
       ) : null}
+      {pastConfirmation !== null && (
+        <PastTourPublicationConfirmation
+          site={publicationSites[0].name}
+          onCancel={() => setPastConfirmation(null)}
+          onConfirm={() => {
+            setPastConfirmation(null);
+            void change(true, pastConfirmation, true);
+          }}
+        />
+      )}
       <Dialog
-        open={open}
+        open={open && pastConfirmation === null}
         onOpenChange={(value) => {
           if (saving) return;
           setOpen(value);

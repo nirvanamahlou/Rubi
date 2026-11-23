@@ -3,6 +3,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { WebsiteDestination } from './components/site-management';
 import { websiteDestinations } from './site-publication-model';
 import { canonicalTestTree } from '@/i18n/test-tree';
+import { PastTourPublicationConfirmation } from '@/modules/site-commerce/past-tour-publication-confirmation';
 const f = vi.hoisted(() => ({
   state: [] as unknown[],
   cursor: 0,
@@ -134,6 +135,38 @@ it('rolls a failed selection back and displays the error', async () => {
   expect(
     nodes(tree()).find((node) => node.props.type === 'checkbox')!.props.checked,
   ).toBe(false);
+});
+it('publishes a past departure only after the user confirms the selected site', async () => {
+  await load();
+  f.fetch.mockResolvedValueOnce({
+    ok: false,
+    status: 409,
+    json: async () => ({
+      error: { code: 'PAST_TOUR_PUBLICATION_CONFIRMATION' },
+    }),
+  });
+  const checkbox = () =>
+    nodes(tree()).find((node) => node.props.type === 'checkbox')!;
+  await (checkbox().props.onChange as (event: unknown) => Promise<void>)({
+    target: { checked: true },
+  });
+  expect(f.fetch).toHaveBeenCalledTimes(2);
+  expect(checkbox().props.checked).toBe(false);
+  const confirm = nodes(tree()).find(
+    (node) => node.type === PastTourPublicationConfirmation,
+  )!;
+  expect(confirm.props.site).toBe('جهان باستان');
+  f.fetch.mockResolvedValueOnce(ok(true));
+  (confirm.props.onConfirm as () => void)();
+  await vi.waitFor(() => expect(checkbox().props.checked).toBe(true));
+  expect(f.fetch.mock.calls[2]![0]).toContain(
+    '/jahan-bastan/publications/tour/resource',
+  );
+  expect(JSON.parse(f.fetch.mock.calls[2]![1].body)).toMatchObject({
+    confirmPastDeparture: true,
+    enabled: true,
+    version: 7,
+  });
 });
 it('blocks repeat toggles while a selection is being saved', async () => {
   await load();
