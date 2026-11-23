@@ -1,3 +1,4 @@
+import { OPENAI_ENDPOINT } from './openai-responses.mjs';
 import { ServiceError } from './errors.mjs';
 import { createHash } from 'node:crypto';
 import { validateGroqCredentials } from './groq-credentials.mjs';
@@ -136,9 +137,7 @@ export function createGroqKeyPool({
   if (!['groq', 'openai'].includes(provider))
     throw new Error('INVALID_POOL_PROVIDER');
   const openai = provider === 'openai';
-  const endpoint = openai
-    ? 'https://api.openai.com/v1/chat/completions'
-    : ENDPOINT;
+  const endpoint = openai ? OPENAI_ENDPOINT : ENDPOINT;
   const keys = validateGroqCredentials({ version: 1, keys: entries }).map(
     (entry) => ({ ...entry, ...state(), disabled: entry.enabled === false }),
   );

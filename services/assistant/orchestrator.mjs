@@ -1,3 +1,4 @@
+import { internalSourceFallback } from './source-policy.mjs';
 import { ServiceError } from './errors.mjs';
 import { filterQuery, resolveReportFilters } from './report-filters.mjs';
 
@@ -135,7 +136,7 @@ export function createOrchestrator({
         plan.text.trim() &&
         plan.text.length <= 2000
       ) {
-        return { version: 1, status: 'REPLY', text: plan.text.trim() };
+        return { version: 1, status: 'REPLY', text: internalSourceFallback };
       }
       if (
         shape(plan, ['kind', 'field']) &&

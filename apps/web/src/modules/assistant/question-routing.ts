@@ -18,6 +18,7 @@ export type QuestionDecision = {
     | 'conversation';
   domain?: AnswerContext['domain'] | undefined;
   guideQuestion?: string;
+  guideTopicId?: 'travel-document-workflow';
   dataMessage: string;
   clarification?: string;
 };
@@ -42,6 +43,30 @@ export function routeAssistantQuestion(
 ): QuestionDecision {
   const q = normalizeQuestion(message);
   const has = (pattern: RegExp) => matchesQuestion(q, pattern);
+  const documentProcedure =
+    has(/رویه|فرایند|فرآیند|به چه صورت/) || has(procedure);
+  const travelDocument =
+    documentProcedure &&
+    has(/بلی[تط]|پرواز|هتل|واچر/) &&
+    has(
+      /سند زدن|سند بزن|سند.*صادر|صدور سند|صدور بلی[تط]|صدور واچر|صادر.*(?:بلی[تط]|واچر)|تحویل مدارک/,
+    ) &&
+    !has(
+      /سند حسابداری|سند مالی|ثبت حسابداری|شماره قرارداد|قرارداد [0-9۰-۹٠-٩]/,
+    ) &&
+    !has(/مبلغ|چقدر|تعداد|چند تا|مانده|وضعیت/);
+  if (
+    travelDocument ||
+    (previous?.kind === 'guide' &&
+      previous.topicId === 'travel-document-workflow' &&
+      shortFollowup.test(q))
+  )
+    return {
+      kind: 'guide',
+      domain: 'sales',
+      guideTopicId: 'travel-document-workflow',
+      dataMessage: message,
+    };
   const sales = has(/قرارداد|بیمه مسافر|رزرواسیون|رزرو/);
   const callCenter = has(
     /کال سنتر|صف رسیدگی|تماس بدون نتیجه|تماس های بدون نتیجه|تماس مجدد|پرونده مخاطب|بررسی پیگیری|مدیر ایجادکننده|واحد مسئول مخاطب|تماس امروز|فایل صوتی تماس|ضبط مکالمه/,
