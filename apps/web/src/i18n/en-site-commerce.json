@@ -90,5 +90,9 @@
   "نشانگر صفحه رزرو معتبر نیست.": "The hold page cursor is invalid.",
   "رزرو مرتبط با پرداخت؛ ظرفیت تا تعیین تکلیف خرید محفوظ است": "Payment-linked reservation; capacity remains held until checkout is resolved",
   "ابتدا مقصد فروش «قسطی‌رو» را برای شعبه تنظیم کنید.": "Configure the Ghestiroo sales destination for the branch first.",
-  "اتصال فروش قسطی‌رو برای پرواز فعال است.": "The Ghestiroo sales integration is active for flights."
+  "اتصال فروش قسطی‌رو برای پرواز فعال است.": "The Ghestiroo sales integration is active for flights.",
+  "ثبت در قسطی‌رو": "Publish to Ghestiroo",
+  "مشاهده در قسطی‌رو": "View on Ghestiroo",
+  "ثبت در قسطی‌رو انجام نشد.": "Publication to Ghestiroo failed.",
+  "ثبت در قسطی‌رو تأیید نشد.": "Ghestiroo did not confirm publication."
 }

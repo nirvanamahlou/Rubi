@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AuthenticatedActor } from '@nora/contracts';
+import { createHmac } from 'node:crypto';
+import { Readable } from 'node:stream';
 import { SiteCommerceService } from './site-commerce.service';
 // Dependencies are injected below; unit publication tests must not start the application graph.
 vi.mock('../sales/sales.service', () => ({ SalesService: class {} }));
@@ -95,6 +97,8 @@ function setup() {
       monthly: null,
     }),
   };
+  const references = { detail: vi.fn() };
+  const logos = { preview: vi.fn() };
   const service = new SiteCommerceService(
     db as never,
     tickets as never,
@@ -106,16 +110,205 @@ function setup() {
     } as never,
     { cancelledWebsiteContracts: vi.fn().mockResolvedValue([]) } as never,
     {} as never,
-    {} as never,
+    references as never,
     {} as never,
     {} as never,
     {} as never,
     undefined,
     floating as never,
+    undefined,
+    undefined,
+    logos as never,
   );
-  return { service, publication, tickets, tours, floating };
+  return { service, publication, tickets, tours, floating, references, logos };
 }
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
+
+describe('site profile publication', () => {
+  const publisher = {
+    ...actor,
+    permissions: [
+      'ticket_catalog.manage',
+      'master_data.read',
+      'master_data.update',
+    ],
+  } as AuthenticatedActor;
+  const secret = 'ghestiroo-profile-test-key-32-bytes';
+
+  it('signs Ghestiroo hotel profiles with their country code and preserves the Jahan payload', async () => {
+    const f = setup();
+    vi.stubEnv('GHESTIROO_CATALOG_WEBHOOK_SECRET', secret);
+    vi.stubEnv(
+      'JAHAN_BASTAN_CATALOG_WEBHOOK_SECRET',
+      'jahan-profile-test-key-32-bytes-01',
+    );
+    f.references.detail.mockImplementation(async (kind: string) =>
+      kind === 'hotels'
+        ? {
+            data: {
+              name: 'Hotel',
+              attributes: {
+                identificationCode: 'HTL-AYT-01',
+                countryId: 'country',
+                countryName: 'Turkey',
+                cityName: 'Antalya',
+                starRating: 5,
+              },
+            },
+          }
+        : { data: { attributes: { iso2Code: 'tr' } } },
+    );
+    const fetcher = vi.fn(async () =>
+      Response.json({
+        identificationCode: 'HTL-AYT-01',
+        slug: 'hotel-page',
+      }),
+    );
+    vi.stubGlobal('fetch', fetcher);
+    await expect(
+      f.service.publishHotelProfile('ghestiroo', 'hotel', publisher),
+    ).resolves.toEqual({
+      url: 'https://ghestiroo.ir/hotels/hotel-page/',
+    });
+    await expect(
+      f.service.publishHotelProfile('jahan-bastan', 'hotel', publisher),
+    ).resolves.toEqual({
+      url: 'https://jahanbastan.ir/hotels/hotel-page/',
+    });
+    const [url, request] = fetcher.mock.calls[0] as unknown as [
+      string,
+      { body: string; headers: Record<string, string> },
+    ];
+    expect(url).toBe('https://ghestiroo.ir/api/v1/erp/hotel-profile');
+    expect(JSON.parse(request.body)).toMatchObject({
+      site: 'ghestiroo',
+      countryCode: 'TR',
+    });
+    expect(request.headers['x-erp-signature']).toBe(
+      createHmac('sha256', secret)
+        .update(request.headers['x-erp-timestamp'] + '.' + request.body)
+        .digest('hex'),
+    );
+    const [, jahan] = fetcher.mock.calls[1] as unknown as [
+      string,
+      { body: string },
+    ];
+    expect(JSON.parse(jahan.body)).not.toHaveProperty('countryCode');
+  });
+
+  it('publishes flag and city country codes only from an authorized branch', async () => {
+    const f = setup();
+    vi.stubEnv('GHESTIROO_CATALOG_WEBHOOK_SECRET', secret);
+    f.references.detail
+      .mockResolvedValueOnce({
+        data: {
+          name: 'Turkey',
+          attributes: { iso2Code: 'TR', logoFileReference: 'flag' },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          name: 'Antalya',
+          attributes: { countryName: 'Turkey', countryCode: 'TR' },
+        },
+      });
+    f.logos.preview.mockResolvedValue({
+      stream: Readable.from([
+        Buffer.from(
+          '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="red"/></svg>',
+        ),
+      ]),
+    });
+    const fetcher = vi.fn(async (_url: string, request: RequestInit) => {
+      const value = JSON.parse(String(request.body));
+      expect(value.countryCode).toBe('TR');
+      expect(value.site).toBe('ghestiroo');
+      if (value.kind === 'countries')
+        expect(Buffer.from(value.flag, 'base64').toString('ascii', 8, 12)).toBe(
+          'WEBP',
+        );
+      else expect(value.countryName).toBe('Turkey');
+      return Response.json({ slug: 'destination' });
+    });
+    vi.stubGlobal('fetch', fetcher);
+    await expect(
+      f.service.publishGeography('ghestiroo', 'cities', 'city', {
+        ...publisher,
+        branchIds: ['other'],
+      }),
+    ).rejects.toThrow();
+    await expect(
+      f.service.publishGeography(
+        'ghestiroo',
+        'countries',
+        'country',
+        publisher,
+      ),
+    ).resolves.toEqual({
+      url: 'https://ghestiroo.ir/destinations/',
+    });
+    await f.service.publishGeography('ghestiroo', 'cities', 'city', publisher);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    ['MA', 'مالزی', 'MY'],
+    ['SL', 'Slovenia', 'SI'],
+    ['MA', 'Morocco', 'MA'],
+    ['SL', 'Sierra Leone', 'SL'],
+  ])(
+    'maps the Ghestiroo country code %s for %s to %s',
+    async (code, name, expected) => {
+      const f = setup();
+      vi.stubEnv('GHESTIROO_CATALOG_WEBHOOK_SECRET', secret);
+      f.references.detail
+        .mockResolvedValueOnce({
+          data: {
+            name: 'Hotel',
+            attributes: { identificationCode: 'HTL-01', countryId: 'country' },
+          },
+        })
+        .mockResolvedValueOnce({
+          data: { name, attributes: { iso2Code: code } },
+        })
+        .mockResolvedValueOnce({
+          data: {
+            name: 'City',
+            attributes: { countryName: name, countryCode: code },
+          },
+        })
+        .mockResolvedValueOnce({
+          data: { name, attributes: { iso2Code: code } },
+        });
+      const fetcher = vi.fn(async (_url: string, request: RequestInit) => {
+        expect(JSON.parse(String(request.body)).countryCode).toBe(expected);
+        return Response.json({
+          identificationCode: 'HTL-01',
+          slug: 'destination',
+        });
+      });
+      vi.stubGlobal('fetch', fetcher);
+      await f.service.publishHotelProfile('ghestiroo', 'hotel', publisher);
+      await f.service.publishGeography(
+        'ghestiroo',
+        'cities',
+        'city',
+        publisher,
+      );
+      await f.service.publishGeography(
+        'ghestiroo',
+        'countries',
+        'country',
+        publisher,
+      );
+      expect(fetcher).toHaveBeenCalledTimes(3);
+    },
+  );
+});
+
 describe('website destination management', () => {
   it('requires an explicit destination action to authorize each Ghestiroo tour', async () => {
     const f = setup();
