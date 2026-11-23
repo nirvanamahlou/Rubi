@@ -13428,3 +13428,11 @@ CALL-CENTER-TODAY-FILTER-STYLE-1116 follow-up reserves WithoutOutcomeDialog init
 ## AUTOMATIC-HOTEL-IDENTIFICATION-1123 — PC-D — READY_FOR_CI
 
 Reserve the Master Data hotel creation and Excel-create paths, the create form, focused tests, and one additive PostgreSQL sequence migration. Reuse established city prefixes and serialize code allocation with explicit hotel code writes. Historical hotel codes and internal import identities are retained. The requested release is limited to the Avina API and Web.
+
+## SELECTED-SITE-WITHDRAWAL-1123 — PC-B — LOCAL VERIFICATION
+
+Scope: site confirmation on Avina ticket, tour and profile deletion, the signed
+withdrawal consumers, focused regression checks and the additive tour archive
+timestamp. Preserve published operations, historical prices, orders and
+contracts. Deployment order and compatibility are recorded in
+[Site withdrawal](docs/tasks/SELECTED-SITE-WITHDRAWAL-1123.md).

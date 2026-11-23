@@ -1,0 +1,1 @@
+ALTER TABLE "TourPackage" ADD COLUMN "archivedAt" TIMESTAMPTZ(3);

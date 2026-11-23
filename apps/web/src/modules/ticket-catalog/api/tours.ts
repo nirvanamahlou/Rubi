@@ -96,9 +96,12 @@ export const toursApi = {
       '/tours/packages',
       signal ? { signal } : undefined,
     ),
-  departures: (management = false, signal?: AbortSignal) =>
+  departures: (management = false, signal?: AbortSignal, includePast = false) =>
     request<{ data: TourDepartureV1[] }>(
-      '/tours/departures' + (management ? '?management=true' : ''),
+      '/tours/departures' +
+        (management
+          ? '?management=true' + (includePast ? '&includePast=true' : '')
+          : ''),
       signal ? { signal } : undefined,
     ),
   createPackage: (input: TourPackageInputV1, branch: string, key: string) =>
@@ -120,13 +123,28 @@ export const toursApi = {
         body: JSON.stringify({ ...input, expectedVersion }),
       },
     ),
-  deletePackage: (id: string, expectedVersion: number, branch: string) =>
+  deletionSites: (kind: 'tour' | 'floating-tour', id: string, branch: string) =>
+    request<{ data: string[] }>(
+      `/tours/deletion-sites/${kind}/${encodeURIComponent(id)}`,
+      {
+        headers: { 'x-branch-id': branch },
+      },
+    ),
+  deletePackage: (
+    id: string,
+    expectedVersion: number,
+    branch: string,
+    siteCodes?: string[],
+  ) =>
     request<{ data: { id: string; deleted: true } }>(
       `/tours/packages/${encodeURIComponent(id)}`,
       {
         method: 'DELETE',
         headers: { 'x-branch-id': branch },
-        body: JSON.stringify({ expectedVersion }),
+        body: JSON.stringify({
+          expectedVersion,
+          ...(siteCodes ? { siteCodes } : {}),
+        }),
       },
     ),
   createDeparture: (input: TourDepartureInputV1, branch: string, key: string) =>
@@ -140,6 +158,7 @@ export const toursApi = {
     expectedVersion: number,
     branch: string,
     isDeleted?: true,
+    siteCodes?: string[],
   ) =>
     request('/tours/departures/' + encodeURIComponent(id) + '/status', {
       method: 'PATCH',
@@ -147,7 +166,9 @@ export const toursApi = {
       body: JSON.stringify({
         isActive,
         expectedVersion,
-        ...(isDeleted ? { isDeleted } : {}),
+        ...(isDeleted
+          ? { isDeleted, ...(siteCodes ? { siteCodes } : {}) }
+          : {}),
       }),
     }),
   offers: async (
@@ -253,17 +274,22 @@ export const toursApi = {
       method: 'PATCH',
       body: JSON.stringify({ current, offers }),
     }),
-  archiveOffer: (id: string, expectedVersion: number) =>
+  offerDeletionSites: (id: string) =>
+    request<{ data: string[] }>(
+      `/offers/${encodeURIComponent(id)}/deletion-sites`,
+    ),
+  archiveOffer: (id: string, expectedVersion: number, siteCodes?: string[]) =>
     request<{ data: { id: string } }>(`/offers/${id}`, {
       method: 'DELETE',
-      body: JSON.stringify({ expectedVersion }),
+      body: JSON.stringify({ expectedVersion, siteCodes }),
     }),
   archiveOfferBatch: (
     items: readonly { id: string; expectedVersion: number }[],
+    siteCodes?: string[],
   ) =>
     request<{ data: { ids: string[] } }>('/offers/batch', {
       method: 'DELETE',
-      body: JSON.stringify({ items }),
+      body: JSON.stringify({ items, siteCodes }),
     }),
   updateOfferStatus: (
     id: string,

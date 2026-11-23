@@ -50,6 +50,9 @@ describe('Master Data safe deletion service', () => {
         2,
         actor.userId,
         actor.branchIds[0],
+        ...(['hotels', 'cities', 'countries'].includes(resource)
+          ? [expect.any(Function)]
+          : []),
       );
     },
   );

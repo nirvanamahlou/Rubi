@@ -11,7 +11,9 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Badge, Button, Card, ConfirmDialog, Input } from '@/components/ui';
+import { Badge, Button, Card, Input } from '@/components/ui';
+import { toursApi } from '../api/tours';
+import { SiteDeleteDialog } from './site-delete-dialog';
 
 export const tourDay = (now = new Date()) =>
   new Intl.DateTimeFormat('en-CA', {
@@ -57,7 +59,11 @@ export function TourOverview({
   definitionMode = false,
 }: {
   onPeriodStatus?:
-    | ((item: TourDepartureV1, status: 'ACTIVE' | 'PAUSED' | 'DELETED') => void)
+    | ((
+        item: TourDepartureV1,
+        status: 'ACTIVE' | 'PAUSED' | 'DELETED',
+        sites?: string[],
+      ) => void)
     | undefined;
   definitionMode?: boolean;
   packages: TourPackageV1[];
@@ -66,7 +72,7 @@ export function TourOverview({
   loading: boolean;
   busy: boolean;
   onEdit: (item: TourPackageV1) => void;
-  onDelete?: (item: TourPackageV1) => void;
+  onDelete?: (item: TourPackageV1, sites?: string[]) => void;
   onSelect: (item: TourPackageV1) => void;
   onRepeat: (item: TourDepartureV1) => void;
 }) {
@@ -301,7 +307,7 @@ export function TourOverview({
                                     ? 'فعال‌سازی بازه'
                                     : 'توقف بازه'}
                                 </Button>
-                                <ConfirmDialog
+                                <SiteDeleteDialog
                                   trigger={
                                     <Button
                                       variant="destructive"
@@ -312,9 +318,15 @@ export function TourOverview({
                                   }
                                   title="حذف بازه"
                                   description="این بازه از انتخاب‌های جدید حذف می‌شود؛ سوابق قراردادها و قیمت‌های قبلی حفظ می‌شوند."
-                                  destructive
-                                  onConfirm={() =>
-                                    onPeriodStatus(item, 'DELETED')
+                                  loadSites={() =>
+                                    toursApi.deletionSites(
+                                      'tour',
+                                      item.id,
+                                      item.branchId,
+                                    )
+                                  }
+                                  onConfirm={(sites) =>
+                                    onPeriodStatus(item, 'DELETED', sites)
                                   }
                                 />
                               </>
@@ -393,7 +405,7 @@ export function TourOverview({
                   {definitionMode ? 'مدیریت نوبت' : 'ثبت نوبت'}
                 </Button>
                 {definitionMode && (
-                  <ConfirmDialog
+                  <SiteDeleteDialog
                     trigger={
                       <Button variant="destructive" disabled={busy}>
                         <Trash2 aria-hidden size={15} />
@@ -402,8 +414,14 @@ export function TourOverview({
                     }
                     title="حذف تور"
                     description="تور فقط وقتی حذف می‌شود که هیچ نوبت ثبت‌شده‌ای نداشته باشد. سوابق سفر حفظ می‌شوند."
-                    destructive
-                    onConfirm={() => onDelete?.(item)}
+                    loadSites={() =>
+                      toursApi.deletionSites(
+                        'floating-tour',
+                        item.id,
+                        item.branchId,
+                      )
+                    }
+                    onConfirm={(sites) => onDelete?.(item, sites)}
                   />
                 )}
               </div>

@@ -17,14 +17,27 @@ function setup({
   lockCount = 1,
   departures = 0,
   exists = true,
-}: { lockCount?: number; departures?: number; exists?: boolean } = {}) {
+  floatingPrices = false,
+}: {
+  lockCount?: number;
+  departures?: number;
+  exists?: boolean;
+  floatingPrices?: boolean;
+} = {}) {
   const updateMany = vi.fn(async () => ({ count: lockCount }));
   const findFirst = vi.fn(async () => (exists ? { id } : null));
   const deleteMany = vi.fn(async () => ({ count: 1 }));
   const count = vi.fn(async () => departures);
+  const update = vi.fn();
   const tx = {
-    tourPackage: { updateMany, findFirst, deleteMany },
+    websitePublication: { findMany: vi.fn().mockResolvedValue([]) },
+    tourPackage: { updateMany, findFirst, deleteMany, update },
     tourDeparture: { count },
+    floatingTourSaleCatalog: {
+      findUnique: vi
+        .fn()
+        .mockResolvedValue(floatingPrices ? { packageId: id } : null),
+    },
   };
   const transaction = vi.fn(
     async (run: (client: typeof tx) => Promise<unknown>) => run(tx),
@@ -37,6 +50,7 @@ function setup({
       references as unknown as MasterTravelDirectory,
     ),
     updateMany,
+    update,
     findFirst,
     deleteMany,
     count,
@@ -51,7 +65,7 @@ describe('tour definition deletion', () => {
       service.deletePackage(id, { expectedVersion: 3 }, salesActor, branch),
     ).resolves.toEqual({ data: { id, deleted: true } });
     expect(updateMany).toHaveBeenCalledWith({
-      where: { id, branchId: branch, version: 3 },
+      where: { id, branchId: branch, version: 3, archivedAt: null },
       data: { version: { increment: 0 } },
     });
     expect(count).toHaveBeenCalledWith({
@@ -60,6 +74,18 @@ describe('tour definition deletion', () => {
     expect(deleteMany).toHaveBeenCalledWith({
       where: { id, branchId: branch, version: 3 },
     });
+  });
+
+  it('archives a floating tour with retained sale prices', async () => {
+    const { service, update, deleteMany } = setup({ floatingPrices: true });
+    await expect(
+      service.deletePackage(id, { expectedVersion: 3 }, salesActor, branch),
+    ).resolves.toEqual({ data: { id, deleted: true } });
+    expect(update).toHaveBeenCalledWith({
+      where: { id },
+      data: { archivedAt: expect.any(Date), version: { increment: 1 } },
+    });
+    expect(deleteMany).not.toHaveBeenCalled();
   });
 
   it('protects tours that already have departures and retains the package row', async () => {

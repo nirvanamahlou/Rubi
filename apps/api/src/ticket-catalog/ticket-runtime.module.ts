@@ -195,22 +195,32 @@ class TicketOffersController {
   ) {
     return this.service.revise(offerId, input, req.actor);
   }
+  @Get(':offerId/deletion-sites') deletionSites(
+    @Param('offerId') offerId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.deletionSites(offerId, req.actor);
+  }
   @Delete('batch') archiveBatch(
     @Body()
-    input: { items: readonly { id: string; expectedVersion: number }[] },
+    input: {
+      items: readonly { id: string; expectedVersion: number }[];
+      siteCodes?: unknown;
+    },
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.archiveBatch(input, req.actor);
   }
   @Delete(':offerId') archiveExpired(
     @Param('offerId') offerId: string,
-    @Body() input: { expectedVersion: number },
+    @Body() input: { expectedVersion: number; siteCodes?: unknown },
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.archiveExpired(
       offerId,
       input?.expectedVersion,
       req.actor,
+      input?.siteCodes,
     );
   }
   @Post() publish(

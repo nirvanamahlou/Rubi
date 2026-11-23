@@ -33,6 +33,10 @@ function readBindings(raw: string) {
   return bindings;
 }
 
+export function commerceBindingSites() {
+  return Object.keys(readBindings(process.env.SITE_COMMERCE_BINDINGS ?? '{}'));
+}
+
 export function actorSite(actor: AuthenticatedActor) {
   const bindings = readBindings(process.env.SITE_COMMERCE_BINDINGS ?? '{}');
   const matches = Object.keys(bindings).filter(
