@@ -12922,6 +12922,10 @@ Isolated work item for Nora OpenAI Responses adapter, agent and guide integratio
 
 Owner requests no product consumption quotas for native danial/demo identities and provider failover Groq/OpenAI for their questions. Base bd301dda3; branch codex/pc-c-nora-provider-failover-1122. Reserve assistant agent-config/data-agent/server/groq-key-pool, a new failover helper and focused tests, own task/status notes. Reuse operator UUID exemption list; never trust client names/headers. Preserve ordinary-user quotas, native authentication/current-scope revalidation, output/evidence/tool validation, wire-size and finite request/turn/query safety bounds. Remove cumulative token/transport-attempt consumption quotas only in trusted exempt request context, audit actual provider usage and fail over only provider quota errors. No migration/dependency/public contract or permission grant changes. Existing Nora source scopes on other branches remain frozen; do not edit peer worktrees.
 
+## NORA-BUSINESS-READ-GRANTS-1123 — PC-C
+
+Owner authorizes read-only business-data access for danial and demo and confirms module-owner consent. Reserve the IAM-owned assistant grant lookup, Sales assistant scope, Reporting assistant aggregate endpoint, Assistant Web consumer and targeted tests. Based on PR #1899 head da897be46. No IAM role commands, database grants, migration, dependency or deployment changes.
+
 ## NORA-OPERATIONAL-READS-1123 — PC-C
 
 Base develop d3e0fdd48. Owner authorizes read-only integration with ERP module sources. Reserve the Assistant dashboard metric reader, bounded Composer dispatch, focused tests and status. Reuse Reporting's existing authenticated native dashboard projection and producer authorization. No schema, dependency, IAM, provider or producer changes.

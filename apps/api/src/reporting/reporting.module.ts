@@ -6,6 +6,7 @@ import { IamModule } from '../iam/iam.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { SettingsModule } from '../settings/settings.module';
 import { ReportingController } from './reporting.controller';
+import { NoraMetricsController } from './nora-metrics.controller';
 import { ReportingService } from './reporting.service';
 import { ReportingRepository } from './reporting.repository';
 import { ReportingExportQueue } from './reporting-export-queue.service';
@@ -30,7 +31,7 @@ import { SalesDashboardCustomersModule } from '../sales/sales-dashboard-customer
     SalesDashboardPaymentsModule,
     SalesDashboardCustomersModule,
   ],
-  controllers: [ReportingController],
+  controllers: [ReportingController, NoraMetricsController],
   providers: [
     ReportingService,
     ReportingNativeDashboard,
