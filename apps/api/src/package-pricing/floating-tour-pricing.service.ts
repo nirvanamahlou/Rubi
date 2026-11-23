@@ -30,6 +30,10 @@ import {
   type FloatingHotelReference,
 } from './floating-tour-import';
 import { floatingWebsitePeriods } from './floating-tour-publication';
+import {
+  changeFloatingPeriod,
+  readFloatingPeriodChange,
+} from './floating-period-change';
 
 const flightClock = Joi.string().pattern(/^(?:[01]\d|2[0-3]):[0-5]\d$/);
 const airport = Joi.object({
@@ -241,6 +245,7 @@ export class FloatingTourPricingService {
           ? (prices?.dated ?? [])
               .filter(
                 (price) =>
+                  !price.salesStopped &&
                   price.startsOn === period.startsOn &&
                   price.nights === period.nights,
               )
@@ -252,7 +257,10 @@ export class FloatingTourPricingService {
               calendar: prices.monthly.calendar,
               months: prices.monthly.months,
               rows: prices.monthly.rows
-                .filter((price) => price.nights === period.nights)
+                .filter(
+                  (price) =>
+                    !price.salesStopped && price.nights === period.nights,
+                )
                 .map(project),
             }
           : null,
@@ -321,6 +329,57 @@ export class FloatingTourPricingService {
           version: row.version,
         }
       : { version: 0, dated: [], monthly: null };
+  }
+  async changePeriod(
+    id: string,
+    raw: unknown,
+    actor: AuthenticatedActor,
+  ): Promise<FloatingTourSaleSet> {
+    this.authorize(actor, true);
+    const command = readFloatingPeriodChange(raw);
+    const { row } = await this.definition(id, actor);
+    return this.db.client.$transaction(async (tx) => {
+      const locked = await tx.tourPackage.updateMany({
+        where: { id, branchId: row.branchId, version: row.version },
+        data: { version: row.version },
+      });
+      if (locked.count !== 1)
+        throw new ConflictException('نسخه تور تغییر کرده است.');
+      const existing = await tx.floatingTourSaleCatalog.findUnique({
+        where: { packageId: id },
+      });
+      if (!existing || existing.version !== command.expectedVersion)
+        throw new ConflictException('نسخه قیمت تغییر کرده است.');
+      const current = {
+        ...(existing.payload as unknown as FloatingTourSaleSet),
+        version: existing.version,
+      };
+      const payload = changeFloatingPeriod(current, command);
+      const changed = await tx.floatingTourSaleCatalog.updateMany({
+        where: { packageId: id, version: command.expectedVersion },
+        data: {
+          version: payload.version,
+          payload: payload as unknown as Prisma.InputJsonValue,
+        },
+      });
+      if (changed.count !== 1)
+        throw new ConflictException('نسخه قیمت تغییر کرده است.');
+      await tx.floatingTourSaleImport.create({
+        data: {
+          packageId: id,
+          version: payload.version,
+          actorUserId: actor.userId,
+          digest: createHash('sha256')
+            .update(JSON.stringify(command))
+            .digest('hex'),
+          payload: {
+            operation: command,
+            previous: current,
+          } as unknown as Prisma.InputJsonValue,
+        },
+      });
+      return payload;
+    });
   }
   async template(
     id: string,
@@ -523,6 +582,22 @@ export class FloatingTourPricingService {
       const touched = new Set(
         preview.rows.map((r) => `${r.startsOn}/${r.nights}`),
       );
+      const stoppedDated = new Set(
+        (current?.dated ?? [])
+          .filter((r) => r.salesStopped)
+          .map((r) => `${r.startsOn}/${r.nights}`),
+      );
+      const sameMonthly =
+        current?.monthly?.calendar === preview.options.calendar &&
+        JSON.stringify([...(current?.monthly?.months ?? [])].sort()) ===
+          JSON.stringify([...(preview.options.months ?? [])].sort());
+      const stoppedMonthly = new Set(
+        sameMonthly
+          ? current?.monthly?.rows
+              .filter((r) => r.salesStopped)
+              .map((r) => r.nights)
+          : [],
+      );
       const payload: FloatingTourSaleSet = {
         version: expectedVersion + 1,
         dated:
@@ -531,7 +606,11 @@ export class FloatingTourPricingService {
                 ...(current?.dated ?? []).filter(
                   (r) => !touched.has(`${r.startsOn}/${r.nights}`),
                 ),
-                ...preview.rows,
+                ...preview.rows.map((r) =>
+                  stoppedDated.has(`${r.startsOn}/${r.nights}`)
+                    ? { ...r, salesStopped: true }
+                    : r,
+                ),
               ]
             : (current?.dated ?? []),
         monthly:
@@ -539,7 +618,11 @@ export class FloatingTourPricingService {
             ? {
                 calendar: preview.options.calendar!,
                 months: preview.options.months!,
-                rows: preview.rows,
+                rows: preview.rows.map((r) =>
+                  stoppedMonthly.has(r.nights)
+                    ? { ...r, salesStopped: true }
+                    : r,
+                ),
               }
             : (current?.monthly ?? null),
       };

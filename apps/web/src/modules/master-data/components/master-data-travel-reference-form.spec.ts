@@ -95,7 +95,9 @@ describe('travel reference form fields', () => {
         'aria-describedby="visa-services-requiredDocumentNames-help"',
       );
       expect(html).toContain('افزودن مدرک');
-      expect(html).not.toContain('type="file"');
+      expect(html.match(/type="file"/g)).toHaveLength(2);
+      expect(html).toContain('id="visa-services-sourceMainImage"');
+      expect(html).toContain('id="visa-services-sourceGalleryImages" multiple');
       expect(html).not.toContain('passportNumber');
       expect(html).not.toContain('نوع اعتبار مرجع');
       expect(html).not.toContain('visa-services-referenceValidityMode');

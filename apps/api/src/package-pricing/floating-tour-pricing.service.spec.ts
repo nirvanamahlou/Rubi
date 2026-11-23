@@ -178,6 +178,67 @@ function fixture() {
   };
 }
 beforeEach(() => vi.clearAllMocks());
+it('manages imported periods with permissions, optimistic versioning, audit and publication state', async () => {
+  const f = fixture();
+  const bytes = workbook();
+  const preview = await f.service.preview('tour', bytes, options, actor);
+  await f.service.commit(
+    'tour',
+    bytes,
+    options,
+    preview.expectedVersion,
+    preview.digest,
+    actor,
+  );
+  const command = {
+    expectedVersion: 1,
+    periodKey: 'dated:2026-08-01:7',
+    action: 'STOP',
+  };
+  await expect(
+    f.service.changePeriod('tour', command, {
+      ...actor,
+      permissions: ['package_pricing.read'],
+    }),
+  ).rejects.toThrow();
+  await expect(
+    f.service.changePeriod('tour', command, { ...actor, branchIds: ['other'] }),
+  ).rejects.toThrow();
+  const stopped = await f.service.changePeriod('tour', command, actor);
+  expect(stopped.version).toBe(2);
+  expect(stopped.dated[0]?.salesStopped).toBe(true);
+  expect(f.imports).toHaveLength(2);
+  expect(f.imports[1]).toMatchObject({
+    actorUserId: actor.userId,
+    payload: { operation: command, previous: { version: 1 } },
+  });
+  await expect(f.service.changePeriod('tour', command, actor)).rejects.toThrow(
+    'نسخه قیمت تغییر کرده است.',
+  );
+  await expect(
+    f.service.websiteProduct('tour', actor.branchIds, command.periodKey),
+  ).rejects.toThrow();
+  const reimport = await f.service.preview('tour', bytes, options, actor);
+  const replaced = await f.service.commit(
+    'tour',
+    bytes,
+    options,
+    reimport.expectedVersion,
+    reimport.digest,
+    actor,
+  );
+  expect(replaced.dated[0]?.salesStopped).toBe(true);
+  const resumed = await f.service.changePeriod(
+    'tour',
+    { ...command, expectedVersion: replaced.version, action: 'RESUME' },
+    actor,
+  );
+  expect(resumed.dated[0]?.salesStopped).toBe(false);
+  expect(
+    (await f.service.websiteProduct('tour', actor.branchIds, command.periodKey))
+      .dated,
+  ).toHaveLength(1);
+});
 it('requires hotel resolution before issuing a commit digest for the same workbook', async () => {
   const f = fixture();
   const id = '12345678-1234-4234-8234-123456789abc';

@@ -1,8 +1,6 @@
-## Nora ERP data coverage
+## Visa service website publication
 
-The Assistant Read service admits the existing Sales hotel-ranking POST when the data agent is enabled. The endpoint retains native Sales company, branch and contract scope. Adding a Sales controller route alone does not admit its POST through this service.
-
-ERP-wide data coverage is pending. Register module-owned read sources with explicit permissions, scope, returned columns and metric definitions. Reuse internal reporting producers where their authorization and data contracts match. Map administrative business-data reads to native IAM grants and immutable account IDs. Keep credentials and authentication storage outside the catalog. Verify administrative and limited roles independently.
+Avina stores one main visa photo and up to six gallery photos. The Visa Services row action sends the saved public profile to Jahan Bastan, Ghestiroo, or Niyayesh Seir using the signed publication API. The payload includes document names and excludes guidance attachments and supplier references.
 
 ## Nora composite guide follow-up checks
 
@@ -219,6 +217,12 @@ OpenAI Responses write access and Sol function continuation verified. All 217 se
 ## NORA-BUDGET-MESSAGE-1123 — PC-C
 
 Production diagnostics for the November 23 incident showed eight successful GPT-4.1 calls before the request failed. The affected actor matched a configured consumption exemption. The Web proxy now keeps Agent analysis-budget exhaustion distinct from admission and provider rate limits without forwarding private upstream error details.
+
+## Nora ERP data coverage
+
+The Assistant Read service admits the existing Sales hotel-ranking POST when the data agent is enabled. The endpoint retains native Sales company, branch and contract scope. Adding a Sales controller route alone does not admit its POST through this service.
+
+ERP-wide data coverage is pending. Register module-owned read sources with explicit permissions, scope, returned columns and metric definitions. Reuse internal reporting producers where their authorization and data contracts match. Map administrative business-data reads to native IAM grants and immutable account IDs. Keep credentials and authentication storage outside the catalog. Verify administrative and limited roles independently.
 
 ## NORA-PRIVILEGED-FAILOVER-1122 — PC-C
 
@@ -10625,3 +10629,7 @@ CALL-CENTER-TODAY-FILTER-STYLE-1116: today's dialog initially focuses its title 
 ## Automatic hotel identification
 
 New hotels receive an HTL identifier on save using the established city prefix and a persistent global sequence. Excel inserts share the allocator. Existing identification codes remain available for publication and existing records keep their identifiers.
+
+## DASHBOARD-AVAILABILITY-NOTES — PC-C
+
+Archived dashboard widget availability reasons and expected data in docs/DASHBOARD-DATA-GAPS.md, ordered by the dashboard navigation. Removed long availability and coverage notes from cards and charts. Compact unavailable and empty states, chart units and genuine zeros remain. Dashboard suite: 62 passed, one existing skip.
