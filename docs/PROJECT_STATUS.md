@@ -199,12 +199,6 @@ PR1768 UI is active in ERP with PR1769 Persian/source presentation preserved. Pu
 
 OpenAI Responses write access and Sol function continuation verified. All 217 service tests passed locally and in the isolated server candidate. All 30 synthetic acceptance scenarios passed across the matrix and targeted reruns. Both models encountered transient socket failures. Median duration across 16 paired successful model scenarios: 19.5 seconds Sol, 9.9 seconds GPT-4.1. Persian month default verified from fixed Tehran boundaries without model calls. PR1879 requires final CI and guarded activation.
 
-## NORA-HOTEL-ANALYSIS-1123 — PC-C
-
-Removed the fixed model-turn stop in Nora v3. Existing request deadline, evidence validation, SQL budget, account admission and provider quota remain enforced. At the SQL budget, the model is offered the final response action only.
-
-A read-only production audit found 469 master hotels, 34 master countries and 193 saved hotel stays with a hotel snapshot and a country link. Nora now uses a native Sales report for supported Persian requests for top hotels by country. The report counts distinct eligible contracts per hotel, uses the existing public Master Data lookup and excludes Sales and Reservations cancellations. Deploy the API endpoint before enabling the consumer. No database migration is needed.
-
 ## NORA-PRIVILEGED-FAILOVER-1122 — PC-C
 
 Trusted native danial/demo exemptions verified; hybrid provider quota failover implemented in both directions, including guide selection. Ordinary quotas and all evidence/access/deadline/finite execution guards preserved.213 service tests pass. No migration/dependency/billing or credential changes. Exact-head hosted CI and guarded native-only activation remain required. See docs/tasks/NORA-PRIVILEGED-FAILOVER-1122.md.
@@ -220,6 +214,12 @@ and future-tool rules preserve this convention without expanding data access.
 110 service,235 Web and81 API/boundary tests pass; prior head's all10 hosted
 gates passed, with fresh refined-head CI required. No Production change
 or migration. Details: [NORA-COUNT-BREAKDOWN-1116](tasks/NORA-COUNT-BREAKDOWN-1116.md).
+
+## NORA-HOTEL-ANALYSIS-1123 — PC-C
+
+Removed the fixed model-turn stop in Nora v3. Existing request deadline, evidence validation, SQL budget, account admission and provider quota remain enforced. At the SQL budget, the model is offered the final response action only.
+
+A read-only production audit found 469 master hotels, 34 master countries and 193 saved hotel stays with a hotel snapshot and a country link. Nora now uses a native Sales report for supported Persian requests for top hotels by country. The report counts distinct eligible contracts per hotel, uses the existing public Master Data lookup and excludes Sales and Reservations cancellations. Deploy the API endpoint before enabling the consumer. No database migration is needed.
 
 ## SITE-MANAGEMENT-1116 — PC-A — READY_FOR_CI
 
