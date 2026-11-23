@@ -232,7 +232,7 @@ or migration. Details: [NORA-COUNT-BREAKDOWN-1116](tasks/NORA-COUNT-BREAKDOWN-11
 
 ## NORA-HOTEL-RANKING-PHRASING-1123 — PC-C
 
-Workbench now routes informal questions about most-contracted hotels to the authorized Sales hotel report. Without a date, use and disclose a recent 30-day window. Explicit ranking windows and data scope remain supported. No API contract or database change.
+Workbench now routes informal questions about most-contracted hotels to the authorized Sales hotel report. Without a date, use and disclose a recent 30-day window. Explicit ranking windows and data scope remain supported. No API contract or database change. PR1890 passed all nine CI checks, merged to develop and was activated on production. Both reported phrases returned an evidence-backed ranking in a read-only component smoke against one production branch. Signed-in browser verification was unavailable.
 
 ## NORA-HOTEL-ANALYSIS-1123 — PC-C
 
