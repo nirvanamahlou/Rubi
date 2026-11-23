@@ -154,7 +154,7 @@ A Groq adapter is available only through explicit trusted test injection; server
 
 ## Live messages-only opt-in — 2026-10-20
 
-The default remains disabled. The owner has approved Groq for message/session text only. Set ASSISTANT_CONVERSATION_ENABLED=true, ASSISTANT_MODEL_PROVIDER=groq, ASSISTANT_DATA_POLICY=messages-only and a private GROQ_API_KEY in the service environment. This supersedes the earlier synthetic-only runtime gate for this explicit opt-in. No ERP tool result is sent to Groq. REPLY returns plain general conversation; ACTION and CLARIFY preserve the existing fixed contracts. Six-second model deadline, no retries. Quick reports remain usable if the provider fails. See ../../docs/tasks/ASSISTANT-LIVE-CHAT-1020.md.
+The default remains disabled. The owner has approved Groq for message/session text only. Set ASSISTANT_CONVERSATION_ENABLED=true, ASSISTANT_MODEL_PROVIDER=groq, ASSISTANT_DATA_POLICY=messages-only and a private GROQ_API_KEY in the service environment. This supersedes the earlier synthetic-only runtime gate for this explicit opt-in. No ERP tool result is sent to Groq. The current source policy replaces REPLY text with a fixed request for an internal panel, workflow or report. ACTION and CLARIFY preserve the existing fixed contracts. Six-second model deadline, no retries. Quick reports remain usable if the provider fails. See ../../docs/tasks/ASSISTANT-LIVE-CHAT-1020.md.
 
 ## Workbench procedural guidance —2026-11-15
 

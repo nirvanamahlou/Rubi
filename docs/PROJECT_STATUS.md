@@ -1,6 +1,11 @@
 ## Nora composite guide pilot
 
 PC-C added the Sales pre-send checklist and ordered leave request and follow-up guidance using the approved guide index. The authenticated checklist selector honors the server flag `ASSISTANT_GUIDE_RAG_ENABLED` and the established model transport. It uses only Sales guide excerpts and falls back to the approved steps. Owner approved transfer of the question and approved excerpts for this scope. Three synthetic pre-send variants passed mandatory-step validation against the configured Germany model. The model returned 9, 12 and 9 of 16 canonical steps with 820/122, 816/236 and 818/161 input/output tokens and 1153, 1358 and 1517 ms provider-path latency. Both direct and model paths provided the required next actions with one exchange in these cases. Keep the production flag disabled under the pilot rollout criterion. The leave workflow and simple questions stay direct.
+
+## NORA-INTERNAL-SOURCES-ONLY-1123 — PC-C
+
+Nora serves local internal procedures and verified ERP evidence. Unsupported model prose is replaced by a fixed request for scope in both conversation versions.
+
 ## NORA-TRAVEL-DOCUMENT-GUIDANCE-1123 — PC-C
 
 Nora routes procedural ticket and hotel voucher questions to the linked internal Sales guide, even after a report answer. The guide uses the approved Reservations and Finance delivery workflow.
@@ -193,6 +198,10 @@ User authorizes latest develop Avina deployment with all data preserved. Reserve
 ## NORA-CHAT-SCROLL-RELEASE-1117 — PC-C — VERIFIED
 
 PR1768 UI is active in ERP with PR1769 Persian/source presentation preserved. Published Web build08Ajp-thgUW8QA5lVntoo;291 integrated tests and server compile/type/Agent admission pass. Authenticated browser confirms immediate messages, waiting spinner, transcript bottom scrolling, pause while reading, latest arrow, next-draft and close/reopen retention. No SQL/financial acceptance claim, migration, business writes or non-Web replacement. [Release receipt](tasks/NORA-CHAT-SCROLL-RELEASE-1117.md).
+
+## NORA-SOL-1123 — PC-C
+
+OpenAI Responses write access and Sol function continuation verified. All 217 service tests passed locally and in the isolated server candidate. All 30 synthetic acceptance scenarios passed across the matrix and targeted reruns. Both models encountered transient socket failures. Median duration across 16 paired successful model scenarios: 19.5 seconds Sol, 9.9 seconds GPT-4.1. Persian month default verified from fixed Tehran boundaries without model calls. PR1879 requires final CI and guarded activation.
 
 ## NORA-PRIVILEGED-FAILOVER-1122 — PC-C
 
@@ -10567,3 +10576,9 @@ Antalya Iran Airtour and Kuala Lumpur plus Singapore XLSX formats now import to 
 کاتالوگ امضاشده تحویل می‌دهد. تنظیم‌های پیش‌نمایش، توقف فروش و اجازهٔ انتشار
 پروفایل هتل برای همان مقصد ذخیره می‌شوند. دریافت، ذخیره و نمایش در قسطی‌رو
 از مسیر نسخه‌بندی‌شده بررسی می‌شود. دریافت سفارش تور در اتصال قسطی‌رو غیرفعال است.
+
+## 2026-11-23 — ACCOUNTING-NAV-CONTRAST-1123 — PC-D
+
+The compact General Ledger menu uses legible labels and icons, distinct group and list colors, an inline marker for the current page, and a visible keyboard focus outline in both themes. The existing menu structure, dimensions, and destinations are preserved.
+
+Chromium verified selected and unselected rows, group and list toggles, keyboard focus and responsive widths. The visible label contrast on the fiscal-year route measured at least 5.10:1 in light mode and 6.05:1 in dark mode.

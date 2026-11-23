@@ -1,3 +1,8 @@
+import {
+  OPENAI_ENDPOINT,
+  responsesRequest,
+  responsesResult,
+} from './openai-responses.mjs';
 import catalog from './workbench-guides.json' with { type: 'json' };
 import callCenter from './call-center-guides.json' with { type: 'json' };
 import { ServiceError } from './errors.mjs';
@@ -44,6 +49,7 @@ export function createWorkbenchGuideSelector({
         retryTokens: 0,
         ...(consumptionExempt ? { maxAttempts: Number.MAX_SAFE_INTEGER } : {}),
       };
+      let usedOpenAI = false;
       const fetchWithFailover = async (url, init, options) => {
         const response = await (transport?.fetch ?? fetcher)(
           url,
@@ -55,11 +61,13 @@ export function createWorkbenchGuideSelector({
         await response.body?.cancel();
         if (beforeRetry) await beforeRetry();
         if (signal.aborted) throw new ServiceError(503, 'AGENT_TIMEOUT');
-        const body = JSON.parse(init.body);
-        body.model = 'gpt-4.1';
-        delete body.reasoning_effort;
+        usedOpenAI = true;
+        const body = responsesRequest(
+          { ...JSON.parse(init.body), max_completion_tokens: 1024 },
+          'low',
+        );
         return openaiTransport.fetch(
-          'https://api.openai.com/v1/chat/completions',
+          OPENAI_ENDPOINT,
           { ...init, body: JSON.stringify(body) },
           options,
         );
@@ -129,7 +137,8 @@ export function createWorkbenchGuideSelector({
         await response.body?.cancel();
         return fallback();
       }
-      const body = await boundedAgentJson(response, 16384);
+      const payload = await boundedAgentJson(response, 16384);
+      const body = usedOpenAI ? responsesResult(payload) : payload;
       const calls = body.choices?.[0]?.message?.tool_calls;
       if (
         !Array.isArray(calls) ||
