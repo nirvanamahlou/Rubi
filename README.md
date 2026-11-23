@@ -1,5 +1,10 @@
 # Nora Airline CRM
 
+Rubi is a Persian-language CRM and operations platform for travel agencies. Staff can follow a sale from the customer record through passenger details, travel services, contract pricing, and document output. The application also covers agency and corporate accounts and HR workflows.
+
+The right-to-left interface uses Next.js and TypeScript. NestJS serves the REST API, with PostgreSQL and Prisma for persistence. The modules are at different stages of development. See the [project status](PROJECT_STATUS.md) for implementation details.
+
+
 Nora یک CRM ماژولار برای شرکت خدمات مسافرتی و هواپیمایی است. Repository به‌صورت
 Modular Monolith در یک pnpm/Turborepo monorepo پیاده‌سازی می‌شود. رابط کاربری فارسی و
 RTL است و نام‌گذاری کد، API و دیتابیس انگلیسی باقی می‌ماند.
