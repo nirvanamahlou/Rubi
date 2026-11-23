@@ -337,7 +337,7 @@ function PeriodCard({
             setError('');
           }}
         >
-          انصراف از ویرایش
+          انصراف
         </Button>
       )}
       {error && (
