@@ -24,10 +24,15 @@ export function travelReferenceFormValues(
     values.referenceValidityMode = String(
       record?.attributes.referenceValidityMode ?? 'DAYS',
     );
-  if (resource === 'visa-services')
+  if (resource === 'visa-services') {
     values.requiredDocumentNames = JSON.stringify(
       requiredDocumentNames(record?.attributes.requiredDocumentNames),
     );
+    values.sourceMainImage = String(record?.attributes.sourceMainImage ?? '');
+    values.sourceGalleryImages = String(
+      record?.attributes.sourceGalleryImages ?? '',
+    );
+  }
   values.status = record?.status ?? 'active';
   return values;
 }

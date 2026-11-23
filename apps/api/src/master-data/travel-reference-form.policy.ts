@@ -4,6 +4,37 @@ import type { AuthenticatedActor } from '@nora/contracts';
 type Resource = 'transfer-types' | 'visa-services';
 type Values = Record<string, string | number | readonly string[] | null>;
 
+function visaImagePath(value: string): string {
+  const path = URL.parse(value, 'https://avinaofficial.ir')?.pathname;
+  if (
+    !path ||
+    !/^\/api\/v1\/master-data\/hotel-images\/[a-f0-9]{64}\.webp$/.test(path)
+  )
+    throw new BadRequestException('عکس باید از فرم بارگذاری شود.');
+  return path;
+}
+
+function normalizeVisaImages(values: Values) {
+  for (const [key, max] of [
+    ['sourceMainImage', 1],
+    ['sourceGalleryImages', 6],
+  ] as const) {
+    if (!Object.hasOwn(values, key)) continue;
+    const raw = values[key];
+    if (raw !== null && typeof raw !== 'string')
+      throw new BadRequestException('عکس باید از فرم بارگذاری شود.');
+    const urls = (raw ?? '')
+      .split('|')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    if (urls.length > max)
+      throw new BadRequestException(
+        'یک عکس اصلی و حداکثر ۶ عکس گالری مجاز است.',
+      );
+    values[key] = urls.length ? urls.map(visaImagePath).join('|') : null;
+  }
+}
+
 export function prepareTravelReferenceForm(
   resource: Resource,
   input: Values,
@@ -11,6 +42,7 @@ export function prepareTravelReferenceForm(
   creating: boolean,
 ) {
   const values = { ...input };
+  if (resource === 'visa-services') normalizeVisaImages(values);
   const statusData: Record<string, unknown> = {};
   const textFields = [
     ['name', 160],
