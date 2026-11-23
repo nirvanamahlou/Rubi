@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { allowsAssistantReadRequest } from './request-policy';
 describe('Assistant read HTTP boundary', () => {
-  it.each(['query', 'count-breakdown'])(
+  it.each(['query', 'count-breakdown', 'hotel-ranking'])(
     'permits the authenticated read-only %s command only when enabled',
     (route) => {
       const path = '/api/v1/sales/assistant-agent/' + route;
@@ -14,6 +14,7 @@ describe('Assistant read HTTP boundary', () => {
     '/api/v1/sales/contracts',
     '/api/v1/sales/assistant-agent/count-breakdown/extra',
     '/api/v1/sales/assistant-agent/query/',
+    '/api/v1/sales/assistant-agent/hotel-ranking/extra',
   ])('keeps mutation and unrecognized paths blocked: %s', (path) => {
     expect(allowsAssistantReadRequest('POST', path, true)).toBe(false);
     expect(allowsAssistantReadRequest('PATCH', path, true)).toBe(false);
