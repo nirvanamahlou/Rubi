@@ -7070,5 +7070,20 @@
   "کوالالامپور + سنگاپور · ایران ایرتور": "Kuala Lumpur + Singapore · Iran Airtour",
   "هزینه پرواز": "Flight cost",
   "هزینه پرواز بزرگسال": "Adult flight cost",
-  "هزینه پرواز کودک": "Child flight cost"
+  "هزینه پرواز کودک": "Child flight cost",
+  "، در محدودهٔ شعب مجاز شما، **": ", across the branches you can access, **",
+  "** است.": "**.",
+  "اسناد ایجادشده در آرشیو": "Documents created in the archive",
+  "اسناد صدور ثبت‌شدهٔ رزرواسیون": "Issuance documents recorded by Reservations",
+  "اضافه‌کاری ثبت‌شدهٔ کارکنان": "Recorded employee overtime",
+  "این شاخص فقط در نمای «همه شرکت‌ها» و در محدودهٔ دسترسی شما قابل خواندن است.": "This metric is available in the All companies view within your access scope.",
+  "بازه را مشخص کنید. امروز، هفتهٔ جاری یا ماه جاری شمسی؟": "Which period should I use: today, this week, or the current Persian month?",
+  "حساب شما مجوز مشاهدهٔ این شاخص را ندارد.": "Your account cannot view this metric.",
+  "درخواست‌های پشتیبانی ثبت‌شدهٔ مشتریان": "Recorded customer support requests",
+  "دریافت شاخص از ERP ناموفق بود. دوباره تلاش کنید.": "The metric could not be loaded from ERP. Try again.",
+  "روزهای کارکرد ثبت‌شدهٔ کارکنان": "Recorded employee workdays",
+  "عدد تأییدشدهٔ این شاخص در دسترس نیست.": "A verified value for this metric is unavailable.",
+  "ماه جاری شمسی تا اکنون": "Current Persian month to date",
+  "مشتریان ثبت‌نام‌شده": "Registered customers",
+  "هفتهٔ جاری تا اکنون": "Current week to date"
 }

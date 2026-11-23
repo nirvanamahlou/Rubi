@@ -50,12 +50,16 @@ const periods = {
   'ماه جاری': { range: 'month', label: 'ماه جاری شمسی تا اکنون' },
 } as const;
 
+const questionPrefix = /^(?:لطفا )?/u;
+const questionSuffix =
+  /(?: (امروز|این هفته|هفته جاری|این ماه|ماه جاری))?(?: (?:چقدر بود|چقدر است|چقدره|چند تاست|چند بود|رو بگو|را بگو|بگو))?$/u;
+
 export function resolveOperationalMetric(question: string) {
   const text = normalizeQuestion(question);
   for (const metric of metrics) {
     // Only admit complete recognized queries. Extra filters must never be ignored.
     const match = new RegExp(
-      `^(?:لطفا )?(?:${metric.phrase.source})(?: (امروز|این هفته|هفته جاری|این ماه|ماه جاری))?(?: (?:چقدر بود|چقدر است|چقدره|چند تاست|چند بود|رو بگو|را بگو|بگو))?$`,
+      `${questionPrefix.source}(?:${metric.phrase.source})${questionSuffix.source}`,
       'u',
     ).exec(text);
     if (!match) continue;
