@@ -31,6 +31,7 @@ import {
 import { MasterDataClearableField } from './master-data-clearable-field';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
 import { MasterDataReferenceSelector } from './master-data-reference-selector';
+import { HotelImageUpload } from './hotel-images';
 
 export function MasterDataTravelReferenceForm({
   resource,
@@ -53,6 +54,8 @@ export function MasterDataTravelReferenceForm({
   const [saving, setSaving] = useState(false);
   const [documentName, setDocumentName] = useState('');
   const savingRef = useRef(false);
+  const uploadingRef = useRef(false);
+  const [uploading, setUploading] = useState(false);
   const change = (key: string, value: string) =>
     setValues((current) => ({
       ...current,
@@ -82,7 +85,7 @@ export function MasterDataTravelReferenceForm({
   };
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (savingRef.current) return;
+    if (savingRef.current || uploadingRef.current) return;
     const result = validateTravelReferenceForm(resource, values);
     setErrors(result.errors);
     if (!result.success) return;
@@ -106,7 +109,7 @@ export function MasterDataTravelReferenceForm({
       open
       title={`${record ? 'ویرایش' : 'ایجاد'} ${definition.singularLabel}`}
       onOpenChange={(open) => {
-        if (!savingRef.current) onOpenChange(open);
+        if (!savingRef.current && !uploadingRef.current) onOpenChange(open);
       }}
     >
       <form
@@ -318,18 +321,31 @@ export function MasterDataTravelReferenceForm({
             </FormField>
           ) : null}
         </div>
+        {resource === 'visa-services' && (
+          <HotelImageUpload
+            idPrefix="visa-services"
+            main={values.sourceMainImage ?? ''}
+            gallery={values.sourceGalleryImages ?? ''}
+            disabled={saving}
+            onChange={change}
+            onBusy={(busy) => {
+              uploadingRef.current = busy;
+              setUploading(busy);
+            }}
+          />
+        )}
         {errors.form ? (
           <Alert title="ذخیره نشد" description={errors.form} tone="error" />
         ) : null}
         <div className="flex justify-end gap-3">
           <Button
             variant="outline"
-            disabled={saving}
+            disabled={saving || uploading}
             onClick={() => onOpenChange(false)}
           >
             انصراف
           </Button>
-          <Button type="submit" loading={saving} disabled={saving}>
+          <Button type="submit" loading={saving} disabled={saving || uploading}>
             <Save className="size-4" aria-hidden="true" />
             ذخیره
           </Button>

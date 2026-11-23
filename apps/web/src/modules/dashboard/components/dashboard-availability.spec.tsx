@@ -38,7 +38,7 @@ vi.mock('@tanstack/react-query', () => ({
 vi.mock('@/modules/legal-entities/components/legal-entity-context', () => ({
   useLegalEntityContext: () => ({ context: null }),
 }));
-it('renders missing-input reasons on cards and partial charts while retaining a genuine zero KPI', () => {
+it('keeps unavailable status and a genuine zero without diagnostic copy', () => {
   const permissions = [
     ...new Set([
       ...dashboardKpis.map((k) => k.permission),
@@ -53,9 +53,12 @@ it('renders missing-input reasons on cards and partial charts while retaining a 
     </AccessPermissionsProvider>,
   );
   expect(html).toContain('قابل محاسبه نیست');
-  expect(html).toContain('دادهٔ موردنیاز:');
-  expect(html).toContain('هزینهٔ تأییدشده و منطبق با فروش کامل نیست');
-  expect(html).toContain('سود ناخالص · قابل محاسبه نیست');
+  expect(html).not.toContain('دادهٔ موردنیاز:');
+  expect(html).not.toContain('هزینهٔ تأییدشده و منطبق با فروش کامل نیست');
+  expect(html).not.toContain('سود ناخالص · قابل محاسبه نیست');
+  expect(html).not.toContain(
+    'منبع معتبر این شاخص برای فیلترها و دسترسی فعلی در دسترس نیست',
+  );
   expect(html).toContain('aria-label="0"');
 });
 
@@ -74,7 +77,7 @@ it.each([
     'دقیقه',
   ],
 ])(
-  'renders the activated chart on %s with its source units and limitations',
+  'renders the activated chart on %s with its source units and without the archived notice',
   (page, id, notice, unit) => {
     state.page = page;
     state.data = {
@@ -99,7 +102,7 @@ it.each([
         <DashboardWorkspace />
       </AccessPermissionsProvider>,
     );
-    expect(html).toContain(notice);
+    expect(html).not.toContain(notice);
     expect(html).toContain(unit);
     expect(html).toContain('2026-11-01');
   },

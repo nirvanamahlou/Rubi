@@ -109,6 +109,15 @@ export class SiteCommerceController {
   ) {
     return this.service.publishHotelProfile(site, id, req.actor);
   }
+  @Post('visa-profiles/:id')
+  @Header('Cache-Control', 'private, no-store')
+  publishVisa(
+    @Param('site') site: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.publishVisaProfile(site, id, req.actor);
+  }
   @Post('geography-profiles/:kind/:id')
   publishGeography(
     @Param('site') site: string,

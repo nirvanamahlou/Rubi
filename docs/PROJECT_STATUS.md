@@ -1,8 +1,6 @@
-## Nora operational module reads
+## Visa service website publication
 
-Nora chat reads six native aggregate metrics from HR, Reservations, Documents, Customers and Customer Affairs via the existing Reporting dashboard endpoint. It uses the active ERP session and displays the exact returned numeric text without sending it to the model. Supported periods are today, the current week and the current Persian month in Tehran. The native dashboard aggregates authorized branches independently of the issuer, so Nora offers these reads in the aggregate company view. Other questions retain the existing routes.
-
-Wider business-data coverage requires separate registered producers for unsupported metrics, company-scoped reads and domain permissions. Administrative account grants and deployment are pending.
+Avina stores one main visa photo and up to six gallery photos. The Visa Services row action sends the saved public profile to Jahan Bastan, Ghestiroo, or Niyayesh Seir using the signed publication API. The payload includes document names and excludes guidance attachments and supplier references.
 
 ## Nora composite guide follow-up checks
 
@@ -245,6 +243,12 @@ Workbench now routes informal questions about most-contracted hotels to the auth
 Removed the fixed model-turn stop in Nora v3. Existing request deadline, evidence validation, SQL budget, account admission and provider quota remain enforced. At the SQL budget, the model is offered the final response action only.
 
 A read-only production audit found 469 master hotels, 34 master countries and 193 saved hotel stays with a hotel snapshot and a country link. Nora now uses a native Sales report for supported Persian requests for top hotels by country. The report counts distinct eligible contracts per hotel, uses the existing public Master Data lookup and excludes Sales and Reservations cancellations. Deploy the API endpoint before enabling the consumer. No database migration is needed.
+
+## Nora operational module reads
+
+Nora chat reads six native aggregate metrics from HR, Reservations, Documents, Customers and Customer Affairs via the existing Reporting dashboard endpoint. It uses the active ERP session and displays the exact returned numeric text without sending it to the model. Supported periods are today, the current week and the current Persian month in Tehran. The native dashboard aggregates authorized branches independently of the issuer, so Nora offers these reads in the aggregate company view. Other questions retain the existing routes.
+
+Wider business-data coverage requires separate registered producers for unsupported metrics, company-scoped reads and domain permissions. Administrative account grants and deployment are pending.
 
 ## SITE-MANAGEMENT-1116 — PC-A — READY_FOR_CI
 
@@ -10625,3 +10629,7 @@ CALL-CENTER-TODAY-FILTER-STYLE-1116: today's dialog initially focuses its title 
 ## Automatic hotel identification
 
 New hotels receive an HTL identifier on save using the established city prefix and a persistent global sequence. Excel inserts share the allocator. Existing identification codes remain available for publication and existing records keep their identifiers.
+
+## DASHBOARD-AVAILABILITY-NOTES — PC-C
+
+Archived dashboard widget availability reasons and expected data in docs/DASHBOARD-DATA-GAPS.md, ordered by the dashboard navigation. Removed long availability and coverage notes from cards and charts. Compact unavailable and empty states, chart units and genuine zeros remain. Dashboard suite: 62 passed, one existing skip.

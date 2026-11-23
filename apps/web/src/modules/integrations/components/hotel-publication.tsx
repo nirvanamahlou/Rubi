@@ -15,7 +15,7 @@ import Link from '@/i18n/link';
 import { localizedFetch } from '@/i18n/localized-fetch';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
-type PublicationResource = 'hotels' | 'countries' | 'cities';
+type PublicationResource = 'hotels' | 'countries' | 'cities' | 'visa-services';
 const siteLabels = {
   'jahan-bastan': {
     name: 'جهان باستان',
@@ -149,7 +149,9 @@ function ProfileDestination({
           '/' +
           (resource === 'hotels'
             ? 'hotel-profiles/'
-            : 'geography-profiles/' + resource + '/') +
+            : resource === 'visa-services'
+              ? 'visa-profiles/'
+              : 'geography-profiles/' + resource + '/') +
           encodeURIComponent(id),
         {
           method: 'POST',
