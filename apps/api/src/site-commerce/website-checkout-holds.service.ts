@@ -38,7 +38,11 @@ import { PackageTourPricingService } from '../package-pricing/package-tour-prici
 import { SalesService } from '../sales/sales.service';
 import { passengerAgeCategory } from '../sales/sales.domain';
 import { ageCounts } from '../ticket-catalog/ticket-age-fares';
-import { websiteFlightQuotes } from './ticket-quote';
+import {
+  websiteFlightQuotes,
+  websitePassengerFlightPrices,
+  type WebsiteFlightQuote,
+} from './ticket-quote';
 import {
   externalOrderId,
   siteBinding,
@@ -519,7 +523,7 @@ export class WebsiteCheckoutHoldsService {
       offerIds: string[];
       offers: Awaited<ReturnType<TicketPublicService['websiteOffer']>>[];
       birthDates: string[];
-      quotes: { amount: string; currencyCode: string }[];
+      quotes: WebsiteFlightQuote[];
       priceComponents: { amount: string; currencyCode: string }[];
       frozenPackageSales: PackagePublishedSaleV1[];
       tourId: string | null;
@@ -591,7 +595,21 @@ export class WebsiteCheckoutHoldsService {
       )
         throw new ConflictException('پرواز با رزرو پرداخت‌شده مطابقت ندارد.');
     }
+    const flightPrices =
+      snapshot.tourId || !snapshot.offers[0]
+        ? undefined
+        : websitePassengerFlightPrices(
+            snapshot.quotes,
+            input.passengers.map((passenger, index) => ({
+              customerId: passenger.customerId,
+              category: passengerAgeCategory(
+                snapshot.birthDates[index],
+                snapshot.offers[0]!.departureAt.slice(0, 10),
+              ),
+            })),
+          );
     return {
+      ...(flightPrices ? { flightPrices } : {}),
       frozenPackageSales: snapshot.frozenPackageSales,
       targetId: snapshot.targetId,
     };

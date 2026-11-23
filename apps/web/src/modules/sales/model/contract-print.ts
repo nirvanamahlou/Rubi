@@ -335,8 +335,16 @@ export function contractPrintHtml(
     : undefined;
   // Owner-approved display allocation for historical whole-contract totals.
   // Explicit passenger prices always retain their saved allocation.
+  const legacySingleWebsiteFlight =
+    c.passengersDetail.length === 1 &&
+    !flightPrices &&
+    c.servicesDetail.length > 0 &&
+    c.servicesDetail.every(
+      (service) =>
+        service.kind === 'FLIGHT' && service.metadata?.sourceSite === 'nss',
+    );
   const firstPassengerTotals =
-    contractPackagePricing &&
+    (contractPackagePricing || legacySingleWebsiteFlight) &&
     !totalPrices &&
     c.passengersDetail.every((p) => !p.agreedPrices?.length)
       ? c.balances.map(({ currencyCode, amount }) => ({ currencyCode, amount }))

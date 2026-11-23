@@ -70,3 +70,23 @@ it('keeps unknown passenger amounts blank without labeling whole-service prices 
     '<td class="contract-total">—</td>',
   );
 });
+
+it('shows the booked total for a historical single-passenger NSS flight', () => {
+  const out = structuredClone(printFixture);
+  out.contract.passengersDetail = out.contract.passengersDetail.slice(0, 1);
+  out.contract.servicesDetail = out.contract.servicesDetail
+    .filter((service) => service.kind === 'FLIGHT')
+    .map((service) => ({
+      ...service,
+      metadata: { sourceSite: 'nss' },
+    }));
+  out.contract.hotelSelection = null;
+  out.contract.balances = [
+    { ...out.contract.balances[0]!, currencyCode: 'IRR', amount: '11400' },
+  ];
+  expect(
+    contractPrintHtml(out, printReferences)
+      .split('PASSENGERS & PRICING')[1]!
+      .split('</table>')[0],
+  ).toContain('11,400');
+});

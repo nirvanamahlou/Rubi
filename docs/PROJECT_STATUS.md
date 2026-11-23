@@ -10560,3 +10560,7 @@ Antalya Iran Airtour and Kuala Lumpur plus Singapore XLSX formats now import to 
 کاتالوگ امضاشده تحویل می‌دهد. تنظیم‌های پیش‌نمایش، توقف فروش و اجازهٔ انتشار
 پروفایل هتل برای همان مقصد ذخیره می‌شوند. دریافت، ذخیره و نمایش در قسطی‌رو
 از مسیر نسخه‌بندی‌شده بررسی می‌شود. دریافت سفارش تور در اتصال قسطی‌رو غیرفعال است.
+
+## 2026-11-23 — Website ticket passenger contract prices
+
+Use the verified ticket quote's passenger fare rows for newly issued website contracts. Preserve the total, pair coverage and each age category. For older NSS flight-only contracts with exactly one passenger, display the saved contract amount in that passenger row when no breakdown exists.
