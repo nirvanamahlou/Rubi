@@ -3,6 +3,7 @@ import type {
   FloatingTourImportOptions,
   FloatingTourImportPreview,
   FloatingTourSaleSet,
+  FloatingTourPeriodChangeV1,
   TourPackageV1,
 } from '@nora/contracts';
 import { localizedFetch } from '@/i18n/localized-fetch';
@@ -130,6 +131,19 @@ export const packagePricingApi = {
     request<FloatingTourSaleSet>(
       `/floating-tours/${encodeURIComponent(id)}`,
       active,
+    ),
+  floatingPeriodChange: (
+    id: string,
+    change: FloatingTourPeriodChangeV1,
+    active: LoginResponse,
+  ) =>
+    request<FloatingTourSaleSet>(
+      `/floating-tours/${encodeURIComponent(id)}/period`,
+      active,
+      {
+        method: 'POST',
+        body: JSON.stringify(change),
+      },
     ),
   floatingImport: (
     id: string,

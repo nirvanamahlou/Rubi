@@ -54,6 +54,15 @@ export class FloatingTourPricingController {
   ) {
     return this.pricing.get(id, req.actor);
   }
+  @Post(':id/period')
+  @RequirePermissions('package_pricing.period.manage')
+  changePeriod(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: unknown,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.pricing.changePeriod(id, body, req.actor);
+  }
   @Get(':id/template')
   @Header('Cache-Control', 'private, no-store')
   @RequirePermissions('package_pricing.read')
