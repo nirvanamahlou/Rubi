@@ -56,7 +56,7 @@ vi.mock('@/modules/iam/access-context', () => ({
   useAccessActor: () => ({
     userId: h.user,
     branchIds: ['branch-a'],
-    permissions: ['sales.contracts.read.all'],
+    permissions: ['sales.contracts.read.all', 'package_pricing.read'],
   }),
   useAccessPermissions: () => [],
 }));
@@ -507,5 +507,25 @@ describe('hotel purchase guide in the Composer', () => {
     expect(chat().at(-1)).toContain('دسترسی این بخش برای حساب شما فعال نیست');
     expect(chat().at(-1)).not.toContain('نسخهٔ ذخیره‌شده:');
     expect(h.fetcher).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Sales panel catalogues in Composer', () => {
+  it('switches between package workflows and continues without model calls', async () => {
+    h.path = '/workbench';
+    await send('بازه بستن پکیج رو کجا بررسی کنم؟');
+    expect(chat().at(-1)).toContain('نرخ و بازه در بستن پکیج');
+    await send('پیش نمایش قیمت شناور چطور باز میشه؟');
+    expect(chat().at(-1)).toContain('هر دو پرواز');
+    h.path = '/sales';
+    await send('بعدش چی؟');
+    expect(chat().at(-1)).toContain('هر دو پرواز');
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+  it('does not show marketing guidance without route access', async () => {
+    h.path = '/workbench';
+    await send('کمپین جدید چطور بسازم؟');
+    expect(chat().at(-1)).not.toContain('تقویم');
+    expect(h.fetcher).not.toHaveBeenCalled();
   });
 });
