@@ -1,3 +1,7 @@
+## NORA-PURCHASE-RESERVATION-GUIDES-1124 — PC-C
+
+Stage 4 adds 12 source-linked topics covering procurement workflows and reservation-report definitions and discrepancy checks. The current ERP route and visibility constraints are captured in docs/tasks/NORA-PURCHASE-RESERVATION-GUIDES-1124.md. Producer operations and permissions are unchanged.
+
 ## NORA-GUIDE-DEPTH-1124 — PC-C
 
 Stage 3 expands five procedural guides with 15 additional source-linked topics and permission-scoped server retrieval. The acceptance matrix and unresolved policy dependencies are in docs/tasks/NORA-GUIDE-DEPTH-1124.md. No producer or runtime deployment changes.

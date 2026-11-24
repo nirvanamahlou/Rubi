@@ -1,3 +1,7 @@
+## NORA-PURCHASE-RESERVATION-GUIDES-1124 — PC-C — REVIEW
+
+Stage 4, based on #1917. Reserve only the purchase and reservation-report guide documents, generated linked catalogue, bounded retrieval/generator integration, tests and status notes. Existing Procurement and Reservations code is read-only evidence. No schema, permissions, dependencies or production changes.
+
 ## NORA-GUIDE-DEPTH-1124 — PC-C — REVIEW
 
 Stacked on #1907. Reserve the five Stage 3 guide documents, their generated catalogue, bounded pilot retrieval integration, focused tests and acceptance notes. Producer modules are referenced read-only. No migration, dependency, merge or deployment.
