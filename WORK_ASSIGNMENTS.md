@@ -18,6 +18,22 @@ Stacked on #1907. Reserve the five Stage 3 guide documents, their generated cata
 
 Own the additive site-commerce dated-tour draft route, authoritative rate and hotel-itinerary validation, and coordinated Jahan Bastan and Ghestiroo checkout callers. Preserve payment verification, floating-tour policy, and other publishing changes. No migration or dependency changes.
 
+## NORA-FLIGHT-CAPACITY-GUIDE-1124 — PC-C — ACTIVE
+
+Reserve additive Nora flight capacity guide, registration, read-only Composer dispatch and tests. Reuse the authenticated managed offers reader and preserve producer workflows and permissions.
+
+## WEBSITE-DATED-TOUR-CONTRACTS-1124 — PC-D — ACTIVE
+
+Own the additive site-commerce dated-tour draft route, authoritative rate and hotel-itinerary validation, and coordinated Jahan Bastan and Ghestiroo checkout callers. Preserve payment verification, floating-tour policy, and other publishing changes. No migration or dependency changes.
+
+## NORA-GUIDE-DEPTH-1124 — PC-C — REVIEW
+
+Stacked on #1907. Reserve the five Stage 3 guide documents, their generated catalogue, bounded pilot retrieval integration, focused tests and acceptance notes. Producer modules are referenced read-only. No migration, dependency, merge or deployment.
+
+## NORA-HOTEL-PURCHASE-GUIDE-1124 — PC-C — ACTIVE
+
+Reserve Nora's hotel purchase guide, generated files, and additive guide routing and tests. Stacked on PR #1915. Reuse the authenticated pack reader and existing producer workflow.
+
 ## GEOGRAPHY-SITE-IMAGES-1124 — PC-D — ACTIVE
 
 Own the city and country photo fields, geography dialog, additive migration, and signed profile delivery of the main photo and gallery. Coordinate the three website receivers and verify the publication contract.
@@ -25,6 +41,14 @@ Own the city and country photo fields, geography dialog, additive migration, and
 ## NORA-ERP-FIRST-1124 — PC-C — ACTIVE
 
 Reserve Nora Web routing, supported guide selection, and the assistant sales period parser with focused regressions. Keep producer permissions and APIs unchanged.
+
+## NORA-OPT-IN-EVIDENCE-1124 — PC-C — ACTIVE
+
+Reserve Nora v3 reply presentation, native report formatting and focused tests. Preserve authenticated reads and evidence validation.
+
+## NORA-RESERVATION-GUIDE-1124 — PC-C — ACTIVE
+
+Reserve the Nora Reservations guide document, generated guide entries, local routing and bounded Composer dispatch, coverage and focused tests. Reuse the existing report reader, routes and permissions. No producer, API, schema, dependency or deployment work.
 
 ## DOCUMENT-LOGO-SCAN-DISPLAY-1124 — PC-C — ACTIVE
 

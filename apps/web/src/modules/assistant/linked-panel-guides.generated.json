@@ -1,4 +1,408 @@
 {
+  "flight-capacity": {
+    "title": "راهنمای تعریف و ظرفیت پرواز",
+    "topics": [
+      {
+        "id": "access",
+        "title": "ورود و سطح دسترسی",
+        "href": "/ticket-management",
+        "related": ["master-data/airlines"],
+        "steps": [
+          "از رزرواسیون، «تعریف و ظرفیت پرواز» را باز کنید. نشست، شرکت فعال و شعبهٔ مربوط به عرضه را کنترل کنید.",
+          "برای عملیات مدیریت و خواندن جزئیات مدیریت عرضه، دسترسی مدیریت بلیط لازم است. اگر کنترل را ندارید، نقش مجاز را در ERP بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/flight-capacity#access"
+      },
+      {
+        "id": "create",
+        "title": "تعریف بلیط جدید",
+        "href": "/ticket-management",
+        "related": ["master-data/airports"],
+        "steps": [
+          "«تعریف بلیط جدید» را بزنید و نوع یک‌طرفه یا رفت‌وبرگشت، مسیر، شمارهٔ پرواز، هواپیما و نوع تأمین را تعیین کنید.",
+          "برای هر جهت ساعت حرکت و رسیدن، «روز رسیدن»، بار مجاز، کلاس و ظرفیت را کنترل کنید. برای رسیدن در فردای حرکت، در «روز رسیدن» گزینهٔ «روز بعد» را انتخاب کنید."
+        ],
+        "guideHref": "/assistant-guides/flight-capacity#create"
+      },
+      {
+        "id": "schedule",
+        "title": "برنامهٔ حرکت و ثبت",
+        "href": "/ticket-management",
+        "related": [],
+        "steps": [
+          "«از تاریخ» و «تا تاریخ» رفت، «روزهای پرواز رفت» و در رفت‌وبرگشت فاصلهٔ برگشت را مشخص کنید. مسیر، ساعت و کلاس را با پیش‌نمایش نوبت‌ها تطبیق دهید.",
+          "اگر پیام پنل ثبت جزئی را تأیید کرد، تعداد نوبت‌های موفق را بررسی و برای ادامه طبق پیام پنل همان مشخصات را دوباره ثبت کنید. برای پاسخ نامطمئن، ابتدا لود را به‌روزرسانی و نوبت‌های موجود را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/flight-capacity#schedule"
+      },
+      {
+        "id": "load",
+        "title": "لود پرواز چارتر",
+        "href": "/ticket-management",
+        "related": [],
+        "steps": [
+          "در «لود پرواز چارتر» تاریخ شمسی یا میلادی، مبدأ، کشور و شهر مقصد، ایرلاین، شمارهٔ پرواز رفت، روز هفته و کلاس را بررسی کنید و «جست‌وجو» را بزنید.",
+          "اگر نتیجه قدیمی است «به‌روزرسانی لود» را بزنید. برای نتیجهٔ خالی یا برگشت پیدا‌نشده، بازه و گزینه‌های «تاریخ‌های معتبر» و «برگشت با کلاس همنام رفت» را دوباره بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/flight-capacity#load"
+      },
+      {
+        "id": "selection",
+        "title": "انتخاب رفت و برگشت",
+        "href": "/ticket-management",
+        "related": ["flight-pricing/overview"],
+        "steps": [
+          "ردیف‌های رفت و برگشت را جدا انتخاب کنید و بخش «مشخصات و قیمت» هر جهت، کلاس، مانده و وضعیت آن را بررسی کنید.",
+          "قیمت یک‌طرفه با نرخ جفت رفت‌وبرگشت فرق دارد. برای قراردادهای مرتبط یا انتشار وب از کنترل همان ردیف و دسترسی مجاز استفاده کنید."
+        ],
+        "guideHref": "/assistant-guides/flight-capacity#selection"
+      },
+      {
+        "id": "edit",
+        "title": "ویرایش و تکرار بلیط",
+        "href": "/ticket-management",
+        "related": [],
+        "steps": [
+          "برای یک بلیط «ویرایش»، برای ردیف‌های لود «ویرایش لود» و برای نوبت‌های روز مشخص «ویرایش روز هفته» را انتخاب کنید. دامنه را پیش از ثبت بازبینی کنید.",
+          "برای ساخت نوبت‌های تازه از «تکرار هفتگی یا ماهانه بلیط» استفاده کنید. در تعارض یا ثبت جزئی، نسخه و نوبت‌های موفق را بررسی کنید و پیام خود پنل را برای ادامه دنبال کنید."
+        ],
+        "guideHref": "/assistant-guides/flight-capacity#edit"
+      },
+      {
+        "id": "capacity",
+        "title": "ظرفیت و رزرو موقت",
+        "href": "/ticket-management",
+        "related": [],
+        "steps": [
+          "ظرفیت کلاسِ همان پرواز و جهت را بررسی کنید. ماندهٔ جاری، رزرو موقت و تخصیص ثبت‌شده را در کنترل‌های همان ردیف از هم جدا بخوانید.",
+          "«در حال خرید و رزروهای فعال» را بررسی کنید. رزرو متصل به پرداخت ممکن است تا تعیین تکلیف خرید باقی بماند. پس از انقضا یا هنگام بررسی آزادسازی، مانده را تازه‌سازی کنید."
+        ],
+        "guideHref": "/assistant-guides/flight-capacity#capacity"
+      },
+      {
+        "id": "status",
+        "title": "توقف، فعال‌سازی و حذف",
+        "href": "/ticket-management",
+        "related": [],
+        "steps": [
+          "برای توقف موقت انتخاب‌های جدید از کنترل توقف فروش همان ردیف استفاده کنید. فعال‌سازی از کنترل وضعیت همان بلیط انجام می‌شود.",
+          "برای حذف، دیالوگ و وابستگی‌ها و وضعیت انتشار وب را مرور کنید. وضعیت قرارداد موجود و اجرای خدمت را از پروندهٔ فروش یا رزرواسیون بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/flight-capacity#status"
+      },
+      {
+        "id": "handoff",
+        "title": "از تعریف تا فروش، صدور و مانیفست",
+        "href": "/ticket-management",
+        "related": ["reservation-report/start"],
+        "steps": [
+          "مسیر، تاریخ، کلاس، وضعیت فروش، مانده و نرخ قابل‌استفاده را برای همان عرضه کنترل کنید. مبلغ قرارداد به منبع فروش تعلق دارد.",
+          "برای خرید و تحویل مالی مسیر مالک، و برای تخصیص مسافر، صدور و مانیفست پروندهٔ رزرواسیون را بررسی کنید. وضعیت ثبت یا ظرفیت به‌تنهایی صدور را اثبات نمی‌کند."
+        ],
+        "guideHref": "/assistant-guides/flight-capacity#handoff"
+      }
+    ]
+  },
+  "hotel-purchase-rates": {
+    "title": "راهنمای قیمت خرید هتل",
+    "topics": [
+      {
+        "id": "hotel-purchase-start",
+        "title": "انتخاب بخش در «قیمت خرید هتل»",
+        "href": "/reservations/hotel-rates",
+        "related": ["reservations/hotel-rates"],
+        "steps": [
+          "از کارت «بستهٔ جدید» ثبت دستی را شروع کنید. برای فایل، «ورودی اکسل نرخ‌ها» و برای مشاهده یا اصلاح نرخ ذخیره‌شده، «بسته‌های موجود» را بزنید.",
+          "«بازگشت به نرخ هتل» شما را به کارت‌ها برمی‌گرداند. پیش از تأیید خروج، تغییرات ذخیره‌نشده را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/hotel-purchase-rates#hotel-purchase-start"
+      },
+      {
+        "id": "hotel-purchase-manual",
+        "title": "بستهٔ جدید",
+        "href": "/reservations/hotel-rates",
+        "related": ["hotel-purchase-rates/hotel-purchase-start"],
+        "steps": [
+          "«بستهٔ جدید» را باز کنید. کشور و شهر، بازهٔ معتبر اقامت و هتل‌های بسته را مشخص کنید.",
+          "برای هر هتل منتخب، کارگزار و ارز، نوع اتاق، قیمت، ظرفیت و دست‌کم یک ضریب چیدمان معتبر را کنترل کنید. «ثبت بستهٔ نرخ» را بزنید و نتیجه را در «بسته‌های موجود» بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/hotel-purchase-rates#hotel-purchase-manual"
+      },
+      {
+        "id": "hotel-purchase-references",
+        "title": "مراجع هتل و مقصد",
+        "href": "/reservations/hotel-rates",
+        "related": ["master-data/hotels"],
+        "steps": [
+          "شعبه، کشور و شهر انتخاب‌شده را کنترل کنید. نام هتل را در «جست‌وجوی هتل‌های شهر» وارد کنید.",
+          "اگر هتل، کارگزار یا نوع اتاق در گزینه‌های مجاز نیست، مرجع مربوط در اطلاعات پایه و ارتباط آن با مقصد را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/hotel-purchase-rates#hotel-purchase-references"
+      },
+      {
+        "id": "hotel-purchase-occupancy",
+        "title": "قیمت و ترکیب اتاق",
+        "href": "/reservations/hotel-rates",
+        "related": ["hotel-purchase-rates/hotel-purchase-start"],
+        "steps": [
+          "نوع اتاق را انتخاب کنید. قیمت پایه، ظرفیت و قیمت ترکیب‌ها را در جدول همان اتاق بررسی کنید.",
+          "تعداد بزرگسال و کودک، ردهٔ سنی و «ضریب ترکیب اتاق» را برای همان چیدمان کنترل کنید. قیمت ترکیب صریح را از ضریب جدا بخوانید و نتیجهٔ جدول را قبل از ثبت مرور کنید.",
+          "نمونهٔ نرخ محاسبه‌شده با ضریب: پایهٔ ۱۰۰ دلار و ضریب ۱٫۲۵، قیمت خرید ۱۲۵ دلار می‌دهد. این مثال برای نرخ مبتنی بر ضریب است. نرخ صریح ترکیب را از جدول خود ردیف بخوانید."
+        ],
+        "guideHref": "/assistant-guides/hotel-purchase-rates#hotel-purchase-occupancy"
+      },
+      {
+        "id": "hotel-purchase-period",
+        "title": "دوره‌ها و بازهٔ مشترک",
+        "href": "/reservations/hotel-rates",
+        "related": ["hotel-purchase-rates/hotel-purchase-start"],
+        "steps": [
+          "«دوره‌های ثبت‌شده» و تاریخ‌های بازه را بررسی کنید. در بازه با پایان غیرشامل، تاریخ پایان شب قابل‌فروش محسوب نمی‌شود.",
+          "برای بازهٔ مشترک، شروع و پایان و هتل‌های منتخب را کنترل کنید. اگر انتخاب یا کپی هتل‌های دوره در همان نما در دسترس است، هتل‌ها و بازهٔ مقصد را پیش از ثبت دوباره مرور کنید."
+        ],
+        "guideHref": "/assistant-guides/hotel-purchase-rates#hotel-purchase-period"
+      },
+      {
+        "id": "hotel-purchase-excel",
+        "title": "ورودی اکسل نرخ‌ها",
+        "href": "/reservations/hotel-rates",
+        "related": ["hotel-purchase-rates/hotel-purchase-start"],
+        "steps": [
+          "«ورودی اکسل نرخ‌ها» را باز و فایل پشتیبانی‌شده را انتخاب کنید. نتیجهٔ خواندن فایل و خطاهای ردیف را بررسی کنید.",
+          "در مسیر نگاشت انتخابی، «هتل در فایل»، «بورد نرخ واردشده»، «هتل موجود در شهر بسته» و «نگاشت اتاق» را بررسی کنید. پیش‌نمایش به معنی ذخیره نیست."
+        ],
+        "guideHref": "/assistant-guides/hotel-purchase-rates#hotel-purchase-excel"
+      },
+      {
+        "id": "hotel-purchase-bulk",
+        "title": "ثبت گروهی و ورود مجدد",
+        "href": "/reservations/hotel-rates",
+        "related": ["hotel-purchase-rates/hotel-purchase-start"],
+        "steps": [
+          "پیش‌نمایش «ثبت همه هتل‌ها و نرخ‌ها» را مرور کنید. نام مبهم یا غیرفعال نیازمند بررسی دستی است. در بخش هم‌پوشان، نرخ ترکیب مشخص بر ردیف ROOM مقدم است.",
+          "در ثبت جزئی، ثبت‌های موفق باقی می‌مانند. نتیجهٔ بسته‌های جدید، به‌روزرسانی‌شده و بدون تغییر را در «بسته‌های موجود» بررسی کنید. فقط موارد حل‌نشده را دوباره بررسی و ثبت کنید."
+        ],
+        "guideHref": "/assistant-guides/hotel-purchase-rates#hotel-purchase-bulk"
+      },
+      {
+        "id": "hotel-purchase-existing",
+        "title": "بسته‌های موجود و ویرایش",
+        "href": "/reservations/hotel-rates",
+        "related": ["hotel-purchase-rates/hotel-purchase-start"],
+        "steps": [
+          "«بسته‌های موجود» را باز کنید. شهر، تاریخ بسته و هتل را بررسی کنید و نرخ را از بستهٔ منطبق باز کنید.",
+          "در تعارض نسخه، تازه‌سازی کنید و تغییرتان را با نسخهٔ جاری تطبیق دهید. اگر پاسخ ثبت نامشخص بود، پیش از تکرار، نرخ ذخیره‌شده و نسخهٔ بسته را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/hotel-purchase-rates#hotel-purchase-existing"
+      },
+      {
+        "id": "hotel-purchase-archive",
+        "title": "حذف بسته",
+        "href": "/reservations/hotel-rates",
+        "related": ["hotel-purchase-rates/hotel-purchase-start"],
+        "steps": [
+          "در کارت «حذف بسته»، بسته را با شعبه، شهر و تاریخ تطبیق دهید. فقط در صورت داشتن مجوز و اطمینان از انتخاب، تأیید کنید.",
+          "کنارگذاری بسته را از انتخاب‌های جدید خارج می‌کند و سابقه را نگه می‌دارد. قیمت منتشرشده را در نمای همان انتشار بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/hotel-purchase-rates#hotel-purchase-archive"
+      },
+      {
+        "id": "hotel-purchase-access",
+        "title": "دسترسی و وضعیت بسته",
+        "href": "/reservations/hotel-rates",
+        "related": ["hotel-purchase-rates/hotel-purchase-start"],
+        "steps": [
+          "شعبه و نشست فعال را بررسی کنید. خواندن بسته به دسترسی مشاهده رزرواسیون و ثبت، اصلاح و کنارگذاری به مجوز نوشتن خرید هتل نیاز دارند.",
+          "اگر بارگیری ناموفق بود، پیام پنل را بررسی و بعد از برقراری اتصال تازه‌سازی کنید. برای فهرست خالی، ابتدا شهر، تاریخ و وضعیت بسته را کنترل کنید."
+        ],
+        "guideHref": "/assistant-guides/hotel-purchase-rates#hotel-purchase-access"
+      },
+      {
+        "id": "hotel-purchase-tour",
+        "title": "انتخاب نرخ در قیمت‌گذاری تور",
+        "href": "/reservations/hotel-rates",
+        "related": ["tour/hotel"],
+        "steps": [
+          "از نوبت تور یا کنترل قیمت‌گذاری مرتبط، شعبه، مقصد، هتل و پوشش بازهٔ سفر را با بستهٔ نرخ تطبیق دهید. وضعیت کنارگذاری را بررسی کنید.",
+          "قیمت خرید بسته، نرخ قابل انتخاب و قیمت منتشرشده سه مرحله‌اند. خروجی قبلی را از نمای همان انتشار بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/hotel-purchase-rates#hotel-purchase-tour"
+      },
+      {
+        "id": "hotel-purchase-purchase",
+        "title": "خرید اقامت، واچر و گزارش",
+        "href": "/reservations/hotel-rates",
+        "related": ["reservations/hotel"],
+        "steps": [
+          "خدمت هتل را در پروندهٔ رزرواسیون باز کنید. خرید اقامت، وضعیت ارسال به کارگزار و صدور واچر هرکدام کنترل مربوط به همان پرونده را دارند.",
+          "برای سؤال گزارش، منبع و فیلتر گزارش را کنترل کنید. نرخ ثبت‌شده به‌تنهایی مبلغ خرید قطعی، پرداخت یا فروش را مشخص نمی‌کند."
+        ],
+        "guideHref": "/assistant-guides/hotel-purchase-rates#hotel-purchase-purchase"
+      }
+    ]
+  },
+  "reservations": {
+    "title": "راهنمای رزرواسیون",
+    "topics": [
+      {
+        "id": "queue",
+        "title": "درخواست‌ها",
+        "href": "/reservations",
+        "related": ["reservation-report/filters"],
+        "steps": [
+          "دامنه شرکت و بازه را بررسی کنید. در «درخواست‌ها» مبنای تاریخ و فیلترهای وضعیت و خدمت را تعیین و «جست‌وجو» را بزنید.",
+          "«دریافت اطلاعات» را بزنید و آخرین فیلترهای اعمال‌شده را بررسی کنید. تعداد فهرست را با داشبورد فقط در دامنه و بازه یکسان مقایسه کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#queue"
+      },
+      {
+        "id": "handoff",
+        "title": "دریافت و بررسی قرارداد",
+        "href": "/reservations/processing",
+        "related": ["finance-delivery/reservation"],
+        "steps": [
+          "در فروش بررسی کنید قرارداد به رزرواسیون ارسال شده باشد. در صف، با شماره قرارداد جست‌وجو و پرونده را باز کنید.",
+          "شرکت، بازه و وضعیت را بررسی کنید. وضعیت فروش و وضعیت هر خدمت را در نماهای مربوط مقایسه کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#handoff"
+      },
+      {
+        "id": "amendment",
+        "title": "اصلاحیه فروش",
+        "href": "/reservations/processing",
+        "related": ["documents/version"],
+        "steps": [
+          "پرونده را باز کنید و آخرین اصلاحیه و خدمات تغییرکرده را با مدارک و وضعیت فعلی هر خدمت تطبیق دهید.",
+          "اگر خدمتی قبلاً ارسال یا صادر شده، وضعیت همان خدمت و نیاز به اقدام واحد مالک را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#amendment"
+      },
+      {
+        "id": "flight",
+        "title": "پرواز و بلیت",
+        "href": "/reservations/processing",
+        "related": ["reservation-report/rows"],
+        "steps": [
+          "پرونده و خدمت پرواز را باز کنید. برای هر مسیر، اطلاعات پرواز، وضعیت ظرفیت، مسافران تخصیص‌یافته و سند صدور را بررسی کنید.",
+          "برای پرواز رفت‌وبرگشت هر مسیر را مستقل بررسی کنید. تخصیص مسافر، رزرو ظرفیت و صدور بلیت وضعیت‌های مستقل‌اند."
+        ],
+        "guideHref": "/assistant-guides/reservations#flight"
+      },
+      {
+        "id": "hotel",
+        "title": "هتل، کارگزار و واچر",
+        "href": "/reservations/processing",
+        "related": ["purchase/access"],
+        "steps": [
+          "در پرونده هر اقامت را جدا باز کنید و هتل، تاریخ ورود و خروج، اتاق، مهمانان و کارگزار را کنترل کنید.",
+          "در ارسال جزئی یا اصلاحیه پس از ارسال، وضعیت هر اقامت و آخرین نسخه را بررسی کنید. وضعیت ارسال به کارگزار و صدور واچر جداست."
+        ],
+        "guideHref": "/assistant-guides/reservations#hotel"
+      },
+      {
+        "id": "purchase",
+        "title": "خرید و تأمین خدمت",
+        "href": "/reservations/processing",
+        "related": ["purchase/flight"],
+        "steps": [
+          "خدمت را در پرونده باز کنید و پرونده خرید مرتبط و اطلاعات تأمین‌کننده را از کنترل‌های در دسترس بررسی کنید.",
+          "وضعیت خرید و وضعیت پرداخت را در پرونده مالک آن‌ها بررسی کنید. قیمت خرید و مبلغ قرارداد فروش دو مقدار مستقل‌اند."
+        ],
+        "guideHref": "/assistant-guides/reservations#purchase"
+      },
+      {
+        "id": "insurance",
+        "title": "بیمه مسافرتی",
+        "href": "/reservations/insurance",
+        "related": ["master-data/insurance-plans"],
+        "steps": [
+          "نوع درخواست را مشخص کنید. بیمه متصل به قرارداد را از پرونده مربوط و بیمه مستقل را از فضای بیمه پیگیری کنید. مشخصات لازم و مسافران مشمول را مطابق فرم کنترل کنید.",
+          "پس از خطا یا پاسخ نامشخص، پیش از ارسال دوباره وضعیت درخواست موجود و نتیجه صدور را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#insurance"
+      },
+      {
+        "id": "manifest",
+        "title": "MANIFEST",
+        "href": "/reservations",
+        "related": ["master-data/manifest-templates"],
+        "steps": [
+          "تب «MANIFEST» را باز کنید و پرواز یا مسیر موردنظر را انتخاب کنید. مشخصات و فهرست مسافران را قبل از دریافت خروجی مرور کنید.",
+          "برای مسافر جامانده، تخصیص مسافر به همان پرواز و مسیر و تازگی نسخهٔ خروجی را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#manifest"
+      },
+      {
+        "id": "delivery",
+        "title": "صدور و مجوز تحویل",
+        "href": "/reservations/processing",
+        "related": ["finance-delivery/status"],
+        "steps": [
+          "پرونده را باز کنید و وضعیت صدور هر خدمت، مدارک صادرشده، رسیدها و مجوز تحویل را جداگانه بررسی کنید.",
+          "اگر سند صادر شده و تحویل ممکن نیست، وضعیت مجوز تحویل و اقدام قابل مشاهده در نقش فعلی را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#delivery"
+      },
+      {
+        "id": "cancellation",
+        "title": "ابطال، استرداد و تغییر",
+        "href": "/reservations/processing",
+        "related": ["reservation-report/cards"],
+        "steps": [
+          "مشخص کنید اقدام به کل قرارداد مربوط است یا به یک خدمت. وضعیت قرارداد را در فروش و وضعیت خدمت و سند را در پرونده رزرواسیون بررسی کنید.",
+          "برای مبلغ، برگشت وجه یا تکمیل اقدام مالی، نتیجهٔ ثبت‌شده در مسیر مالی را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#cancellation"
+      },
+      {
+        "id": "hotel-rates",
+        "title": "نرخ هتل",
+        "href": "/reservations/hotel-rates",
+        "related": [
+          "hotel-purchase-rates/hotel-purchase-start",
+          "master-data/hotels"
+        ],
+        "steps": [
+          "صفحه نرخ هتل را باز کنید و هتل و بازهٔ اثر نرخ را بررسی کنید. کنترل‌های قابل مشاهده به دسترسی و وضعیت وابسته‌اند.",
+          "اگر هتل یا نرخ پیدا نشد، ابتدا هتل انتخابی، بازه و مرجع هتل را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#hotel-rates"
+      },
+      {
+        "id": "queue-export",
+        "title": "خروجی اکسل درخواست‌ها",
+        "href": "/reservations",
+        "related": ["reservation-report/exports"],
+        "steps": [
+          "در تب «درخواست‌ها» بازه و فیلترها را وارد کنید و «جست‌وجو» را بزنید. تعداد روی دکمهٔ «خروجی اکسل» را با نتیجهٔ نمایش‌داده‌شده مقایسه کنید.",
+          "برای خروجی گزارش رزرواسیون از صفحهٔ گزارش استفاده کنید. خروجی صف و گزارش دامنه و ستون‌های متفاوتی دارند."
+        ],
+        "guideHref": "/assistant-guides/reservations#queue-export"
+      },
+      {
+        "id": "hotel-mail",
+        "title": "ارسال به کارگزار",
+        "href": "/reservations/processing",
+        "related": ["purchase/save"],
+        "steps": [
+          "در خدمت هتل، اقامت‌ها و کارگزار منتخب را کنترل کنید. فقط اقامت‌های آماده و مشمول را در کنترل ارسال انتخاب کنید.",
+          "اگر نتیجه نامشخص بود، قبل از تکرار ارسال، آخرین وضعیت و سابقهٔ ارسال همان اقامت را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#hotel-mail"
+      },
+      {
+        "id": "insurance-correction",
+        "title": "اصلاح بیمه‌نامه",
+        "href": "/reservations/insurance",
+        "related": ["documents/travel"],
+        "steps": [
+          "در «بیمه مسافرتی» درخواست را پیدا کنید، پیام وضعیت و اطلاعات مسافر مشمول را با مدارک معتبر تطبیق دهید.",
+          "اگر اقدام اصلاح در وضعیت و نقش شما دیده می‌شود از همان کنترل استفاده کنید. در نتیجهٔ نامشخص، وضعیت صدور را پیش از ارسال مجدد بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#insurance-correction"
+      }
+    ]
+  },
   "travel-issuance": {
     "title": "راهنمای صدور مدارک سفر",
     "topics": [
