@@ -636,6 +636,7 @@ export function DetailPanel({
   >(null);
   const [operationError, setOperationError] = useState(false);
   const stage = 'stage' in detail ? detail.stage : detail.status;
+  const linkedSite = 'sourceSite' in detail && Boolean(detail.sourceSite);
   const assessment =
     'stage' in detail ? qualificationReport(detail.qualification) : null;
   const confirmedCriteriaCount = assessment
@@ -675,6 +676,8 @@ export function DetailPanel({
   async function timeline(event: FormEvent) {
     event.preventDefault();
     if (!message.trim()) return;
+    const websiteReply =
+      tab === 'tickets' && linkedSite && activityType === 'MESSAGE';
     const success = await run(
       () =>
         tab === 'leads'
@@ -686,7 +689,8 @@ export function DetailPanel({
           : customerAffairsApi.addTicketTimeline(detail.id, {
               type: activityType,
               summary: message,
-              customerVisible: false,
+              customerVisible: websiteReply,
+              ...(websiteReply ? { channel: 'WEBSITE' } : {}),
             }),
       'ارتباط در سابقه پرونده ثبت شد.',
     );
@@ -1428,13 +1432,21 @@ export function DetailPanel({
                 <option value="CALL">ثبت تماس</option>
                 <option value="MEETING">ثبت جلسه</option>
                 <option value="CUSTOMER_REPLY">پاسخ دریافتی مشتری</option>
+                {tab === 'tickets' && linkedSite && (
+                  <option value="MESSAGE">پاسخ به مشتری در سایت</option>
+                )}
               </AffairsSelect>
               <Textarea
                 rows={5}
                 aria-label="خلاصه ارتباط"
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
-                placeholder="خلاصه ارتباط و نتیجه آن (ثبت داخلی)"
+                placeholder={
+                  activityType === 'MESSAGE'
+                    ? 'متن پاسخ به مشتری'
+                    : 'خلاصه ارتباط و نتیجه آن (ثبت داخلی)'
+                }
+                maxLength={2000}
               />
               <Button disabled={busy || !message.trim()} type="submit">
                 ثبت ارتباط

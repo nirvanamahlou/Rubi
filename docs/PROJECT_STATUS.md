@@ -21,6 +21,9 @@ Stage 2 completed its 18 authenticated local browser cases across Sales, Travel 
 ## NORA-GUIDE-COVERAGE-1124 — PC-C
 
 Initial linked guides for travel issuance, Customer Affairs, package generator, petty cash and correspondence. Scoped lexical retrieval uses accessible destinations and existing record dispatch. Build-time catalogue consistency and 11 focused retrieval tests passed. Stage 1 acceptance baseline records 15 module coverage rows, 18 pilot questions and policy evidence gaps in docs/tasks/NORA-GUIDE-ACCEPTANCE-BASELINE-1124.md. Server-side retrieval and execution of the pilot belong to Stage 2.
+## Website customer services and B2B terms
+
+Local integration connects bidirectional website support, approved sell rates, account-bound agency terms and settled-tour sandbox insurance. Linked agencies see active agreements and negotiated rates only for their enrolled branch. Website buyer name refresh is limited to the existing site and branch registration record. The sandbox insurance API remains disabled on production and site conversations require their configured binding. Carrier pricing and inventory, real insurance, private document synchronization and credit operations require separate verified integrations.
 
 ## Agency website accounts
 

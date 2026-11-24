@@ -9,6 +9,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
   Query,
   Req,
   Res,
@@ -233,6 +234,32 @@ export class SiteCommerceController {
       binding.branchId,
       undefined,
       `site-buyer:${stableFingerprint({ site, branchId: binding.branchId, id })}`,
+    );
+    return {
+      data: { id: result.data.id, displayName: result.data.displayName },
+    };
+  }
+  @Put('buyer-profile/:externalId')
+  @Header('Cache-Control', 'private, no-store')
+  async syncBuyerProfile(
+    @Param('site') site: string,
+    @Param('externalId') id: string,
+    @Body() body: CustomerMutationDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const { branchId } = siteBinding(site, req.actor);
+    externalOrderId(id);
+    if (body.kind !== 'person' || !body.firstName || !body.lastName)
+      throw new BadRequestException();
+    const result = await this.customers.syncWebsiteBuyerNames(
+      {
+        firstName: body.firstName,
+        lastName: body.lastName,
+        displayName: body.displayName,
+      },
+      { ...req.actor, branchIds: [branchId] },
+      branchId,
+      `site-buyer:${stableFingerprint({ site, branchId, id })}`,
     );
     return {
       data: { id: result.data.id, displayName: result.data.displayName },

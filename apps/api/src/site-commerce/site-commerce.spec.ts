@@ -229,6 +229,7 @@ function fixture() {
     undefined,
     undefined,
     undefined,
+    undefined,
     insurance as never,
   );
   return {

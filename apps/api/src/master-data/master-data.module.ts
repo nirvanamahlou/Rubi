@@ -71,6 +71,7 @@ import {
     MasterHotelBaseRatePublicService,
   ],
   exports: [
+    WebsiteAgencyDirectory,
     CurrencyRateService,
     MasterSalesDirectory,
     MasterProcurementDirectory,

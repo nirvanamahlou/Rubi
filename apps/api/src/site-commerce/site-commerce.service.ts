@@ -27,6 +27,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   Optional,
 } from '@nestjs/common';
@@ -1964,6 +1965,20 @@ export class SiteCommerceService {
         (event) => this.sales.applyFinancePaymentConfirmed(event),
       );
       await this.releaseSettledWebsiteDocuments(row, scoped);
+      if (this.websiteTestInsuranceEnabled()) {
+        try {
+          await this.websiteTourInsurance(site, externalId, actor, true);
+        } catch (error) {
+          if (!(
+            error instanceof NotFoundException ||
+            error instanceof ForbiddenException
+          ))
+            Logger.warn(
+              'Website tour insurance is pending an issuance retry.',
+              SiteCommerceService.name,
+            );
+        }
+      }
     }
     return this.status(site, externalId, actor);
   }
@@ -2074,6 +2089,14 @@ export class SiteCommerceService {
     return { data: intake, delivery: authorization };
   }
 
+  private websiteTestInsuranceEnabled() {
+    return (
+      process.env.NODE_ENV !== 'production' &&
+      process.env.SITE_COMMERCE_TEST_TOUR_INSURANCE === 'true' &&
+      !!this.insurance
+    );
+  }
+
   private async websiteTourInsuranceContext(
     site: string,
     externalId: string,
@@ -2081,11 +2104,7 @@ export class SiteCommerceService {
   ) {
     // The only configured provider issues test policies. Customer records from
     // production orders must stay out of that provider.
-    if (
-      process.env.NODE_ENV === 'production' ||
-      process.env.SITE_COMMERCE_TEST_TOUR_INSURANCE !== 'true' ||
-      !this.insurance
-    ) {
+    if (!this.websiteTestInsuranceEnabled() || !this.insurance) {
       throw new NotFoundException();
     }
     const { row, scoped } = await this.order(site, externalId, actor);

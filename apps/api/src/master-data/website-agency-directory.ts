@@ -334,6 +334,31 @@ export class WebsiteAgencyDirectory {
     });
     return { data };
   }
+  async activeWebsiteAccount(
+    site: string,
+    account: string,
+    actor: AuthenticatedActor,
+  ) {
+    const { branchId } = siteBinding(site, actor);
+    const handle =
+      site === 'nss' && /^[a-zA-Z0-9_.-]{3,120}$/.test(account)
+        ? account
+        : externalOrderId(account);
+    const rows = await this.db.client.websiteAgencyAccount.findMany({
+      where: {
+        site,
+        branchId,
+        status: 'LINKED',
+        organizationId: { not: null },
+        ...(site === 'nss' ? { username: handle } : { externalId: handle }),
+      },
+      select: { organizationId: true },
+      take: 2,
+    });
+    return rows.length === 1 && rows[0]?.organizationId
+      ? { branchId, organizationId: rows[0].organizationId }
+      : null;
+  }
   async approve(id: string, actor: AuthenticatedActor) {
     await this.assertStaff(actor, true);
     return this.db.client
