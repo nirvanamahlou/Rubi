@@ -1,3 +1,7 @@
+## NORA-EXISTING-GUIDES-AUDIT-1124 — PC-C
+
+Stage 5 inventories eight existing guides and updates 14 sections with source-backed steps, preserving existing routes and topic IDs. Coverage, source references and Stage 6 acceptance boundaries are in docs/tasks/NORA-EXISTING-GUIDES-AUDIT-1124.md.
+
 ## NORA-PURCHASE-RESERVATION-GUIDES-1124 — PC-C
 
 Stage 4 adds 12 source-linked topics covering procurement workflows and reservation-report definitions and discrepancy checks. The current ERP route and visibility constraints are captured in docs/tasks/NORA-PURCHASE-RESERVATION-GUIDES-1124.md. Producer operations and permissions are unchanged.

@@ -1,3 +1,7 @@
+## NORA-EXISTING-GUIDES-AUDIT-1124 — PC-C — REVIEW
+
+Stage 5 based on #1920. Reserve only the eight existing guide documents and their generated catalogues, regression tests, coverage and status notes. ERP producers, screen controls, policy, migrations and deployments are outside this unit.
+
 ## NORA-PURCHASE-RESERVATION-GUIDES-1124 — PC-C — REVIEW
 
 Stage 4, based on #1917. Reserve only the purchase and reservation-report guide documents, generated linked catalogue, bounded retrieval/generator integration, tests and status notes. Existing Procurement and Reservations code is read-only evidence. No schema, permissions, dependencies or production changes.
