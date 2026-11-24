@@ -189,3 +189,12 @@ it.each([
     dataMessage: message,
   });
 });
+
+it('routes a daily package lookup to Workbench guidance', () => {
+  expect(routeAssistantQuestion('پکیج های روز رو از کجا ببینم؟')).toMatchObject(
+    {
+      kind: 'guide',
+      domain: 'workbench',
+    },
+  );
+});

@@ -1,3 +1,7 @@
+## NORA-GUIDE-RELEASE-ACCEPTANCE-1124 — PC-C
+
+Stage 6 runs an authenticated isolated browser matrix on the integrated guide branch. It addresses two observed routing gaps for document download and Workbench daily packages. Evidence and remaining gates are in docs/tasks/NORA-GUIDE-RELEASE-ACCEPTANCE-1124.md.
+
 ## NORA-EXISTING-GUIDES-AUDIT-1124 — PC-C
 
 Stage 5 inventories eight existing guides and updates 14 sections with source-backed steps, preserving existing routes and topic IDs. Coverage, source references and Stage 6 acceptance boundaries are in docs/tasks/NORA-EXISTING-GUIDES-AUDIT-1124.md.
