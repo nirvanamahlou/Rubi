@@ -16,6 +16,10 @@ Reserve Nora v3 reply presentation, native report formatting and focused tests. 
 
 ## DOCUMENT-LOGO-SCAN-DISPLAY-1124 — PC-C — ACTIVE
 
+## NORA-GUIDE-PILOT-1124 — PC-C — REVIEW
+
+Stacked on #1906. Reserve the new authored-guide retrieval endpoint and pilot tests plus bounded Composer call site and three additive pilot messages in the Assistant copy catalogue. Preserve existing model and record-read routes. Authenticated local acceptance complete. PR #1907 retains this scope pending CI and review. No production migration or deployment.
+
 ## NORA-GUIDE-COVERAGE-1124 — PC-C — ACTIVE
 
 Reserve new procedural guides, additive linked catalogue inputs and shared lexical retrieval with a bounded Composer integration. Preserve producer modules, existing record readers and policies. No migration or deployment.
