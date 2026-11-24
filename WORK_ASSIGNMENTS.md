@@ -1,5 +1,7 @@
 ## NORA-DATA-ATLAS-1124 — PC-C — REVIEW
 
+Release follow-up for #1933 reserves the four report-discovery translations in en-overrides.json and the report search grammar for CI and production verification.
+
 From origin/develop 0b54d1986. Reserve the Assistant catalog shortlist in data-agent.mjs, additive source discovery, schema inventory, tests and coordination notes. Native domains, migrations and permissions are read-only references.
 
 ## NORA-PURCHASE-DEPTH-1124 — PC-C — REVIEW

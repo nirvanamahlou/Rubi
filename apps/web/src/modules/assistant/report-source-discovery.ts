@@ -1,5 +1,8 @@
 import { normalizeQuestion } from './question-text';
 
+const reportStopWord =
+  /^(?:برای|های|میزان|تعداد|مجموع|مبلغ|داده|گزارش|ها|به|از|در|را|بر|اساس)$/u;
+
 export function reportSourceTopic(question: string) {
   const text = normalizeQuestion(question);
   const match =
@@ -34,27 +37,7 @@ export async function describeReportSources(
     ...new Set(
       normalizeQuestion(topic)
         .split(' ')
-        .filter(
-          (term) =>
-            term.length > 1 &&
-            ![
-              'برای',
-              'های',
-              'میزان',
-              'تعداد',
-              'مجموع',
-              'مبلغ',
-              'داده',
-              'گزارش',
-              'ها',
-              'به',
-              'از',
-              'در',
-              'را',
-              'بر',
-              'اساس',
-            ].includes(term),
-        ),
+        .filter((term) => term.length > 1 && !reportStopWord.test(term)),
     ),
   ];
   if (!terms.length)
