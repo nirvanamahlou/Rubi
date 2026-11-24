@@ -1,3 +1,7 @@
+## Website checkout contracts for dated tours
+
+The authenticated dated-tour draft endpoint builds a native Sales contract from the site's eligible publication and Avina's current room rates. It verifies the complete traveler allocation, all stays in a combined package, published price components and current flight capacity. Resulting drafts use the existing website order identity and payment verification. Jahan Bastan and Ghestiroo can use the endpoint additively, while Niyayesh Seir's existing draft integration remains compatible.
+
 ## City and country website photos
 
 Avina geography records support a main photo and up to six gallery photos. The row publication action includes the saved photos in the signed profile sent to Jahan Bastan, Ghestiroo, or Niyayesh Seir. Country flags use their existing independent field. Profiles created before this change omit photo fields until an image is added.
