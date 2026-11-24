@@ -13,3 +13,13 @@
 - Chrome confirmed conversational rendering for contract creation, the pre-handoff checklist, receipt upload, ticket issuance, vouchers, the role-filtered issuance reference, the unsupported reissuance response and finance delivery guidance. The real incomplete contract form supplied the error shown by Nora (S03).
 - The customer-status question initially reached an unavailable provider. The pilot now asks for the tracking number and shows where to check the current assignee. Chrome verified that reply and the clarification for ambiguous follow-up (C04, C06). For S05, Chrome confirmed the previous selected contract ID was used before the switch and was absent from outgoing assistant requests after switching native accounts. A synthetic DOM selection fixture supplied the ID.
 - No production components were changed.
+
+### Browser acceptance
+
+| Area | Cases | Result |
+| --- | --- | --- |
+| Sales | S01–S06 | 6/6. Creation, combined service checklist, real form error, receipt follow-up, account isolation and no invented discount policy. |
+| Travel issuance | I01–I06 | 6/6. Issuance, selected stay, finance delivery, restricted finance references, unsupported reissuance and voucher guidance with the provider disconnected. |
+| Customer Affairs | C01–C06 | 6/6. Requests, permission-qualified handoff, overdue tickets, tracking-number clarification, satisfaction and ambiguous follow-up. |
+
+Each baseline case was exercised through the authenticated Chrome chat. Endpoint assertions supplied additional evidence for the expected checklist sections. S05 used an injected synthetic selection marker and native account switching to verify outgoing request isolation. The model provider was disconnected in this preview, so this run establishes guide behavior and does not certify a live model answer. The draft PR remains subject to its CI and review.
