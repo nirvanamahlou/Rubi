@@ -1423,6 +1423,27 @@ export class CustomerService {
     );
   }
 
+  syncWebsiteBuyerNames(
+    names: Pick<
+      CustomerMutationRequest,
+      'firstName' | 'lastName' | 'displayName'
+    >,
+    actor: AuthenticatedActor,
+    branch: string,
+    registrationKey: string,
+  ) {
+    return this.createRecord(
+      { ...names, kind: 'person', roles: ['customer'] },
+      this.salesEntryActor(actor),
+      branch,
+      'website-buyer-profile',
+      true,
+      true,
+      registrationKey,
+      true,
+    );
+  }
+
   /** Called only after Sales authorizes an available historical completion. */
   async createForSalesCompletion(
     input: CustomerMutationRequest,
@@ -1448,6 +1469,7 @@ export class CustomerService {
     nationalIdOptional: boolean,
     birthDateOptional = false,
     registrationKey?: string,
+    refreshRegisteredNames = false,
   ) {
     this.assertMutationFields(input, actor);
     let row;
@@ -1483,9 +1505,12 @@ export class CustomerService {
               )
               .digest('hex'),
             traceId,
+            ...(refreshRegisteredNames ? ([true] as const) : []),
           )
         : await this.repository.create(data, actor.userId, branch, traceId);
     } catch (error) {
+      if (refreshRegisteredNames && prismaCode(error) === 'P2025')
+        throw conflict();
       if (prismaCode(error) === 'P2003')
         throw new BadRequestException({
           code: 'INVALID_MASTER_DATA_REFERENCE',

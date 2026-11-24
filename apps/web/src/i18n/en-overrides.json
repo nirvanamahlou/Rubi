@@ -7139,5 +7139,10 @@
   "راهنمای تعریف بلیط، لود چارتر، ویرایش یا بررسی ظرفیت را می‌خواهید؟": "Do you need help defining tickets, loading charter flights, editing flights, or checking capacity?",
   "شمارهٔ پرواز و تاریخ حرکت را با قالب میلادی 2026-11-24 بنویسید. اگر کلاس مشخصی مدنظر است، آن را هم ذکر کنید.": "Enter the flight number and departure date in Gregorian YYYY-MM-DD format. Include the class if applicable.",
   "کلاس:": "Class:",
-  "وضعیت فروش:": "Sales status:"
+  "وضعیت فروش:": "Sales status:",
+  "برای استعلام درخواست شخصی، کد پیگیری را در میزکار من مشخص کنید. وضعیت پروندهٔ دیگر را از نمای مجاز منابع انسانی بررسی کنید.": "Provide the tracking code in My Workbench to check your own request. Use the authorized HR view to check another employee’s case.",
+  "برای مشاهدهٔ این بخش، دسترسی منابع انسانی در نشست فعلی لازم است.": "HR access is required to view this section in the current session.",
+  "جزئیات محرمانه را از پرونده، فیش یا درخواست در نمای مجاز ERP بررسی کنید.": "Check confidential details in the record, payslip, or request in the authorized ERP view.",
+  "کدام بخش منابع انسانی را می‌خواهید بررسی کنید؟ نوع درخواست، قرارداد کاری، کارکرد یا حقوق را مشخص کنید.": "Which HR area would you like to check? Specify the request type, employment contract, attendance, or payroll.",
+  "نتیجهٔ یکتا پیدا نشد. کد را در کارتابل درخواست‌ها بررسی کنید.": "A unique result was not found. Verify the code in the request inbox."
 }
