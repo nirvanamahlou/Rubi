@@ -24,6 +24,7 @@ function setup() {
   const database = {
     client: {
       $transaction: vi.fn().mockResolvedValue({ version: 1, rows: [] }),
+      user: { findFirst: vi.fn() },
     },
   };
   const controller = new SalesAgentController(
@@ -41,10 +42,34 @@ function setup() {
 }
 const original = process.env.ASSISTANT_AGENT_ENABLED;
 afterEach(() => {
+  vi.unstubAllEnvs();
   if (original === undefined) delete process.env.ASSISTANT_AGENT_ENABLED;
   else process.env.ASSISTANT_AGENT_ENABLED = original;
 });
 describe('Sales public agent source authorization', () => {
+  it('uses global scope only for the configured active account and rechecks it on release', async () => {
+    const h = setup();
+    const id = '00000000-0000-4000-8000-000000000001';
+    h.current.userId = id;
+    h.current.permissions = [];
+    h.request.actor = { ...h.request.actor, userId: id };
+    vi.stubEnv('NORA_DANIAL_BUSINESS_READ_USER_ID', id);
+    h.companies.selected.mockResolvedValue(null);
+    h.database.client.user.findFirst.mockResolvedValue({ id });
+    const { contextId, sources } = await h.controller.catalog(h.request);
+    expect(sources.map((source) => source.id)).toContain('payments');
+    expect(h.companies.selected).toHaveBeenCalledWith(
+      expect.objectContaining({ permissions: ['legal-entity.aggregate.read'] }),
+    );
+    h.database.client.$transaction.mockImplementation(async () => {
+      h.database.client.user.findFirst.mockResolvedValue(null);
+      return { version: 1, rows: [] };
+    });
+    await expect(
+      h.controller.countBreakdown(h.request, { contextId }),
+    ).rejects.toThrow();
+  });
+
   it('rejects count scope injection, stale scope and revocation before result release', async () => {
     const h = setup();
     const { contextId } = await h.controller.catalog(h.request);

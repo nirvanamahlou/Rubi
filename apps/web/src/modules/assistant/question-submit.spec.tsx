@@ -169,17 +169,18 @@ describe('actual Composer submit routing and transport', () => {
     vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '/api/v1');
     h.fetcher.mockResolvedValueOnce(
       Response.json({
-        state: 'ready',
-        metadata: { reportVersion: 'reporting.dashboard.native.v1' },
-        metrics: { 'employee-overtime': { value: '۱۲٫۵' } },
-        visuals: {},
+        version: 1,
+        id: 'employee-overtime',
+        range: 'week',
+        scope: 'authorized',
+        value: '۱۲٫۵',
       }),
     );
     await send('مجموع اضافه‌کاری کارکنان این هفته چقدره؟');
     expect(h.fetcher).toHaveBeenCalledOnce();
     const [url, init] = h.fetcher.mock.calls[0]!;
-    expect(url).toMatch(/^\/api\/v1\/reports\/dashboard\/projection\?/u);
-    expect(new URLSearchParams(url.split('?')[1]).get('kpiIds')).toBe(
+    expect(url).toMatch(/^\/api\/v1\/reports\/nora\/metric\?/u);
+    expect(new URLSearchParams(url.split('?')[1]).get('id')).toBe(
       'employee-overtime',
     );
     expect(init.credentials).toBe('include');

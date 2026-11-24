@@ -27,6 +27,7 @@ import { SalesAgentQueryService, type AgentScope } from './query.service';
 import { DatabaseService } from '../../database/database.service';
 import { readHotelRanking } from './hotel-ranking';
 import { readContractCountBreakdown } from './count-breakdown';
+import { hasNoraGlobalBusinessRead } from '../../iam/nora-business-read';
 
 @UseGuards(AuthGuard)
 @Controller('sales/assistant-agent')
@@ -46,34 +47,56 @@ export class SalesAgentController {
     const token = readCookie(request, ACCESS_COOKIE);
     if (!token) throw new ForbiddenException();
     const actor = await this.iam.authenticate(decodeURIComponent(token));
-    if (
-      actor.userId !== request.actor.userId ||
-      !canViewRoute(actor.permissions, '/sales')
-    )
+    if (actor.userId !== request.actor.userId) throw new ForbiddenException();
+    const globalRead = await hasNoraGlobalBusinessRead(
+      this.database.client,
+      actor,
+    );
+    if (!globalRead && !canViewRoute(actor.permissions, '/sales'))
       throw new ForbiddenException();
     const has = (permission: string) =>
       actor.permissions.some((value) => value === permission);
-    const mode = has('sales.contracts.read.all')
-      ? 'all'
-      : has('sales.contracts.read.branch')
-        ? 'branch'
-        : has('sales.contracts.read.own')
-          ? 'own'
-          : undefined;
+    const mode =
+      globalRead || has('sales.contracts.read.all')
+        ? 'all'
+        : has('sales.contracts.read.branch')
+          ? 'branch'
+          : has('sales.contracts.read.own')
+            ? 'own'
+            : undefined;
     if (!mode) throw new ForbiddenException('SALES_READ_REQUIRED');
     const scope: AgentScope = {
       userId: actor.userId,
       branchIds: [...actor.branchIds].sort(),
       mode,
-      companyId: await this.companies.selected(actor),
-      payments: has('sales.payments.read'),
+      companyId: await this.companies.selected(
+        globalRead
+          ? {
+              ...actor,
+              permissions: [
+                ...actor.permissions,
+                'legal-entity.aggregate.read',
+              ],
+            }
+          : actor,
+      ),
+      payments: globalRead || has('sales.payments.read'),
     };
     const contextId = createHash('sha256')
       .update(
-        JSON.stringify({ scope, permissions: [...actor.permissions].sort() }),
+        JSON.stringify({
+          scope,
+          globalRead,
+          permissions: [...actor.permissions].sort(),
+        }),
       )
       .digest('hex');
-    return { scope, contextId, sources: allowedSources(scope.payments) };
+    return {
+      scope,
+      contextId,
+      globalRead,
+      sources: allowedSources(scope.payments),
+    };
   }
 
   @Get('catalog')
@@ -89,6 +112,11 @@ export class SalesAgentController {
         'Money is Decimal text: keep currencies separate.',
         'Amounts are before refunds, payments exclude cross-contract allocations; accounting receivables/outstanding and refund-adjusted net sales are unavailable.',
         'Scope is enforced independently of SQL. Times are UTC; interpret calendar days in Asia/Tehran.',
+        ...(context.globalRead && context.scope.companyId === null
+          ? [
+              'These results use the configured organization-wide Nora read scope across companies. Explicitly label this scope in answers.',
+            ]
+          : []),
       ],
     };
   }

@@ -266,6 +266,12 @@ Removed the fixed model-turn stop in Nora v3. Existing request deadline, evidenc
 
 A read-only production audit found 469 master hotels, 34 master countries and 193 saved hotel stays with a hotel snapshot and a country link. Nora now uses a native Sales report for supported Persian requests for top hotels by country. The report counts distinct eligible contracts per hotel, uses the existing public Master Data lookup and excludes Sales and Reservations cancellations. Deploy the API endpoint before enabling the consumer. No database migration is needed.
 
+## Nora business read grants
+
+The separate Nora metric API returns one aggregate from existing authorized producers. It adds registered leads, confirmed customer receipts, executed refunds and registered reservation service purchases to the prior six metrics. Sales Agent and Nora metrics recognize the two configurable native IAM account IDs only when each still matches its active canonical username. This is an endpoint-scoped business read and does not change user roles or mutation routes.
+
+Configure `NORA_DANIAL_BUSINESS_READ_USER_ID` and `NORA_DEMO_BUSINESS_READ_USER_ID` with verified native IAM UUIDs in private server configuration. The Sales Agent read runtime and core Reporting API both need the settings. Missing settings leave ordinary permissions in force. No operational activation or all-domain coverage is claimed.
+
 ## Nora operational module reads
 
 Nora chat reads six native aggregate metrics from HR, Reservations, Documents, Customers and Customer Affairs via the existing Reporting dashboard endpoint. It uses the active ERP session and displays the exact returned numeric text without sending it to the model. Supported periods are today, the current week and the current Persian month in Tehran. The native dashboard aggregates authorized branches independently of the issuer, so Nora offers these reads in the aggregate company view. Other questions retain the existing routes.
