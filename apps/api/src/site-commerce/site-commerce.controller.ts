@@ -201,10 +201,29 @@ export class SiteCommerceController {
   }
 
   @Post('people')
-  async person(
+  person(
     @Param('site') site: string,
     @Body() body: CustomerMutationDto,
     @Req() req: AuthenticatedRequest,
+  ) {
+    return this.syncPerson(site, body, req, false);
+  }
+
+  @Post('people/saved')
+  @Header('Cache-Control', 'private, no-store')
+  savedPerson(
+    @Param('site') site: string,
+    @Body() body: CustomerMutationDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.syncPerson(site, body, req, true);
+  }
+
+  private async syncPerson(
+    site: string,
+    body: CustomerMutationDto,
+    req: AuthenticatedRequest,
+    preserveExisting: boolean,
   ) {
     const binding = siteBinding(site, req.actor);
     const result = await this.customers.syncWebsitePassenger(
@@ -212,6 +231,7 @@ export class SiteCommerceController {
       { ...req.actor, branchIds: [binding.branchId] },
       binding.branchId,
       `site:${site}:passenger-sync`,
+      ...(preserveExisting ? ([true] as const) : []),
     );
     return {
       data: { id: result.data.id, displayName: result.data.displayName },
