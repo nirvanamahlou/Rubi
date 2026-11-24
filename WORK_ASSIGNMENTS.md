@@ -1,3 +1,7 @@
+## NORA-DATA-ATLAS-1124 — PC-C — REVIEW
+
+From origin/develop 0b54d1986. Reserve the Assistant catalog shortlist in data-agent.mjs, additive source discovery, schema inventory, tests and coordination notes. Native domains, migrations and permissions are read-only references.
+
 ## NORA-PURCHASE-DEPTH-1124 — PC-C — REVIEW
 
 Reserve purchase guide content, generated catalogue, bounded Nora routing and focused tests. Procurement, Reservations and Finance are read-only references.

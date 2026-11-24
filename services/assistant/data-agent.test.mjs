@@ -195,7 +195,11 @@ const result = {
   queryHash: 'b'.repeat(64),
   durationMs: 2,
 };
-function harness(steps = [plan, describe, query, finish], override) {
+function harness(
+  steps = [plan, describe, query, finish],
+  override,
+  compactCatalog = false,
+) {
   const calls = [];
   const payloads = [];
   const providerOptions = [];
@@ -204,6 +208,7 @@ function harness(steps = [plan, describe, query, finish], override) {
   let index = 0;
   const agent = createDataAgent({
     enabled: true,
+    compactCatalog,
     erpBaseUrl: 'http://127.0.0.1:4301/api/v1',
     audit: (value) => audits.push(value),
     provider: {
@@ -226,6 +231,43 @@ function harness(steps = [plan, describe, query, finish], override) {
   });
   return { agent, calls, payloads, audits, providerOptions, providerFlags };
 }
+
+test('compact catalog sends relevant definitions, then resolves another authorized source on demand', async () => {
+  const expanded = {
+    ...catalog,
+    sources: [
+      ...catalog.sources,
+      {
+        id: 'passengers',
+        description: 'AGE_SCHEMA',
+        columns: ['age_category'],
+        grain: 'passenger',
+      },
+    ],
+  };
+  const h = harness(
+    [
+      plan,
+      step('catalog_describe', { source: 'passengers' }, 2),
+      query,
+      finish,
+    ],
+    (url) => (url.endsWith('/catalog') ? Response.json(expanded) : undefined),
+    true,
+  );
+  const answer = await h.agent(message, {
+    cookie: 'nora_access=synthetic',
+    signal: signal(),
+  });
+  assert.equal(answer.status, 'ANSWER');
+  assert.ok(!JSON.stringify(h.payloads[0]).includes('AGE_SCHEMA'));
+  assert.ok(JSON.stringify(h.payloads[0]).includes('currency_code'));
+  assert.ok(JSON.stringify(h.payloads[2]).includes('AGE_SCHEMA'));
+  assert.equal(
+    h.calls.filter((call) => call.options.method === 'POST').length,
+    1,
+  );
+});
 
 test('only validated current calculated evidence enables the provider explanation requirement', async () => {
   const h = harness(

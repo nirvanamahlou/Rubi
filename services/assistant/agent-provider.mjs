@@ -503,6 +503,7 @@ export function createAgentProvider({
               ? decodeFinal(JSON.parse(call.function.arguments))
               : JSON.parse(call.function.arguments),
           tokens,
+          usage: usageCounters(result.usage),
         };
       } catch (error) {
         if (error instanceof ServiceError) throw error;

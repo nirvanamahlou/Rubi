@@ -1,115 +1,13 @@
+import {
+  reportSourceTopic,
+  describeReportSources,
+} from './report-source-discovery';
 import { LEGAL_ENTITY_CONTEXT_ALL } from '@nora/contracts';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { normalizeQuestion } from './question-text';
 
-const metrics = [
-  {
-    id: 'employee-overtime',
-    phrase: /(?:مجموع |ساعت |چند ساعت )?اضافه کاری(?: ثبت شده)? کارکنان/,
-    label: 'اضافه‌کاری ثبت‌شدهٔ کارکنان',
-    unit: 'ساعت',
-  },
-  {
-    id: 'employee-workdays',
-    phrase: /(?:تعداد )?روزهای کارکرد کارکنان/,
-    label: 'روزهای کارکرد ثبت‌شدهٔ کارکنان',
-    unit: 'روز',
-  },
-  {
-    id: 'issued-documents',
-    phrase: /(?:تعداد |چند )?(?:سند|اسناد) (?:صدور|صادر شده) رزرواسیون/,
-    label: 'اسناد صدور ثبت‌شدهٔ رزرواسیون',
-    unit: 'سند',
-  },
-  {
-    id: 'document-count',
-    phrase: /(?:تعداد |چند )?(?:سند|اسناد) (?:ثبت شده |ایجاد شده )?آرشیو/,
-    label: 'اسناد ایجادشده در آرشیو',
-    unit: 'سند',
-  },
-  {
-    id: 'registered-customers',
-    phrase: /(?:تعداد |چند )?(?:مشتری|مشتریان) ثبت نام شده/,
-    label: 'مشتریان ثبت‌نام‌شده',
-    unit: 'مشتری',
-  },
-  {
-    id: 'support-ticket-count',
-    phrase: /(?:تعداد |چند )?(?:درخواست|درخواست های|تیکت) پشتیبانی مشتریان/,
-    label: 'درخواست‌های پشتیبانی ثبت‌شدهٔ مشتریان',
-    unit: 'درخواست',
-  },
-  {
-    id: 'new-leads',
-    phrase: /(?:تعداد |چند )?(?:لید|سرنخ)(?: های)? (?:جدید|ثبت شده)/,
-    label: 'سرنخ‌های ثبت‌شده',
-    unit: 'سرنخ',
-  },
-  {
-    id: 'collected',
-    phrase: /(?:مجموع |مبلغ )?دریافت های ت[اأ]یید ?شده مشتریان/,
-    label: 'دریافت‌های تأییدشدهٔ مشتریان',
-    unit: null,
-  },
-  {
-    id: 'refunded',
-    phrase: /(?:مجموع |مبلغ )?استردادهای قطعی مشتریان/,
-    label: 'استردادهای قطعی مشتریان',
-    unit: null,
-  },
-  {
-    id: 'registered-service-purchases',
-    phrase: /(?:تعداد )?خریدهای ثبت شده خدمات/,
-    label: 'خریدهای جاری ثبت‌شدهٔ خدمات رزرواسیون',
-    unit: 'خرید',
-  },
-  {
-    id: 'employee-call-count',
-    phrase: /(?:تعداد )?تماس های منتسب به کارشناسان کال سنتر/,
-    label: 'انتساب‌های تماس به کارشناسان کال‌سنتر',
-    unit: 'مورد',
-  },
-  {
-    id: 'employee-connected-call-count',
-    phrase: /(?:تعداد )?تماس های متصل منتسب به کارشناسان کال سنتر/,
-    label: 'انتساب‌های تماس متصل به کارشناسان کال‌سنتر',
-    unit: 'مورد',
-  },
-  {
-    id: 'active-offers',
-    phrase: /(?:تعداد )?پیشنهادهای فعال بلیت با حرکت/,
-    label: 'پیشنهادهای فعال بلیت با تاریخ حرکت در بازه',
-    unit: 'پیشنهاد',
-  },
-  {
-    id: 'active-marketing-campaigns',
-    phrase: /(?:تعداد |چند )?کمپین(?: های)? فعال بازاریابی/,
-    label: 'کمپین‌های فعال بازاریابی',
-    unit: 'کمپین',
-    snapshot: true,
-  },
-  {
-    id: 'accounting-books',
-    phrase: /(?:تعداد )?دفاتر حسابداری/,
-    label: 'دفاتر حسابداری قابل مشاهده',
-    unit: 'دفتر',
-    snapshot: true,
-  },
-  {
-    id: 'procurement-request-count',
-    phrase: /(?:تعداد )?درخواست های خرید و تامین/,
-    label: 'درخواست‌های خرید و تأمین در همهٔ وضعیت‌ها',
-    unit: 'درخواست',
-    snapshot: true,
-  },
-  {
-    id: 'posted-accounting-journals',
-    phrase: /(?:تعداد |چند )?(?:سند|اسناد) قطعی حسابداری/,
-    label: 'اسناد قطعی حسابداری بر اساس تاریخ سند',
-    unit: 'سند',
-  },
-] as const;
+import { operationalMetrics as metrics } from './operational-metric-catalog';
 
 const periods = {
   امروز: { range: 'today', label: 'امروز' },
@@ -130,7 +28,12 @@ const questionSuffix =
 
 export function resolveOperationalMetric(
   question: string,
-): OperationalMetricRequest | null {
+):
+  | OperationalMetricRequest
+  | { metric: { id: 'report-source' }; topic: string; period: null }
+  | null {
+  const topic = reportSourceTopic(question);
+  if (topic) return { metric: { id: 'report-source' }, period: null, topic };
   const text = normalizeQuestion(question);
   for (const metric of metrics) {
     // Only admit complete recognized queries. Extra filters must never be ignored.
@@ -148,28 +51,34 @@ export function resolveOperationalMetric(
 }
 
 export async function readOperationalMetric(
-  request: OperationalMetricRequest,
+  request: NonNullable<ReturnType<typeof resolveOperationalMetric>>,
   company: string | undefined,
   signal: AbortSignal,
   fetcher = fetch,
 ) {
-  if (!request.period)
+  if (!('topic' in request) && !request.period)
     return 'بازه را مشخص کنید. امروز، هفتهٔ جاری یا ماه جاری شمسی؟';
   const { metric, period } = request;
   const base = getPublicApiBaseUrl();
   try {
     if (!base) throw new Error('Missing ERP endpoint');
+    const topic = 'topic' in request ? request.topic : null;
     const query = new URLSearchParams({
       id: metric.id,
-      range: period.range,
+      range: period?.range ?? '',
       aggregate: String(company === LEGAL_ENTITY_CONTEXT_ALL),
     });
     const load = () =>
-      fetcher(`${base}/reports/nora/metric?${query}`, {
-        credentials: 'include',
-        cache: 'no-store',
-        signal: AbortSignal.any([signal, AbortSignal.timeout(8000)]),
-      });
+      fetcher(
+        topic
+          ? `${base}/reports/catalog`
+          : `${base}/reports/nora/metric?${query}`,
+        {
+          credentials: 'include',
+          cache: 'no-store',
+          signal: AbortSignal.any([signal, AbortSignal.timeout(8000)]),
+        },
+      );
     let response = await load();
     if (
       response.status === 401 &&
@@ -179,11 +88,21 @@ export async function readOperationalMetric(
       response = await load();
     if (signal.aborted) throw new DOMException('Request aborted', 'AbortError');
     if (response.status === 403)
-      return 'حساب شما مجوز مشاهدهٔ این شاخص را ندارد.';
+      return topic
+        ? 'حساب شما مجوز مشاهدهٔ فهرست گزارش‌ها را ندارد.'
+        : 'حساب شما مجوز مشاهدهٔ این شاخص را ندارد.';
     if (!response.ok) throw new Error('ERP metric unavailable');
     const result = await response.json();
     if (signal.aborted) throw new DOMException('Request aborted', 'AbortError');
+    if ('topic' in request) {
+      const answer = await describeReportSources(request.topic, result);
+      if (signal.aborted)
+        throw new DOMException('Request aborted', 'AbortError');
+      return answer;
+    }
     if (
+      !period ||
+      !('unit' in metric) ||
       result?.version !== 1 ||
       result.id !== metric.id ||
       result.range !== period.range

@@ -432,6 +432,8 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
         nativeCountCalls = 0,
         tokens = 0,
         rejectedTokenReserve = 0;
+      let promptTokens = 0;
+      let measuredCalls = 0;
       const provider = providerRuntime.liveProvider();
       const queryAttempts: Array<{ sql: string; error?: string }> = [];
       const agent = runtime.createDataAgent({
@@ -445,6 +447,10 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
             calls++;
             try {
               const r = await provider.step(...args);
+              if (Number.isSafeInteger(r.usage?.promptTokens)) {
+                promptTokens += r.usage.promptTokens;
+                measuredCalls++;
+              }
               tokens += r.tokens;
               return r;
             } catch (error) {
@@ -543,6 +549,7 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
         sqlCalls: queries - nativeCountCalls,
         nativeCountCalls,
         tokens,
+        promptTokens: measuredCalls === calls ? promptTokens : null,
         rejectedTokenReserve,
         durationMs: Date.now() - started,
         results,
