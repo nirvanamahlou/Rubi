@@ -64,7 +64,7 @@ export function buildLinkedPanelGuides(directory, check) {
       const validAction =
         href === action ||
         (domain === 'travel-issuance' &&
-          id === 'delivery' &&
+          ['delivery', 'delivery-exception'].includes(id) &&
           href === '/finance/delivery') ||
         (domain === 'tour' &&
           [

@@ -1,4 +1,8 @@
-import { assistantGuideSection } from './assistant-guide-registry';
+import {
+  assistantGuideSection,
+  isAssistantGuideModule,
+} from './assistant-guide-registry';
+import { retrieveSpecificPanelGuide } from './panel-guide-retrieval';
 import { normalizeQuestion } from './question-text';
 
 export function resolvePilotGuide(
@@ -26,6 +30,8 @@ export function resolvePilotGuide(
     !/\d{4,}/.test(q)
   )
     return { status: 'clarify-record' } as const;
+  const specific = retrieveSpecificPanelGuide(message, panel);
+  if (specific) return { status: 'answer', ids: [specific] } as const;
   if (!procedure.test(q) && !followup) return null;
   if (/\d{4,}|دست کی|وضعیت همین|وضعیت قرارداد/.test(q)) return null;
   if (followup && previous === 'sales/create')
@@ -83,10 +89,8 @@ export function pilotGuideResponse(
   if (!decision || decision.status !== 'answer')
     return { status: decision?.status ?? 'unmatched', sections: [] };
   const sections = decision.ids.flatMap((ref) => {
-    const [domain, id] = ref.split('/') as [
-      'sales' | 'travel-issuance' | 'customer-affairs',
-      string,
-    ];
+    const [domain, id] = ref.split('/');
+    if (!domain || !isAssistantGuideModule(domain)) return [];
     const section = assistantGuideSection(domain, id);
     return section && canOpen(section.href) ? [{ ...section, ref }] : [];
   });
