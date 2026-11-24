@@ -6,6 +6,14 @@ Own the additive site-commerce dated-tour draft route, authoritative rate and ho
 
 Own the city and country photo fields, geography dialog, additive migration, and signed profile delivery of the main photo and gallery. Coordinate the three website receivers and verify the publication contract.
 
+## NORA-ERP-FIRST-1124 — PC-C — ACTIVE
+
+Reserve Nora Web routing, supported guide selection, and the assistant sales period parser with focused regressions. Keep producer permissions and APIs unchanged.
+
+## NORA-OPT-IN-EVIDENCE-1124 — PC-C — ACTIVE
+
+Reserve Nora v3 reply presentation, native report formatting and focused tests. Preserve authenticated reads and evidence validation.
+
 ## DOCUMENT-LOGO-SCAN-DISPLAY-1124 — PC-C — ACTIVE
 
 ## NORA-GUIDE-COVERAGE-1124 — PC-C — ACTIVE

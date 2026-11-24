@@ -410,3 +410,13 @@ test('financial reconciliation never releases stale authorization or substitutes
     );
   }
 });
+
+test('uses 30 complete Tehran days for a resolved recent sales period', async () => {
+  const { relativeSalesRequest } = await import('./sales-window-evidence.mjs');
+  const periods = relativeSalesRequest(
+    { message: 'فروش 30 روز گذشته چقدر است؟', history: [] },
+    new Date('2026-11-24T09:17:00Z'),
+  );
+  assert.equal(periods?.[0]?.startUtc, '2026-10-24T20:30:00.000Z');
+  assert.equal(periods?.[0]?.endExclusiveUtc, '2026-11-23T20:30:00.000Z');
+});

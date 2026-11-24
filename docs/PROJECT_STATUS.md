@@ -6,9 +6,18 @@ The authenticated dated-tour draft endpoint builds a native Sales contract from 
 
 Avina geography records support a main photo and up to six gallery photos. The row publication action includes the saved photos in the signed profile sent to Jahan Bastan, Ghestiroo, or Niyayesh Seir. Country flags use their existing independent field. Profiles created before this change omit photo fields until an image is added.
 
+## Nora ERP question routing
+
+Nora routes workflow questions to existing guides, record and report questions to authorized ERP readers, and unmatched requests to clarification. The Web composer has no generic conversation dispatch. Cross-module intent is independent of the current page. Ambiguous recent-month sales requests ask for a date range before reading scoped ERP sales data.
+
+## Nora response details
+
+Nora v3 shows calculation methods, source names and observation timestamps on explicit request. Report periods, coverage limitations and authorization checks remain part of the normal reporting flow.
+
 ## NORA-GUIDE-COVERAGE-1124 — PC-C
 
 Initial linked guides for travel issuance, Customer Affairs, package generator, petty cash and correspondence. Scoped lexical retrieval uses accessible destinations and existing record dispatch. Build-time catalogue consistency and 11 focused retrieval tests passed. Stage 1 acceptance baseline records 15 module coverage rows, 18 pilot questions and policy evidence gaps in docs/tasks/NORA-GUIDE-ACCEPTANCE-BASELINE-1124.md. Server-side retrieval and execution of the pilot belong to Stage 2.
+
 
 
 ## Master Data logo scan display

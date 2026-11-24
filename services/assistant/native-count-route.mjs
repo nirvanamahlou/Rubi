@@ -39,7 +39,7 @@ export function nativeCountRoute(request) {
         text: `تعداد کل قراردادها: ${n(row.total)}`,
         resultIds: [output.resultId],
         limitations: [],
-        calculationExplanation: `شمارش تمام‌وقت قراردادهای قابل مشاهده در شرکت و محدوده دسترسی فعلی شما، شامل وضعیت‌های لغوشده است؛ فیلترهای سفارشی فهرست اعمال نشده‌اند. جمع گروه‌های بدون هم‌پوشانی: ${n(row.panel_non_cancelled)} غیرلغوشده + ${n(row.sales_cancelled)} لغوشده در فروش + ${n(row.reservation_cancelled_only)} فقط لغوشده در رزرواسیون = ${n(row.total)} قرارداد. منبع: شمارش جاری سامانه؛ زمان مشاهده: ${output.observedAt}.`,
+        calculationExplanation: `شمارش تمام‌وقت قراردادهای قابل مشاهده در شرکت و محدوده دسترسی فعلی شما، شامل وضعیت‌های لغوشده است؛ فیلترهای سفارشی فهرست اعمال نشده‌اند. جمع گروه‌های بدون هم‌پوشانی: ${n(row.panel_non_cancelled)} غیرلغوشده + ${n(row.sales_cancelled)} لغوشده در فروش + ${n(row.reservation_cancelled_only)} فقط لغوشده در رزرواسیون = ${n(row.total)} قرارداد.`,
       },
     };
   };
