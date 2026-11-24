@@ -159,6 +159,9 @@ export function buildLinkedPanelGuides(directory, check) {
         fields.specific === true
           ? fields
           : {}),
+        ...(domain === 'petty-cash' && fields.aliases
+          ? { aliases: fields.aliases }
+          : {}),
         related,
         steps,
         guideHref: '/assistant-guides/' + domain + '#' + id,

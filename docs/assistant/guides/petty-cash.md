@@ -65,7 +65,7 @@
 
 ## ثبت هزینه و رسید
 
-<!-- nora-guide {"id":"expense","href":"/purchases","related":[],"route":["سرمایه انسانی","تنخواه","ثبت هزینه و رسید"],"terms":["ثبت هزینه","ثبت جدید","مبلغ کل","کارمزد","مرکز هزینه","موجودی ناکافی","ثبت ها","رسید هزینه"],"examples":["کارمزد را جدا به مبلغ کل اضافه کنم؟"],"source":"apps/web/src/modules/procurement/petty-registrations.tsx"} -->
+<!-- nora-guide {"id":"expense","href":"/purchases","related":[],"route":["سرمایه انسانی","تنخواه","ثبت هزینه و رسید"],"aliases":["ثبت هزینه تنخواه","رسید تنخواه"],"terms":["ثبت هزینه","ثبت جدید","مبلغ کل","کارمزد","مرکز هزینه","موجودی ناکافی","ثبت ها","رسید هزینه"],"examples":["کارمزد را جدا به مبلغ کل اضافه کنم؟"],"source":"apps/web/src/modules/procurement/petty-registrations.tsx"} -->
 
 ### مراحل
 
