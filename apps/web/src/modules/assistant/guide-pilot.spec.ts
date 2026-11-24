@@ -78,6 +78,17 @@ describe('shared pilot guide evidence', () => {
   });
 });
 
+it('keeps a customer request with a tracking number on the record path', () => {
+  expect(
+    pilotGuideResponse(
+      'درخواست مشتری 123456 الان دست کیه؟',
+      '/customer-affairs',
+      undefined,
+      () => true,
+    ).status,
+  ).toBe('unmatched');
+});
+
 describe('additional fixed pilot questions', () => {
   it.each([
     [
@@ -98,7 +109,7 @@ describe('additional fixed pilot questions', () => {
       'C04',
       'درخواست مشتری من الان دست کیه؟',
       '/customer-affairs',
-      'unmatched',
+      'clarify-record',
       undefined,
     ],
     [

@@ -19,6 +19,13 @@ export function resolvePilotGuide(
   const followup = /^(?:بعدش چی|بعدش|مرحله بعد چیه)$/.test(q);
   if (/سقف.*تخفیف|واچر.*باطل|صدور مجدد/.test(q) && (sales || issuance))
     return { status: 'insufficient' } as const;
+  if (
+    affairs &&
+    /درخواست/.test(q) &&
+    /دست کی|مسئول.*کی/.test(q) &&
+    !/\d{4,}/.test(q)
+  )
+    return { status: 'clarify-record' } as const;
   if (!procedure.test(q) && !followup) return null;
   if (/\d{4,}|دست کی|وضعیت همین|وضعیت قرارداد/.test(q)) return null;
   if (followup && previous === 'sales/create')

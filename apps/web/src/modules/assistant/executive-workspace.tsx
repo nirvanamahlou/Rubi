@@ -656,6 +656,7 @@ function AssistantComposerContent({
       }
       if (
         guide?.status === 'clarify' ||
+        guide?.status === 'clarify-record' ||
         guide?.status === 'insufficient' ||
         result?.status === 401 ||
         result?.status === 403
@@ -663,7 +664,9 @@ function AssistantComposerContent({
         replyLocally(
           guide?.status === 'clarify'
             ? 'منظورتان پیگیری در امور مشتریان، کال‌سنتر یا میزکار من است؟'
-            : 'برای این سؤال راهنمای قابل استناد در دسترس نیست.',
+            : guide?.status === 'clarify-record'
+              ? 'شمارهٔ پیگیری درخواست را بفرستید. برای دیدن مسئول فعلی، در امور مشتریان ← درخواست‌های مشتریان، جزئیات همان پرونده را باز کنید.'
+              : 'برای این سؤال راهنمای قابل استناد در دسترس نیست.',
         );
         return;
       }
