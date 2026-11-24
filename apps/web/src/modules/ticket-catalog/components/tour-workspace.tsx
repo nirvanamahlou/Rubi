@@ -221,7 +221,11 @@ export function TourWorkspace({
       const [p, d, cities, insurance, airlines, airports, countries] =
         await Promise.all([
           toursApi.packages(),
-          toursApi.departures(canManagePeriods),
+          toursApi.departures(
+            canManagePeriods,
+            undefined,
+            mode === 'definition',
+          ),
           loadRefs('cities'),
           loadRefs('insurance-plans'),
           loadRefs('airlines'),
@@ -254,7 +258,7 @@ export function TourWorkspace({
     return () => {
       cancelled = true;
     };
-  }, [reload, canManagePeriods]);
+  }, [reload, canManagePeriods, mode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -496,36 +500,78 @@ export function TourWorkspace({
           packages={packages}
           departures={departures}
           cities={references.cities}
+          branches={branches}
           loading={loading}
           busy={busy || loading}
           onEdit={showEditor}
-          onDelete={(item, sites) =>
-            void run(async () => {
-              await toursApi.deletePackage(
-                item.id,
-                item.version,
-                item.branchId,
-                sites,
-              );
-              setNotice('تور «' + item.name + '» حذف شد.');
-            })
+          onDelete={
+            canManagePeriods
+              ? async (item, sites) => {
+                  setBusy(true);
+                  setProblem('');
+                  setNotice('');
+                  try {
+                    await toursApi.deletePackage(
+                      item.id,
+                      item.version,
+                      item.branchId,
+                      sites,
+                    );
+                    setPackages((current) =>
+                      current.filter((tour) => tour.id !== item.id),
+                    );
+                    if (selected === item.id) {
+                      setSelected('');
+                      resetTickets();
+                    }
+                    if (editing?.id === item.id) {
+                      setEditing(undefined);
+                      setCreating(false);
+                    }
+                    setNotice('تور «' + item.name + '» حذف شد.');
+                  } finally {
+                    setBusy(false);
+                  }
+                }
+              : undefined
           }
           onSelect={selectTour}
           onRepeat={repeatTour}
           onPeriodStatus={
             canManagePeriods
-              ? (item, status, sites) =>
-                  void run(async () => {
+              ? async (item, status, sites) => {
+                  if (status === 'DELETED') {
+                    setBusy(true);
+                    setProblem('');
+                    setNotice('');
+                    try {
+                      await toursApi.setDepartureStatus(
+                        item.id,
+                        false,
+                        item.salesVersion ?? 1,
+                        item.branchId,
+                        true,
+                        sites,
+                      );
+                      setDepartures((current) =>
+                        current.filter((period) => period.id !== item.id),
+                      );
+                      setNotice('وضعیت بازه به‌روز شد.');
+                    } finally {
+                      setBusy(false);
+                    }
+                    return;
+                  }
+                  await run(async () => {
                     await toursApi.setDepartureStatus(
                       item.id,
                       status === 'ACTIVE',
                       item.salesVersion ?? 1,
                       item.branchId,
-                      status === 'DELETED' ? true : undefined,
-                      sites,
                     );
                     setNotice('وضعیت بازه به‌روز شد.');
-                  })
+                  });
+                }
               : undefined
           }
           definitionMode={mode === 'definition'}

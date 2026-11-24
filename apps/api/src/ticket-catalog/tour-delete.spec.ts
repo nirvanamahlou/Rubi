@@ -18,11 +18,13 @@ function setup({
   departures = 0,
   exists = true,
   floatingPrices = false,
+  history = false,
 }: {
   lockCount?: number;
   departures?: number;
   exists?: boolean;
   floatingPrices?: boolean;
+  history?: boolean;
 } = {}) {
   const updateMany = vi.fn(async () => ({ count: lockCount }));
   const findFirst = vi.fn(async () => (exists ? { id } : null));
@@ -32,7 +34,10 @@ function setup({
   const tx = {
     websitePublication: { findMany: vi.fn().mockResolvedValue([]) },
     tourPackage: { updateMany, findFirst, deleteMany, update },
-    tourDeparture: { count },
+    tourDeparture: {
+      count,
+      findFirst: vi.fn().mockResolvedValue(history ? { id } : null),
+    },
     floatingTourSaleCatalog: {
       findUnique: vi
         .fn()
@@ -69,7 +74,7 @@ describe('tour definition deletion', () => {
       data: { version: { increment: 0 } },
     });
     expect(count).toHaveBeenCalledWith({
-      where: { packageId: id, branchId: branch },
+      where: { packageId: id, branchId: branch, isDeleted: false },
     });
     expect(deleteMany).toHaveBeenCalledWith({
       where: { id, branchId: branch, version: 3 },
@@ -93,6 +98,18 @@ describe('tour definition deletion', () => {
     await expect(
       service.deletePackage(id, { expectedVersion: 1 }, salesActor, branch),
     ).rejects.toThrow('برای حفظ سوابق قابل حذف نیست');
+    expect(deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('archives the definition after its final departure has been deleted', async () => {
+    const { service, update, deleteMany } = setup({ history: true });
+    await expect(
+      service.deletePackage(id, { expectedVersion: 3 }, salesActor, branch),
+    ).resolves.toEqual({ data: { id, deleted: true } });
+    expect(update).toHaveBeenCalledWith({
+      where: { id },
+      data: { archivedAt: expect.any(Date), version: { increment: 1 } },
+    });
     expect(deleteMany).not.toHaveBeenCalled();
   });
 

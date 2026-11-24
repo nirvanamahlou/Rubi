@@ -2,6 +2,10 @@
 
 Stacked on #1907. Reserve the five Stage 3 guide documents, their generated catalogue, bounded pilot retrieval integration, focused tests and acceptance notes. Producer modules are referenced read-only. No migration, dependency, merge or deployment.
 
+## GEOGRAPHY-SITE-IMAGES-1124 — PC-D — ACTIVE
+
+Own the city and country photo fields, geography dialog, additive migration, and signed profile delivery of the main photo and gallery. Coordinate the three website receivers and verify the publication contract.
+
 ## DOCUMENT-LOGO-SCAN-DISPLAY-1124 — PC-C — ACTIVE
 
 ## NORA-GUIDE-PILOT-1124 — PC-C — REVIEW
@@ -13494,3 +13498,15 @@ Reserve the Master Data hotel creation and Excel-create paths, the create form, 
 ## DASHBOARD-AVAILABILITY-NOTES — PC-C — ACTIVE
 
 Reserve Dashboard availability display, its existing tests and the requested audit Markdown. Presentation only; source contracts, metrics and permissions remain unchanged.
+
+## TOUR-LIST-DELETE-1124 — PC-A — READY_FOR_CI
+
+Scope: defined tour list, delete confirmation and archive after the last departure is deleted. Maintain branch, version and website confirmation checks and preserve historical rows.
+
+## TOUR-INLINE-RATES-1124 — PC-A — READY_FOR_CI
+
+Scope: expanded tour periods, saved departure pricing, and direct editing of imported floating amounts using the existing versioned pricing API. No schema or permission changes.
+
+## TOUR-DELETE-REPAIR-1124 — PC-A — READY_FOR_CI
+
+Scope: add the existing departure withdrawal flow under each expanded tour, apply successful removal immediately and keep errors in confirmation. Production 409 for a previously deleted period is resolved by the archive logic already in develop (#1911). No schema or deployment change.
