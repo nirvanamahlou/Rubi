@@ -144,7 +144,7 @@ export function resolveRelativeSalesPeriods(message, now) {
     calendar: gregorian ? 'gregory' : 'persian',
   });
   const pattern =
-    /این (هفته|ماه|سال)|(هفته|ماه|سال) (?:ی )?(قبل تر|قبلی تر|پیش تر|گذشته|قبل|پیش)|(?:هفت|7) روز گذشته|(امروز|دیروز|پریروز)(?![\p{L}\p{N}])/gu;
+    /این (هفته|ماه|سال)|(هفته|ماه|سال) (?:ی )?(قبل تر|قبلی تر|پیش تر|گذشته|قبل|پیش)|(?<![\p{L}\p{N}])(?:سی|30|هفت|7) روز گذشته|(امروز|دیروز|پریروز)(?![\p{L}\p{N}])/gu;
   const terms = [...text.matchAll(pattern)];
   if (!terms.length) return null;
   const matchedTime = /تا همین (?:موقع|زمان)/.test(text);
@@ -163,7 +163,10 @@ export function resolveRelativeSalesPeriods(message, now) {
       return make(date, date, offset === 0 || Boolean(cutoff), cutoff);
     }
     const unit = term[1] ?? term[2];
-    if (!unit) return make(civilShift(today, -7), civilShift(today, -1));
+    if (!unit) {
+      const days = /^(?:سی|30)/.test(term[0]) ? 30 : 7;
+      return make(civilShift(today, -days), civilShift(today, -1));
+    }
     const offset = term[1] ? 0 : term[3].endsWith(' تر') ? -2 : -1;
     if (unit === 'هفته') {
       const start = civilShift(startOfWeek, offset * 7);
