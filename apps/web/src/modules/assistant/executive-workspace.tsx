@@ -90,6 +90,13 @@ import {
   resolveReservationGuide,
 } from './reservation-guide';
 import { readHotelPurchaseGuidePack } from './hotel-purchase-guide';
+import {
+  pettyCashHref,
+  pettyCashReadError,
+  readPettyCashGuide,
+  renderPettyCashGuide,
+  resolvePettyCashGuide,
+} from './petty-cash-guide';
 import { normalizeQuestion } from './question-text';
 import {
   renderSystemManagementGuide,
@@ -503,6 +510,13 @@ function AssistantComposerContent({
   const guideTopic = useRef<string | undefined>(undefined);
   const systemGuideTopic = useRef<string | undefined>(undefined);
   const flightCapacityTopic = useRef<string | undefined>(undefined);
+  const pettyCashTopic = useRef<string | undefined>(undefined);
+  const pettyCashRead = useRef<AbortController | null>(null);
+  const pettyCashSelected = searchParams.get('request');
+  useEffect(
+    () => () => pettyCashRead.current?.abort(),
+    [pathname, pettyCashSelected],
+  );
   const previousAnswer = useRef<AnswerContext | undefined>(undefined);
   const pendingSalesPeriod = useRef(false);
   useEffect(() => {
@@ -512,6 +526,8 @@ function AssistantComposerContent({
       previousAnswer.current = undefined;
       flightCapacityTopic.current = undefined;
       reservationGuideTopic.current = undefined;
+      pettyCashTopic.current = undefined;
+      pettyCashRead.current?.abort();
       pendingSalesPeriod.current = false;
     }
   }, [denied]);
@@ -771,6 +787,52 @@ function AssistantComposerContent({
     }
     const previousReservationTopic = reservationGuideTopic.current;
     reservationGuideTopic.current = undefined;
+    const pettyCash = resolvePettyCashGuide(
+      message,
+      pathname,
+      pettyCashTopic.current,
+      pettyCashSelected,
+    );
+    pettyCashTopic.current = undefined;
+    if (pettyCash) {
+      pendingSalesPeriod.current = false;
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      guideTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      const link = { href: pettyCashHref, label: 'تنخواه' };
+      if (pettyCash.kind === 'guide') {
+        pettyCashTopic.current = pettyCash.topic.id;
+        replyLocally(
+          renderPettyCashGuide(pettyCash.topic, pettyCash.followUp),
+          undefined,
+          undefined,
+          documentGuideLink(link, 'petty-cash', pettyCash.topic.id),
+        );
+      } else if (pettyCash.kind === 'clarify') {
+        replyLocally(pettyCash.text, undefined, undefined, link);
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        pettyCashRead.current = controller;
+        setActionState('loading');
+        try {
+          const result = await readPettyCashGuide(pettyCash, controller.signal);
+          if (!controller.signal.aborted) {
+            replyLocally(result.text, undefined, undefined, {
+              ...link,
+              href: result.href,
+            });
+          }
+        } catch (error) {
+          if (!controller.signal.aborted)
+            replyLocally(pettyCashReadError(error), undefined, undefined, link);
+        } finally {
+          if (pending.current === controller) setActionState(null);
+        }
+      }
+      return;
+    }
     if (decision.kind === 'capabilities') {
       replyLocally(
         english

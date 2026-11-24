@@ -22,6 +22,10 @@ Stage 4, based on #1917. Reserve only the purchase and reservation-report guide 
 
 Stacked on #1907. Reserve the five Stage 3 guide documents, their generated catalogue, bounded pilot retrieval integration, focused tests and acceptance notes. Producer modules are referenced read-only. No migration, dependency, merge or deployment.
 
+## NORA-PETTY-CASH-GUIDE-1124 — PC-C — ACTIVE
+
+Reserve Nora petty cash guide, generation, read-only Composer dispatch and focused tests. Reuse native Procurement access and workflows.
+
 ## WEBSITE-DATED-TOUR-CONTRACTS-1124 — PC-D — ACTIVE
 
 Own the additive site-commerce dated-tour draft route, authoritative rate and hotel-itinerary validation, and coordinated Jahan Bastan and Ghestiroo checkout callers. Preserve payment verification, floating-tour policy, and other publishing changes. No migration or dependency changes.

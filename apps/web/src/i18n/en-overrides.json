@@ -7145,5 +7145,16 @@
   "وضعیت فروش:": "Sales status:",
   "منظورتان خرید کدام خدمت قرارداد است، یا می‌خواهید درخواست خرید تنخواه ثبت کنید؟": "Do you mean a contract service purchase or a petty cash purchase request?",
   "راهنمای کدام گردش را می‌خواهید؟ بازاریابی، بستن پکیج یا پکیج‌های شناور؟": "Which workflow do you need help with: marketing, standard packages, or floating packages?",
-  "وضعیت این مورد را در نمای مجاز ERP بررسی کنید.": "Review this record in the authorized ERP view."
+  "وضعیت این مورد را در نمای مجاز ERP بررسی کنید.": "Review this record in the authorized ERP view.",
+  "برای این شعبه حساب تنخواه تنظیم نشده است.": "No petty cash account is configured for this branch.",
+  "جست‌وجو نتیجهٔ یکتای قابل تأیید نداشت. پرونده را در تنخواه باز کنید و دوباره بپرسید.": "The search did not return one verifiable result. Open the record in Petty Cash and ask again.",
+  "درخواست در دامنهٔ قابل مشاهدهٔ این نشست پیدا نشد.": "The request was not found within this session’s accessible scope.",
+  "دریافت اطلاعات تنخواه ناموفق بود. وضعیت اتصال و پیام پنل را بررسی کنید.": "Petty cash information could not be retrieved. Check connectivity and the panel message.",
+  "دسترسی خواندن این مورد در نشست جاری وجود ندارد.": "The current session does not have read access to this item.",
+  "راهنمای درخواست خرید، ثبت هزینه، شارژ یا خروجی تنخواه را می‌خواهید؟": "Do you need help with a purchase request, an expense, a top-up, or a petty cash export?",
+  "کد کامل درخواست خرید را بنویسید یا همان پرونده را در تنخواه باز کنید.": "Enter the complete purchase request code or open its record in Petty Cash.",
+  "موجودی تنخواه «": "Petty cash balance for “",
+  "نام دقیق شعبه را برای بررسی موجودی تنخواه بنویسید.": "Enter the exact branch name to check its petty cash balance.",
+  "نام شعبه را با عنوان دقیقِ قابل مشاهده در پنل مشخص کنید.": "Provide the branch name exactly as shown in the panel.",
+  "نشست پایان یافته است. دوباره وارد ERP شوید.": "Your session has ended. Sign in to the ERP again."
 }

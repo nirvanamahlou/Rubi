@@ -10760,3 +10760,5 @@ Website-bound connectors can read the latest active and approved USD, EUR and TR
 - نورا: پوشش راهنمای خرید و تأمین با موضوع‌های تخصصی هتل، بلیت شناور، ترانسفر، بیمه و ثبت نامطمئن تکمیل شد. جزئیات پذیرش در [سند آزمون](tasks/NORA-PURCHASE-DEPTH-1124.md) ثبت شده‌اند.
 
 - راهنماهای بازاریابی، مدیریت پکیج و پکیج‌های شناور در شاخهٔ نورا و ماتریس [پذیرش](tasks/NORA-SALES-GUIDES-1124.md) ثبت شدند.
+
+2026-11-24 PC-C — NORA-PETTY-CASH-GUIDE-1124: Added versioned Nora petty cash guidance, read-only request and balance lookup and coverage. See docs/tasks/NORA-PETTY-CASH-GUIDE-1124.md.

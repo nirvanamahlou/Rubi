@@ -548,6 +548,7 @@ describe('Purchase guide depth in the Composer', () => {
 describe('Sales panel catalogues in Composer', () => {
   it('switches between package workflows and continues without model calls', async () => {
     h.permissions.push('package_pricing.read');
+    h.permissions.push('package_pricing.read');
     h.path = '/workbench';
     await send('بازه بستن پکیج رو کجا بررسی کنم؟');
     expect(chat().at(-1)).toContain('نرخ و بازه در بستن پکیج');
@@ -563,5 +564,37 @@ describe('Sales panel catalogues in Composer', () => {
     await send('کمپین جدید چطور بسازم؟');
     expect(chat().at(-1)).not.toContain('تقویم');
     expect(h.fetcher).not.toHaveBeenCalled();
+  });
+});
+
+describe('petty cash guide in the Composer', () => {
+  const id = '12345678-1234-4234-8234-123456789abc';
+
+  it('answers a procedural question outside the panel and keeps follow-up local', async () => {
+    h.path = '/workbench';
+    await send('در تنخواه کارمزد را جدا به مبلغ کل اضافه کنم؟');
+    expect(chat().at(-1)).toContain('کارمزد جزء مبلغ کل است');
+    await send('بعدش چی؟');
+    expect(chat().at(-1)).toContain('حساب تنخواه و موجودی همان شعبه');
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+
+  it('uses the native authenticated GET for an exact purchase request', async () => {
+    h.path = '/purchases';
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '/api/v1');
+    h.fetcher.mockResolvedValueOnce(
+      Response.json({
+        items: [{ id, number: 'PR-' + id, status: 'IN_REVIEW' }],
+        hasMore: false,
+      }),
+    );
+    await send(`وضعیت درخواست PR-${id}`);
+    expect(chat().at(-1)).toContain('در بررسی');
+    expect(h.fetcher).toHaveBeenCalledTimes(1);
+    expect(h.fetcher).toHaveBeenCalledWith(
+      expect.stringContaining('/api/v1/procurement/requests?search='),
+      expect.objectContaining({ credentials: 'include' }),
+    );
+    expect(h.fetcher.mock.calls[0]?.[1]?.method).toBeUndefined();
   });
 });

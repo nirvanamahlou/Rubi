@@ -20,7 +20,7 @@ const outputs = {
   'travel-issuance': ['', '/reservations', 'registry'],
   'customer-affairs': ['', '/customer-affairs', 'registry'],
   'package-generator': ['', '/sales/pricing/generator', 'registry'],
-  'petty-cash': ['', '/purchases', 'registry'],
+  'petty-cash': ['petty-cash.generated', '/purchases', 'documents'],
   correspondence: ['', '/correspondence', 'registry'],
   b2b: ['b2b-guide-catalog', '/organizations', 'text'],
   tour: ['tour-guide', '/sales/tours', 'tuple'],
@@ -144,6 +144,9 @@ export function buildLinkedPanelGuides(directory, check) {
         title,
         href,
         ...(format === 'registry' || fields.specific === true ? fields : {}),
+        ...(domain === 'petty-cash' && fields.aliases
+          ? { aliases: fields.aliases }
+          : {}),
         related,
         steps,
         guideHref: '/assistant-guides/' + domain + '#' + id,
