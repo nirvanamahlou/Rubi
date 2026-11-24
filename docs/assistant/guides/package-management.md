@@ -50,7 +50,7 @@
 
 ## بنر و خروجی پکیج
 
-<!-- nora-guide {"id":"output","href":"/sales/pricing/management","related":["package-generator/start"],"route":["فروش و ارتباط با مشتری","مدیریت پکیج","بستن پکیج","بنر و خروجی پکیج"],"aliases":["بنر پکیج ثبت شده","خروجی بستن پکیج","انتشار سایت پکیج"],"examples":["چطور بنر پکیج ثبت شده را بررسی کنم؟","از کجا بنر پکیج ثبت شده رو ببینم؟"],"conditions":["دسترسی به شرکت و نمای مربوط و اختیار اقدام لازم است."],"sources":["apps/web/src/modules/pricing-management/components/tour-pricing-workspace.tsx"],"specific":true} -->
+<!-- nora-guide {"id":"output","href":"/sales/pricing/management","related":["package-generator/start"],"route":["فروش و ارتباط با مشتری","مدیریت پکیج","بستن پکیج","بنر و خروجی پکیج"],"aliases":["بنر پکیج ثبت شده","خروجی بستن پکیج","انتشار سایت پکیج"],"examples":["چطور بنر پکیج ثبت شده را بررسی کنم؟","از کجا بنر پکیج ثبت شده رو ببینم؟"],"conditions":["دسترسی به شرکت و نمای مربوط و اختیار اقدام لازم است."],"sources":["apps/web/src/modules/pricing-management/components/tour-pricing-workspace.tsx"],"specific":true,"workflow":{"next":"package-generator/start"}} -->
 
 ### مراحل
 

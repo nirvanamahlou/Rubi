@@ -43,7 +43,7 @@
 
 ## انتخاب مشتری و طرف حساب قرارداد
 
-<!-- nora-guide {"id":"buyer","route":["فروش و ارتباط با مشتری","قرارداد","قرارداد جدید","مسیر، خدمات و مسافران","مشتری و طرف حساب قرارداد"],"sources":["apps/web/src/modules/sales/components/sales-people-sheet.tsx"],"pattern":"مشتری|خریدار|طرف حساب|پرداخت کننده|آدرس|تلفن|کد پستی|شماره مشتری|آشنایی","flags":"","href":"/sales","conditions":["دسترسی به پنل قراردادها"],"related":[]} -->
+<!-- nora-guide {"id":"buyer","route":["فروش و ارتباط با مشتری","قرارداد","قرارداد جدید","مسیر، خدمات و مسافران","مشتری و طرف حساب قرارداد"],"sources":["apps/web/src/modules/sales/components/sales-people-sheet.tsx"],"pattern":"مشتری|خریدار|طرف حساب|پرداخت کننده|آدرس|تلفن|کد پستی|شماره مشتری|آشنایی","flags":"","href":"/sales","conditions":["دسترسی به پنل قراردادها"],"related":["b2c/register"]} -->
 
 ### مراحل
 
@@ -52,11 +52,15 @@
 3. نام مشتری و اطلاعات تماس و آدرس موجود را در فیلدهای مربوط وارد کنید. «نحوه آشنایی با ما» برای کل قرارداد ثبت می‌شود.
 4. در جدول افراد از «انتخاب موجود» برای پرونده قبلی استفاده کنید و پس از تکمیل اطلاعات، «ثبت و تأیید افراد» را بزنید. اگر پیام «مشتری قرارداد را مشخص کنید» می‌بینید، ابتدا انتخاب طرف حساب و تأیید افراد را کامل کنید.
 
+### راهنماهای مرتبط
+
+- [ثبت و ویرایش پرونده](b2c.md#register)
+
 <a id="agency"></a>
 
 ## ثبت قرارداد برای مشتری حقوقی یا آژانس
 
-<!-- nora-guide {"id":"agency","route":["فروش و ارتباط با مشتری","قرارداد","قرارداد جدید","مسیر، خدمات و مسافران","حقوقی / آژانس"],"sources":["apps/web/src/modules/sales/components/sales-organization-customer.tsx","apps/web/src/modules/sales/components/sales-people-sheet.tsx"],"pattern":"آژانس|اژانس|حقوقی|سازمانی|سازمان|شرکت","flags":"","href":"/sales","conditions":["دسترسی به پنل قراردادها"],"related":[]} -->
+<!-- nora-guide {"id":"agency","route":["فروش و ارتباط با مشتری","قرارداد","قرارداد جدید","مسیر، خدمات و مسافران","حقوقی / آژانس"],"sources":["apps/web/src/modules/sales/components/sales-organization-customer.tsx","apps/web/src/modules/sales/components/sales-people-sheet.tsx"],"pattern":"آژانس|اژانس|حقوقی|سازمانی|سازمان|شرکت","flags":"","href":"/sales","conditions":["دسترسی به پنل قراردادها"],"related":["b2b/registration"]} -->
 
 ### مراحل
 
@@ -64,6 +68,10 @@
 2. در «مشتری حقوقی / آژانس»، سازمان موردنظر را جست‌وجو و انتخاب کنید. اگر پرونده قبلاً وجود دارد، «انتخاب مشتری حقوقی» را بزنید؛ در حالت ایجاد پرونده، گزینه «ثبت پرونده مشتری حقوقی و انتخاب» نمایش داده می‌شود.
 3. اطلاعات رابط و تماس را مطابق فیلدهای فرم تکمیل کنید. سپس مسافران استفاده‌کننده از خدمات را در جدول افراد مشخص و تأیید کنید.
 4. مسیر و خدمات و تخصیص‌ها را کامل کنید و با «تأیید مسیر و خدمات» به «قیمت و پرداخت» بروید.
+
+### راهنماهای مرتبط
+
+- [ثبت و اصلاح هویت](b2b.md#registration)
 
 <a id="route"></a>
 
@@ -392,7 +400,7 @@
 
 ## پیگیری قرارداد پس از ارسال به رزرواسیون
 
-<!-- nora-guide {"id":"reservation","route":["فروش و ارتباط با مشتری","قرارداد","ردیف قرارداد موردنظر"],"sources":["apps/web/src/modules/sales/components/sales-workspace.tsx","apps/web/src/modules/sales/components/sales-travel-documents.tsx"],"pattern":"رزرواسیون|رزرو|صف|وضعیت|پذیرفته|رد شده|در حال انجام|تکمیل شده","flags":"","href":"/sales","conditions":["دسترسی به پنل قراردادها"],"related":[]} -->
+<!-- nora-guide {"id":"reservation","route":["فروش و ارتباط با مشتری","قرارداد","ردیف قرارداد موردنظر"],"sources":["apps/web/src/modules/sales/components/sales-workspace.tsx","apps/web/src/modules/sales/components/sales-travel-documents.tsx"],"pattern":"رزرواسیون|رزرو|صف|وضعیت|پذیرفته|رد شده|در حال انجام|تکمیل شده","flags":"","href":"/sales","conditions":["دسترسی به پنل قراردادها"],"related":["reservations/handoff","finance-delivery/status"],"workflow":{"next":"reservations/handoff","status":"finance-delivery/status"}} -->
 
 ### مراحل
 
@@ -401,11 +409,16 @@
 3. اگر درخواست نیازمند بررسی یا رد شده است، توضیح درخواست مرتبط را از رزرواسیون پیگیری کنید. اصلاح اطلاعات مسافر یا مبلغ از «اصلاح» همان ردیف انجام می‌شود.
 4. پس از اجرای خدمات، مدارک را از «مدارک» بررسی کنید و وضعیت مجوز تحویل مالی را پیگیری کنید.
 
+### راهنماهای مرتبط
+
+- [دریافت و بررسی قرارداد](reservations.md#handoff)
+- [وضعیت مجوز](finance-delivery.md#status)
+
 <a id="purchase"></a>
 
 ## خرید مرتبط با قرارداد شناوری
 
-<!-- nora-guide {"id":"purchase","route":["فروش و ارتباط با مشتری","قرارداد","ردیف قرارداد موردنظر","خرید"],"sources":["apps/web/src/modules/sales/components/floating-contract-purchase-dialog.tsx","apps/web/src/modules/sales/components/new-contract-purchases.tsx"],"pattern":"خرید|تامین کننده|تأمین کننده|کارگزار|شناوری","flags":"","href":"/sales","conditions":["دسترسی به پنل قراردادها"],"related":[]} -->
+<!-- nora-guide {"id":"purchase","route":["فروش و ارتباط با مشتری","قرارداد","ردیف قرارداد موردنظر","خرید"],"sources":["apps/web/src/modules/sales/components/floating-contract-purchase-dialog.tsx","apps/web/src/modules/sales/components/new-contract-purchases.tsx"],"pattern":"خرید|تامین کننده|تأمین کننده|کارگزار|شناوری","flags":"","href":"/sales","conditions":["دسترسی به پنل قراردادها"],"related":["purchase/floating"],"workflow":{"next":"purchase/floating"}} -->
 
 ### مراحل
 
@@ -413,6 +426,10 @@
 2. «خرید» را باز کنید و اطلاعات خدمت و خرید مرتبط را مطابق فرم بررسی یا تکمیل کنید.
 3. قیمت فروش قرارداد را در بخش قیمت قرارداد و اطلاعات خرید را در فرم خرید مربوط کنترل کنید.
 4. اگر دکمه برای حساب شما نمایش داده نمی‌شود، وضعیت شناوری قرارداد و مجوز حساب را با مسئول دسترسی بررسی کنید.
+
+### راهنماهای مرتبط
+
+- [خرید بلیط شناور](purchase.md#floating)
 
 <a id="draft"></a>
 

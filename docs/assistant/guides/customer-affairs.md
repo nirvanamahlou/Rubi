@@ -52,7 +52,7 @@
 
 ## پاسخ فروش به ارجاع
 
-<!-- nora-guide {"id":"sales-response","href":"/customer-affairs","related":[],"aliases":["پذیرش ارجاع فروش","پاسخ فروش به درخواست","برگرداندن ارجاع"],"route":["امور مشتریان","پاسخ فروش به ارجاع"],"conditions":["دسترسی به پنل و اختیار اقدام روی همان پرونده"],"sources":["apps/web/src/modules/customer-affairs/components/sales-handoff-response.tsx"],"specific":true} -->
+<!-- nora-guide {"id":"sales-response","href":"/customer-affairs","related":["sales/list"],"aliases":["پذیرش ارجاع فروش","پاسخ فروش به درخواست","برگرداندن ارجاع"],"route":["امور مشتریان","پاسخ فروش به ارجاع"],"conditions":["دسترسی به پنل و اختیار اقدام روی همان پرونده"],"sources":["apps/web/src/modules/customer-affairs/components/sales-handoff-response.tsx"],"specific":true,"workflow":{"prerequisite":"sales/list"}} -->
 
 ### مراحل
 
@@ -63,6 +63,10 @@
 ### مرجع
 
 [رفتار پیاده‌سازی](../../../apps/web/src/modules/customer-affairs/components/sales-handoff-response.tsx)
+
+### راهنماهای مرتبط
+
+- [پیداکردن قرارداد و استفاده از فهرست](sales.md#list)
 
 <a id="ticket-escalation"></a>
 

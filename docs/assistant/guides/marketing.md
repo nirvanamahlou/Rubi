@@ -119,13 +119,15 @@
 
 ## منابع ورود و رضایت مخاطب
 
-<!-- nora-guide {"id":"audience-consent","href":"/marketing?section=audiences","related":[],"route":["فروش و ارتباط با مشتری","بازاریابی","منابع ورود و رضایت مخاطب"],"aliases":["رضایت مخاطبان"],"examples":["چطور رضایت مخاطبان را بررسی کنم؟","از کجا رضایت مخاطبان رو ببینم؟"],"conditions":["دسترسی به نمای مربوط و اختیار اقدام لازم است."],"sources":["apps/web/src/modules/marketing/model/reference-data.ts"],"specific":true} -->
+<!-- nora-guide {"id":"audience-consent","href":"/marketing?section=audiences","related":["b2c/consent"],"route":["فروش و ارتباط با مشتری","بازاریابی","منابع ورود و رضایت مخاطب"],"aliases":["رضایت مخاطبان"],"examples":["چطور رضایت مخاطبان را بررسی کنم؟","از کجا رضایت مخاطبان رو ببینم؟"],"conditions":["دسترسی به نمای مربوط و اختیار اقدام لازم است."],"sources":["apps/web/src/modules/marketing/model/reference-data.ts"],"specific":true} -->
 
 ### مراحل
 
 1. در «مخاطبان»، گروه‌ها و سگمنت‌ها، مخاطبان کمپین و منابع ورود را جدا بررسی کنید. برای ارسال، رضایت کانال و دامنهٔ گروه هدف را از همان نما کنترل کنید.
 
+### راهنماهای مرتبط
 
+- [رضایت ارتباطی](b2c.md#consent)
 
 <a id="offer-usage"></a>
 

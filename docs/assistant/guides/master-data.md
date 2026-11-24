@@ -365,11 +365,15 @@
 
 ## نرخ پایه هتل
 
-<!-- nora-guide {"id":"hotel-rates","href":"/master-data/accommodation/hotel-rates","section":"accommodation","pattern":"نرخ پایه هتل","special":true,"related":[]} -->
+<!-- nora-guide {"id":"hotel-rates","href":"/master-data/accommodation/hotel-rates","section":"accommodation","pattern":"نرخ پایه هتل","special":true,"related":["hotel-purchase-rates/hotel-purchase-start"]} -->
 
 ### مراحل
 
 1. شهر و هتل‌های فعال و فروش‌پذیر را انتخاب کنید. نرخ مثبت، ارز و دلیل ثبت یا اصلاح را بررسی کنید. نرخ پایه هتل با هزینه خرید و قیمت فروش قرارداد متفاوت است.
+
+### راهنماهای مرتبط
+
+- [انتخاب بخش در «قیمت خرید هتل»](hotel-purchase-rates.md#hotel-purchase-start)
 
 <a id="files"></a>
 

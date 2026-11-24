@@ -5,7 +5,10 @@ import {
   selectCompositeChecklist,
 } from './composite-guide';
 
-import { documentGuideLink } from './assistant-guide-registry';
+import {
+  documentGuideLink,
+  type GuideSection,
+} from './assistant-guide-registry';
 
 import {
   purchaseGuideLink,
@@ -47,6 +50,7 @@ import {
 } from './document-guides';
 
 import { canViewRoute, canViewScreen } from '@nora/contracts';
+import { findCatalogueTopics, workflowDestination } from './catalogue-search';
 import { prefersTravelIssuanceGuide, resolvePilotGuide } from './guide-pilot';
 import {
   retrievePanelGuidance,
@@ -649,6 +653,64 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    const mayReadGuide = (section: GuideSection) =>
+      Boolean(
+        actor &&
+        canViewRoute(actor.permissions, section.href) &&
+        (!section.permission ||
+          actor.permissions.some((p) => p === section.permission)),
+      );
+    const showSection = (section: GuideSection) => {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      replyLocally(
+        [
+          section.title,
+          ...((section.route ?? section.path)?.length
+            ? [(section.route ?? section.path)!.join(' ← ')]
+            : []),
+          ...(section.conditions ?? []),
+          ...section.steps.map((step, i) => i + 1 + '. ' + step),
+        ].join('\n'),
+        undefined,
+        undefined,
+        {
+          href: section.href,
+          label: english ? 'Open panel' : 'باز کردن پنل',
+          guideHref: section.guideHref,
+        },
+      );
+    };
+    const lastReply = messages.at(-1);
+    const linkedNext =
+      lastReply?.role === 'assistant' &&
+      workflowDestination(
+        message,
+        lastReply.guideLink?.guideHref,
+        mayReadGuide,
+      );
+    if (linkedNext === null) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      replyLocally(t(c.pilotGuideInsufficient));
+      return;
+    }
+    if (linkedNext) {
+      showSection(linkedNext);
+      return;
+    }
+    // An explicit manual lookup can start on any page.
+    if (guidanceAllowed && /^راهنمای?\s/.test(message.trim())) {
+      const [section, other] = findCatalogueTopics(
+        message,
+        pathname,
+        mayReadGuide,
+      );
+      if (section && !other) {
+        showSection(section);
+        return;
+      }
+    }
     const newGuide = retrieveSalesPanelGuide(
       message,
       pathname,
@@ -2033,6 +2095,20 @@ function AssistantComposerContent({
       return;
     }
     if (guidanceAllowed) {
+      const matches = findCatalogueTopics(message, pathname, mayReadGuide);
+      if (matches.length === 1 && matches[0]) {
+        showSection(matches[0]);
+        return;
+      }
+      if (matches.length > 1) {
+        const options = matches.slice(0, 3).map((s) => s.title);
+        replyLocally(
+          (english
+            ? 'Which topic do you mean? '
+            : 'راهنمای کدام بخش را می‌خواهید؟ ') + options.join(' / '),
+        );
+        return;
+      }
       replyLocally(
         english
           ? 'Which ERP workflow, record, or report would you like me to check?'

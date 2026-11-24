@@ -51,7 +51,7 @@
 
 ## ثبت و اصلاح خرید خدمات قرارداد
 
-<!-- nora-guide {"id":"save","href":"/ticket-purchases","pattern":"ثبت|اصلاح|ویرایش|هتل|بیمه|ترانسفر|شناور|کارگزار|مبلغ","flags":"","related":["purchase/finance"]} -->
+<!-- nora-guide {"id":"save","href":"/ticket-purchases","pattern":"ثبت|اصلاح|ویرایش|هتل|بیمه|ترانسفر|شناور|کارگزار|مبلغ","flags":"","related":["purchase/finance"],"workflow":{"next":"purchase/finance"}} -->
 
 ### مراحل
 

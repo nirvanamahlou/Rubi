@@ -36,7 +36,7 @@
 
 ## مراجع هتل و مقصد
 
-<!-- nora-guide {"id":"hotel-purchase-references","href":"/reservations/hotel-rates","related":["master-data/hotels"],"route":["رزرواسیون","قیمت خرید هتل","مراجع هتل و مقصد"],"terms":["هتل پیدا نمیشه","هتل در فهرست نیست","کارگزار هتل","ارز نرخ هتل","نوع اتاق پیدا"],"examples":["چرا هتل در فهرست نیست؟"],"source":"apps/web/src/modules/reservations/hotel-rates/manual-hotel-panel.tsx"} -->
+<!-- nora-guide {"id":"hotel-purchase-references","href":"/reservations/hotel-rates","related":["master-data/hotels"],"route":["رزرواسیون","قیمت خرید هتل","مراجع هتل و مقصد"],"terms":["هتل پیدا نمیشه","هتل در فهرست نیست","کارگزار هتل","ارز نرخ هتل","نوع اتاق پیدا"],"examples":["چرا هتل در فهرست نیست؟"],"source":"apps/web/src/modules/reservations/hotel-rates/manual-hotel-panel.tsx","workflow":{"prerequisite":"master-data/hotels"}} -->
 
 ### مراحل
 

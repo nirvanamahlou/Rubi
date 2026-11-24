@@ -42,7 +42,10 @@
       "نوع اتاق پیدا"
     ],
     "examples": ["چرا هتل در فهرست نیست؟"],
-    "source": "apps/web/src/modules/reservations/hotel-rates/manual-hotel-panel.tsx"
+    "source": "apps/web/src/modules/reservations/hotel-rates/manual-hotel-panel.tsx",
+    "workflow": {
+      "prerequisite": "master-data/hotels"
+    }
   },
   {
     "id": "hotel-purchase-occupancy",

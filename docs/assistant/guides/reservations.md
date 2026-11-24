@@ -126,7 +126,7 @@
 
 ## صدور و مجوز تحویل
 
-<!-- nora-guide {"id":"delivery","href":"/reservations/processing","related":["finance-delivery/status"],"route":["رزرواسیون","صدور و مجوز تحویل"],"conditions":["مشاهده پرونده و اقدام‌ها تابع دسترسی کاربر، شرکت فعال و وضعیت پرونده است."],"terms":["مجوز تحویل","تحویل مدارک","تحویل مالی","تحویل نمیره","تحویل نمی رود","رسید"],"examples":["بلیت صادر شده، چرا تحویل نمیره؟"],"source":"apps/web/src/modules/reservations/components/reservation-delivery-permit.tsx"} -->
+<!-- nora-guide {"id":"delivery","href":"/reservations/processing","related":["finance-delivery/status"],"route":["رزرواسیون","صدور و مجوز تحویل"],"conditions":["مشاهده پرونده و اقدام‌ها تابع دسترسی کاربر، شرکت فعال و وضعیت پرونده است."],"terms":["مجوز تحویل","تحویل مدارک","تحویل مالی","تحویل نمیره","تحویل نمی رود","رسید"],"examples":["بلیت صادر شده، چرا تحویل نمیره؟"],"source":"apps/web/src/modules/reservations/components/reservation-delivery-permit.tsx","workflow":{"status":"finance-delivery/status"}} -->
 
 ### مراحل
 
@@ -156,7 +156,7 @@
 
 ## نرخ هتل
 
-<!-- nora-guide {"id":"hotel-rates","href":"/reservations/hotel-rates","related":["hotel-purchase-rates/hotel-purchase-start","master-data/hotels"],"route":["رزرواسیون","نرخ هتل"],"conditions":["مشاهده پرونده و اقدام‌ها تابع دسترسی کاربر، شرکت فعال و وضعیت پرونده است."],"terms":["نرخ هتل","قیمت هتل","نرخ اقامت"],"examples":["نرخ هتل رو کجا بررسی کنم؟"],"source":"apps/web/src/modules/reservations/hotel-rates/hotel-rate-hub.tsx"} -->
+<!-- nora-guide {"id":"hotel-rates","href":"/reservations/hotel-rates","related":["hotel-purchase-rates/hotel-purchase-start","master-data/hotels"],"route":["رزرواسیون","نرخ هتل"],"conditions":["مشاهده پرونده و اقدام‌ها تابع دسترسی کاربر، شرکت فعال و وضعیت پرونده است."],"terms":["نرخ هتل","قیمت هتل","نرخ اقامت"],"examples":["نرخ هتل رو کجا بررسی کنم؟"],"source":"apps/web/src/modules/reservations/hotel-rates/hotel-rate-hub.tsx","workflow":{"next":"hotel-purchase-rates/hotel-purchase-start","prerequisite":"master-data/hotels"}} -->
 
 ### مراحل
 

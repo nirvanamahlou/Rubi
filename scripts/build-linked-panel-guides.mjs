@@ -1,3 +1,4 @@
+import { validateGuideLinks } from './build-assistant-guide-index.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
@@ -142,18 +143,7 @@ export function buildLinkedPanelGuides(directory, check) {
         throw new Error(
           'Invalid or duplicate linked topic: ' + domain + '/' + id,
         );
-      const visibleLinks = [
-        ...section.matchAll(
-          /^- \[[^\]]+\]\((?:([a-z-]+)\.md)?#([a-z][a-z0-9-]*)\)$/gm,
-        ),
-      ].map(([, target, anchor]) => (target ?? domain) + '/' + anchor);
-      if (JSON.stringify(related) !== JSON.stringify(visibleLinks))
-        throw new Error(
-          'Markdown guide links do not match their references: ' +
-            domain +
-            '/' +
-            id,
-        );
+      validateGuideLinks(domain, id, related, section);
       if ('pattern' in fields) new RegExp(fields.pattern, fields.flags);
       index.set(id, {
         id,
@@ -164,6 +154,8 @@ export function buildLinkedPanelGuides(directory, check) {
         fields.specific === true
           ? fields
           : {}),
+        ...(Array.isArray(fields.terms) ? { terms: fields.terms } : {}),
+        ...(fields.workflow ? { workflow: fields.workflow } : {}),
         ...(domain === 'petty-cash' && fields.aliases
           ? { aliases: fields.aliases }
           : {}),
@@ -256,22 +248,7 @@ export function buildLinkedPanelGuides(directory, check) {
       });
     }
   }
-  for (const [domain, { topics }] of Object.entries(panels)) {
-    for (const topic of topics) {
-      for (const ref of topic.related) {
-        if (typeof ref !== 'string')
-          throw new Error('Invalid guide relation: ' + domain);
-        const [target, id] = ref.split('/');
-        if (
-          ref === domain + '/' + topic.id ||
-          !panels[target]?.topics.some((item) => item.id === id)
-        )
-          throw new Error(
-            'Invalid guide relation: ' + domain + '/' + topic.id + ' -> ' + ref,
-          );
-      }
-    }
-  }
   for (const [output, data] of products) publish(output, data, check);
   publish('linked-panel-guides.generated', panels, check);
+  return panels;
 }

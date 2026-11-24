@@ -148,7 +148,10 @@
       "رسید"
     ],
     "examples": ["بلیت صادر شده، چرا تحویل نمیره؟"],
-    "source": "apps/web/src/modules/reservations/components/reservation-delivery-permit.tsx"
+    "source": "apps/web/src/modules/reservations/components/reservation-delivery-permit.tsx",
+    "workflow": {
+      "status": "finance-delivery/status"
+    }
   },
   {
     "id": "cancellation",
@@ -188,7 +191,11 @@
     ],
     "terms": ["نرخ هتل", "قیمت هتل", "نرخ اقامت"],
     "examples": ["نرخ هتل رو کجا بررسی کنم؟"],
-    "source": "apps/web/src/modules/reservations/hotel-rates/hotel-rate-hub.tsx"
+    "source": "apps/web/src/modules/reservations/hotel-rates/hotel-rate-hub.tsx",
+    "workflow": {
+      "next": "hotel-purchase-rates/hotel-purchase-start",
+      "prerequisite": "master-data/hotels"
+    }
   },
   {
     "id": "queue-export",

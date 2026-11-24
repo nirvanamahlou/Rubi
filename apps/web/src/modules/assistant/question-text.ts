@@ -19,18 +19,26 @@ export function normalizeQuestion(text: string) {
   );
 }
 
-export function matchesQuestion(text: string, pattern: RegExp) {
+function boundedPattern(pattern: RegExp) {
   // Allow ordinary attached Persian plural/possessive endings, not arbitrary substrings.
   return new RegExp(
     `(?:^|[^\\p{L}\\p{N}])(?:${pattern.source})(?=$|[^\\p{L}\\p{N}]|(?:ها(?:یی?)?(?:م|ت|ش|مان|تان|شان)?|ان|ش|شان|مان|تان|م|ت)(?:$|[^\\p{L}\\p{N}]))`,
     'iu',
-  ).test(text);
+  );
 }
 
-export function containsQuestionPhrase(text: string, phrase: string) {
+export function matchesQuestion(text: string, pattern: RegExp) {
+  return boundedPattern(pattern).test(text);
+}
+
+export function compileQuestionPhrase(phrase: string) {
   const literal = normalizeQuestion(phrase).replace(
     /[.*+?^${}()|[\]\\]/g,
     '\\$&',
   );
-  return Boolean(literal) && matchesQuestion(text, new RegExp(literal));
+  return boundedPattern(new RegExp(literal || '(?!)'));
+}
+
+export function containsQuestionPhrase(text: string, phrase: string) {
+  return compileQuestionPhrase(phrase).test(text);
 }

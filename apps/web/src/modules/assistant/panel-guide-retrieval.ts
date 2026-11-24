@@ -9,6 +9,8 @@ import {
   normalizeQuestion,
 } from './question-text';
 
+import { buildGuidePhraseIndex } from './guide-phrase-index';
+
 const procedural =
   /چطور|چگونه|چجور|چیکار|از کجا|نحوه|مراحل|راهنما|آموزش|چه طور/;
 const record = /\d{4,}|چقدر|چه تعداد|دست کی|وضعیت (?:این|همین|درخواست من)/;
@@ -22,6 +24,16 @@ const panelDomains = [
   'reservation-report',
 ] as const;
 
+const indexedPanels = panelDomains.flatMap((domain) =>
+  assistantGuideCatalogues[domain].topics.map((section) => ({
+    domain,
+    section,
+  })),
+);
+const searchPanels = buildGuidePhraseIndex(indexedPanels, ({ section }) =>
+  'aliases' in section ? section.aliases : [],
+);
+
 function matchPanelGuidance(
   question: string,
   pathname: string | null,
@@ -33,25 +45,12 @@ function matchPanelGuidance(
     procedural.test(normalized) ||
     (specificOnly && /چرا|مبنای|معنی|فرق|تفاوت/.test(normalized));
   if (!asksForGuide || record.test(normalized)) return;
-  const candidates = panelDomains.flatMap((domain) =>
-    assistantGuideCatalogues[domain].topics.flatMap((section) => {
-      if (
-        !canOpen(section.href) ||
-        (specificOnly && !('specific' in section && section.specific))
-      )
-        return [];
-      const aliases = 'aliases' in section ? section.aliases : [];
-      const score = aliases.reduce(
-        (best, alias) =>
-          containsQuestionPhrase(normalized, alias)
-            ? Math.max(best, normalizeQuestion(alias).split(' ').length)
-            : best,
-        0,
-      );
-      return score
+  const candidates = searchPanels(normalized).flatMap(
+    ({ item: { domain, section }, score }) =>
+      canOpen(section.href) &&
+      (!specificOnly || ('specific' in section && section.specific))
         ? [{ domain, section, score, onPanel: pathname === section.href }]
-        : [];
-    }),
+        : [],
   );
   candidates.sort(
     (a, b) => b.score - a.score || Number(b.onPanel) - Number(a.onPanel),
@@ -80,14 +79,20 @@ export function retrievePanelGuidance(
 ) {
   const first = matchPanelGuidance(question, pathname, canOpen);
   if (!first) return [];
-  const selected = [first.section];
-  for (const ref of first.section.related) {
+  const related = first.section.related.flatMap((ref) => {
     const [domain, id] = ref.split('/');
-    if (!domain || !isAssistantGuideModule(domain)) continue;
-    const related = assistantGuideSection(domain, id);
-    if (related && canOpen(related.href)) return [first.section, related];
-  }
-  return selected;
+    if (!domain || !isAssistantGuideModule(domain)) return [];
+    const target = assistantGuideSection(domain, id);
+    return target && canOpen(target.href) && !target.permission ? [target] : [];
+  });
+  if (related.length === 1) return [first.section, ...related];
+  const text = normalizeQuestion(question);
+  const requested = related.filter((target) =>
+    containsQuestionPhrase(text, target.title),
+  );
+  return requested.length === 1
+    ? [first.section, ...requested]
+    : [first.section];
 }
 
 const salesPanelDomains = [
@@ -100,6 +105,11 @@ const salesPanelTopics = salesPanelDomains.flatMap((domain) =>
     domain,
     section,
   })),
+);
+
+const searchSalesPanels = buildGuidePhraseIndex(
+  salesPanelTopics,
+  ({ section }) => section.aliases,
 );
 
 export function retrieveSalesPanelGuide(
@@ -139,19 +149,13 @@ export function retrieveSalesPanelGuide(
       return 'record' as const;
     return;
   }
-  const candidates = salesPanelTopics
-    .filter((item) => !domain || item.domain === domain)
-    .map(({ section }) => ({
+  const candidates = searchSalesPanels(text)
+    .filter(({ item }) => !domain || item.domain === domain)
+    .map(({ item: { section }, score }) => ({
       section,
+      score,
       onPanel: section.href.split('?')[0] === pathname,
-      score: Math.max(
-        0,
-        ...section.aliases
-          .filter((alias) => containsQuestionPhrase(text, alias))
-          .map((alias) => normalizeQuestion(alias).split(' ').length),
-      ),
     }))
-    .filter(({ score }) => score > 0)
     .sort((a, b) => b.score - a.score || Number(b.onPanel) - Number(a.onPanel));
   const [first, second] = candidates;
   if (

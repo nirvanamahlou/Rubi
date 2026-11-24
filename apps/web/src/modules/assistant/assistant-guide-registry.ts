@@ -4,7 +4,10 @@ import b2c from './customer-guide-catalog.json';
 import sales from './contract-guide.generated.json';
 import panels from './linked-panel-guides.generated.json';
 
-interface Section {
+export interface GuideSection {
+  terms?: readonly string[];
+  aliases?: readonly string[];
+  workflow?: Partial<Record<'next' | 'prerequisite' | 'status', string>>;
   id: string;
   title: string;
   href: string;
@@ -23,7 +26,7 @@ export const assistantGuideCatalogues = {
   workbench: { title: 'راهنمای میزکار من', topics: workbench.topics },
   'call-center': { title: 'راهنمای کال‌سنتر', topics: callCenter.topics },
   b2c: { title: 'راهنمای مشتریان حقیقی', topics: b2c },
-} satisfies Record<string, { title: string; topics: Section[] }>;
+} satisfies Record<string, { title: string; topics: GuideSection[] }>;
 
 export type AssistantGuideModule = keyof typeof assistantGuideCatalogues;
 
@@ -36,7 +39,7 @@ export function isAssistantGuideModule(
 export function assistantGuideSection(
   domain: AssistantGuideModule,
   id?: string,
-): Section | undefined {
+): GuideSection | undefined {
   return assistantGuideCatalogues[domain].topics.find((item) => item.id === id);
 }
 

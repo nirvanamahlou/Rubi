@@ -3,6 +3,9 @@ import {
   isAssistantGuideModule,
 } from './assistant-guide-registry';
 import { retrieveSpecificPanelGuide } from './panel-guide-retrieval';
+import { findCatalogueTopics, workflowDestination } from './catalogue-search';
+import { routeAssistantQuestion } from './question-routing';
+import type { GuideSection } from './assistant-guide-registry';
 import { normalizeQuestion } from './question-text';
 
 export function resolvePilotGuide(
@@ -99,8 +102,46 @@ export function pilotGuideResponse(
   message: string,
   panel: string,
   previous: string | undefined,
-  canOpen: (href: string) => boolean,
+  canOpen: (href: string, permission?: string) => boolean,
 ) {
+  const allowed = (s: GuideSection) => canOpen(s.href, s.permission);
+  const from = previous?.split('/');
+  const linked =
+    from?.length === 2
+      ? workflowDestination(
+          message,
+          '/assistant-guides/' + from[0] + '#' + from[1],
+          allowed,
+        )
+      : undefined;
+  if (linked === null) return { status: 'insufficient', sections: [] };
+  if (
+    linked ||
+    (/^راهنمای?\s/.test(normalizeQuestion(message)) &&
+      routeAssistantQuestion(message).kind === 'guide')
+  ) {
+    const topics = linked
+      ? [linked]
+      : findCatalogueTopics(message, panel, allowed);
+    const [section, second] = topics;
+    if (!section || second)
+      return { status: second ? 'clarify' : 'insufficient', sections: [] };
+    const { title, steps, route, path, href, guideHref, conditions } = section;
+    return {
+      status: 'answer',
+      sections: [
+        {
+          title,
+          steps,
+          route: route ?? path,
+          href,
+          guideHref,
+          conditions,
+          ref: guideHref.slice('/assistant-guides/'.length).replace('#', '/'),
+        },
+      ],
+    };
+  }
   const decision = resolvePilotGuide(message, panel, previous);
   if (!decision || decision.status !== 'answer')
     return { status: decision?.status ?? 'unmatched', sections: [] };
@@ -108,7 +149,7 @@ export function pilotGuideResponse(
     const [domain, id] = ref.split('/');
     if (!domain || !isAssistantGuideModule(domain)) return [];
     const section = assistantGuideSection(domain, id);
-    return section && canOpen(section.href) ? [{ ...section, ref }] : [];
+    return section && allowed(section) ? [{ ...section, ref }] : [];
   });
   if (sections[0]?.ref !== decision.ids[0])
     return { status: 'insufficient', sections: [] };
