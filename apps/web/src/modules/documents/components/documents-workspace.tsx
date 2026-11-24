@@ -193,6 +193,18 @@ function date(value: string | null) {
     : 'بدون انقضا';
 }
 
+function documentScanLabel(document: DocumentListItemV1) {
+  const { scanStatus, versionNote } = document.currentVersion;
+  if (
+    scanStatus === 'AWAITING_ANTIVIRUS_ADAPTER' &&
+    document.type.code === 'BRAND_ASSET_TEMPLATE' &&
+    document.category?.code === 'BRAND_ASSETS' &&
+    /^master-data-logo-v1:[0-9a-f-]{36}$/.test(versionNote)
+  ) {
+    return 'معاف از اسکن خودکار';
+  }
+  return scanLabel[scanStatus];
+}
 function scanTone(status: DocumentListItemV1['currentVersion']['scanStatus']) {
   if (status === 'CLEAN') return 'bg-emerald-100 text-emerald-800';
   if (status === 'PENDING_SCAN' || status === 'AWAITING_ANTIVIRUS_ADAPTER')
@@ -1127,7 +1139,7 @@ export function DocumentsWorkspace() {
                     <Badge
                       className={scanTone(document.currentVersion.scanStatus)}
                     >
-                      {scanLabel[document.currentVersion.scanStatus]}
+                      {documentScanLabel(document)}
                     </Badge>
                   </td>
                   <td className="px-3 py-4">{date(document.validUntil)}</td>
@@ -1896,7 +1908,7 @@ export function DocumentsWorkspace() {
                               ? 'مدرک ناقص علامت‌گذاری شده است'
                               : expired
                                 ? `منقضی در ${date(item.validUntil)}`
-                                : scanLabel[item.currentVersion.scanStatus]}
+                                : documentScanLabel(item)}
                           </p>
                         </div>
                         <div className="flex shrink-0 items-center gap-1">
