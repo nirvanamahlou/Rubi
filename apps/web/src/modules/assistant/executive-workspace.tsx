@@ -47,7 +47,7 @@ import {
 } from './document-guides';
 
 import { canViewRoute, canViewScreen } from '@nora/contracts';
-import { resolvePilotGuide } from './guide-pilot';
+import { prefersTravelIssuanceGuide, resolvePilotGuide } from './guide-pilot';
 import { retrievePanelGuidance } from './panel-guide-retrieval';
 import {
   readTourGuideStatus,
@@ -77,6 +77,12 @@ import {
   type ReservationReportTopic,
 } from './reservation-report-guide';
 import {
+  flightCapacityHref,
+  readFlightCapacity,
+  renderFlightCapacityGuide,
+  resolveFlightCapacityQuestion,
+} from './flight-capacity-guide';
+import {
   renderReservationGuide,
   resolveReservationGuide,
 } from './reservation-guide';
@@ -87,6 +93,7 @@ import {
   renderCorrespondenceGuide,
   resolveCorrespondenceGuide,
 } from './correspondence-guide';
+import { readHotelPurchaseGuidePack } from './hotel-purchase-guide';
 import { normalizeQuestion } from './question-text';
 import { AssistantResponseContent } from './response-content';
 import {
@@ -493,12 +500,14 @@ function AssistantComposerContent({
   const lastVersion = useRef<number | undefined>(undefined);
   const contractId = useRef<string | undefined>(undefined);
   const guideTopic = useRef<string | undefined>(undefined);
+  const flightCapacityTopic = useRef<string | undefined>(undefined);
   const previousAnswer = useRef<AnswerContext | undefined>(undefined);
   const pendingSalesPeriod = useRef(false);
   const correspondenceTopic = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (denied) {
       previousAnswer.current = undefined;
+      flightCapacityTopic.current = undefined;
       reservationGuideTopic.current = undefined;
       pendingSalesPeriod.current = false;
       correspondenceTopic.current = undefined;
@@ -610,6 +619,65 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    const flightCapacity = resolveFlightCapacityQuestion(
+      message,
+      pathname,
+      flightCapacityTopic.current,
+    );
+    flightCapacityTopic.current = undefined;
+    if (flightCapacity) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      guideTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      const link = { href: flightCapacityHref, label: 'تعریف و ظرفیت پرواز' };
+      if (flightCapacity.kind === 'guide') {
+        flightCapacityTopic.current = flightCapacity.topic.id;
+        replyLocally(
+          renderFlightCapacityGuide(
+            flightCapacity.topic,
+            flightCapacity.followUp,
+          ),
+          undefined,
+          undefined,
+          documentGuideLink(link, 'flight-capacity', flightCapacity.topic.id),
+        );
+      } else if (flightCapacity.kind === 'clarify') {
+        replyLocally(flightCapacity.text, undefined, undefined, link);
+      } else if (!actor?.permissions.includes('ticket_catalog.manage')) {
+        replyLocally(
+          'خواندن وضعیت پرواز به دسترسی مدیریت بلیط نیاز دارد.',
+          undefined,
+          undefined,
+          link,
+        );
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readFlightCapacity(
+            flightCapacity.lookup,
+            actor.branchIds,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer, undefined, undefined, link);
+        } catch {
+          if (!controller.signal.aborted) {
+            replyLocally(
+              'دریافت وضعیت پرواز ناموفق بود. دسترسی و اتصال را در پنل بررسی کنید.',
+              undefined,
+              undefined,
+              link,
+            );
+          }
+        } finally {
+          if (pending.current === controller) setActionState(null);
+        }
+      }
+      return;
+    }
     const previousReservationTopic = reservationGuideTopic.current;
     reservationGuideTopic.current = undefined;
     const correspondence = resolveCorrespondenceGuide(
@@ -720,11 +788,13 @@ function AssistantComposerContent({
       }
       return;
     }
-    const reservationGuide = resolveReservationGuide(
-      message,
-      pathname,
-      previousReservationTopic,
-    );
+    const pilotGuide =
+      agentMode && actor && !pathname?.startsWith('/sales/contracts/new')
+        ? resolvePilotGuide(message, pathname ?? '', pilotTopic.current)
+        : null;
+    const reservationGuide = prefersTravelIssuanceGuide(message, pilotGuide)
+      ? undefined
+      : resolveReservationGuide(message, pathname, previousReservationTopic);
     if (reservationGuide) {
       pending.current?.abort();
       previousAnswer.current = undefined;
@@ -734,27 +804,65 @@ function AssistantComposerContent({
       if ('clarification' in reservationGuide) {
         replyLocally(reservationGuide.clarification);
       } else {
-        const { topic, followUp, inspection } = reservationGuide;
+        const { topic, followUp, inspection, packId } = reservationGuide;
         reservationGuideTopic.current = topic.id;
-        replyLocally(
-          renderReservationGuide(topic, followUp, inspection),
-          undefined,
-          undefined,
-          documentGuideLink(
-            { href: topic.href, label: 'باز کردن پنل' },
-            'reservations',
-            topic.id,
-          ),
+        const link = documentGuideLink(
+          { href: topic.href, label: 'باز کردن پنل' },
+          topic.id.startsWith('hotel-purchase-')
+            ? 'hotel-purchase-rates'
+            : 'reservations',
+          topic.id,
         );
+        if (packId) {
+          const controller = new AbortController();
+          pending.current = controller;
+          setActionState('loading');
+          try {
+            const evidence = await readHotelPurchaseGuidePack(
+              packId,
+              controller.signal,
+            );
+            if (!controller.signal.aborted) {
+              replyLocally(
+                [evidence, renderReservationGuide(topic, followUp, false)].join(
+                  '\n\n',
+                ),
+                undefined,
+                undefined,
+                link,
+              );
+            }
+          } catch (error) {
+            if (!controller.signal.aborted) {
+              const message = error instanceof Error ? error.message : '';
+              const reason =
+                message === 'بستهٔ نرخ پیدا نشد.'
+                  ? 'بسته در دامنهٔ قابل مشاهدهٔ این نشست پیدا نشد.'
+                  : message === 'دسترسی این بخش برای حساب شما فعال نیست.'
+                    ? message
+                    : 'دریافت وضعیت بسته ناموفق بود.';
+              replyLocally(
+                [reason, renderReservationGuide(topic, followUp, true)].join(
+                  '\n\n',
+                ),
+                undefined,
+                undefined,
+                link,
+              );
+            }
+          }
+        } else {
+          replyLocally(
+            renderReservationGuide(topic, followUp, inspection),
+            undefined,
+            undefined,
+            link,
+          );
+        }
       }
       return;
     }
-    if (
-      agentMode &&
-      actor &&
-      !pathname?.startsWith('/sales/contracts/new') &&
-      resolvePilotGuide(message, pathname ?? '', pilotTopic.current)
-    ) {
+    if (pilotGuide) {
       pending.current?.abort();
       const controller = new AbortController();
       pending.current = controller;

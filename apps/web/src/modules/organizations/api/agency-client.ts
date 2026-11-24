@@ -100,7 +100,35 @@ async function b2bRequest<T>(
   return response.json() as Promise<T>;
 }
 
+export interface WebsiteAgencyAccount {
+  id: string;
+  site: string;
+  legalName: string;
+  email: string | null;
+  username: string | null;
+  nationalId: string | null;
+  economicCode: string | null;
+  registrationNumber: string | null;
+  profile?: { phone?: string | null; address?: string | null };
+  status: 'REVIEW' | 'LINKED';
+  siteApproved: boolean;
+}
+
 export const agencyClient = {
+  websiteAccounts(organizationId?: string) {
+    const path = organizationId
+      ? `organization/${encodeURIComponent(organizationId)}`
+      : 'review';
+    return b2bRequest<{ data: WebsiteAgencyAccount[] }>(
+      `/website-agency-accounts/${path}`,
+    );
+  },
+  approveWebsiteAccount(id: string) {
+    return b2bRequest<{ data: { status: string } }>(
+      `/website-agency-accounts/${encodeURIComponent(id)}/approve`,
+      { method: 'POST', body: '{}' },
+    );
+  },
   requestPhoneChallenge(input: CreateB2bPhoneChallengeRequestV1) {
     return b2bRequest<B2bPhoneChallengeV1>(
       '/cooperation/phone-verification/challenges',

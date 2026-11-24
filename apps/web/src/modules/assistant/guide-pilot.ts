@@ -79,6 +79,22 @@ export function resolvePilotGuide(
   return null;
 }
 
+export function prefersTravelIssuanceGuide(
+  message: string,
+  guide: ReturnType<typeof resolvePilotGuide>,
+) {
+  if (!guide) return false;
+  const question = normalizeQuestion(message);
+  if (/\d{4,}|شماره قرارداد|وضعیت همین/.test(question)) return false;
+  if (guide.status === 'insufficient')
+    return /واچر.*باطل|صدور مجدد/.test(question);
+  return (
+    guide.status === 'answer' &&
+    guide.ids[0]?.startsWith('travel-issuance/') &&
+    /صدور|صادر|تحویل|واچر.*بگیر|واچر.*دریافت/.test(question)
+  );
+}
+
 export function pilotGuideResponse(
   message: string,
   panel: string,
