@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { WebsiteAgencyTermsController } from './website-agency-terms.controller';
 import {
   FinancePartnerModule,
   FinancePartnerService,
@@ -58,6 +59,7 @@ import { B2bPhoneVerificationStore } from './b2b-phone-verification.store';
     ReservationsRuntimeModule,
   ],
   controllers: [
+    WebsiteAgencyTermsController,
     B2bActivityController,
     B2bCrmConnectionsController,
     B2bController,

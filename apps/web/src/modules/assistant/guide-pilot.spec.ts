@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { pilotGuideResponse } from './guide-pilot';
+import {
+  pilotGuideResponse,
+  prefersTravelIssuanceGuide,
+  resolvePilotGuide,
+} from './guide-pilot';
 
 describe('shared pilot guide evidence', () => {
   it.each([
@@ -129,3 +133,20 @@ describe('additional fixed pilot questions', () => {
     },
   );
 });
+
+it.each([
+  ['بلیت پرواز رو چطور صادر کنم؟', true],
+  ['واچر هتل دوم رو از کجا بگیرم؟', true],
+  ['واچر اقامت دوم رو کجا چک کنم؟', false],
+  ['وضعیت بلیت صادرشده قرارداد شماره ۱۲۳۴۵۶ چیست؟', false],
+] as const)(
+  'uses the appropriate reservation guide for %s',
+  (question, expected) => {
+    expect(
+      prefersTravelIssuanceGuide(
+        question,
+        resolvePilotGuide(question, '/reservations'),
+      ),
+    ).toBe(expected);
+  },
+);

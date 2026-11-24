@@ -367,6 +367,38 @@ export class CurrencyRateService {
     };
   }
 
+  async websiteSellRates() {
+    const now = new Date();
+    const rows = await this.database.client.masterDraftExchangeRate.findMany({
+      where: {
+        isActive: true,
+        status: MasterCurrencyRateStatus.APPROVED,
+        rateType: 'SELL',
+        rate: { gt: 0 },
+        fromCurrency: { code: { in: ['USD', 'EUR', 'TRY'] }, isActive: true },
+        toCurrency: { code: 'IRR', isActive: true },
+        validFrom: { lte: now },
+        OR: [{ validTo: null }, { validTo: { gt: now } }],
+      },
+      select: {
+        rate: true,
+        validFrom: true,
+        validTo: true,
+        fromCurrency: { select: { code: true } },
+      },
+      orderBy: [{ validFrom: 'desc' }, { approvedAt: 'desc' }, { id: 'desc' }],
+      distinct: ['fromCurrencyId'],
+    });
+    return rows.map((row) => ({
+      currencyCode: row.fromCurrency.code,
+      rateType: 'SELL' as const,
+      quoteCurrencyCode: 'IRR' as const,
+      rate: row.rate.toFixed(),
+      validFrom: row.validFrom.toISOString(),
+      validTo: row.validTo?.toISOString() ?? null,
+    }));
+  }
+
   async mutate(
     id: string,
     input: { expectedVersion: number; rate?: string; source?: string },

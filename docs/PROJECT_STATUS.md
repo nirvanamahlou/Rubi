@@ -1,3 +1,43 @@
+## NORA-GUIDE-RELEASE-ACCEPTANCE-1124 — PC-C
+
+Stage 6 verified authenticated guide cases, account and company isolation, record clarification, translation coverage and reservation report-to-XLSX parity with three synthetic rows. The draft release PR remains gated on final CI and separate rollout approval. Evidence is in docs/tasks/NORA-GUIDE-RELEASE-ACCEPTANCE-1124.md.
+
+
+
+## NORA-EXISTING-GUIDES-AUDIT-1124 — PC-C
+
+Stage 5 inventories eight existing guides and updates 14 sections with source-backed steps, preserving existing routes and topic IDs. Coverage, source references and Stage 6 acceptance boundaries are in docs/tasks/NORA-EXISTING-GUIDES-AUDIT-1124.md.
+
+
+
+
+
+## NORA-PURCHASE-RESERVATION-GUIDES-1124 — PC-C
+
+Stage 4 adds 12 source-linked topics covering procurement workflows and reservation-report definitions and discrepancy checks. The current ERP route and visibility constraints are captured in docs/tasks/NORA-PURCHASE-RESERVATION-GUIDES-1124.md. Producer operations and permissions are unchanged.
+
+## NORA-GUIDE-DEPTH-1124 — PC-C
+
+Stage 3 expands five procedural guides with 15 additional source-linked topics and permission-scoped server retrieval. The acceptance matrix and unresolved policy dependencies are in docs/tasks/NORA-GUIDE-DEPTH-1124.md. No producer or runtime deployment changes.
+
+## NORA-GUIDE-PILOT-1124 — PC-C
+
+Stage 2 completed its 18 authenticated local browser cases across Sales, Travel Issuance and Customer Affairs. Customer-status questions without a tracking number now request it and identify the appropriate panel. Evidence and fixture limitations are in docs/tasks/NORA-GUIDE-PILOT-VERIFICATION-1124.md. Draft PR #1907 remains subject to CI and review.
+
+## NORA-GUIDE-COVERAGE-1124 — PC-C
+
+Initial linked guides for travel issuance, Customer Affairs, package generator, petty cash and correspondence. Scoped lexical retrieval uses accessible destinations and existing record dispatch. Build-time catalogue consistency and 11 focused retrieval tests passed. Stage 1 acceptance baseline records 15 module coverage rows, 18 pilot questions and policy evidence gaps in docs/tasks/NORA-GUIDE-ACCEPTANCE-BASELINE-1124.md. Server-side retrieval and execution of the pilot belong to Stage 2.
+## Website customer services and B2B terms
+
+Local integration connects bidirectional website support, approved sell rates, account-bound agency terms and settled-tour sandbox insurance. Linked agencies see active agreements and negotiated rates only for their enrolled branch. Website buyer name refresh is limited to the existing site and branch registration record. The sandbox insurance API remains disabled on production and site conversations require their configured binding. Carrier pricing and inventory, real insurance, private document synchronization and credit operations require separate verified integrations.
+
+## Agency website accounts
+
+Website agency registration records store organization identity, site login name, email and review status. Local agency approvals from Jahan Bastan and Niyayesh Seir can link or create a Master Data agency. Ghestiroo submits after its verified account registration and Avina staff approve the connection. Existing legal records are preserved and conflicts remain in review. Storefront passwords and hashes stay outside ERP.
+
+
+
+
 ## Website checkout contracts for dated tours
 
 The authenticated dated-tour draft endpoint builds a native Sales contract from the site's eligible publication and Avina's current room rates. It verifies the complete traveler allocation, all stays in a combined package, published price components and current flight capacity. Resulting drafts use the existing website order identity and payment verification. Jahan Bastan and Ghestiroo can use the endpoint additively, while Niyayesh Seir's existing draft integration remains compatible.
@@ -10710,5 +10750,9 @@ Archived dashboard widget availability reasons and expected data in docs/DASHBOA
 2026-11-24 PC-C — NORA-HOTEL-PURCHASE-GUIDE-1124: Added Nora's hotel purchase guide, local routing, scoped read of exact pack identifiers, and coverage matrix. Stacked on PR #1915. See docs/tasks/NORA-HOTEL-PURCHASE-GUIDE-1124.md.
 
 2026-11-24 PC-C — NORA-FLIGHT-CAPACITY-GUIDE-1124: Added the flight capacity guide, scoped managed-offer read and coverage matrix. See docs/tasks/NORA-FLIGHT-CAPACITY-GUIDE-1124.md.
+
+## Website sell rates and test tour insurance
+
+Website-bound connectors can read the latest active and approved USD, EUR and TRY sell rates to IRR with decimal precision and validity times. Test tour insurance reuses private PDF delivery and the existing issuance queue for a fully settled website tour with insurance included. Test issuance requires `SITE_COMMERCE_TEST_TOUR_INSURANCE=true` outside production, plus the corresponding Niyayesh Seir test setting. The production insurance provider remains an open integration.
 
 - نورا: راهنمای نسخه‌دار مدیریت سیستم برای حساب‌ها، نقش‌ها، تاریخچه، نمایش قراردادها و آرشیو در شاخهٔ مستقل اضافه شد. پوشش و سناریوهای پذیرش در [سند آزمون](tasks/NORA-SYSTEM-GUIDE-1124.md) ثبت شده‌اند.
