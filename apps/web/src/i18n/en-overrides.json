@@ -7139,5 +7139,15 @@
   "راهنمای تعریف بلیط، لود چارتر، ویرایش یا بررسی ظرفیت را می‌خواهید؟": "Do you need help defining tickets, loading charter flights, editing flights, or checking capacity?",
   "شمارهٔ پرواز و تاریخ حرکت را با قالب میلادی 2026-11-24 بنویسید. اگر کلاس مشخصی مدنظر است، آن را هم ذکر کنید.": "Enter the flight number and departure date in Gregorian YYYY-MM-DD format. Include the class if applicable.",
   "کلاس:": "Class:",
-  "وضعیت فروش:": "Sales status:"
+  "وضعیت فروش:": "Sales status:",
+  "این شماره در کارتابل دریافتی قابل مشاهدهٔ نشست پیدا نشد. برای نامه‌های ارسال‌شده، وضعیت دریافت‌کننده از این کارتابل قابل بررسی نیست.": "This number was not found in the accessible inbox. Recipient status for sent letters cannot be checked from this inbox.",
+  "دریافت وضعیت مکاتبات ناموفق بود. اتصال و دسترسی کارتابل را بررسی کنید.": "Correspondence status could not be retrieved. Check the connection and inbox access.",
+  "دسترسی کارتابل مکاتبات داخلی برای نشست جاری فعال نیست.": "The current session does not have access to the internal correspondence inbox.",
+  "شمارهٔ کامل نامهٔ داخلی را از کارتابل بنویسید.": "Enter the full internal letter number from the inbox.",
+  "منظورتان ثبت نامهٔ ورودی، تولید نامهٔ خروجی یا ارسال و پیگیری نامهٔ داخلی است؟": "Do you mean registering an incoming letter, generating an outgoing letter, or sending and tracking an internal letter?",
+  "نتیجهٔ یکتا در دامنهٔ بررسی تأیید نشد. شماره را در کارتابل دریافتی جست‌وجو کنید.": "A unique result was not confirmed in the accessible scope. Search for the number in the inbox.",
+  "نشانی سرویس مکاتبات در دسترس نیست.": "The correspondence service URL is unavailable.",
+  "نشست معتبر نیست. دوباره وارد ERP شوید.": "The session is invalid. Sign in to the ERP again.",
+  "وضعیت دریافت این نشست:": "Receipt status for this session:",
+  "وضعیت مشاهده:": "View status:"
 }
