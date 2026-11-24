@@ -1,3 +1,7 @@
+## Nora response details
+
+Nora v3 shows calculation methods, source names and observation timestamps on explicit request. Report periods, coverage limitations and authorization checks remain part of the normal reporting flow.
+
 ## Master Data logo scan display
 
 The Documents workspace labels uploads carrying the Master Data logo exemption marker as exempt from automatic antivirus scanning. Standard pending and completed results retain their existing labels.

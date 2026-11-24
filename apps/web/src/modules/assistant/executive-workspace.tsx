@@ -76,7 +76,10 @@ import {
 } from './reservation-report-guide';
 import { normalizeQuestion } from './question-text';
 import { AssistantResponseContent } from './response-content';
-import { formatAssistantSources } from './response-presentation';
+import {
+  assistantSourceRequest,
+  formatAssistantSources,
+} from './response-presentation';
 import { useChatScroll } from './use-chat-scroll';
 import { usePathname, useSearchParams } from 'next/navigation';
 import contractGuideCatalog from './contract-guide.generated.json';
@@ -1549,7 +1552,12 @@ function AssistantComposerContent({
           replyLocally(t(c.internalSourceFallback));
           return;
         }
-        const sourceText = formatAssistantSources(result.sources, english);
+        const requestedSources = assistantSourceRequest(message);
+        const sourceText = formatAssistantSources(
+          result.sources,
+          english,
+          requestedSources,
+        );
         const answer = [
           result.text,
           result.status === 'ANSWER' &&
@@ -1557,7 +1565,9 @@ function AssistantComposerContent({
           guide
             ? guide.text
             : '',
-          sourceText ? `${t(c.agentSources)}:\n${sourceText}` : '',
+          sourceText && requestedSources.names
+            ? `${t(c.agentSources)}:\n${sourceText}`
+            : sourceText,
           result.limitations.length
             ? `${t(c.agentLimitations)}:\n${result.limitations.join('\n')}`
             : '',
