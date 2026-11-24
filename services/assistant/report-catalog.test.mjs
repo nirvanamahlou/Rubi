@@ -61,3 +61,25 @@ test('module rollout hides otherwise permitted sources on search and exact descr
     /SOURCE_NOT_ALLOWED/,
   );
 });
+
+test('distinguishes denied discovery, an unavailable catalog and permission loss after discovery', async () => {
+  const responses = [
+    new Response(null, { status: 403 }),
+    new Response(null, { status: 503 }),
+    Response.json(catalog),
+    new Response(null, { status: 403 }),
+  ];
+  const reports = createReportCatalog({
+    base: 'https://synthetic.invalid/api/v1',
+    cookie: 'synthetic',
+    signal: new AbortController().signal,
+    fetcher: async () => responses.shift(),
+  });
+  assert.deepEqual(await reports.search('فهرست مسافران', 3), []);
+  await assert.rejects(
+    reports.search('فهرست مسافران', 3),
+    /AGENT_SOURCE_UNAVAILABLE/,
+  );
+  assert.equal((await reports.search('فهرست مسافران', 3)).length, 1);
+  await assert.rejects(reports.revalidate(), /AGENT_SOURCE_UNAVAILABLE/);
+});

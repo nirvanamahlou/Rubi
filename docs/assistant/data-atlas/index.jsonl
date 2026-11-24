@@ -1629,6 +1629,7 @@
 {"kind":"api-route","id":"apps/api/src/site-commerce/site-commerce.controller.ts#flightQuote","method":"POST","route":"/sales/site-commerce/v1/:site/flight-quote","module":"site-commerce","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/site-commerce/site-commerce.controller.ts#checkPeople","method":"POST","route":"/sales/site-commerce/v1/:site/people/check","module":"site-commerce","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/site-commerce/site-commerce.controller.ts#person","method":"POST","route":"/sales/site-commerce/v1/:site/people","module":"site-commerce","access":"inventory-only"}
+{"kind":"api-route","id":"apps/api/src/site-commerce/site-commerce.controller.ts#savedPerson","method":"POST","route":"/sales/site-commerce/v1/:site/people/saved","module":"site-commerce","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/site-commerce/site-commerce.controller.ts#buyer","method":"POST","route":"/sales/site-commerce/v1/:site/buyers/:externalId","module":"site-commerce","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/site-commerce/site-commerce.controller.ts#syncBuyerProfile","method":"PUT","route":"/sales/site-commerce/v1/:site/buyer-profile/:externalId","module":"site-commerce","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/site-commerce/site-commerce.controller.ts#draft","method":"POST","route":"/sales/site-commerce/v1/:site/orders/:externalId","module":"site-commerce","access":"inventory-only"}
