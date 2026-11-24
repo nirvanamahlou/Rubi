@@ -53,7 +53,12 @@ const dates = new Intl.DateTimeFormat('fa-IR', {
 const numbers = new Intl.NumberFormat('fa-IR');
 const label = (s) => s.replace(/[|*\x60\r\n]/g, ' ').trim();
 
-export function renderHotelRanking(result, period, requestId) {
+export function renderHotelRanking(
+  result,
+  period,
+  requestId,
+  showMethod = false,
+) {
   if (
     !Array.isArray(result.rows) ||
     result.rows.length > 60 ||
@@ -128,7 +133,11 @@ export function renderHotelRanking(result, period, requestId) {
             ...rows,
           ].join('\n')
         : 'برای این بازه رتبه‌بندی قابل ارائه نیست.',
-      'مبنای رتبه‌بندی تعداد قراردادهای قطعی قابل مشاهده است. هتل اصلی و اقامت‌های اضافه بررسی می‌شوند. هر هتل در هر قرارداد یک‌بار شمرده می‌شود و حداکثر پنج هتل در هر کشور نمایش داده می‌شود.',
+      ...(showMethod
+        ? [
+            'مبنای رتبه‌بندی تعداد قراردادهای قطعی قابل مشاهده است. هتل اصلی و اقامت‌های اضافه بررسی می‌شوند. هر هتل در هر قرارداد یک‌بار شمرده می‌شود و حداکثر پنج هتل در هر کشور نمایش داده می‌شود.',
+          ]
+        : []),
     ].join('\n\n'),
   };
 }

@@ -1,3 +1,19 @@
+## Website checkout contracts for dated tours
+
+The authenticated dated-tour draft endpoint builds a native Sales contract from the site's eligible publication and Avina's current room rates. It verifies the complete traveler allocation, all stays in a combined package, published price components and current flight capacity. Resulting drafts use the existing website order identity and payment verification. Jahan Bastan and Ghestiroo can use the endpoint additively, while Niyayesh Seir's existing draft integration remains compatible.
+
+## City and country website photos
+
+Avina geography records support a main photo and up to six gallery photos. The row publication action includes the saved photos in the signed profile sent to Jahan Bastan, Ghestiroo, or Niyayesh Seir. Country flags use their existing independent field. Profiles created before this change omit photo fields until an image is added.
+
+## Nora ERP question routing
+
+Nora routes workflow questions to existing guides, record and report questions to authorized ERP readers, and unmatched requests to clarification. The Web composer has no generic conversation dispatch. Cross-module intent is independent of the current page. Ambiguous recent-month sales requests ask for a date range before reading scoped ERP sales data.
+
+## Nora response details
+
+Nora v3 shows calculation methods, source names and observation timestamps on explicit request. Report periods, coverage limitations and authorization checks remain part of the normal reporting flow.
+
 ## NORA-GUIDE-DEPTH-1124 — PC-C
 
 Stage 3 expands five procedural guides with 15 additional source-linked topics and permission-scoped server retrieval. The acceptance matrix and unresolved policy dependencies are in docs/tasks/NORA-GUIDE-DEPTH-1124.md. No producer or runtime deployment changes.
@@ -6,13 +22,17 @@ Stage 3 expands five procedural guides with 15 additional source-linked topics a
 
 Stage 2 completed its 18 authenticated local browser cases across Sales, Travel Issuance and Customer Affairs. Customer-status questions without a tracking number now request it and identify the appropriate panel. Evidence and fixture limitations are in docs/tasks/NORA-GUIDE-PILOT-VERIFICATION-1124.md. Draft PR #1907 remains subject to CI and review.
 
+
 ## NORA-GUIDE-COVERAGE-1124 — PC-C
 
 Initial linked guides for travel issuance, Customer Affairs, package generator, petty cash and correspondence. Scoped lexical retrieval uses accessible destinations and existing record dispatch. Build-time catalogue consistency and 11 focused retrieval tests passed. Stage 1 acceptance baseline records 15 module coverage rows, 18 pilot questions and policy evidence gaps in docs/tasks/NORA-GUIDE-ACCEPTANCE-BASELINE-1124.md. Server-side retrieval and execution of the pilot belong to Stage 2.
 
+
+
 ## City and country website photos
 
 Avina geography records support a main photo and up to six gallery photos. The row publication action includes the saved photos in the signed profile sent to Jahan Bastan, Ghestiroo, or Niyayesh Seir. Country flags use their existing independent field. Profiles created before this change omit photo fields until an image is added.
+
 
 ## Master Data logo scan display
 
