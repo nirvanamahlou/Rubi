@@ -10,6 +10,11 @@ Avina geography records support a main photo and up to six gallery photos. The r
 
 Nora routes workflow questions to existing guides, record and report questions to authorized ERP readers, and unmatched requests to clarification. The Web composer has no generic conversation dispatch. Cross-module intent is independent of the current page. Ambiguous recent-month sales requests ask for a date range before reading scoped ERP sales data.
 
+## Nora response details
+
+Nora v3 shows calculation methods, source names and observation timestamps on explicit request. Report periods, coverage limitations and authorization checks remain part of the normal reporting flow.
+
+
 ## Master Data logo scan display
 
 The Documents workspace labels uploads carrying the Master Data logo exemption marker as exempt from automatic antivirus scanning. Standard pending and completed results retain their existing labels.

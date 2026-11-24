@@ -10,6 +10,10 @@ Own the city and country photo fields, geography dialog, additive migration, and
 
 Reserve Nora Web routing, supported guide selection, and the assistant sales period parser with focused regressions. Keep producer permissions and APIs unchanged.
 
+## NORA-OPT-IN-EVIDENCE-1124 — PC-C — ACTIVE
+
+Reserve Nora v3 reply presentation, native report formatting and focused tests. Preserve authenticated reads and evidence validation.
+
 ## DOCUMENT-LOGO-SCAN-DISPLAY-1124 — PC-C — ACTIVE
 
 Reserve document workspace scan label rendering and focused verification. Preserve scan policy, authorization and schema.

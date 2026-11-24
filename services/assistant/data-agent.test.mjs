@@ -618,12 +618,24 @@ test('reads the reported hotel ranking in native scope and uses current evidence
   );
   assert.equal(response.status, 'ANSWER');
   assert.match(response.text, /Example Hotel/);
+  assert.doesNotMatch(response.text, /مبنای رتبه‌بندی/);
   assert.equal(h.payloads.length, 0);
   assert.deepEqual(
     h.calls.map(({ url }) => url.split('/').at(-1)),
     ['catalog', 'hotel-ranking', 'catalog'],
   );
   assert.equal(JSON.parse(h.calls[1].options.body).contextId, contextId);
+  const details = await h.agent(
+    {
+      ...message,
+      message:
+        'سؤال مرتبط قبلی: پرفروش ترین هتل هارا که باهاشون قرارداد بستیمو بده\nپرسش فعلی: روش محاسبه را بگو\nبرای بررسی پاسخ قبلی، شواهد تازه از ابزار مجاز بخوان.',
+    },
+    { cookie: 'nora_access=x', signal: signal() },
+  );
+  assert.match(details.text, /مبنای رتبه‌بندی/);
+  assert.equal(details.sources[0].resultId, result.resultId);
+  assert.equal(h.payloads.length, 0);
 });
 test('releases a verified answer after the eighth model turn', async () => {
   const h = harness([
@@ -756,7 +768,7 @@ test('native counts reach the model and retain its own prose/calculation layout'
     { cookie: 'nora_access=synthetic', signal: signal() },
   );
   assert.deepEqual(h.providerOptions, [[], [], [resultId]]);
-  assert.match(response.text, /۷ \+ ۲ \+ ۳ = ۱۲/);
+  assert.equal(response.text, 'مجموع قابل مشاهده ۱۲ قرارداد است.');
   assert.doesNotMatch(response.text, /100.0000 USD/);
   assert.doesNotMatch(response.text, /\| وضعیت \|/);
   assert.equal(
@@ -818,10 +830,7 @@ test('any computed source requires a model explanation, with one bounded repair 
     cookie: 'nora_access=synthetic',
     signal: signal(),
   });
-  assert.equal(
-    response.text,
-    corrected.args.text + '\n\n' + corrected.args.calculationExplanation,
-  );
+  assert.equal(response.text, corrected.args.text);
   assert.match(
     h.payloads[4].at(-1).content,
     /CALCULATION_EXPLANATION_REQUIRED/,
