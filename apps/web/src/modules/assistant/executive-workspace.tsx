@@ -89,6 +89,13 @@ import {
   renderReservationGuide,
   resolveReservationGuide,
 } from './reservation-guide';
+import {
+  correspondenceHref,
+  internalInboxHref,
+  readCorrespondenceStatus,
+  renderCorrespondenceGuide,
+  resolveCorrespondenceGuide,
+} from './correspondence-guide';
 import { readHotelPurchaseGuidePack } from './hotel-purchase-guide';
 import {
   pettyCashHref,
@@ -519,6 +526,7 @@ function AssistantComposerContent({
   );
   const previousAnswer = useRef<AnswerContext | undefined>(undefined);
   const pendingSalesPeriod = useRef(false);
+  const correspondenceTopic = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (denied) {
       salesPanelTopic.current = undefined;
@@ -529,6 +537,7 @@ function AssistantComposerContent({
       pettyCashTopic.current = undefined;
       pettyCashRead.current?.abort();
       pendingSalesPeriod.current = false;
+      correspondenceTopic.current = undefined;
     }
   }, [denied]);
   useEffect(() => {
@@ -787,6 +796,67 @@ function AssistantComposerContent({
     }
     const previousReservationTopic = reservationGuideTopic.current;
     reservationGuideTopic.current = undefined;
+    const correspondence = resolveCorrespondenceGuide(
+      message,
+      pathname,
+      correspondenceTopic.current,
+    );
+    correspondenceTopic.current = undefined;
+    if (correspondence) {
+      pending.current?.abort();
+      pendingSalesPeriod.current = false;
+      previousAnswer.current = undefined;
+      guideTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      if (correspondence.kind === 'guide') {
+        correspondenceTopic.current = correspondence.topic.id;
+        replyLocally(
+          renderCorrespondenceGuide(
+            correspondence.topic,
+            correspondence.followUp,
+          ),
+          undefined,
+          undefined,
+          documentGuideLink(
+            { href: correspondence.topic.href, label: 'مکاتبات' },
+            'correspondence',
+            correspondence.topic.id,
+          ),
+        );
+      } else if (correspondence.kind === 'clarify') {
+        replyLocally(correspondence.text, undefined, undefined, {
+          href: correspondenceHref,
+          label: 'مکاتبات',
+        });
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        const link = {
+          href: internalInboxHref,
+          label: 'نامه‌های دریافتی داخلی',
+        };
+        try {
+          const answer = await readCorrespondenceStatus(
+            correspondence.number,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer, undefined, undefined, link);
+        } catch {
+          if (!controller.signal.aborted)
+            replyLocally(
+              'دریافت وضعیت مکاتبات ناموفق بود. اتصال و دسترسی کارتابل را بررسی کنید.',
+              undefined,
+              undefined,
+              link,
+            );
+        } finally {
+          if (pending.current === controller) setActionState(null);
+        }
+      }
+      return;
+    }
     const pettyCash = resolvePettyCashGuide(
       message,
       pathname,

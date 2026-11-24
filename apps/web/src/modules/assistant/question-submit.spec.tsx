@@ -478,6 +478,49 @@ describe('Reservations catalogue in the Composer', () => {
   });
 });
 
+describe('flight capacity guide in the Composer', () => {
+  it('answers and continues from the catalogue without contacting the model', async () => {
+    h.path = '/ticket-management';
+    await send('چطور بلیط جدید تعریف کنم؟');
+    expect(chat().at(-1)).toContain('رزرواسیون ← تعریف و ظرفیت پرواز');
+
+    h.path = '/workbench';
+    await send('بعدش چی؟');
+    expect(chat().at(-1)).toContain('روز بعد');
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+
+  it('does not call the managed reader without the native management permission', async () => {
+    h.path = '/ticket-management';
+    await send('چند صندلی برای پرواز TK۱۲۳ در ۲۰۲۶-۱۲-۰۱ مانده؟');
+    expect(chat().at(-1)).toContain('دسترسی مدیریت بلیط');
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+});
+
+describe('Reservations catalogue in the Composer', () => {
+  it('answers locally and continues after navigation without calling the model', async () => {
+    h.path = '/reservations';
+    await send('چطور خروجی مانیفست بگیرم؟');
+    expect(chat().at(-1)).toContain('رزرواسیون ← MANIFEST');
+
+    h.path = '/workbench';
+    await send('بعدش چی؟');
+    expect(chat().at(-1)).toContain('مسافر جامانده');
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+
+  it('drops the previous topic when the selected company changes', async () => {
+    h.path = '/reservations';
+    await send('چطور خروجی مانیفست بگیرم؟');
+    expect(chat().at(-1)).toContain('MANIFEST');
+
+    h.company = 'company-b';
+    await send('بعدش چی؟');
+    expect(chat().join('\n')).not.toContain('مسافر جامانده');
+  });
+});
+
 describe('hotel purchase guide in the Composer', () => {
   const id = '12345678-1234-4234-8234-123456789abc';
 
@@ -549,6 +592,7 @@ describe('Sales panel catalogues in Composer', () => {
   it('switches between package workflows and continues without model calls', async () => {
     h.permissions.push('package_pricing.read');
     h.permissions.push('package_pricing.read');
+    h.permissions.push('package_pricing.read');
     h.path = '/workbench';
     await send('بازه بستن پکیج رو کجا بررسی کنم؟');
     expect(chat().at(-1)).toContain('نرخ و بازه در بستن پکیج');
@@ -596,5 +640,37 @@ describe('petty cash guide in the Composer', () => {
       expect.objectContaining({ credentials: 'include' }),
     );
     expect(h.fetcher.mock.calls[0]?.[1]?.method).toBeUndefined();
+  });
+});
+
+describe('correspondence guide in the Composer', () => {
+  it('answers from the local guide without sending a letter or calling the model', async () => {
+    h.path = '/hr';
+    await send('چطور نامه داخلی به چند نفر بفرستم؟');
+    expect(chat().at(-1)).toContain('حداکثر پنج فایل');
+    await send('بعدش چی؟');
+    expect(chat().at(-1)).toContain('۱۰ مگابایت');
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+
+  it('reads current inbox status without marking a letter as read', async () => {
+    h.path = '/correspondence/internal/received';
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '/api/v1');
+    h.fetcher.mockResolvedValueOnce(
+      Response.json({
+        total: 1,
+        items: [
+          {
+            letter: { number: 'NS/1405/09/03/000001', text: 'private' },
+            delivery: { status: 'SENT', readAt: null },
+          },
+        ],
+      }),
+    );
+    await send('وضعیت نامه داخلی NS/۱۴۰۵/۰۹/۰۳/۰۰۰۰۰۱ چیست؟');
+    expect(chat().at(-1)).toContain('خوانده‌نشده');
+    expect(chat().at(-1)).not.toContain('private');
+    expect(h.fetcher).toHaveBeenCalledTimes(1);
+    expect(h.fetcher.mock.calls[0]?.[1]?.method).toBe('GET');
   });
 });

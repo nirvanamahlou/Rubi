@@ -20,8 +20,12 @@ const outputs = {
   'travel-issuance': ['', '/reservations', 'registry'],
   'customer-affairs': ['', '/customer-affairs', 'registry'],
   'package-generator': ['', '/sales/pricing/generator', 'registry'],
+  correspondence: [
+    'correspondence-guide.generated',
+    '/correspondence',
+    'documents',
+  ],
   'petty-cash': ['petty-cash.generated', '/purchases', 'documents'],
-  correspondence: ['', '/correspondence', 'registry'],
   b2b: ['b2b-guide-catalog', '/organizations', 'text'],
   tour: ['tour-guide', '/sales/tours', 'tuple'],
   'flight-pricing': ['flight-pricing-catalog', '/sales/ticket-prices', 'text'],
@@ -78,6 +82,13 @@ export function buildLinkedPanelGuides(directory, check) {
       const { id: metadataId, href, related, ...fields } = JSON.parse(metadata);
       const validAction =
         href === action ||
+        (domain === 'correspondence' &&
+          [
+            '/correspondence/incoming',
+            '/correspondence/outgoing',
+            '/correspondence/internal/send',
+            '/correspondence/internal/received',
+          ].includes(href)) ||
         (domain === 'marketing' &&
           (/^\/marketing\?section=(dashboard|campaigns|audiences|leads|communications|content|offers)$/.test(
             href,
@@ -143,7 +154,11 @@ export function buildLinkedPanelGuides(directory, check) {
         id,
         title,
         href,
-        ...(format === 'registry' || fields.specific === true ? fields : {}),
+        ...(format === 'registry' ||
+        domain === 'correspondence' ||
+        fields.specific === true
+          ? fields
+          : {}),
         ...(domain === 'petty-cash' && fields.aliases
           ? { aliases: fields.aliases }
           : {}),
@@ -178,15 +193,23 @@ export function buildLinkedPanelGuides(directory, check) {
     if (format === 'documents') {
       products.set(
         output,
-        topics.map(({ id, title, href, steps, fields }) => ({
-          id,
-          title,
-          ...(['reservations', 'hotel-purchase-rates'].includes(domain)
-            ? { href }
-            : {}),
-          steps,
-          ...fields,
-        })),
+        topics
+          .filter(
+            ({ fields }) => domain !== 'correspondence' || 'terms' in fields,
+          )
+          .map(({ id, title, href, steps, fields }) => ({
+            id,
+            title,
+            ...([
+              'reservations',
+              'hotel-purchase-rates',
+              'correspondence',
+            ].includes(domain)
+              ? { href }
+              : {}),
+            steps,
+            ...fields,
+          })),
       );
     }
     if (format === 'tuple') {
