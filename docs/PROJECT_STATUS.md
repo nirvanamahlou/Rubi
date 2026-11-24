@@ -1,6 +1,6 @@
 ## NORA-GUIDE-RELEASE-ACCEPTANCE-1124 — PC-C
 
-Stage 6 runs an authenticated isolated browser matrix on the integrated guide branch. It addresses two observed routing gaps for document download and Workbench daily packages. Evidence and remaining gates are in docs/tasks/NORA-GUIDE-RELEASE-ACCEPTANCE-1124.md.
+Stage 6 verified authenticated guide cases, account and company isolation, record clarification, translation coverage and reservation report-to-XLSX parity with three synthetic rows. The draft release PR remains gated on final CI and separate rollout approval. Evidence is in docs/tasks/NORA-GUIDE-RELEASE-ACCEPTANCE-1124.md.
 
 ## NORA-EXISTING-GUIDES-AUDIT-1124 — PC-C
 
