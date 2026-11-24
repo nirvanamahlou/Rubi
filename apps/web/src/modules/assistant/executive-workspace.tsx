@@ -46,7 +46,8 @@ import {
   readDocumentGuide,
 } from './document-guides';
 
-import { canViewScreen } from '@nora/contracts';
+import { canViewRoute, canViewScreen } from '@nora/contracts';
+import { retrievePanelGuidance } from './panel-guide-retrieval';
 import {
   readTourGuideStatus,
   renderTourGuide,
@@ -636,6 +637,29 @@ function AssistantComposerContent({
         if (!controller.signal.aborted) throw error;
       } finally {
         if (pending.current === controller) setActionState(null);
+      }
+      return;
+    }
+    const linkedGuidance = actor
+      ? retrievePanelGuidance(message, pathname, (href) =>
+          canViewRoute(actor.permissions, href),
+        )
+      : [];
+    if (linkedGuidance.length) {
+      for (const section of linkedGuidance) {
+        replyLocally(
+          [
+            section.title,
+            ...section.steps.map((step, index) => index + 1 + '. ' + step),
+          ].join('\n'),
+          undefined,
+          undefined,
+          {
+            href: section.href,
+            label: english ? 'Open panel' : 'باز کردن پنل',
+            guideHref: section.guideHref,
+          },
+        );
       }
       return;
     }
