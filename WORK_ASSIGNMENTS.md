@@ -1,3 +1,7 @@
+## NORA-CORRESPONDENCE-GUIDE-1124 — PC-C — ACTIVE
+
+Reserve the Nora correspondence guide, catalogue generation, read-only dispatch and tests. Preserve correspondence and document producer controls and permissions.
+
 ## WEBSITE-DATED-TOUR-CONTRACTS-1124 — PC-D — ACTIVE
 
 Own the additive site-commerce dated-tour draft route, authoritative rate and hotel-itinerary validation, and coordinated Jahan Bastan and Ghestiroo checkout callers. Preserve payment verification, floating-tour policy, and other publishing changes. No migration or dependency changes.

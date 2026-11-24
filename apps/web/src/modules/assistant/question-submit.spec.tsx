@@ -429,3 +429,35 @@ describe('actual Composer submit routing and transport', () => {
     expect(chat()).toHaveLength(1);
   });
 });
+
+describe('correspondence guide in the Composer', () => {
+  it('answers from the local guide without sending a letter or calling the model', async () => {
+    h.path = '/hr';
+    await send('چطور نامه داخلی به چند نفر بفرستم؟');
+    expect(chat().at(-1)).toContain('حداکثر پنج فایل');
+    await send('بعدش چی؟');
+    expect(chat().at(-1)).toContain('۱۰ مگابایت');
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+
+  it('reads current inbox status without marking a letter as read', async () => {
+    h.path = '/correspondence/internal/received';
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '/api/v1');
+    h.fetcher.mockResolvedValueOnce(
+      Response.json({
+        total: 1,
+        items: [
+          {
+            letter: { number: 'NS/1405/09/03/000001', text: 'private' },
+            delivery: { status: 'SENT', readAt: null },
+          },
+        ],
+      }),
+    );
+    await send('وضعیت نامه داخلی NS/۱۴۰۵/۰۹/۰۳/۰۰۰۰۰۱ چیست؟');
+    expect(chat().at(-1)).toContain('خوانده‌نشده');
+    expect(chat().at(-1)).not.toContain('private');
+    expect(h.fetcher).toHaveBeenCalledTimes(1);
+    expect(h.fetcher.mock.calls[0]?.[1]?.method).toBe('GET');
+  });
+});

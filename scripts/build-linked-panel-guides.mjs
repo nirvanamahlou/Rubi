@@ -2,6 +2,11 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
 const outputs = {
+  correspondence: [
+    'correspondence-guide.generated',
+    '/correspondence',
+    'documents',
+  ],
   b2b: ['b2b-guide-catalog', '/organizations', 'text'],
   tour: ['tour-guide', '/sales/tours', 'tuple'],
   'flight-pricing': ['flight-pricing-catalog', '/sales/ticket-prices', 'text'],
@@ -58,6 +63,13 @@ export function buildLinkedPanelGuides(directory, check) {
       const { id: metadataId, href, related, ...fields } = JSON.parse(metadata);
       const validAction =
         href === action ||
+        (domain === 'correspondence' &&
+          [
+            '/correspondence/incoming',
+            '/correspondence/outgoing',
+            '/correspondence/internal/send',
+            '/correspondence/internal/received',
+          ].includes(href)) ||
         (domain === 'tour' &&
           [
             '/integrations',
@@ -124,10 +136,11 @@ export function buildLinkedPanelGuides(directory, check) {
     if (format === 'documents') {
       products.set(
         output,
-        topics.map(({ id, title, steps, fields }) => ({
+        topics.map(({ id, title, href, steps, fields }) => ({
           id,
           title,
           steps,
+          ...(domain === 'correspondence' ? { href } : {}),
           ...fields,
         })),
       );
