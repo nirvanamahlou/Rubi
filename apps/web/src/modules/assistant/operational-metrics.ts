@@ -82,6 +82,33 @@ const metrics = [
     label: 'پیشنهادهای فعال بلیت با تاریخ حرکت در بازه',
     unit: 'پیشنهاد',
   },
+  {
+    id: 'active-marketing-campaigns',
+    phrase: /(?:تعداد |چند )?کمپین(?: های)? فعال بازاریابی/,
+    label: 'کمپین‌های فعال بازاریابی',
+    unit: 'کمپین',
+    snapshot: true,
+  },
+  {
+    id: 'accounting-books',
+    phrase: /(?:تعداد )?دفاتر حسابداری/,
+    label: 'دفاتر حسابداری قابل مشاهده',
+    unit: 'دفتر',
+    snapshot: true,
+  },
+  {
+    id: 'procurement-request-count',
+    phrase: /(?:تعداد )?درخواست های خرید و تامین/,
+    label: 'درخواست‌های خرید و تأمین در همهٔ وضعیت‌ها',
+    unit: 'درخواست',
+    snapshot: true,
+  },
+  {
+    id: 'posted-accounting-journals',
+    phrase: /(?:تعداد |چند )?(?:سند|اسناد) قطعی حسابداری/,
+    label: 'اسناد قطعی حسابداری بر اساس تاریخ سند',
+    unit: 'سند',
+  },
 ] as const;
 
 const periods = {
@@ -105,6 +132,10 @@ export function resolveOperationalMetric(question: string) {
       'u',
     ).exec(text);
     if (!match) continue;
+    if ('snapshot' in metric)
+      return match[1]
+        ? null
+        : { metric, period: { range: 'current', label: 'حال حاضر' } as const };
     const period = periods[match[1] as keyof typeof periods];
     return period ? { metric, period } : { metric, period: null };
   }
@@ -165,7 +196,9 @@ export async function readOperationalMetric(
       'u',
     );
     if (
-      !['organization', 'authorized'].includes(result.scope) ||
+      !['organization', 'authorized', 'selected-company'].includes(
+        result.scope,
+      ) ||
       typeof value !== 'string' ||
       !format.test(value)
     )
@@ -173,7 +206,9 @@ export async function readOperationalMetric(
     const scope =
       result.scope === 'organization'
         ? 'در کل سازمان'
-        : 'در محدودهٔ شعب مجاز شما';
+        : result.scope === 'selected-company'
+          ? 'در محدودهٔ مجاز شرکت انتخاب‌شده'
+          : 'در محدودهٔ شعب مجاز شما';
     if (!metric.unit && /^[۰0]$/u.test(value))
       return `برای «${metric.label}» در ${period.label}، ${scope}، مبلغی ثبت نشده است.`;
     return `${metric.label} در ${period.label}، ${scope}، **${value}${metric.unit ? ' ' + metric.unit : ''}** است.`;

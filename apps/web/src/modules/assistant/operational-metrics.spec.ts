@@ -28,6 +28,10 @@ describe('Nora operational reads', () => {
       'employee-connected-call-count',
     ],
     ['تعداد پیشنهادهای فعال بلیت با حرکت این ماه', 'active-offers'],
+    ['تعداد کمپین‌های فعال بازاریابی', 'active-marketing-campaigns'],
+    ['تعداد دفاتر حسابداری', 'accounting-books'],
+    ['تعداد اسناد قطعی حسابداری این ماه', 'posted-accounting-journals'],
+    ['تعداد درخواست‌های خرید و تامین', 'procurement-request-count'],
   ])('resolves %s to its native metric', (question, id) => {
     expect(resolveOperationalMetric(question)?.metric.id).toBe(id);
   });
@@ -38,6 +42,7 @@ describe('Nora operational reads', () => {
     'تعداد اسناد آرشیو هفته قبل',
     'تعداد اسناد صدور رزرواسیون امروز و دیروز',
     'پرفروش‌ترین هتل‌ها به تفکیک کشور',
+    'تعداد کمپین‌های فعال بازاریابی این هفته',
   ])('leaves other questions to their regular route: %s', (question) => {
     expect(resolveOperationalMetric(question)).toBeNull();
   });

@@ -9,6 +9,8 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
+import type { IamPermissionCode } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 import { AuthGuard } from '../iam/auth.guard';
 import { IamService } from '../iam/iam.service';
@@ -20,6 +22,12 @@ import {
 import { readReservationReporting } from '../reservations/reservation-reporting.public';
 import { dashboardCalendarRangeStart } from './reporting-dashboard-calendar';
 import { ReportingService } from './reporting.service';
+import {
+  noraAccountingMetrics,
+  noraInventoryMetrics,
+  noraOwnerMetrics,
+  readNoraOwnerMetric,
+} from './nora-owner-metrics';
 
 const metrics = new Set([
   'employee-overtime',
@@ -35,8 +43,9 @@ const metrics = new Set([
   'employee-call-count',
   'employee-connected-call-count',
   'active-offers',
+  ...noraOwnerMetrics,
 ]);
-const businessReadPermissions = [
+const businessReadPermissions: IamPermissionCode[] = [
   'reporting.read',
   'hr.read',
   'reservations.read',
@@ -48,6 +57,11 @@ const businessReadPermissions = [
   'ticket_catalog.read',
   'sales.contracts.read.all',
   'sales.payments.read',
+  'finance.read',
+  'finance.journal.read',
+  'legal-entity.aggregate.read',
+  'marketing.read',
+  'procurement.read.all',
 ];
 
 @Controller('reports/nora')
@@ -57,6 +71,7 @@ export class NoraMetricsController {
     @Inject(ReportingService) private readonly reporting: ReportingService,
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(IamService) private readonly iam: IamService,
+    @Inject(ModuleRef) private readonly modules: ModuleRef,
   ) {}
 
   @Get('metric')
@@ -69,13 +84,15 @@ export class NoraMetricsController {
   ) {
     if (
       !metrics.has(id) ||
-      (range !== 'today' && range !== 'week' && range !== 'month')
+      (noraInventoryMetrics.has(id)
+        ? range !== 'current'
+        : range !== 'today' && range !== 'week' && range !== 'month')
     )
       throw new BadRequestException('NORA_METRIC_UNSUPPORTED');
     const { actor } = request;
     const database = this.database.client;
     const globalRead = await hasNoraGlobalBusinessRead(database, actor);
-    if (!globalRead && aggregate !== 'true')
+    if (!globalRead && aggregate !== 'true' && !noraAccountingMetrics.has(id))
       return {
         version: 1,
         id,
@@ -95,7 +112,23 @@ export class NoraMetricsController {
     const now = new Date();
     let value: string | undefined;
     let denied = false;
-    if (id === 'registered-service-purchases') {
+    let companyScoped = false;
+    if (noraOwnerMetrics.has(id)) {
+      const result = await readNoraOwnerMetric(
+        this.modules,
+        id,
+        range as 'today' | 'week' | 'month' | 'current',
+        reportingActor,
+        now,
+      );
+      companyScoped = result.companyScoped;
+      if (
+        result.total !== null &&
+        Number.isSafeInteger(result.total) &&
+        result.total >= 0
+      )
+        value = result.total.toLocaleString('fa-IR');
+    } else if (id === 'registered-service-purchases') {
       if (!globalRead && !actor.permissions.includes('reservations.read'))
         throw new ForbiddenException();
       const purchases = await readReservationReporting(
@@ -149,7 +182,11 @@ export class NoraMetricsController {
       version: 1,
       id,
       range,
-      scope: globalRead ? 'organization' : 'authorized',
+      scope: companyScoped
+        ? 'selected-company'
+        : globalRead
+          ? 'organization'
+          : 'authorized',
       value: value ?? null,
     };
   }
