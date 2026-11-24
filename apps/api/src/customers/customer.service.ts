@@ -1078,7 +1078,7 @@ export class CustomerService {
     const passport = input.passportNumber
       ? this.nationalIdProtector.protectPassportNumber(input.passportNumber)
       : undefined;
-    prepareMutation(
+    const prepared = prepareMutation(
       { ...input, roles: ['customer', 'passenger'] },
       true,
       national,
@@ -1109,6 +1109,14 @@ export class CustomerService {
         (row) =>
           row.passportNumberFingerprint === passport.passportNumberFingerprint,
       );
+    if (passport && passportOwner && !national) {
+      const matched = await this.matchWebsitePassport(
+        passport.passportNumberFingerprint,
+        branch,
+        prepared,
+      );
+      if (matched) return { valid: true };
+    }
     if (passportOwner && passportOwner.id !== existing?.id)
       return { valid: false, code: 'CUSTOMER_PASSPORT_NUMBER_EXISTS' };
     // The existing website sync owns updates to the same national-ID profile.
@@ -1116,11 +1124,37 @@ export class CustomerService {
     return { valid: true };
   }
 
+  private async matchWebsitePassport(
+    fingerprint: string,
+    branchId: string,
+    data: Record<string, unknown>,
+  ) {
+    if (
+      !(data.birthDate instanceof Date) ||
+      !data.passportFirstName ||
+      !data.passportLastName
+    )
+      return null;
+    const person = await this.repository.findWebsitePassport(
+      fingerprint,
+      branchId,
+    );
+    if (
+      !person ||
+      person.birthDate?.getTime() !== data.birthDate.getTime() ||
+      person.passportFirstName !== data.passportFirstName ||
+      person.passportLastName !== data.passportLastName
+    )
+      return null;
+    return person;
+  }
+
   async syncWebsitePassenger(
     input: CustomerMutationRequest,
     actor: AuthenticatedActor,
     requestedBranch: string,
     traceId?: string,
+    preserveExisting = false,
   ) {
     const salesActor = this.salesEntryActor(actor);
     const branch = branchOf(actor, requestedBranch);
@@ -1175,8 +1209,28 @@ export class CustomerService {
     const patch = Object.fromEntries(
       Object.entries(prepared).filter(([field]) => allowed.has(field)),
     );
-    if (!passenger.nationalId)
-      return this.createForSales(passenger, scoped, branch, traceId);
+    if (!passenger.nationalId) {
+      if (!passport) throw new BadRequestException();
+      const match = () =>
+        this.matchWebsitePassport(
+          passport.passportNumberFingerprint,
+          branch,
+          prepared,
+        );
+      const existing = await match();
+      if (existing)
+        return { data: { id: existing.id, displayName: existing.displayName } };
+      try {
+        return await this.createForSales(passenger, scoped, branch, traceId);
+      } catch (error) {
+        if (!(error instanceof ConflictException)) throw error;
+        const concurrent = await match();
+        if (!concurrent) throw error;
+        return {
+          data: { id: concurrent.id, displayName: concurrent.displayName },
+        };
+      }
+    }
     const fingerprint = this.nationalIdProtector.protect(
       passenger.nationalId,
     ).nationalIdFingerprint;
@@ -1200,6 +1254,16 @@ export class CustomerService {
             continue;
           throw error;
         }
+      }
+      if (preserveExisting) {
+        if (
+          !(prepared.birthDate instanceof Date) ||
+          existing.birthDate?.getTime() !== prepared.birthDate.getTime() ||
+          existing.firstName !== prepared.firstName ||
+          existing.lastName !== prepared.lastName
+        )
+          throw conflict();
+        return { data: { id: existing.id, displayName: existing.displayName } };
       }
       const changes = Object.fromEntries(
         Object.entries(patch).filter(([field, value]) => {

@@ -37,6 +37,8 @@ const row = {
 function fixture(rows: unknown[] = []) {
   const repo = {
     websiteIdentityCandidates: vi.fn().mockResolvedValue(rows),
+    findWebsitePassport: vi.fn().mockResolvedValue(null),
+    findRegistration: vi.fn().mockResolvedValue(null),
     create: vi.fn(),
     update: vi.fn(),
   };
@@ -67,6 +69,57 @@ describe('read-only website passenger preflight', () => {
   });
   it('accepts exact existing identity with the same passport', async () => {
     expect(await fixture([row]).check()).toEqual({ valid: true });
+  });
+  it('allows a saved profile to match without changing the existing ERP identity', async () => {
+    const f = fixture([row]);
+    f.repo.findRegistration.mockResolvedValue({
+      ...row,
+      displayName: input.displayName,
+    });
+    const sync = (passenger: CustomerMutationRequest) =>
+      f.service.syncWebsitePassenger(
+        passenger,
+        actor,
+        'branch',
+        undefined,
+        true,
+      );
+    expect(await sync(input)).toEqual({
+      data: { id: row.id, displayName: input.displayName },
+    });
+    await expect(sync({ ...input, firstName: 'Different' })).rejects.toThrow();
+    expect(f.repo.update).not.toHaveBeenCalled();
+  });
+  it('reuses a matching passport-only identity on repeated storefront purchases', async () => {
+    const passport = {
+      ...input,
+      nationalId: null,
+      passportFirstName: 'SYNTHETIC',
+      passportLastName: 'PASSENGER',
+    };
+    const f = fixture([{ ...row, nationalIdFingerprint: null }]);
+    f.repo.findWebsitePassport.mockResolvedValue({
+      ...row,
+      passportFirstName: 'SYNTHETIC',
+      passportLastName: 'PASSENGER',
+      displayName: 'Synthetic Passenger',
+    });
+    expect(await f.check(passport)).toEqual({ valid: true });
+    expect(
+      await f.service.syncWebsitePassenger(passport, actor, 'branch'),
+    ).toEqual({
+      data: { id: row.id, displayName: 'Synthetic Passenger' },
+    });
+    expect(f.repo.findWebsitePassport).toHaveBeenCalledWith(
+      'passport',
+      'branch',
+    );
+    expect(f.repo.create).not.toHaveBeenCalled();
+    expect(f.repo.update).not.toHaveBeenCalled();
+    expect(await f.check({ ...passport, birthDate: '1990-02-01' })).toEqual({
+      valid: false,
+      code: 'CUSTOMER_PASSPORT_NUMBER_EXISTS',
+    });
   });
   it('rejects a passport belonging to a different national-ID record', async () => {
     const f = fixture([
