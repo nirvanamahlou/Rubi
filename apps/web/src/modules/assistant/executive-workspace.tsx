@@ -74,6 +74,10 @@ import {
   resolveReservationReportQuestion,
   type ReservationReportTopic,
 } from './reservation-report-guide';
+import {
+  renderReservationGuide,
+  resolveReservationGuide,
+} from './reservation-guide';
 import { normalizeQuestion } from './question-text';
 import { AssistantResponseContent } from './response-content';
 import { formatAssistantSources } from './response-presentation';
@@ -469,6 +473,7 @@ function AssistantComposerContent({
   const b2bTopic = useRef<string | undefined>(undefined);
   const b2bRead = useRef<AbortController | null>(null);
   useEffect(() => () => b2bRead.current?.abort(), [pathname]);
+  const reservationGuideTopic = useRef<string | undefined>(undefined);
   const reportTopic = useRef<ReservationReportTopic | undefined>(undefined);
   const documentTopic = useRef<string | undefined>(undefined);
   const workbenchTopic = useRef<string | undefined>(undefined);
@@ -477,7 +482,10 @@ function AssistantComposerContent({
   const guideTopic = useRef<string | undefined>(undefined);
   const previousAnswer = useRef<AnswerContext | undefined>(undefined);
   useEffect(() => {
-    if (denied) previousAnswer.current = undefined;
+    if (denied) {
+      previousAnswer.current = undefined;
+      reservationGuideTopic.current = undefined;
+    }
   }, [denied]);
   useEffect(() => {
     const resetRecord = () => {
@@ -585,6 +593,8 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    const previousReservationTopic = reservationGuideTopic.current;
+    reservationGuideTopic.current = undefined;
     const operationalMetric = resolveOperationalMetric(message);
     if (operationalMetric) {
       pending.current?.abort();
@@ -603,6 +613,35 @@ function AssistantComposerContent({
         if (!controller.signal.aborted) throw error;
       } finally {
         if (pending.current === controller) setActionState(null);
+      }
+      return;
+    }
+    const reservationGuide = resolveReservationGuide(
+      message,
+      pathname,
+      previousReservationTopic,
+    );
+    if (reservationGuide) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      reportTopic.current = undefined;
+      guideTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      if ('clarification' in reservationGuide) {
+        replyLocally(reservationGuide.clarification);
+      } else {
+        const { topic, followUp, inspection } = reservationGuide;
+        reservationGuideTopic.current = topic.id;
+        replyLocally(
+          renderReservationGuide(topic, followUp, inspection),
+          undefined,
+          undefined,
+          documentGuideLink(
+            { href: topic.href, label: 'باز کردن پنل' },
+            'reservations',
+            topic.id,
+          ),
+        );
       }
       return;
     }

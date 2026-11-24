@@ -2,6 +2,10 @@
 
 Own the city and country photo fields, geography dialog, additive migration, and signed profile delivery of the main photo and gallery. Coordinate the three website receivers and verify the publication contract.
 
+## NORA-RESERVATION-GUIDE-1124 — PC-C — ACTIVE
+
+Reserve the Nora Reservations guide document, generated guide entries, local routing and bounded Composer dispatch, coverage and focused tests. Reuse the existing report reader, routes and permissions. No producer, API, schema, dependency or deployment work.
+
 ## DOCUMENT-LOGO-SCAN-DISPLAY-1124 — PC-C — ACTIVE
 
 Reserve document workspace scan label rendering and focused verification. Preserve scan policy, authorization and schema.
