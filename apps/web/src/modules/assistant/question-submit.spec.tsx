@@ -455,3 +455,37 @@ describe('Reservations catalogue in the Composer', () => {
     expect(chat().join('\n')).not.toContain('مسافر جامانده');
   });
 });
+
+describe('hotel purchase guide in the Composer', () => {
+  const id = '12345678-1234-4234-8234-123456789abc';
+
+  it('reads only the existing credentialed GET endpoint for an exact identifier', async () => {
+    h.path = '/reservations/hotel-rates';
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '/api/v1');
+    h.fetcher.mockResolvedValueOnce(
+      Response.json({
+        cityName: 'شهر آزمایشی',
+        version: 2,
+        checkIn: '2026-11-24',
+        checkOut: '2026-11-26',
+      }),
+    );
+    await send(`وضعیت این بسته ${id}`);
+    expect(chat().at(-1)).toContain('نسخهٔ ذخیره‌شده: ۲');
+    expect(h.fetcher).toHaveBeenCalledTimes(1);
+    expect(h.fetcher).toHaveBeenCalledWith(
+      `/api/v1/reservations/hotel-rates/packs/${id}`,
+      expect.objectContaining({ credentials: 'include' }),
+    );
+    expect(h.fetcher.mock.calls[0]?.[1]?.method).toBeUndefined();
+  });
+
+  it('reports a denied read without making a status claim', async () => {
+    h.path = '/reservations/hotel-rates';
+    h.fetcher.mockResolvedValueOnce(Response.json({}, { status: 403 }));
+    await send(`وضعیت این بسته ${id}`);
+    expect(chat().at(-1)).toContain('دسترسی این بخش برای حساب شما فعال نیست');
+    expect(chat().at(-1)).not.toContain('نسخهٔ ذخیره‌شده:');
+    expect(h.fetcher).toHaveBeenCalledTimes(1);
+  });
+});

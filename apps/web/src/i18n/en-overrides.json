@@ -7125,5 +7125,11 @@
   "» است یا «": "” or “",
   "منظورتان «": "Do you mean “",
   "برای تأیید وضعیت این پرونده، مورد را در پنل بررسی کنید.": "Check this record in the panel to confirm its status.",
-  "در رزرواسیون درباره صف، پرواز، هتل، بیمه، مانیفست یا تحویل سؤال دارید؟": "Do you have a Reservations question about the queue, flights, hotels, insurance, manifests, or delivery?"
+  "در رزرواسیون درباره صف، پرواز، هتل، بیمه، مانیفست یا تحویل سؤال دارید؟": "Do you have a Reservations question about the queue, flights, hotels, insurance, manifests, or delivery?",
+  "(پایان غیرشامل)": "(end date excluded)",
+  "بازهٔ ذخیره‌شده:": "Saved period:",
+  "بسته در دامنهٔ قابل مشاهدهٔ این نشست پیدا نشد.": "The pack was not found within this session’s accessible scope.",
+  "دریافت وضعیت بسته ناموفق بود.": "The pack status could not be retrieved.",
+  "منظورتان قیمت خرید هتل، قیمت فروش تور یا مبلغ یک قرارداد است؟": "Do you mean a hotel purchase rate, a tour selling price, or a contract amount?",
+  "نسخهٔ ذخیره‌شده:": "Saved version:"
 }

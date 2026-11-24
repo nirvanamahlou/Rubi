@@ -2,6 +2,11 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
 const outputs = {
+  'hotel-purchase-rates': [
+    'hotel-purchase-rates.generated',
+    '/reservations/hotel-rates',
+    'documents',
+  ],
   reservations: ['reservation-guide.generated', '/reservations', 'documents'],
   'travel-issuance': ['', '/reservations', 'registry'],
   'customer-affairs': ['', '/customer-affairs', 'registry'],
@@ -143,7 +148,9 @@ export function buildLinkedPanelGuides(directory, check) {
         topics.map(({ id, title, href, steps, fields }) => ({
           id,
           title,
-          ...(domain === 'reservations' ? { href } : {}),
+          ...(['reservations', 'hotel-purchase-rates'].includes(domain)
+            ? { href }
+            : {}),
           steps,
           ...fields,
         })),

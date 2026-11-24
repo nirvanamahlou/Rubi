@@ -1,13 +1,18 @@
 import catalog from './reservation-guide.generated.json';
 import {
+  hotelPurchaseGuideTopic,
+  resolveHotelPurchaseGuide,
+  type HotelPurchaseGuideTopic,
+} from './hotel-purchase-guide';
+import {
   containsQuestionPhrase,
   matchesQuestion,
   normalizeQuestion,
 } from './question-text';
 
-type Topic = (typeof catalog)[number];
+type Topic = (typeof catalog)[number] | HotelPurchaseGuideTopic;
 type ReservationGuideIntent =
-  | { topic: Topic; followUp: boolean; inspection: boolean }
+  | { topic: Topic; followUp: boolean; inspection: boolean; packId?: string }
   | { clarification: string };
 
 const panels = new Set([
@@ -15,7 +20,6 @@ const panels = new Set([
   '/reservations/operations',
   '/reservations/processing',
   '/reservations/insurance',
-  '/reservations/hotel-rates',
 ]);
 
 export function resolveReservationGuide(
@@ -26,9 +30,14 @@ export function resolveReservationGuide(
   const text = normalizeQuestion(message);
   const followUp = /^(?:بعدش چی|بعدش|ادامه بده|مرحله بعد چیه)$/.test(text);
   if (followUp && previous) {
-    const topic = catalog.find(({ id }) => id === previous);
+    const topic =
+      hotelPurchaseGuideTopic(previous) ??
+      catalog.find(({ id }) => id === previous);
     if (topic) return { topic, followUp, inspection: false };
   }
+
+  const hotelPurchase = resolveHotelPurchaseGuide(text, pathname);
+  if (hotelPurchase) return hotelPurchase;
 
   if (
     pathname === '/reservations/reports' ||
