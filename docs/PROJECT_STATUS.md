@@ -10668,3 +10668,7 @@ New hotels receive an HTL identifier on save using the established city prefix a
 ## DASHBOARD-AVAILABILITY-NOTES — PC-C
 
 Archived dashboard widget availability reasons and expected data in docs/DASHBOARD-DATA-GAPS.md, ordered by the dashboard navigation. Removed long availability and coverage notes from cards and charts. Compact unavailable and empty states, chart units and genuine zeros remain. Dashboard suite: 62 passed, one existing skip.
+
+## Website sell rates and test tour insurance
+
+Website-bound connectors can read the latest active and approved USD, EUR and TRY sell rates to IRR with decimal precision and validity times. Test tour insurance reuses private PDF delivery and the existing issuance queue for a fully settled website tour with insurance included. Test issuance requires `SITE_COMMERCE_TEST_TOUR_INSURANCE=true` outside production, plus the corresponding Niyayesh Seir test setting. The production insurance provider remains an open integration.

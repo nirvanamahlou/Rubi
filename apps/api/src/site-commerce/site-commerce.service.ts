@@ -43,6 +43,7 @@ import { SalesService } from '../sales/sales.service';
 import { SalesOutputService } from '../sales/sales-output.service';
 import { MasterDataService } from '../master-data/master-data.service';
 import { TravelWorkflowService } from '../reservations/travel-workflow.service';
+import { InsuranceAutomation } from '../reservations/insurance/insurance-automation';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import { ReservationTicketDocumentsService } from '../reservations/reservation-ticket-documents';
 import { salesContractFlights, isFloatingSalesContract } from '@nora/contracts';
@@ -129,6 +130,9 @@ export class SiteCommerceService {
     @Optional()
     @Inject(MasterDataLogoService)
     private readonly logos?: MasterDataLogoService,
+    @Optional()
+    @Inject(InsuranceAutomation)
+    private readonly insurance?: InsuranceAutomation,
   ) {}
 
   private scoped(site: string, actor: AuthenticatedActor) {
@@ -1996,5 +2000,92 @@ export class SiteCommerceService {
       };
     }
     return { data: intake, delivery: authorization };
+  }
+
+  private async websiteTourInsuranceContext(
+    site: string,
+    externalId: string,
+    actor: AuthenticatedActor,
+  ) {
+    // The only configured provider issues test policies. Customer records from
+    // production orders must stay out of that provider.
+    if (
+      process.env.NODE_ENV === 'production' ||
+      process.env.SITE_COMMERCE_TEST_TOUR_INSURANCE !== 'true' ||
+      !this.insurance
+    ) {
+      throw new NotFoundException();
+    }
+    const { row, scoped } = await this.order(site, externalId, actor);
+    const { data: contract } = await this.sales.detail(row.contractId, scoped);
+    const services = contract.servicesDetail ?? [];
+    const isTour = services.some(
+      (s) =>
+        s.kind === 'HOTEL' &&
+        (s.metadata?.purchaseSupplyType === 'FLOATING' ||
+          services.some(
+            (item) => typeof item.metadata?.tourDepartureId === 'string',
+          )),
+    );
+    if (!isTour || !services.some((s) => s.kind === 'INSURANCE'))
+      throw new NotFoundException();
+    const facts = await this.sales.financeCustomerDocumentDeliveryFacts(
+      row.contractId,
+      scoped.branchIds,
+    );
+    if (facts.cancelled || !facts.hasConfirmedPayment || !facts.fullySettled)
+      throw new ForbiddenException();
+    const intake = await this.travel.forContract(
+      row.contractId,
+      scoped.branchIds,
+    );
+    if (intake.workflow.supplierStatus === 'CANCELLED')
+      throw new ForbiddenException();
+    const delivery = await this.releaseSettledWebsiteDocuments(row, scoped);
+    if (!delivery.approved) throw new ForbiddenException();
+    return { insurance: this.insurance, intakeId: intake.id, row, scoped };
+  }
+
+  async websiteTourInsurance(
+    site: string,
+    externalId: string,
+    actor: AuthenticatedActor,
+    issue = false,
+  ) {
+    const { insurance, intakeId, row, scoped } =
+      await this.websiteTourInsuranceContext(site, externalId, actor);
+    if (issue) await insurance.enqueue(intakeId, true);
+    const summary = await insurance.summary(intakeId, scoped, row.contractId);
+    if (issue) {
+      for (const policy of summary.policies) {
+        if (policy.id && policy.automatic && !policy.ready)
+          insurance.requestImmediate(policy.id);
+      }
+    }
+    return {
+      data: {
+        sandbox: true,
+        policies: summary.policies.map(
+          ({ id, passengerName, policyNumber, status, ready }) => ({
+            id,
+            passengerName,
+            policyNumber,
+            status,
+            ready,
+          }),
+        ),
+      },
+    };
+  }
+
+  async websiteTourInsurancePdf(
+    site: string,
+    externalId: string,
+    policyId: string,
+    actor: AuthenticatedActor,
+  ) {
+    const { insurance, intakeId, row, scoped } =
+      await this.websiteTourInsuranceContext(site, externalId, actor);
+    return insurance.download(intakeId, scoped, policyId, row.contractId);
   }
 }
