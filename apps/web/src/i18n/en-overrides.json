@@ -6881,6 +6881,7 @@
   "حذف دائمی را فقط از اقدام مربوط و بعد از بررسی شرایط همان سند انجام دهید.": "Use the permanent deletion action only after checking the document's conditions.",
   "دانلود سند": "Download document",
   "در انتظار سرویس اسکن": "Awaiting scan service",
+  "معاف از اسکن خودکار": "Exempt from automatic scanning",
   "در جزئیات، ارتباط سند با": "In the details, verify the document's link to",
   "در صف مجاز کال‌سنتر درخواستی با این مشخصات پیدا نشد.": "No matching request was found in the accessible call center queue.",
   "در صورت داشتن مجوز، از ویرایش اطلاعات یا تاریخچهٔ عملیات استفاده کنید.": "If authorized, edit the information or view the action history.",
