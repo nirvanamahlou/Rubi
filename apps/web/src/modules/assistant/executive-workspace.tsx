@@ -48,7 +48,10 @@ import {
 
 import { canViewRoute, canViewScreen } from '@nora/contracts';
 import { prefersTravelIssuanceGuide, resolvePilotGuide } from './guide-pilot';
-import { retrievePanelGuidance } from './panel-guide-retrieval';
+import {
+  retrievePanelGuidance,
+  retrieveSalesPanelGuide,
+} from './panel-guide-retrieval';
 import {
   readTourGuideStatus,
   renderTourGuide,
@@ -95,6 +98,10 @@ import {
   resolvePettyCashGuide,
 } from './petty-cash-guide';
 import { normalizeQuestion } from './question-text';
+import {
+  renderSystemManagementGuide,
+  resolveSystemManagementGuide,
+} from './system-management-guide';
 import { AssistantResponseContent } from './response-content';
 import {
   assistantSourceRequest,
@@ -453,6 +460,7 @@ function AssistantComposerContent({
   const inspecting = useRef<AbortController | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
   const pathname = usePathname();
+  const salesPanelTopic = useRef<string | undefined>(undefined);
   const pilotTopic = useRef<string | undefined>(undefined);
   const searchParams = useSearchParams();
   const workbenchTab =
@@ -500,6 +508,7 @@ function AssistantComposerContent({
   const lastVersion = useRef<number | undefined>(undefined);
   const contractId = useRef<string | undefined>(undefined);
   const guideTopic = useRef<string | undefined>(undefined);
+  const systemGuideTopic = useRef<string | undefined>(undefined);
   const flightCapacityTopic = useRef<string | undefined>(undefined);
   const pettyCashTopic = useRef<string | undefined>(undefined);
   const pettyCashRead = useRef<AbortController | null>(null);
@@ -512,6 +521,8 @@ function AssistantComposerContent({
   const pendingSalesPeriod = useRef(false);
   useEffect(() => {
     if (denied) {
+      salesPanelTopic.current = undefined;
+      systemGuideTopic.current = undefined;
       previousAnswer.current = undefined;
       flightCapacityTopic.current = undefined;
       reservationGuideTopic.current = undefined;
@@ -626,6 +637,95 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    const newGuide = retrieveSalesPanelGuide(
+      message,
+      pathname,
+      salesPanelTopic.current,
+    );
+    salesPanelTopic.current = undefined;
+    if (newGuide) {
+      pending.current?.abort();
+      pendingSalesPeriod.current = false;
+      previousAnswer.current = undefined;
+      pilotTopic.current = undefined;
+      guideTopic.current = undefined;
+      if (newGuide === 'record') {
+        replyLocally(
+          english
+            ? 'Open the authorized ERP panel to review the record and its current status.'
+            : 'وضعیت این مورد را در نمای مجاز ERP بررسی کنید.',
+        );
+        return;
+      }
+      if (newGuide === 'clarify') {
+        replyLocally(
+          english
+            ? 'Which workflow do you need: marketing, standard packages, or floating packages?'
+            : 'راهنمای کدام گردش را می‌خواهید؟ بازاریابی، بستن پکیج یا پکیج‌های شناور؟',
+        );
+        return;
+      }
+      if (!actor || !canViewRoute(actor.permissions, newGuide.href)) {
+        replyLocally(t(c.pilotGuideInsufficient));
+        return;
+      }
+      salesPanelTopic.current = newGuide.guideHref;
+      replyLocally(
+        [newGuide.route.join(' ← '), ...newGuide.steps].join('\n\n'),
+        undefined,
+        undefined,
+        {
+          href: newGuide.href,
+          label: english ? 'Open panel' : 'باز کردن پنل',
+          guideHref: newGuide.guideHref,
+        },
+      );
+      return;
+    }
+    const systemGuidance = resolveSystemManagementGuide(
+      message,
+      pathname,
+      systemGuideTopic.current,
+    );
+    systemGuideTopic.current = undefined;
+    if (systemGuidance) {
+      pending.current?.abort();
+      pendingSalesPeriod.current = false;
+      previousAnswer.current = undefined;
+      flightCapacityTopic.current = undefined;
+      reservationGuideTopic.current = undefined;
+      guideTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      if ('clarification' in systemGuidance) {
+        replyLocally(systemGuidance.clarification);
+        return;
+      }
+      const { topic, followUp, inspect } = systemGuidance;
+      const permission = 'permission' in topic ? topic.permission : undefined;
+      if (
+        !actor ||
+        !canViewRoute(actor.permissions, topic.href) ||
+        (permission &&
+          !actor.permissions.some((granted) => granted === permission))
+      ) {
+        replyLocally(
+          'برای مشاهدهٔ این بخش، حساب فعلی باید مجوز همان بخش مدیریت سیستم را داشته باشد.',
+        );
+        return;
+      }
+      systemGuideTopic.current = topic.id;
+      replyLocally(
+        renderSystemManagementGuide(topic, followUp, inspect),
+        undefined,
+        undefined,
+        documentGuideLink(
+          { href: topic.href, label: topic.title },
+          'system-management',
+          topic.id,
+        ),
+      );
+      return;
+    }
     const flightCapacity = resolveFlightCapacityQuestion(
       message,
       pathname,
@@ -1092,6 +1192,14 @@ function AssistantComposerContent({
       documentTopic.current = undefined;
       workbenchTopic.current = undefined;
       guideTopic.current = undefined;
+      if (purchaseQuestion.kind === 'clarify') {
+        replyLocally(
+          english
+            ? 'Do you mean a contract service purchase or a petty cash purchase request?'
+            : 'منظورتان خرید کدام خدمت قرارداد است، یا می‌خواهید درخواست خرید تنخواه ثبت کنید؟',
+        );
+        return;
+      }
       if (purchaseQuestion.kind === 'guide') {
         purchaseTopic.current = purchaseQuestion.topic.id;
         replyLocally(

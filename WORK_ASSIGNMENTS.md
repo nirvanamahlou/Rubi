@@ -1,3 +1,11 @@
+## NORA-PURCHASE-DEPTH-1124 — PC-C — REVIEW
+
+Reserve purchase guide content, generated catalogue, bounded Nora routing and focused tests. Procurement, Reservations and Finance are read-only references.
+
+## NORA-SALES-GUIDES-1124 — PC-C — REVIEW
+
+Reserve Nora-only marketing and pricing guides, catalogue registration, bounded Composer dispatch, tests and coordination docs. Producer modules are read-only references.
+
 ## NORA-GUIDE-RELEASE-ACCEPTANCE-1124 — PC-C — REVIEW
 
 Stage 6 on top of #1922 and current develop. Reserve isolated role-based acceptance, bounded document download aliases, daily-package routing, explicit issuance-guide precedence and Nora guide regressions and acceptance evidence. No production deployment or merge in this unit before acceptance and release approval.
@@ -21,6 +29,10 @@ Reserve Nora petty cash guide, generation, read-only Composer dispatch and focus
 ## WEBSITE-DATED-TOUR-CONTRACTS-1124 — PC-D — ACTIVE
 
 Own the additive site-commerce dated-tour draft route, authoritative rate and hotel-itinerary validation, and coordinated Jahan Bastan and Ghestiroo checkout callers. Preserve payment verification, floating-tour policy, and other publishing changes. No migration or dependency changes.
+
+## NORA-SYSTEM-GUIDE-1124 — PC-C — REVIEW
+
+Reserve additive Nora System Management catalogue, generator registration, bounded Composer dispatch, tests and coordination docs. Producer System Management, IAM and archive are read-only references. No API, permissions, schema, dependency or deployment changes.
 
 ## NORA-FLIGHT-CAPACITY-GUIDE-1124 — PC-C — ACTIVE
 

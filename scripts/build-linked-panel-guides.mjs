@@ -2,6 +2,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
 const outputs = {
+  marketing: ['', '/marketing', 'registry'],
+  'package-management': ['', '/sales/pricing', 'registry'],
+  'floating-packages': ['', '/sales/pricing/floating', 'registry'],
+  'system-management': ['', '/system', 'registry'],
   'flight-capacity': [
     'flight-capacity.generated',
     '/ticket-management',
@@ -74,6 +78,14 @@ export function buildLinkedPanelGuides(directory, check) {
       const { id: metadataId, href, related, ...fields } = JSON.parse(metadata);
       const validAction =
         href === action ||
+        (domain === 'marketing' &&
+          (/^\/marketing\?section=(dashboard|campaigns|audiences|leads|communications|content|offers)$/.test(
+            href,
+          ) ||
+            href === '/system?module=marketing')) ||
+        (domain === 'package-management' &&
+          href === '/sales/pricing/management') ||
+        (domain === 'system-management' && href === '/system/users') ||
         (domain === 'reservations' &&
           [
             '/reservations/processing',
@@ -150,7 +162,16 @@ export function buildLinkedPanelGuides(directory, check) {
       }));
     if (format === 'text')
       products.set(output, { ...copy, topics: textTopics() });
-    if (format === 'purchase') products.set(output, textTopics());
+    if (format === 'purchase')
+      products.set(
+        output,
+        topics.map(({ id, title, steps, fields }) => ({
+          id,
+          title,
+          ...fields,
+          steps,
+        })),
+      );
     if (format === 'documents') {
       products.set(
         output,

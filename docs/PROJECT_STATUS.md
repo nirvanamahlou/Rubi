@@ -2,9 +2,15 @@
 
 Stage 6 verified authenticated guide cases, account and company isolation, record clarification, translation coverage and reservation report-to-XLSX parity with three synthetic rows. The draft release PR remains gated on final CI and separate rollout approval. Evidence is in docs/tasks/NORA-GUIDE-RELEASE-ACCEPTANCE-1124.md.
 
+
+
 ## NORA-EXISTING-GUIDES-AUDIT-1124 — PC-C
 
 Stage 5 inventories eight existing guides and updates 14 sections with source-backed steps, preserving existing routes and topic IDs. Coverage, source references and Stage 6 acceptance boundaries are in docs/tasks/NORA-EXISTING-GUIDES-AUDIT-1124.md.
+
+
+
+
 
 ## NORA-PURCHASE-RESERVATION-GUIDES-1124 — PC-C
 
@@ -28,6 +34,9 @@ Local integration connects bidirectional website support, approved sell rates, a
 ## Agency website accounts
 
 Website agency registration records store organization identity, site login name, email and review status. Local agency approvals from Jahan Bastan and Niyayesh Seir can link or create a Master Data agency. Ghestiroo submits after its verified account registration and Avina staff approve the connection. Existing legal records are preserved and conflicts remain in review. Storefront passwords and hashes stay outside ERP.
+
+
+
 
 ## Website checkout contracts for dated tours
 
@@ -10745,5 +10754,11 @@ Archived dashboard widget availability reasons and expected data in docs/DASHBOA
 ## Website sell rates and test tour insurance
 
 Website-bound connectors can read the latest active and approved USD, EUR and TRY sell rates to IRR with decimal precision and validity times. Test tour insurance reuses private PDF delivery and the existing issuance queue for a fully settled website tour with insurance included. Test issuance requires `SITE_COMMERCE_TEST_TOUR_INSURANCE=true` outside production, plus the corresponding Niyayesh Seir test setting. The production insurance provider remains an open integration.
+
+- نورا: راهنمای نسخه‌دار مدیریت سیستم برای حساب‌ها، نقش‌ها، تاریخچه، نمایش قراردادها و آرشیو در شاخهٔ مستقل اضافه شد. پوشش و سناریوهای پذیرش در [سند آزمون](tasks/NORA-SYSTEM-GUIDE-1124.md) ثبت شده‌اند.
+
+- نورا: پوشش راهنمای خرید و تأمین با موضوع‌های تخصصی هتل، بلیت شناور، ترانسفر، بیمه و ثبت نامطمئن تکمیل شد. جزئیات پذیرش در [سند آزمون](tasks/NORA-PURCHASE-DEPTH-1124.md) ثبت شده‌اند.
+
+- راهنماهای بازاریابی، مدیریت پکیج و پکیج‌های شناور در شاخهٔ نورا و ماتریس [پذیرش](tasks/NORA-SALES-GUIDES-1124.md) ثبت شدند.
 
 2026-11-24 PC-C — NORA-PETTY-CASH-GUIDE-1124: Added versioned Nora petty cash guidance, read-only request and balance lookup and coverage. See docs/tasks/NORA-PETTY-CASH-GUIDE-1124.md.

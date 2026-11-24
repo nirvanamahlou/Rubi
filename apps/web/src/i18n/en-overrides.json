@@ -1,4 +1,7 @@
 {
+  "برای مشاهدهٔ این بخش، حساب فعلی باید مجوز همان بخش مدیریت سیستم را داشته باشد.": "Your account needs permission to view this section of System Management.",
+  "جزئیات این مورد در چت بررسی نشده است. برای بررسی همان مورد، از نمای مجاز ERP استفاده کنید.": "This record was not inspected in chat. Open the authorized ERP view to review it.",
+  "کدام بخش مدیریت سیستم را می‌خواهید بررسی کنید؟ مدیریت کاربران، تاریخچه یا محتوا؟": "Which System Management section do you want to review: User Management, History, or Content?",
   "پیش‌نویس ·": "Draft ·",
   "در حال دریافت قیمت‌ها…": "Loading prices…",
   "هنوز نوبتی ثبت نشده است.": "No departure has been registered yet.",
@@ -7140,6 +7143,9 @@
   "شمارهٔ پرواز و تاریخ حرکت را با قالب میلادی 2026-11-24 بنویسید. اگر کلاس مشخصی مدنظر است، آن را هم ذکر کنید.": "Enter the flight number and departure date in Gregorian YYYY-MM-DD format. Include the class if applicable.",
   "کلاس:": "Class:",
   "وضعیت فروش:": "Sales status:",
+  "منظورتان خرید کدام خدمت قرارداد است، یا می‌خواهید درخواست خرید تنخواه ثبت کنید؟": "Do you mean a contract service purchase or a petty cash purchase request?",
+  "راهنمای کدام گردش را می‌خواهید؟ بازاریابی، بستن پکیج یا پکیج‌های شناور؟": "Which workflow do you need help with: marketing, standard packages, or floating packages?",
+  "وضعیت این مورد را در نمای مجاز ERP بررسی کنید.": "Review this record in the authorized ERP view.",
   "برای این شعبه حساب تنخواه تنظیم نشده است.": "No petty cash account is configured for this branch.",
   "جست‌وجو نتیجهٔ یکتای قابل تأیید نداشت. پرونده را در تنخواه باز کنید و دوباره بپرسید.": "The search did not return one verifiable result. Open the record in Petty Cash and ask again.",
   "درخواست در دامنهٔ قابل مشاهدهٔ این نشست پیدا نشد.": "The request was not found within this session’s accessible scope.",
