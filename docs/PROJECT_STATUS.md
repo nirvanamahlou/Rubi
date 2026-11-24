@@ -1,6 +1,15 @@
+## Website checkout contracts for dated tours
+
+The authenticated dated-tour draft endpoint builds a native Sales contract from the site's eligible publication and Avina's current room rates. It verifies the complete traveler allocation, all stays in a combined package, published price components and current flight capacity. Resulting drafts use the existing website order identity and payment verification. Jahan Bastan and Ghestiroo can use the endpoint additively, while Niyayesh Seir's existing draft integration remains compatible.
+
+## City and country website photos
+
+Avina geography records support a main photo and up to six gallery photos. The row publication action includes the saved photos in the signed profile sent to Jahan Bastan, Ghestiroo, or Niyayesh Seir. Country flags use their existing independent field. Profiles created before this change omit photo fields until an image is added.
+
 ## NORA-GUIDE-COVERAGE-1124 — PC-C
 
 Initial linked guides for travel issuance, Customer Affairs, package generator, petty cash and correspondence. Scoped lexical retrieval uses accessible destinations and existing record dispatch. Build-time catalogue consistency and 11 focused retrieval tests passed. Stage 1 acceptance baseline records 15 module coverage rows, 18 pilot questions and policy evidence gaps in docs/tasks/NORA-GUIDE-ACCEPTANCE-BASELINE-1124.md. Server-side retrieval and execution of the pilot belong to Stage 2.
+
 
 ## Master Data logo scan display
 

@@ -1,4 +1,9 @@
 {
+  "پیش‌نویس ·": "Draft ·",
+  "در حال دریافت قیمت‌ها…": "Loading prices…",
+  "هنوز نوبتی ثبت نشده است.": "No departure has been registered yet.",
+  "حذف تور «": "Delete tour «",
+  "ابتدا نوبت‌های باقی‌مانده را حذف کنید. سوابق سفر حفظ می‌شوند.": "Remove any remaining departures first. Travel history is retained.",
   "ادامه فروش بازه": "Resume period sales",
   "ارزهای ردیف قیمت را تغییر ندهید.": "Do not change the currencies of a price row.",
   "اعمال تغییر گروهی": "Apply bulk adjustment",
