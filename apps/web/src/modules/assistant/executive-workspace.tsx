@@ -97,6 +97,7 @@ import {
   resolveCorrespondenceGuide,
 } from './correspondence-guide';
 import { readHotelPurchaseGuidePack } from './hotel-purchase-guide';
+import { renderHrGuide, resolveHrGuide } from './hr-guide';
 import {
   pettyCashHref,
   pettyCashReadError,
@@ -526,6 +527,7 @@ function AssistantComposerContent({
   );
   const previousAnswer = useRef<AnswerContext | undefined>(undefined);
   const pendingSalesPeriod = useRef(false);
+  const hrGuideTopic = useRef<string | undefined>(undefined);
   const correspondenceTopic = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (denied) {
@@ -537,6 +539,7 @@ function AssistantComposerContent({
       pettyCashTopic.current = undefined;
       pettyCashRead.current?.abort();
       pendingSalesPeriod.current = false;
+      hrGuideTopic.current = undefined;
       correspondenceTopic.current = undefined;
     }
   }, [denied]);
@@ -929,6 +932,8 @@ function AssistantComposerContent({
       replyLocally(decision.clarification!);
       return;
     }
+    const previousHrGuide = hrGuideTopic.current;
+    hrGuideTopic.current = undefined;
     const operationalMetric = resolveOperationalMetric(message);
     if (operationalMetric) {
       pending.current?.abort();
@@ -947,6 +952,37 @@ function AssistantComposerContent({
         if (!controller.signal.aborted) throw error;
       } finally {
         if (pending.current === controller) setActionState(null);
+      }
+      return;
+    }
+    const hrGuidance = resolveHrGuide(message, pathname, previousHrGuide);
+    if (hrGuidance) {
+      pending.current?.abort();
+      pendingSalesPeriod.current = false;
+      previousAnswer.current = undefined;
+      guideTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      if ('clarification' in hrGuidance) {
+        replyLocally(hrGuidance.clarification);
+      } else {
+        const { topic, followUp } = hrGuidance;
+        if (!actor || !canViewRoute(actor.permissions, topic.href)) {
+          replyLocally(
+            'برای مشاهدهٔ این بخش، دسترسی منابع انسانی در نشست فعلی لازم است.',
+          );
+          return;
+        }
+        hrGuideTopic.current = topic.id;
+        replyLocally(
+          renderHrGuide(topic, followUp),
+          undefined,
+          undefined,
+          documentGuideLink(
+            { href: topic.href, label: 'منابع انسانی' },
+            'human-resources',
+            topic.id,
+          ),
+        );
       }
       return;
     }
@@ -1669,14 +1705,18 @@ function AssistantComposerContent({
       );
       return;
     }
+    const hrTrackedRequest =
+      (pathname === '/hr' || pathname === '/human-resources') &&
+      /\b[a-z]+(?:-[a-z\d]+)*-\d+\b/i.test(normalizeQuestion(message));
     const workbenchStatus = asksWorkbenchRequestStatus(
       message,
-      pathname === '/workbench',
+      pathname === '/workbench' || hrTrackedRequest,
     );
     if (
       !callCenterStatus &&
       workbenchStatus &&
       pathname !== '/workbench' &&
+      !hrTrackedRequest &&
       /^(?:درخواستم|درخواست من)\s+(?:الان )?(?:دست|کجا|به کجا)/.test(
         normalizeQuestion(message),
       )
@@ -1725,6 +1765,7 @@ function AssistantComposerContent({
           message,
           data,
           pathname === '/workbench' ? searchParams.get('request') : undefined,
+          hrTrackedRequest,
         );
         previousAnswer.current = undefined;
         workbenchTopic.current = undefined;

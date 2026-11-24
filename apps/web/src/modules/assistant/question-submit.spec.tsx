@@ -15,6 +15,7 @@ const h = vi.hoisted(() => ({
   company: 'company-a',
   user: 'user-a',
   permissions: ['sales.contracts.read.all'],
+  hrAccess: false,
   fetcher: vi.fn(),
 }));
 vi.mock('react', async (original) => ({
@@ -57,7 +58,10 @@ vi.mock('@/modules/iam/access-context', () => ({
   useAccessActor: () => ({
     userId: h.user,
     branchIds: ['branch-a'],
-    permissions: h.permissions,
+    permissions: [
+      ...h.permissions,
+      ...(h.hrAccess ? ['hr.employees.read', 'hr.attendance.read'] : []),
+    ],
   }),
   useAccessPermissions: () => [],
 }));
@@ -147,6 +151,7 @@ beforeEach(() => {
   h.company = 'company-a';
   h.user = 'user-a';
   h.permissions = ['sales.contracts.read.all'];
+  h.hrAccess = false;
   vi.stubEnv('NEXT_PUBLIC_ASSISTANT_AGENT_ENABLED', 'true');
   vi.stubGlobal('document', { querySelector: () => null });
   vi.stubGlobal(
@@ -591,8 +596,6 @@ describe('Purchase guide depth in the Composer', () => {
 describe('Sales panel catalogues in Composer', () => {
   it('switches between package workflows and continues without model calls', async () => {
     h.permissions.push('package_pricing.read');
-    h.permissions.push('package_pricing.read');
-    h.permissions.push('package_pricing.read');
     h.path = '/workbench';
     await send('بازه بستن پکیج رو کجا بررسی کنم؟');
     expect(chat().at(-1)).toContain('نرخ و بازه در بستن پکیج');
@@ -673,4 +676,46 @@ describe('correspondence guide in the Composer', () => {
     expect(h.fetcher).toHaveBeenCalledTimes(1);
     expect(h.fetcher.mock.calls[0]?.[1]?.method).toBe('GET');
   });
+});
+
+describe('HR guide in the Composer', () => {
+  it('continues local HR guidance without a provider call', async () => {
+    h.path = '/hr';
+    h.hrAccess = true;
+    await send('چرا تردد دستگاه در کارکرد دیده نمی‌شود؟');
+    expect(chat().at(-1)).toContain('سرمایه انسانی ← منابع انسانی');
+    h.path = '/system';
+    await send('بعدش چی؟');
+    expect(chat().at(-1)).toContain('نیمه‌شب');
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+
+  it('does not return a section link without HR access', async () => {
+    h.path = '/system';
+    await send('چطور مدیر مستقیم را در منابع انسانی بررسی کنم؟');
+    expect(chat().at(-1)).toContain('دسترسی منابع انسانی');
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+});
+
+it('reads a tracked HR request through Workbench and only shows its status', async () => {
+  h.path = '/hr';
+  vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '/api/v1');
+  h.fetcher.mockResolvedValueOnce(
+    Response.json({
+      data: [
+        {
+          id: 'leave-id',
+          trackingNumber: 'HR-123',
+          subject: 'private evidence',
+          status: 'APPROVED',
+          direction: 'outgoing',
+        },
+      ],
+    }),
+  );
+  await send('درخواست من کجاست؟ کد پیگیری HR-123');
+  expect(chat().at(-1)).toContain('وضعیت ثبت‌شده');
+  expect(chat().at(-1)).not.toContain('private evidence');
+  expect(h.fetcher).toHaveBeenCalledTimes(1);
 });

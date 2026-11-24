@@ -10764,3 +10764,5 @@ Website-bound connectors can read the latest active and approved USD, EUR and TR
 2026-11-24 PC-C — NORA-PETTY-CASH-GUIDE-1124: Added versioned Nora petty cash guidance, read-only request and balance lookup and coverage. See docs/tasks/NORA-PETTY-CASH-GUIDE-1124.md.
 
 2026-11-24 PC-C — NORA-CORRESPONDENCE-GUIDE-1124: Added Nora correspondence guide, scoped read-only inbox status and test matrix. See docs/tasks/NORA-CORRESPONDENCE-GUIDE-1124.md.
+
+2026-11-24 PC-C — NORA-HR-GUIDE-1124: Added Nora's 14 HR guide topics, permission-aware local dispatch and acceptance matrix. Reuse current native metrics and Workbench request readers. See docs/tasks/NORA-HR-GUIDE-1124.md.

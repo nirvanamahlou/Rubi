@@ -34,6 +34,10 @@ Own the additive site-commerce dated-tour draft route, authoritative rate and ho
 
 Reserve additive Nora System Management catalogue, generator registration, bounded Composer dispatch, tests and coordination docs. Producer System Management, IAM and archive are read-only references. No API, permissions, schema, dependency or deployment changes.
 
+## NORA-HR-GUIDE-1124 — PC-C — ACTIVE
+
+Reserve additive Nora HR guide catalogue, local dispatch and focused tests. Reuse the existing authorization, Workbench readers and HR aggregate readers. Preserve producer modules, workflows and permissions.
+
 ## NORA-FLIGHT-CAPACITY-GUIDE-1124 — PC-C — ACTIVE
 
 Reserve additive Nora flight capacity guide, registration, read-only Composer dispatch and tests. Reuse the authenticated managed offers reader and preserve producer workflows and permissions.
