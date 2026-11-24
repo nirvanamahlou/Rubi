@@ -10738,3 +10738,7 @@ Archived dashboard widget availability reasons and expected data in docs/DASHBOA
 2026-11-24 PC-C — NORA-HOTEL-PURCHASE-GUIDE-1124: Added Nora's hotel purchase guide, local routing, scoped read of exact pack identifiers, and coverage matrix. Stacked on PR #1915. See docs/tasks/NORA-HOTEL-PURCHASE-GUIDE-1124.md.
 
 2026-11-24 PC-C — NORA-FLIGHT-CAPACITY-GUIDE-1124: Added the flight capacity guide, scoped managed-offer read and coverage matrix. See docs/tasks/NORA-FLIGHT-CAPACITY-GUIDE-1124.md.
+
+## Website sell rates and test tour insurance
+
+Website-bound connectors can read the latest active and approved USD, EUR and TRY sell rates to IRR with decimal precision and validity times. Test tour insurance reuses private PDF delivery and the existing issuance queue for a fully settled website tour with insurance included. Test issuance requires `SITE_COMMERCE_TEST_TOUR_INSURANCE=true` outside production, plus the corresponding Niyayesh Seir test setting. The production insurance provider remains an open integration.

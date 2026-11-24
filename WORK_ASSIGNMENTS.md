@@ -13558,3 +13558,7 @@ Scope: expanded tour periods, saved departure pricing, and direct editing of imp
 ## TOUR-DELETE-REPAIR-1124 — PC-A — READY_FOR_CI
 
 Scope: add the existing departure withdrawal flow under each expanded tour, apply successful removal immediately and keep errors in confirmation. Production 409 for a previously deleted period is resolved by the archive logic already in develop (#1911). No schema or deployment change.
+
+## WEBSITE-EXCHANGE-RATES-TOUR-INSURANCE-1124 — PC-D
+
+Branch `codex/pc-d-site-customer-services` from develop `ba9b26331`. Reserve the read-only Master Data sell-rate projection, the Site Commerce rate and test tour-insurance routes, and focused tests. Consumers are Jahan Bastan, Niyayesh Seir and Ghestiroo for rates, and Niyayesh Seir for test insurance. Existing pricing and document contracts keep their behavior. No schema, dependency, customer data, role or provider changes.

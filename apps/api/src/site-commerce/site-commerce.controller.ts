@@ -11,8 +11,11 @@ import {
   Post,
   Query,
   Req,
+  Res,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import type {
   SalesContractCreateRequest,
   SalesPaymentCreateRequest,
@@ -20,6 +23,7 @@ import type {
 import { AuthGuard } from '../iam/auth.guard';
 import { IamService } from '../iam/iam.service';
 import type { AuthenticatedRequest } from '../iam/iam.types';
+import { CurrencyRateService } from '../master-data/currency-rate.service';
 // Nest needs the runtime DTO constructor for request validation.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { CustomerMutationDto } from '../customers/customer.dto';
@@ -43,6 +47,8 @@ export class SiteCommerceController {
     @Inject(SiteCommerceService) private readonly service: SiteCommerceService,
     @Inject(CustomerService) private readonly customers: CustomerService,
     @Inject(IamService) private readonly iam: IamService,
+    @Inject(CurrencyRateService)
+    private readonly currencyRates: CurrencyRateService,
   ) {}
   @Get('publications/:kind/:resourceId')
   @Header('Cache-Control', 'private, no-store')
@@ -101,6 +107,16 @@ export class SiteCommerceController {
     return floatingTours === 'only'
       ? this.service.catalog(site, req.actor, true, true)
       : this.service.catalog(site, req.actor, floatingTours === 'true');
+  }
+
+  @Get('exchange-rates')
+  @Header('Cache-Control', 'private, no-store')
+  async exchangeRates(
+    @Param('site') site: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    siteBinding(site, req.actor);
+    return { data: await this.currencyRates.websiteSellRates() };
   }
   @Post('hotel-profiles/:id')
   @Header('Cache-Control', 'private, no-store')
@@ -315,6 +331,46 @@ export class SiteCommerceController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.travelDocuments(site, id, req.actor);
+  }
+  @Get('orders/:externalId/tour-insurance')
+  @Header('Cache-Control', 'private, no-store')
+  tourInsurance(
+    @Param('site') site: string,
+    @Param('externalId') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.websiteTourInsurance(site, id, req.actor);
+  }
+  @Post('orders/:externalId/tour-insurance')
+  @Header('Cache-Control', 'private, no-store')
+  issueTourInsurance(
+    @Param('site') site: string,
+    @Param('externalId') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.websiteTourInsurance(site, id, req.actor, true);
+  }
+  @Get('orders/:externalId/tour-insurance/:policyId')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('X-Content-Type-Options', 'nosniff')
+  async tourInsurancePdf(
+    @Param('site') site: string,
+    @Param('externalId') id: string,
+    @Param('policyId', ParseUUIDPipe) policyId: string,
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const pdf = await this.service.websiteTourInsurancePdf(
+      site,
+      id,
+      policyId,
+      req.actor,
+    );
+    response.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${pdf.filename}"`,
+    );
+    return new StreamableFile(pdf.bytes, { type: pdf.type });
   }
   @Get('orders/:externalId/payment-accounts')
   @Header('Cache-Control', 'private, no-store')
