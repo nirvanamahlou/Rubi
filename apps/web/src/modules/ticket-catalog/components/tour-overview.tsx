@@ -3,6 +3,7 @@ import { tourDestinationIds } from '@nora/contracts';
 import type { TourDepartureV1, TourPackageV1 } from '@nora/contracts';
 import {
   CalendarDays,
+  ChevronDown,
   MapPin,
   Pencil,
   Plane,
@@ -14,6 +15,10 @@ import { useState } from 'react';
 import { Badge, Button, Card, Input } from '@/components/ui';
 import { toursApi } from '../api/tours';
 import { SiteDeleteDialog } from './site-delete-dialog';
+import {
+  InlineDeparturePrices,
+  InlineFloatingTourPrices,
+} from './tour-inline-prices';
 
 export const tourDay = (now = new Date()) =>
   new Intl.DateTimeFormat('en-CA', {
@@ -83,6 +88,16 @@ export function TourOverview({
   const [search, setSearch] = useState('');
   const [definitionSearch, setDefinitionSearch] = useState('');
   const [definitionStatus, setDefinitionStatus] = useState('');
+  const [expanded, setExpanded] = useState('');
+  const [pricedDeparture, setPricedDeparture] = useState('');
+  const toggle = (id: string) => {
+    setExpanded((current) => (current === id ? '' : id));
+    setPricedDeparture(
+      departures.find(
+        (departure) => departure.packageId === id && !departure.isDeleted,
+      )?.id ?? '',
+    );
+  };
   const [view, setView] = useState<'all' | 'current' | 'upcoming'>('all');
   const today = tourDay();
   const metrics = tourMetrics(departures, today);
@@ -149,7 +164,21 @@ export function TourOverview({
           >
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h4 className="font-semibold">{item.name}</h4>
+                <h4 className="min-w-0 font-semibold">
+                  <button
+                    type="button"
+                    className="flex items-center gap-1.5 text-start hover:text-primary"
+                    aria-expanded={expanded === item.id}
+                    onClick={() => toggle(item.id)}
+                  >
+                    <ChevronDown
+                      aria-hidden
+                      size={16}
+                      className={expanded === item.id ? 'rotate-180' : ''}
+                    />
+                    {item.name}
+                  </button>
+                </h4>
                 <Badge
                   className={
                     item.publicationStatus === 'DRAFT'
@@ -181,7 +210,13 @@ export function TourOverview({
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" disabled={busy} onClick={() => onSelect(item)}>
+              <Button
+                size="sm"
+                disabled={busy}
+                onClick={() =>
+                  definitionMode ? toggle(item.id) : onSelect(item)
+                }
+              >
                 <CalendarDays aria-hidden size={15} />
                 {definitionMode ? 'مدیریت نوبت' : 'ثبت نوبت'}
               </Button>
@@ -220,6 +255,85 @@ export function TourOverview({
                 />
               )}
             </div>
+            {expanded === item.id && (
+              <div className="min-w-0 space-y-3 border-t pt-3 lg:col-span-2">
+                {departures
+                  .filter(
+                    (departure) =>
+                      departure.packageId === item.id && !departure.isDeleted,
+                  )
+                  .map((departure) => (
+                    <section
+                      key={departure.id}
+                      className="rounded-lg border bg-muted/20 p-3"
+                    >
+                      <button
+                        type="button"
+                        aria-expanded={pricedDeparture === departure.id}
+                        onClick={() =>
+                          setPricedDeparture((current) =>
+                            current === departure.id ? '' : departure.id,
+                          )
+                        }
+                        className="flex w-full flex-wrap items-center gap-x-4 gap-y-1 text-start text-sm"
+                      >
+                        <ChevronDown
+                          aria-hidden
+                          size={16}
+                          className={
+                            pricedDeparture === departure.id ? 'rotate-180' : ''
+                          }
+                        />
+                        <strong>
+                          {tourDate(departure.startsOn)} تا{' '}
+                          {tourDate(departure.endsOn)}
+                        </strong>
+                        <span>
+                          {departure.outbound.carrierName} ·{' '}
+                          <bdi>{departure.outbound.serviceNumber}</bdi>
+                          {departure.returning && (
+                            <>
+                              {' '}
+                              / <bdi>{departure.returning.serviceNumber}</bdi>
+                            </>
+                          )}
+                        </span>
+                        <span>ظرفیت {number(departure.remainingCapacity)}</span>
+                        {departure.isActive === false && (
+                          <Badge>فروش بازه متوقف است</Badge>
+                        )}
+                      </button>
+                      {pricedDeparture === departure.id && (
+                        <div className="mt-3">
+                          <InlineDeparturePrices departure={departure} />
+                        </div>
+                      )}
+                    </section>
+                  ))}
+                {item.details?.isFloating ? (
+                  <InlineFloatingTourPrices tourId={item.id} />
+                ) : (
+                  !departures.some(
+                    (departure) =>
+                      departure.packageId === item.id && !departure.isDeleted,
+                  ) && (
+                    <p className="text-sm text-muted-foreground">
+                      هنوز نوبتی ثبت نشده است.
+                    </p>
+                  )
+                )}
+                {definitionMode && !item.details?.isFloating && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => onSelect(item)}
+                  >
+                    مدیریت نوبت و قیمت
+                  </Button>
+                )}
+              </div>
+            )}
           </article>
         ))}
       </div>

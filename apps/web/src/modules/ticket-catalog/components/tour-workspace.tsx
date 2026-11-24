@@ -221,7 +221,11 @@ export function TourWorkspace({
       const [p, d, cities, insurance, airlines, airports, countries] =
         await Promise.all([
           toursApi.packages(),
-          toursApi.departures(canManagePeriods),
+          toursApi.departures(
+            canManagePeriods,
+            undefined,
+            mode === 'definition',
+          ),
           loadRefs('cities'),
           loadRefs('insurance-plans'),
           loadRefs('airlines'),
@@ -254,7 +258,7 @@ export function TourWorkspace({
     return () => {
       cancelled = true;
     };
-  }, [reload, canManagePeriods]);
+  }, [reload, canManagePeriods, mode]);
 
   useEffect(() => {
     let cancelled = false;
