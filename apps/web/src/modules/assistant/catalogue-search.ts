@@ -4,6 +4,7 @@ import {
   type AssistantGuideModule,
 } from './assistant-guide-registry';
 import { buildGuidePhraseIndex } from './guide-phrase-index';
+import type { QuestionDecision } from './question-routing';
 import { normalizeQuestion } from './question-text';
 
 type Entry = { domain: AssistantGuideModule; section: GuideSection };
@@ -26,10 +27,34 @@ const panels = Object.entries(assistantGuideCatalogues).map(
 const searchPanelNames = buildGuidePhraseIndex(panels, (panel) => [panel.name]);
 let search: ReturnType<typeof buildGuidePhraseIndex<Entry>> | undefined;
 
+/** Ask the index only for an instruction. Leave composite, record and provenance questions to their readers. */
+export function catalogueLookupMode(
+  question: string,
+  decision: QuestionDecision,
+) {
+  const text = normalizeQuestion(question);
+  if (
+    decision.guideTopicId ||
+    decision.needsSalesPeriod ||
+    !['guide', 'clarify'].includes(decision.kind)
+  )
+    return;
+  if (
+    /\d{3,}|چقدر|دست کی|از کجا آوردی|این (?:عدد|مبلغ|نتیجه|قرارداد|پرونده|درخواست|کمپین)|همین|پیگیری من|چرا|قبل (?:از )?ارسال/.test(
+      text,
+    )
+  )
+    return;
+  if (/^راهنمای?\s/.test(text)) return 'explicit';
+  if (/چطور|چجور|چگونه|کجا|نحوه|مراحل|انجام بدم|انجام بدهم/.test(text))
+    return 'procedure';
+}
+
 export function findCatalogueTopics(
   message: string,
   pathname: string | null,
   allowed: (s: GuideSection) => boolean,
+  minimumWords = 1,
 ) {
   const text = normalizeQuestion(message);
   search ??= buildGuidePhraseIndex(entries, ({ section }) => [
@@ -55,7 +80,8 @@ export function findCatalogueTopics(
     explicit.length && !hasScopedHit ? search(text) : subjectHits
   )
     .filter(
-      ({ item }) =>
+      ({ item, score }) =>
+        score >= minimumWords &&
         allowed(item.section) &&
         (!named.length ||
           named.some(

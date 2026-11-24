@@ -5,7 +5,7 @@ export function buildGuidePhraseIndex<T>(
   items: Iterable<T>,
   phrases: (item: T) => readonly string[],
 ) {
-  type Posting = { item: T; pattern: RegExp; weight: number };
+  type Posting = { item: T; phrase: string; pattern?: RegExp; weight: number };
   const postings = new Map<string, Posting[]>();
   let longest = 0;
   for (const item of items) {
@@ -16,7 +16,7 @@ export function buildGuidePhraseIndex<T>(
       const bucket = postings.get(first) ?? [];
       bucket.push({
         item,
-        pattern: compileQuestionPhrase(phrase),
+        phrase,
         weight: phrase.split(' ').length,
       });
       postings.set(first, bucket);
@@ -32,9 +32,15 @@ export function buildGuidePhraseIndex<T>(
         const bucket = postings.get(prefix);
         if (!bucket || checked.has(prefix)) continue;
         checked.add(prefix);
-        for (const { item, pattern, weight } of bucket) {
+        for (const posting of bucket) {
+          const pattern = (posting.pattern ??= compileQuestionPhrase(
+            posting.phrase,
+          ));
           if (pattern.test(normalized))
-            scores.set(item, Math.max(weight, scores.get(item) ?? 0));
+            scores.set(
+              posting.item,
+              Math.max(posting.weight, scores.get(posting.item) ?? 0),
+            );
         }
       }
     }

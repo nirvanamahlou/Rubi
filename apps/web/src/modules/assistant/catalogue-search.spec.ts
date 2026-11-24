@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { assistantGuideCatalogues } from './assistant-guide-registry';
-import { findCatalogueTopics, workflowDestination } from './catalogue-search';
+import { routeAssistantQuestion } from './question-routing';
+import {
+  catalogueLookupMode,
+  findCatalogueTopics,
+  workflowDestination,
+} from './catalogue-search';
 
 const open = () => true;
 
@@ -72,6 +77,19 @@ describe('catalogue discovery', () => {
       findCatalogueTopics(q, '/unrelated', open).map((t) => t.guideHref),
     ).toEqual(['/assistant-guides/' + ref]);
   });
+
+  it.each([
+    'چرا این عدد با پنل فرق داره؟',
+    'پرسیدم این عدد رو از کجا آوردی؟',
+    'وضعیت قرارداد ۱۲۳۴۵ را از کجا بیارم؟',
+    'این مبلغ از کجا آمده و از کجا اصلاحش کنم؟',
+    'چرا همین کمپین منتشر نشده؟',
+  ])(
+    'keeps real records and source follow-ups out of the catalogue fast path: %s',
+    (q) => {
+      expect(catalogueLookupMode(q, routeAssistantQuestion(q))).toBeUndefined();
+    },
+  );
 
   it('checks both endpoints and distinguishes prerequisites from next steps', () => {
     const from = '/assistant-guides/reservations#hotel-rates';

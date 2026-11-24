@@ -27,8 +27,17 @@ function boundedPattern(pattern: RegExp) {
   );
 }
 
+// Routing patterns are supplied by code and catalogues. Never use a user's question as a cache key.
+const routingPatterns = new Map<string, RegExp>();
+
 export function matchesQuestion(text: string, pattern: RegExp) {
-  return boundedPattern(pattern).test(text);
+  let bounded = routingPatterns.get(pattern.source);
+  if (!bounded) {
+    bounded = boundedPattern(pattern);
+    if (routingPatterns.size < 512)
+      routingPatterns.set(pattern.source, bounded);
+  }
+  return bounded.test(text);
 }
 
 export function compileQuestionPhrase(phrase: string) {

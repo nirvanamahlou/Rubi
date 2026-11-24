@@ -201,6 +201,11 @@ export function routeAssistantQuestion(
         (explicitProcedure || locationProcedure)
       )) ||
     (has(metric) && /چرا|اختلاف|فرق|بجای|به جای/.test(q));
+  const panelProcedure =
+    !asksEvidence &&
+    !/\d/.test(q) &&
+    (has(/از کجای.*شروع کنم/) || has(/مبنای تاریخ.*گزارش.*چیه/));
+  if (panelProcedure) return { kind: 'guide', dataMessage: message };
   const dataIntent =
     asksEvidence ||
     (has(metric) &&
