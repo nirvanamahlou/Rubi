@@ -91,6 +91,10 @@ import {
 } from './reservation-guide';
 import { readHotelPurchaseGuidePack } from './hotel-purchase-guide';
 import { normalizeQuestion } from './question-text';
+import {
+  renderSystemManagementGuide,
+  resolveSystemManagementGuide,
+} from './system-management-guide';
 import { AssistantResponseContent } from './response-content';
 import {
   assistantSourceRequest,
@@ -497,12 +501,14 @@ function AssistantComposerContent({
   const lastVersion = useRef<number | undefined>(undefined);
   const contractId = useRef<string | undefined>(undefined);
   const guideTopic = useRef<string | undefined>(undefined);
+  const systemGuideTopic = useRef<string | undefined>(undefined);
   const flightCapacityTopic = useRef<string | undefined>(undefined);
   const previousAnswer = useRef<AnswerContext | undefined>(undefined);
   const pendingSalesPeriod = useRef(false);
   useEffect(() => {
     if (denied) {
       salesPanelTopic.current = undefined;
+      systemGuideTopic.current = undefined;
       previousAnswer.current = undefined;
       flightCapacityTopic.current = undefined;
       reservationGuideTopic.current = undefined;
@@ -657,6 +663,50 @@ function AssistantComposerContent({
           label: english ? 'Open panel' : 'باز کردن پنل',
           guideHref: newGuide.guideHref,
         },
+      );
+      return;
+    }
+    const systemGuidance = resolveSystemManagementGuide(
+      message,
+      pathname,
+      systemGuideTopic.current,
+    );
+    systemGuideTopic.current = undefined;
+    if (systemGuidance) {
+      pending.current?.abort();
+      pendingSalesPeriod.current = false;
+      previousAnswer.current = undefined;
+      flightCapacityTopic.current = undefined;
+      reservationGuideTopic.current = undefined;
+      guideTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      if ('clarification' in systemGuidance) {
+        replyLocally(systemGuidance.clarification);
+        return;
+      }
+      const { topic, followUp, inspect } = systemGuidance;
+      const permission = 'permission' in topic ? topic.permission : undefined;
+      if (
+        !actor ||
+        !canViewRoute(actor.permissions, topic.href) ||
+        (permission &&
+          !actor.permissions.some((granted) => granted === permission))
+      ) {
+        replyLocally(
+          'برای مشاهدهٔ این بخش، حساب فعلی باید مجوز همان بخش مدیریت سیستم را داشته باشد.',
+        );
+        return;
+      }
+      systemGuideTopic.current = topic.id;
+      replyLocally(
+        renderSystemManagementGuide(topic, followUp, inspect),
+        undefined,
+        undefined,
+        documentGuideLink(
+          { href: topic.href, label: topic.title },
+          'system-management',
+          topic.id,
+        ),
       );
       return;
     }
@@ -1080,6 +1130,14 @@ function AssistantComposerContent({
       documentTopic.current = undefined;
       workbenchTopic.current = undefined;
       guideTopic.current = undefined;
+      if (purchaseQuestion.kind === 'clarify') {
+        replyLocally(
+          english
+            ? 'Do you mean a contract service purchase or a petty cash purchase request?'
+            : 'منظورتان خرید کدام خدمت قرارداد است، یا می‌خواهید درخواست خرید تنخواه ثبت کنید؟',
+        );
+        return;
+      }
       if (purchaseQuestion.kind === 'guide') {
         purchaseTopic.current = purchaseQuestion.topic.id;
         replyLocally(

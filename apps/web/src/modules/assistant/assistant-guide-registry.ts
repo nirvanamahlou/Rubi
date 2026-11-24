@@ -14,6 +14,7 @@ interface Section {
   route?: string[];
   path?: string[];
   conditions?: string[];
+  permission?: string;
 }
 
 export const assistantGuideCatalogues = {

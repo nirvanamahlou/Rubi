@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@nora/database';
 
@@ -71,6 +72,14 @@ export class CustomerAffairsRepository {
   findSite(code: string) {
     return this.database.client.customerAffairsSite.findUnique({
       where: { code },
+    });
+  }
+
+  registerSite(code: string, domain: string) {
+    return this.database.client.customerAffairsSite.upsert({
+      where: { code },
+      create: { id: randomUUID(), code, domain },
+      update: {},
     });
   }
 

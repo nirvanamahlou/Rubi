@@ -21,8 +21,23 @@ import { ConfigService } from '@nestjs/config';
 import { IsISO8601, IsString, Length, Matches } from 'class-validator';
 import { IamService } from '../iam/iam.service';
 import type { AuthenticatedRequest } from '../iam/iam.types';
+import { siteBinding } from '../site-commerce/site-commerce.policy';
 import { CustomerAffairsService } from './customer-affairs.service';
 import { CustomerAffairsRepository } from './customer-affairs.repository';
+
+const siteDomains = new Map([
+  ['jahanbastan', 'jahanbastan.ir'],
+  ['nystkt', 'nystkt.ir'],
+  ['nss', 'niyayeshseir.ir'],
+  ['ghestiroo', 'ghestiroo.ir'],
+]);
+
+const siteExternalId = /^[A-Za-z0-9_.:-]{1,160}$/;
+const commerceSiteCodes = new Map([
+  ['jahanbastan', 'jahan-bastan'],
+  ['nss', 'nss'],
+  ['ghestiroo', 'ghestiroo'],
+]);
 
 /** Minimal inbound payload: websites cannot assign staff, raise priority or link arbitrary records. */
 export class SiteTicketDto {
@@ -48,7 +63,7 @@ export class CustomerAffairsSiteGuard implements CanActivate {
   async canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const code = request.params.site;
-    if (typeof code !== 'string' || !['jahanbastan', 'nystkt'].includes(code))
+    if (typeof code !== 'string' || !siteDomains.has(code))
       throw new NotFoundException();
     let bindings: Record<string, { userId?: string; branchId?: string }>;
     try {
@@ -59,13 +74,26 @@ export class CustomerAffairsSiteGuard implements CanActivate {
       throw new UnauthorizedException('اتصال سایت فعال نیست.');
     }
     const binding = bindings?.[code];
-    if (!binding?.userId || !binding.branchId)
+    const commerceCode = commerceSiteCodes.get(code);
+    const commerceEnabled =
+      commerceCode &&
+      (this.config.get<string>('CUSTOMER_AFFAIRS_COMMERCE_SITES') ?? '')
+        .split(',')
+        .map((site) => site.trim())
+        .includes(commerceCode);
+    if ((!binding?.userId || !binding.branchId) && !commerceEnabled)
       throw new UnauthorizedException('اتصال سایت فعال نیست.');
     const authorization = request.headers.authorization;
     if (!authorization?.startsWith('Bearer ') || authorization.length > 8192)
       throw new UnauthorizedException();
     const actor = await this.iam.authenticate(authorization.slice(7));
+    if (commerceEnabled && (!binding?.userId || !binding.branchId)) {
+      const scoped = siteBinding(commerceCode, actor);
+      request.actor = { ...actor, branchIds: [scoped.branchId] };
+      return true;
+    }
     if (
+      !binding?.branchId ||
       actor.userId !== binding.userId ||
       !actor.branchIds.includes(binding.branchId)
     )
@@ -97,8 +125,11 @@ export class CustomerAffairsSiteController {
     @Body() input: SiteTicketDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    const site = await this.repository.findSite(code);
-    if (!site) throw new NotFoundException();
+    const domain = siteDomains.get(code);
+    if (!domain) throw new NotFoundException();
+    const site =
+      (await this.repository.findSite(code)) ??
+      (await this.repository.registerSite(code, domain));
     const key =
       'site:' +
       createHash('sha256')
@@ -134,14 +165,49 @@ export class CustomerAffairsSiteController {
     @Param('externalId') externalId: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    if (!/^[A-Za-z0-9_.:-]{1,160}$/.test(externalId))
-      throw new NotFoundException();
+    if (!siteExternalId.test(externalId)) throw new NotFoundException();
     const site = await this.repository.findSite(code);
     if (!site) throw new NotFoundException();
     const origin = await this.repository.findSiteTicket(site.id, externalId);
     if (!origin) throw new NotFoundException();
     const result = await this.affairs.getTicket(origin.ticketId, req.actor);
     return { data: this.publicStatus(result.data) };
+  }
+
+  @Get(':externalId/conversation')
+  @Header('Cache-Control', 'private, no-store')
+  async conversation(
+    @Param('site') code: string,
+    @Param('externalId') externalId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!siteExternalId.test(externalId)) throw new NotFoundException();
+    const site = await this.repository.findSite(code);
+    if (!site) throw new NotFoundException();
+    const origin = await this.repository.findSiteTicket(site.id, externalId);
+    if (!origin || !req.actor.branchIds.includes(origin.ticket.branchId))
+      throw new NotFoundException();
+    const { data } = await this.affairs.getTicket(origin.ticketId, req.actor);
+    return {
+      data: {
+        ...this.publicStatus(data),
+        messages: data.timeline
+          .filter(
+            (message) =>
+              message.customerVisible === true &&
+              message.channel === 'WEBSITE' &&
+              (message.type === 'MESSAGE' || message.type === 'CUSTOMER_REPLY'),
+          )
+          .sort((a, b) => a.occurredAt.localeCompare(b.occurredAt))
+          .slice(-100)
+          .map((message) => ({
+            id: message.id,
+            from: message.type === 'MESSAGE' ? 'support' : 'customer',
+            text: message.summary,
+            occurredAt: message.occurredAt,
+          })),
+      },
+    };
   }
 
   @Post(':externalId/comments')
@@ -151,8 +217,7 @@ export class CustomerAffairsSiteController {
     @Body() input: SiteTicketCommentDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    if (!/^[A-Za-z0-9_.:-]{1,160}$/.test(externalId))
-      throw new NotFoundException();
+    if (!siteExternalId.test(externalId)) throw new NotFoundException();
     const site = await this.repository.findSite(code);
     if (!site) throw new NotFoundException();
     const origin = await this.repository.findSiteTicket(site.id, externalId);

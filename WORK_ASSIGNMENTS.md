@@ -1,3 +1,7 @@
+## NORA-PURCHASE-DEPTH-1124 — PC-C — REVIEW
+
+Reserve purchase guide content, generated catalogue, bounded Nora routing and focused tests. Procurement, Reservations and Finance are read-only references.
+
 ## NORA-SALES-GUIDES-1124 — PC-C — REVIEW
 
 Reserve Nora-only marketing and pricing guides, catalogue registration, bounded Composer dispatch, tests and coordination docs. Producer modules are read-only references.
@@ -22,9 +26,17 @@ Stacked on #1907. Reserve the five Stage 3 guide documents, their generated cata
 
 Own the additive site-commerce dated-tour draft route, authoritative rate and hotel-itinerary validation, and coordinated Jahan Bastan and Ghestiroo checkout callers. Preserve payment verification, floating-tour policy, and other publishing changes. No migration or dependency changes.
 
+## NORA-SYSTEM-GUIDE-1124 — PC-C — REVIEW
+
+Reserve additive Nora System Management catalogue, generator registration, bounded Composer dispatch, tests and coordination docs. Producer System Management, IAM and archive are read-only references. No API, permissions, schema, dependency or deployment changes.
+
 ## NORA-FLIGHT-CAPACITY-GUIDE-1124 — PC-C — ACTIVE
 
 Reserve additive Nora flight capacity guide, registration, read-only Composer dispatch and tests. Reuse the authenticated managed offers reader and preserve producer workflows and permissions.
+
+## WEBSITE-AGENCY-ONBOARDING-1124 — PC-D — ACTIVE
+
+Reserve the additive website-agency account model and migration, Master Data intake, matching and approval, and the Organizations account panel. Coordinate the three storefront callers. Preserve all IAM, credit, existing agency records and website password stores.
 
 ## WEBSITE-DATED-TOUR-CONTRACTS-1124 — PC-D — ACTIVE
 
@@ -13558,3 +13570,7 @@ Scope: expanded tour periods, saved departure pricing, and direct editing of imp
 ## TOUR-DELETE-REPAIR-1124 — PC-A — READY_FOR_CI
 
 Scope: add the existing departure withdrawal flow under each expanded tour, apply successful removal immediately and keep errors in confirmation. Production 409 for a previously deleted period is resolved by the archive logic already in develop (#1911). No schema or deployment change.
+
+## WEBSITE-EXCHANGE-RATES-TOUR-INSURANCE-1124 — PC-D
+
+Branch `codex/pc-d-site-customer-services` from develop `ba9b26331`. Reserve the read-only Master Data sell-rate projection, the Site Commerce rate and test tour-insurance routes, and focused tests. Consumers are Jahan Bastan, Niyayesh Seir and Ghestiroo for rates, and Niyayesh Seir for test insurance. Existing pricing and document contracts keep their behavior. No schema, dependency, customer data, role or provider changes.

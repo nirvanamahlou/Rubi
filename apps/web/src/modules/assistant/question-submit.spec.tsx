@@ -14,6 +14,7 @@ const h = vi.hoisted(() => ({
   key: '',
   company: 'company-a',
   user: 'user-a',
+  permissions: ['sales.contracts.read.all'],
   fetcher: vi.fn(),
 }));
 vi.mock('react', async (original) => ({
@@ -56,7 +57,7 @@ vi.mock('@/modules/iam/access-context', () => ({
   useAccessActor: () => ({
     userId: h.user,
     branchIds: ['branch-a'],
-    permissions: ['sales.contracts.read.all', 'package_pricing.read'],
+    permissions: h.permissions,
   }),
   useAccessPermissions: () => [],
 }));
@@ -145,6 +146,7 @@ beforeEach(() => {
   h.tab = '';
   h.company = 'company-a';
   h.user = 'user-a';
+  h.permissions = ['sales.contracts.read.all'];
   vi.stubEnv('NEXT_PUBLIC_ASSISTANT_AGENT_ENABLED', 'true');
   vi.stubGlobal('document', { querySelector: () => null });
   vi.stubGlobal(
@@ -510,8 +512,42 @@ describe('hotel purchase guide in the Composer', () => {
   });
 });
 
+describe('System Management guide in the Composer', () => {
+  it('answers across pages and retains the topic until company changes', async () => {
+    h.permissions.push('system.audit.read');
+    h.path = '/workbench';
+    await send('فعالیت‌های قدیمی‌تر را در مدیریت سیستم از کجا ببینم؟');
+    expect(chat().at(-1)).toContain('مدیریت سیستم ← تاریخچه');
+    h.path = '/sales';
+    await send('بعدش چی؟');
+    expect(chat().at(-1)).toContain('نمای مجاز ERP');
+    expect(h.fetcher).not.toHaveBeenCalled();
+    h.company = 'company-b';
+    await send('بعدش چی؟');
+    expect(chat().join(' ')).not.toContain('مدیریت سیستم ← تاریخچه');
+  });
+  it('checks the History card permission and avoids the model', async () => {
+    h.path = '/workbench';
+    await send('تاریخچه فعالیت مدیریت سیستم رو از کجا ببینم؟');
+    expect(chat().at(-1)).toContain('مجوز همان بخش مدیریت سیستم');
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+});
+
+describe('Purchase guide depth in the Composer', () => {
+  it('answers a floating ticket question locally from another page and follows up', async () => {
+    h.path = '/workbench';
+    await send('خرید بلیط شناور رو چطور ثبت کنم؟');
+    expect(chat().at(-1)).toContain('خرید و تأمین ← بلیط شناور');
+    await send('بعدش چی؟');
+    expect(chat().at(-1)).toContain('ارز خرید');
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+});
+
 describe('Sales panel catalogues in Composer', () => {
   it('switches between package workflows and continues without model calls', async () => {
+    h.permissions.push('package_pricing.read');
     h.path = '/workbench';
     await send('بازه بستن پکیج رو کجا بررسی کنم؟');
     expect(chat().at(-1)).toContain('نرخ و بازه در بستن پکیج');
