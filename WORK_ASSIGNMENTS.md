@@ -1,6 +1,6 @@
 ## NORA-GUIDE-RELEASE-ACCEPTANCE-1124 — PC-C — ACTIVE
 
-Stage 6 on top of #1922 and current develop. Reserve isolated role-based acceptance, bounded document download aliases, daily-package routing and Nora guide regressions and acceptance evidence. No production deployment or merge in this unit before acceptance and release approval.
+Stage 6 on top of #1922 and current develop. Reserve isolated role-based acceptance, bounded document download aliases, daily-package routing, explicit issuance-guide precedence and Nora guide regressions and acceptance evidence. No production deployment or merge in this unit before acceptance and release approval.
 
 ## NORA-EXISTING-GUIDES-AUDIT-1124 — PC-C — REVIEW
 

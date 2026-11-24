@@ -47,7 +47,7 @@ import {
 } from './document-guides';
 
 import { canViewRoute, canViewScreen } from '@nora/contracts';
-import { resolvePilotGuide } from './guide-pilot';
+import { prefersTravelIssuanceGuide, resolvePilotGuide } from './guide-pilot';
 import { retrievePanelGuidance } from './panel-guide-retrieval';
 import {
   readTourGuideStatus,
@@ -718,11 +718,13 @@ function AssistantComposerContent({
       }
       return;
     }
-    const reservationGuide = resolveReservationGuide(
-      message,
-      pathname,
-      previousReservationTopic,
-    );
+    const pilotGuide =
+      agentMode && actor && !pathname?.startsWith('/sales/contracts/new')
+        ? resolvePilotGuide(message, pathname ?? '', pilotTopic.current)
+        : null;
+    const reservationGuide = prefersTravelIssuanceGuide(message, pilotGuide)
+      ? undefined
+      : resolveReservationGuide(message, pathname, previousReservationTopic);
     if (reservationGuide) {
       pending.current?.abort();
       previousAnswer.current = undefined;
@@ -790,12 +792,7 @@ function AssistantComposerContent({
       }
       return;
     }
-    if (
-      agentMode &&
-      actor &&
-      !pathname?.startsWith('/sales/contracts/new') &&
-      resolvePilotGuide(message, pathname ?? '', pilotTopic.current)
-    ) {
+    if (pilotGuide) {
       pending.current?.abort();
       const controller = new AbortController();
       pending.current = controller;
