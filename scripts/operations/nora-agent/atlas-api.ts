@@ -69,6 +69,22 @@ export function apiInventory(
         }
         for (const member of statement.members) {
           if (!ts.isMethodDeclaration(member)) continue;
+          const calls = new Set<string>();
+          function collectCalls(node: ts.Node) {
+            if (
+              ts.isCallExpression(node) &&
+              ts.isPropertyAccessExpression(node.expression)
+            ) {
+              const receiver = node.expression.expression;
+              if (
+                ts.isPropertyAccessExpression(receiver) &&
+                receiver.expression.kind === ts.SyntaxKind.ThisKeyword
+              )
+                calls.add(receiver.name.text + '.' + node.expression.name.text);
+            }
+            ts.forEachChild(node, collectCalls);
+          }
+          if (member.body) collectCalls(member.body);
           for (const call of decorators(member)) {
             const method = call.expression.getText(ast).toUpperCase();
             if (
@@ -94,6 +110,7 @@ export function apiInventory(
               id: source + '#' + member.name.getText(ast),
               method,
               route,
+              directCalls: [...calls].sort(),
               module,
               access: 'inventory-only',
             });

@@ -1,3 +1,4 @@
+import { reachableWebReaders } from './atlas-ui';
 import { apiInventory } from './atlas-api';
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
@@ -307,6 +308,7 @@ function visit(dirPath: string) {
         kind: 'page',
         id: route,
         source: path.split(sep).join('/'),
+        reachableHttpClients: reachableWebReaders(path),
         ...(redirect ? { redirect } : {}),
         components,
         modules,
