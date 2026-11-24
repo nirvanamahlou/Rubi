@@ -1,4 +1,163 @@
 {
+  "reservations": {
+    "title": "راهنمای رزرواسیون",
+    "topics": [
+      {
+        "id": "queue",
+        "title": "درخواست‌ها",
+        "href": "/reservations",
+        "related": ["reservation-report/filters"],
+        "steps": [
+          "دامنه شرکت و بازه را بررسی کنید. در «درخواست‌ها» مبنای تاریخ و فیلترهای وضعیت و خدمت را تعیین و «جست‌وجو» را بزنید.",
+          "«دریافت اطلاعات» را بزنید و آخرین فیلترهای اعمال‌شده را بررسی کنید. تعداد فهرست را با داشبورد فقط در دامنه و بازه یکسان مقایسه کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#queue"
+      },
+      {
+        "id": "handoff",
+        "title": "دریافت و بررسی قرارداد",
+        "href": "/reservations/processing",
+        "related": ["finance-delivery/reservation"],
+        "steps": [
+          "در فروش بررسی کنید قرارداد به رزرواسیون ارسال شده باشد. در صف، با شماره قرارداد جست‌وجو و پرونده را باز کنید.",
+          "شرکت، بازه و وضعیت را بررسی کنید. وضعیت فروش و وضعیت هر خدمت را در نماهای مربوط مقایسه کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#handoff"
+      },
+      {
+        "id": "amendment",
+        "title": "اصلاحیه فروش",
+        "href": "/reservations/processing",
+        "related": ["documents/version"],
+        "steps": [
+          "پرونده را باز کنید و آخرین اصلاحیه و خدمات تغییرکرده را با مدارک و وضعیت فعلی هر خدمت تطبیق دهید.",
+          "اگر خدمتی قبلاً ارسال یا صادر شده، وضعیت همان خدمت و نیاز به اقدام واحد مالک را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#amendment"
+      },
+      {
+        "id": "flight",
+        "title": "پرواز و بلیت",
+        "href": "/reservations/processing",
+        "related": ["reservation-report/rows"],
+        "steps": [
+          "پرونده و خدمت پرواز را باز کنید. برای هر مسیر، اطلاعات پرواز، وضعیت ظرفیت، مسافران تخصیص‌یافته و سند صدور را بررسی کنید.",
+          "برای پرواز رفت‌وبرگشت هر مسیر را مستقل بررسی کنید. تخصیص مسافر، رزرو ظرفیت و صدور بلیت وضعیت‌های مستقل‌اند."
+        ],
+        "guideHref": "/assistant-guides/reservations#flight"
+      },
+      {
+        "id": "hotel",
+        "title": "هتل، کارگزار و واچر",
+        "href": "/reservations/processing",
+        "related": ["purchase/access"],
+        "steps": [
+          "در پرونده هر اقامت را جدا باز کنید و هتل، تاریخ ورود و خروج، اتاق، مهمانان و کارگزار را کنترل کنید.",
+          "در ارسال جزئی یا اصلاحیه پس از ارسال، وضعیت هر اقامت و آخرین نسخه را بررسی کنید. وضعیت ارسال به کارگزار و صدور واچر جداست."
+        ],
+        "guideHref": "/assistant-guides/reservations#hotel"
+      },
+      {
+        "id": "purchase",
+        "title": "خرید و تأمین خدمت",
+        "href": "/reservations/processing",
+        "related": ["purchase/flight"],
+        "steps": [
+          "خدمت را در پرونده باز کنید و پرونده خرید مرتبط و اطلاعات تأمین‌کننده را از کنترل‌های در دسترس بررسی کنید.",
+          "وضعیت خرید و وضعیت پرداخت را در پرونده مالک آن‌ها بررسی کنید. قیمت خرید و مبلغ قرارداد فروش دو مقدار مستقل‌اند."
+        ],
+        "guideHref": "/assistant-guides/reservations#purchase"
+      },
+      {
+        "id": "insurance",
+        "title": "بیمه مسافرتی",
+        "href": "/reservations/insurance",
+        "related": ["master-data/insurance-plans"],
+        "steps": [
+          "نوع درخواست را مشخص کنید. بیمه متصل به قرارداد را از پرونده مربوط و بیمه مستقل را از فضای بیمه پیگیری کنید. مشخصات لازم و مسافران مشمول را مطابق فرم کنترل کنید.",
+          "پس از خطا یا پاسخ نامشخص، پیش از ارسال دوباره وضعیت درخواست موجود و نتیجه صدور را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#insurance"
+      },
+      {
+        "id": "manifest",
+        "title": "MANIFEST",
+        "href": "/reservations",
+        "related": ["master-data/manifest-templates"],
+        "steps": [
+          "تب «MANIFEST» را باز کنید و پرواز یا مسیر موردنظر را انتخاب کنید. مشخصات و فهرست مسافران را قبل از دریافت خروجی مرور کنید.",
+          "برای مسافر جامانده، تخصیص مسافر به همان پرواز و مسیر و تازگی نسخهٔ خروجی را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#manifest"
+      },
+      {
+        "id": "delivery",
+        "title": "صدور و مجوز تحویل",
+        "href": "/reservations/processing",
+        "related": ["finance-delivery/status"],
+        "steps": [
+          "پرونده را باز کنید و وضعیت صدور هر خدمت، مدارک صادرشده، رسیدها و مجوز تحویل را جداگانه بررسی کنید.",
+          "اگر سند صادر شده و تحویل ممکن نیست، وضعیت مجوز تحویل و اقدام قابل مشاهده در نقش فعلی را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#delivery"
+      },
+      {
+        "id": "cancellation",
+        "title": "ابطال، استرداد و تغییر",
+        "href": "/reservations/processing",
+        "related": ["reservation-report/cards"],
+        "steps": [
+          "مشخص کنید اقدام به کل قرارداد مربوط است یا به یک خدمت. وضعیت قرارداد را در فروش و وضعیت خدمت و سند را در پرونده رزرواسیون بررسی کنید.",
+          "برای مبلغ، برگشت وجه یا تکمیل اقدام مالی، نتیجهٔ ثبت‌شده در مسیر مالی را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#cancellation"
+      },
+      {
+        "id": "hotel-rates",
+        "title": "نرخ هتل",
+        "href": "/reservations/hotel-rates",
+        "related": ["master-data/hotels"],
+        "steps": [
+          "صفحه نرخ هتل را باز کنید و هتل و بازهٔ اثر نرخ را بررسی کنید. کنترل‌های قابل مشاهده به دسترسی و وضعیت وابسته‌اند.",
+          "اگر هتل یا نرخ پیدا نشد، ابتدا هتل انتخابی، بازه و مرجع هتل را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#hotel-rates"
+      },
+      {
+        "id": "queue-export",
+        "title": "خروجی اکسل درخواست‌ها",
+        "href": "/reservations",
+        "related": ["reservation-report/exports"],
+        "steps": [
+          "در تب «درخواست‌ها» بازه و فیلترها را وارد کنید و «جست‌وجو» را بزنید. تعداد روی دکمهٔ «خروجی اکسل» را با نتیجهٔ نمایش‌داده‌شده مقایسه کنید.",
+          "برای خروجی گزارش رزرواسیون از صفحهٔ گزارش استفاده کنید. خروجی صف و گزارش دامنه و ستون‌های متفاوتی دارند."
+        ],
+        "guideHref": "/assistant-guides/reservations#queue-export"
+      },
+      {
+        "id": "hotel-mail",
+        "title": "ارسال به کارگزار",
+        "href": "/reservations/processing",
+        "related": ["purchase/save"],
+        "steps": [
+          "در خدمت هتل، اقامت‌ها و کارگزار منتخب را کنترل کنید. فقط اقامت‌های آماده و مشمول را در کنترل ارسال انتخاب کنید.",
+          "اگر نتیجه نامشخص بود، قبل از تکرار ارسال، آخرین وضعیت و سابقهٔ ارسال همان اقامت را بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#hotel-mail"
+      },
+      {
+        "id": "insurance-correction",
+        "title": "اصلاح بیمه‌نامه",
+        "href": "/reservations/insurance",
+        "related": ["documents/travel"],
+        "steps": [
+          "در «بیمه مسافرتی» درخواست را پیدا کنید، پیام وضعیت و اطلاعات مسافر مشمول را با مدارک معتبر تطبیق دهید.",
+          "اگر اقدام اصلاح در وضعیت و نقش شما دیده می‌شود از همان کنترل استفاده کنید. در نتیجهٔ نامشخص، وضعیت صدور را پیش از ارسال مجدد بررسی کنید."
+        ],
+        "guideHref": "/assistant-guides/reservations#insurance-correction"
+      }
+    ]
+  },
   "travel-issuance": {
     "title": "راهنمای صدور مدارک سفر",
     "topics": [

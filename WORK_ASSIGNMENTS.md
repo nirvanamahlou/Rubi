@@ -18,6 +18,10 @@ Reserve Nora Web routing, supported guide selection, and the assistant sales per
 
 Reserve Nora v3 reply presentation, native report formatting and focused tests. Preserve authenticated reads and evidence validation.
 
+## NORA-RESERVATION-GUIDE-1124 — PC-C — ACTIVE
+
+Reserve the Nora Reservations guide document, generated guide entries, local routing and bounded Composer dispatch, coverage and focused tests. Reuse the existing report reader, routes and permissions. No producer, API, schema, dependency or deployment work.
+
 ## DOCUMENT-LOGO-SCAN-DISPLAY-1124 — PC-C — ACTIVE
 
 ## NORA-GUIDE-PILOT-1124 — PC-C — REVIEW
