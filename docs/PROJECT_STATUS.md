@@ -1,3 +1,7 @@
+## City and country website photos
+
+Avina geography records support a main photo and up to six gallery photos. The row publication action includes the saved photos in the signed profile sent to Jahan Bastan, Ghestiroo, or Niyayesh Seir. Country flags use their existing independent field. Profiles created before this change omit photo fields until an image is added.
+
 ## Nora ERP question routing
 
 Nora routes workflow questions to existing guides, record and report questions to authorized ERP readers, and unmatched requests to clarification. The Web composer has no generic conversation dispatch.

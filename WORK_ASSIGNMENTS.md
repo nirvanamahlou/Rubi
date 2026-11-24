@@ -1,3 +1,7 @@
+## GEOGRAPHY-SITE-IMAGES-1124 — PC-D — ACTIVE
+
+Own the city and country photo fields, geography dialog, additive migration, and signed profile delivery of the main photo and gallery. Coordinate the three website receivers and verify the publication contract.
+
 ## NORA-ERP-FIRST-1124 — PC-C — ACTIVE
 
 Reserve Nora Web routing and supported guide selection with focused regressions. Keep producer permissions and APIs unchanged.
