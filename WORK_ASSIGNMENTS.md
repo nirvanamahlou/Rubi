@@ -13490,3 +13490,7 @@ Scope: defined tour list, delete confirmation and archive after the last departu
 ## TOUR-INLINE-RATES-1124 — PC-A — READY_FOR_CI
 
 Scope: expanded tour periods, saved departure pricing, and direct editing of imported floating amounts using the existing versioned pricing API. No schema or permission changes.
+
+## TOUR-DELETE-REPAIR-1124 — PC-A — READY_FOR_CI
+
+Scope: add the existing departure withdrawal flow under each expanded tour, apply successful removal immediately and keep errors in confirmation. Production 409 for a previously deleted period is resolved by the archive logic already in develop (#1911). No schema or deployment change.
