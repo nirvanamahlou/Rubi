@@ -38,9 +38,22 @@ function fixture() {
     {} as SiteCommerceService,
     customers as unknown as CustomerService,
     {} as IamService,
+    { websiteSellRates: vi.fn().mockResolvedValue([]) } as never,
   );
   return { customers, controller };
 }
+describe('website sell exchange rates', () => {
+  it('returns rates only to the website bound to the requesting actor', async () => {
+    const { controller } = fixture();
+    const request = { actor } as AuthenticatedRequest;
+    await expect(controller.exchangeRates('nss', request)).resolves.toEqual({
+      data: [],
+    });
+    await expect(
+      controller.exchangeRates('ghestiroo', request),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+});
 describe('configured website passenger synchronization', () => {
   it('uses the Customers public sync contract and returns only the minimal identity reference', async () => {
     const { customers, controller } = fixture();

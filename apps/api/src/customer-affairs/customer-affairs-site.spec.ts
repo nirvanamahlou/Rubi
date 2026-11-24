@@ -98,6 +98,30 @@ describe('Website integration boundary', () => {
       'customer_affairs.ticket.update',
     ]);
   });
+  it('binds an opted-in checkout connector to its own support site without staff grants', async () => {
+    vi.stubEnv(
+      'SITE_COMMERCE_BINDINGS',
+      JSON.stringify({ nss: { userId: actor.userId, branchId: 'branch' } }),
+    );
+    try {
+      const { iam, request, context } = guardSetup({});
+      request.params.site = 'nss';
+      const guard = new CustomerAffairsSiteGuard(
+        iam as never,
+        {
+          get: (key: string) =>
+            key === 'CUSTOMER_AFFAIRS_COMMERCE_SITES' ? 'nss' : '{}',
+        } as never,
+      );
+      await expect(guard.canActivate(context as never)).resolves.toBe(true);
+      expect(request.actor.branchIds).toEqual(['branch']);
+      expect(iam.assertPermissions).not.toHaveBeenCalled();
+      request.params.site = 'ghestiroo';
+      await expect(guard.canActivate(context as never)).rejects.toThrow();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
   it('rejects forged assignment, priority and customer fields at the DTO boundary', async () => {
     const input = plainToInstance(SiteTicketDto, {
       externalId: 'order-1',
@@ -168,6 +192,63 @@ describe('Website integration boundary', () => {
     ).rejects.toThrow();
     expect(repository.findSiteTicket).toHaveBeenCalledWith('site', 'order-1');
     expect(affairs.getTicket).not.toHaveBeenCalled();
+  });
+
+  it('returns only website messages approved for the customer and only within the site branch', async () => {
+    const item = {
+      summary: 'Customer-visible reply',
+      occurredAt: '2026-11-24T08:00:00Z',
+      type: 'MESSAGE',
+      channel: 'WEBSITE',
+      customerVisible: true,
+    };
+    const getTicket = vi.fn().mockResolvedValue({
+      data: {
+        trackingNumber: 'CA-1',
+        status: 'NEW',
+        updatedAt: item.occurredAt,
+        timeline: [
+          { ...item, id: 'public' },
+          { ...item, id: 'internal', customerVisible: false },
+          { ...item, id: 'note', type: 'NOTE' },
+          { ...item, id: 'other-channel', channel: 'SMS' },
+        ],
+      },
+    });
+    const findSiteTicket = vi.fn().mockResolvedValue({
+      ticketId: 'ticket',
+      ticket: { branchId: 'other' },
+    });
+    const controller = new CustomerAffairsSiteController(
+      { getTicket } as never,
+      {
+        findSite: vi.fn().mockResolvedValue({ id: 'site' }),
+        findSiteTicket,
+      } as never,
+    );
+    const request = { actor: { ...actor, branchIds: ['branch'] } } as never;
+    await expect(
+      controller.conversation('jahanbastan', 'account-ticket-1', request),
+    ).rejects.toThrow();
+    expect(getTicket).not.toHaveBeenCalled();
+    findSiteTicket.mockResolvedValue({
+      ticketId: 'ticket',
+      ticket: { branchId: 'branch' },
+    });
+    await expect(
+      controller.conversation('jahanbastan', 'account-ticket-1', request),
+    ).resolves.toMatchObject({
+      data: {
+        messages: [
+          {
+            id: 'public',
+            from: 'support',
+            text: item.summary,
+            occurredAt: item.occurredAt,
+          },
+        ],
+      },
+    });
   });
   it('accepts only validated website comments and replays the same comment once', async () => {
     const input = plainToInstance(SiteTicketCommentDto, {
