@@ -14,6 +14,7 @@ const h = vi.hoisted(() => ({
   key: '',
   company: 'company-a',
   user: 'user-a',
+  hrAccess: false,
   fetcher: vi.fn(),
 }));
 vi.mock('react', async (original) => ({
@@ -56,7 +57,10 @@ vi.mock('@/modules/iam/access-context', () => ({
   useAccessActor: () => ({
     userId: h.user,
     branchIds: ['branch-a'],
-    permissions: ['sales.contracts.read.all'],
+    permissions: [
+      'sales.contracts.read.all',
+      ...(h.hrAccess ? ['hr.employees.read', 'hr.attendance.read'] : []),
+    ],
   }),
   useAccessPermissions: () => [],
 }));
@@ -145,6 +149,7 @@ beforeEach(() => {
   h.tab = '';
   h.company = 'company-a';
   h.user = 'user-a';
+  h.hrAccess = false;
   vi.stubEnv('NEXT_PUBLIC_ASSISTANT_AGENT_ENABLED', 'true');
   vi.stubGlobal('document', { querySelector: () => null });
   vi.stubGlobal(
@@ -507,5 +512,25 @@ describe('hotel purchase guide in the Composer', () => {
     expect(chat().at(-1)).toContain('دسترسی این بخش برای حساب شما فعال نیست');
     expect(chat().at(-1)).not.toContain('نسخهٔ ذخیره‌شده:');
     expect(h.fetcher).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('HR guide in the Composer', () => {
+  it('continues local HR guidance without a provider call', async () => {
+    h.path = '/hr';
+    h.hrAccess = true;
+    await send('چرا تردد دستگاه در کارکرد دیده نمی‌شود؟');
+    expect(chat().at(-1)).toContain('سرمایه انسانی ← منابع انسانی');
+    h.path = '/system';
+    await send('بعدش چی؟');
+    expect(chat().at(-1)).toContain('نیمه‌شب');
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+
+  it('does not return a section link without HR access', async () => {
+    h.path = '/system';
+    await send('چطور مدیر مستقیم را در منابع انسانی بررسی کنم؟');
+    expect(chat().at(-1)).toContain('دسترسی منابع انسانی');
+    expect(h.fetcher).not.toHaveBeenCalled();
   });
 });

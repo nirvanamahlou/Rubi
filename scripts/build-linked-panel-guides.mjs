@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
 const outputs = {
+  'human-resources': ['', '/hr', 'registry'],
   'flight-capacity': [
     'flight-capacity.generated',
     '/ticket-management',
@@ -74,6 +75,10 @@ export function buildLinkedPanelGuides(directory, check) {
       const { id: metadataId, href, related, ...fields } = JSON.parse(metadata);
       const validAction =
         href === action ||
+        (domain === 'human-resources' &&
+          /^\/hr\?section=(dashboard|employees|organization|recruitment|time|development|expenses|assets|requests|surveys|reports|payroll)$/.test(
+            href,
+          )) ||
         (domain === 'reservations' &&
           [
             '/reservations/processing',
