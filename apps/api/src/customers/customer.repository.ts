@@ -490,6 +490,25 @@ export class CustomerRepository {
     return match ? this.find(match.id, branchIds) : null;
   }
 
+  async findWebsitePassport(fingerprint: string, branchId: string) {
+    return this.database.client.customer.findFirst({
+      where: {
+        passportNumberFingerprint: fingerprint,
+        ownerBranchId: branchId,
+        kind: 'PERSON',
+        mergedIntoId: null,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        displayName: true,
+        birthDate: true,
+        passportFirstName: true,
+        passportLastName: true,
+      },
+    });
+  }
+
   /** Constraint probe owned by Customers. Never return these records to a website. */
   async websiteIdentityCandidates(
     nationalIdFingerprint?: string,

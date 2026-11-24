@@ -2,6 +2,10 @@
 
 All 358 authored topics across 25 manuals are indexed under nine sidebar groups. Scoped lookup reuses the authored text and can follow a verified prerequisite, next step or status destination. Access is checked at both ends of a handoff. Local checks and Chromium evidence are in [the acceptance notes](tasks/NORA-GUIDE-SEARCH-1124.md).
 
+## NORA-DATA-ATLAS-1124 — PC-C — REVIEW
+
+ERP schema inventory, scoped source discovery and replayable synthetic acceptance. See [data atlas](assistant/data-atlas/README.md) and [measurements](assistant/data-atlas/acceptance.md). Compact selection and native report discovery are opt-in. Production was inspected read-only.
+
 ## NORA-GUIDE-RELEASE-ACCEPTANCE-1124 — PC-C
 
 Stage 6 verified authenticated guide cases, account and company isolation, record clarification, translation coverage and reservation report-to-XLSX parity with three synthetic rows. The draft release PR remains gated on final CI and separate rollout approval. Evidence is in docs/tasks/NORA-GUIDE-RELEASE-ACCEPTANCE-1124.md.
