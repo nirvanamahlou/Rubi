@@ -371,8 +371,11 @@ describe('actual Composer submit routing and transport', () => {
   it('does not match پرسیدم to receipt and clarifies why without prior evidence', async () => {
     await send('چرا؟');
     expect(h.fetcher).not.toHaveBeenCalled();
+    h.fetcher.mockResolvedValueOnce(Response.json({ status: 'unmatched' }));
     await send('پرسیدم چجور قرارداد بزنم؟');
-    expect(h.fetcher).not.toHaveBeenCalled();
+    expect(h.fetcher.mock.calls.map(([url]) => url)).toEqual([
+      '/api/assistant/v3/guidance',
+    ]);
     expect(chat().at(-1)).toContain('مراحل ثبت قرارداد جدید');
     expect(chat().at(-1)).not.toContain('بارگذاری و پیگیری رسید');
   });

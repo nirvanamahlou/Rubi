@@ -2,6 +2,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
 const outputs = {
+  'travel-issuance': ['', '/reservations', 'registry'],
+  'customer-affairs': ['', '/customer-affairs', 'registry'],
+  'package-generator': ['', '/sales/pricing/generator', 'registry'],
+  'petty-cash': ['', '/purchases', 'registry'],
   correspondence: [
     'correspondence-guide.generated',
     '/correspondence',
@@ -70,6 +74,9 @@ export function buildLinkedPanelGuides(directory, check) {
             '/correspondence/internal/send',
             '/correspondence/internal/received',
           ].includes(href)) ||
+        (domain === 'travel-issuance' &&
+          id === 'delivery' &&
+          href === '/finance/delivery') ||
         (domain === 'tour' &&
           [
             '/integrations',
@@ -115,6 +122,7 @@ export function buildLinkedPanelGuides(directory, check) {
         id,
         title,
         href,
+        ...(format === 'registry' ? fields : {}),
         related,
         steps,
         guideHref: '/assistant-guides/' + domain + '#' + id,
@@ -136,13 +144,17 @@ export function buildLinkedPanelGuides(directory, check) {
     if (format === 'documents') {
       products.set(
         output,
-        topics.map(({ id, title, href, steps, fields }) => ({
-          id,
-          title,
-          steps,
-          ...(domain === 'correspondence' ? { href } : {}),
-          ...fields,
-        })),
+        topics
+          .filter(
+            ({ fields }) => domain !== 'correspondence' || 'terms' in fields,
+          )
+          .map(({ id, title, href, steps, fields }) => ({
+            id,
+            title,
+            steps,
+            ...(domain === 'correspondence' ? { href } : {}),
+            ...fields,
+          })),
       );
     }
     if (format === 'tuple') {
