@@ -1,5 +1,9 @@
 ## DOCUMENT-LOGO-SCAN-DISPLAY-1124 — PC-C — ACTIVE
 
+## NORA-GUIDE-COVERAGE-1124 — PC-C — ACTIVE
+
+Reserve new procedural guides, additive linked catalogue inputs and shared lexical retrieval with a bounded Composer integration. Preserve producer modules, existing record readers and policies. No migration or deployment.
+
 Reserve document workspace scan label rendering and focused verification. Preserve scan policy, authorization and schema.
 
 ## AVINA-PUBLICATION-SLUGS-1123 — PC-D — ACTIVE

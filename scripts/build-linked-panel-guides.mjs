@@ -2,6 +2,11 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
 const outputs = {
+  'travel-issuance': ['', '/reservations', 'registry'],
+  'customer-affairs': ['', '/customer-affairs', 'registry'],
+  'package-generator': ['', '/sales/pricing/generator', 'registry'],
+  'petty-cash': ['', '/purchases', 'registry'],
+  correspondence: ['', '/correspondence', 'registry'],
   b2b: ['b2b-guide-catalog', '/organizations', 'text'],
   tour: ['tour-guide', '/sales/tours', 'tuple'],
   'flight-pricing': ['flight-pricing-catalog', '/sales/ticket-prices', 'text'],
@@ -58,6 +63,9 @@ export function buildLinkedPanelGuides(directory, check) {
       const { id: metadataId, href, related, ...fields } = JSON.parse(metadata);
       const validAction =
         href === action ||
+        (domain === 'travel-issuance' &&
+          id === 'delivery' &&
+          href === '/finance/delivery') ||
         (domain === 'tour' &&
           [
             '/integrations',
@@ -103,6 +111,7 @@ export function buildLinkedPanelGuides(directory, check) {
         id,
         title,
         href,
+        ...(format === 'registry' ? fields : {}),
         related,
         steps,
         guideHref: '/assistant-guides/' + domain + '#' + id,

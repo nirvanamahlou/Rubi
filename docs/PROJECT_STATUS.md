@@ -1,3 +1,7 @@
+## NORA-GUIDE-COVERAGE-1124 — PC-C
+
+Initial linked guides for travel issuance, Customer Affairs, package generator, petty cash and correspondence. Scoped lexical retrieval uses accessible destinations and existing record dispatch. Build-time catalogue consistency and 11 focused retrieval tests passed. Comprehensive policy inventory and server-side cross-module retrieval remain pending.
+
 ## Master Data logo scan display
 
 The Documents workspace labels uploads carrying the Master Data logo exemption marker as exempt from automatic antivirus scanning. Standard pending and completed results retain their existing labels.
