@@ -6,6 +6,8 @@ Stage 6 verified authenticated guide cases, account and company isolation, recor
 
 Stage 5 inventories eight existing guides and updates 14 sections with source-backed steps, preserving existing routes and topic IDs. Coverage, source references and Stage 6 acceptance boundaries are in docs/tasks/NORA-EXISTING-GUIDES-AUDIT-1124.md.
 
+
+
 ## NORA-PURCHASE-RESERVATION-GUIDES-1124 — PC-C
 
 Stage 4 adds 12 source-linked topics covering procurement workflows and reservation-report definitions and discrepancy checks. The current ERP route and visibility constraints are captured in docs/tasks/NORA-PURCHASE-RESERVATION-GUIDES-1124.md. Producer operations and permissions are unchanged.
@@ -28,6 +30,9 @@ Local integration connects bidirectional website support, approved sell rates, a
 ## Agency website accounts
 
 Website agency registration records store organization identity, site login name, email and review status. Local agency approvals from Jahan Bastan and Niyayesh Seir can link or create a Master Data agency. Ghestiroo submits after its verified account registration and Avina staff approve the connection. Existing legal records are preserved and conflicts remain in review. Storefront passwords and hashes stay outside ERP.
+
+
+
 
 ## Website checkout contracts for dated tours
 
