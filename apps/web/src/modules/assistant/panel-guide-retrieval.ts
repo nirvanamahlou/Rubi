@@ -122,7 +122,10 @@ export function retrieveSalesPanelGuide(
         : undefined;
   if (!domain && matchesQuestion(text, /پک جنریتور|پکیج های روز|قرارداد فروش/))
     return;
-  if (!procedural.test(text) && !matchesQuestion(text, /چرا|فرق|تفاوت|کجا|کجاست/))
+  if (
+    !procedural.test(text) &&
+    !matchesQuestion(text, /چرا|فرق|تفاوت|کجا|کجاست/)
+  )
     return;
   if (
     record.test(text) ||
