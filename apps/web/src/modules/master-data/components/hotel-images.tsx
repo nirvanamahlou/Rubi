@@ -107,7 +107,15 @@ export function HotelImageUpload({
     setBusy(true);
     onBusy(true);
     try {
-      const urls = await masterDataApi.uploadHotelImages(files);
+      const urls: string[] = [];
+      // Two maximum-size files fit inside the upload proxy's request limit.
+      for (let offset = 0; offset < files.length; offset += 2) {
+        urls.push(
+          ...(await masterDataApi.uploadHotelImages(
+            files.slice(offset, offset + 2),
+          )),
+        );
+      }
       onChange(
         kind === 'main' ? 'sourceMainImage' : 'sourceGalleryImages',
         kind === 'main' ? urls[0]! : [...galleryUrls, ...urls].join('|'),
