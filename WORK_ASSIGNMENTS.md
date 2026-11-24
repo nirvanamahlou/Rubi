@@ -1,3 +1,23 @@
+## NORA-GUIDE-RELEASE-ACCEPTANCE-1124 — PC-C — REVIEW
+
+Stage 6 on top of #1922 and current develop. Reserve isolated role-based acceptance, bounded document download aliases, daily-package routing, explicit issuance-guide precedence and Nora guide regressions and acceptance evidence. No production deployment or merge in this unit before acceptance and release approval.
+
+## NORA-EXISTING-GUIDES-AUDIT-1124 — PC-C — REVIEW
+
+Stage 5 based on #1920. Reserve only the eight existing guide documents and their generated catalogues, regression tests, coverage and status notes. ERP producers, screen controls, policy, migrations and deployments are outside this unit.
+
+## NORA-PURCHASE-RESERVATION-GUIDES-1124 — PC-C — REVIEW
+
+Stage 4, based on #1917. Reserve only the purchase and reservation-report guide documents, generated linked catalogue, bounded retrieval/generator integration, tests and status notes. Existing Procurement and Reservations code is read-only evidence. No schema, permissions, dependencies or production changes.
+
+## NORA-GUIDE-DEPTH-1124 — PC-C — REVIEW
+
+Stacked on #1907. Reserve the five Stage 3 guide documents, their generated catalogue, bounded pilot retrieval integration, focused tests and acceptance notes. Producer modules are referenced read-only. No migration, dependency, merge or deployment.
+
+## WEBSITE-DATED-TOUR-CONTRACTS-1124 — PC-D — ACTIVE
+
+Own the additive site-commerce dated-tour draft route, authoritative rate and hotel-itinerary validation, and coordinated Jahan Bastan and Ghestiroo checkout callers. Preserve payment verification, floating-tour policy, and other publishing changes. No migration or dependency changes.
+
 ## NORA-FLIGHT-CAPACITY-GUIDE-1124 — PC-C — ACTIVE
 
 Reserve additive Nora flight capacity guide, registration, read-only Composer dispatch and tests. Reuse the authenticated managed offers reader and preserve producer workflows and permissions.

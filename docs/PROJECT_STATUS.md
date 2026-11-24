@@ -1,3 +1,28 @@
+## NORA-GUIDE-RELEASE-ACCEPTANCE-1124 — PC-C
+
+Stage 6 verified authenticated guide cases, account and company isolation, record clarification, translation coverage and reservation report-to-XLSX parity with three synthetic rows. The draft release PR remains gated on final CI and separate rollout approval. Evidence is in docs/tasks/NORA-GUIDE-RELEASE-ACCEPTANCE-1124.md.
+
+## NORA-EXISTING-GUIDES-AUDIT-1124 — PC-C
+
+Stage 5 inventories eight existing guides and updates 14 sections with source-backed steps, preserving existing routes and topic IDs. Coverage, source references and Stage 6 acceptance boundaries are in docs/tasks/NORA-EXISTING-GUIDES-AUDIT-1124.md.
+
+## NORA-PURCHASE-RESERVATION-GUIDES-1124 — PC-C
+
+Stage 4 adds 12 source-linked topics covering procurement workflows and reservation-report definitions and discrepancy checks. The current ERP route and visibility constraints are captured in docs/tasks/NORA-PURCHASE-RESERVATION-GUIDES-1124.md. Producer operations and permissions are unchanged.
+
+## NORA-GUIDE-DEPTH-1124 — PC-C
+
+Stage 3 expands five procedural guides with 15 additional source-linked topics and permission-scoped server retrieval. The acceptance matrix and unresolved policy dependencies are in docs/tasks/NORA-GUIDE-DEPTH-1124.md. No producer or runtime deployment changes.
+
+## NORA-GUIDE-PILOT-1124 — PC-C
+
+Stage 2 completed its 18 authenticated local browser cases across Sales, Travel Issuance and Customer Affairs. Customer-status questions without a tracking number now request it and identify the appropriate panel. Evidence and fixture limitations are in docs/tasks/NORA-GUIDE-PILOT-VERIFICATION-1124.md. Draft PR #1907 remains subject to CI and review.
+
+## NORA-GUIDE-COVERAGE-1124 — PC-C
+
+Initial linked guides for travel issuance, Customer Affairs, package generator, petty cash and correspondence. Scoped lexical retrieval uses accessible destinations and existing record dispatch. Build-time catalogue consistency and 11 focused retrieval tests passed. Stage 1 acceptance baseline records 15 module coverage rows, 18 pilot questions and policy evidence gaps in docs/tasks/NORA-GUIDE-ACCEPTANCE-BASELINE-1124.md. Server-side retrieval and execution of the pilot belong to Stage 2.
+
+
 ## Website checkout contracts for dated tours
 
 The authenticated dated-tour draft endpoint builds a native Sales contract from the site's eligible publication and Avina's current room rates. It verifies the complete traveler allocation, all stays in a combined package, published price components and current flight capacity. Resulting drafts use the existing website order identity and payment verification. Jahan Bastan and Ghestiroo can use the endpoint additively, while Niyayesh Seir's existing draft integration remains compatible.

@@ -83,6 +83,9 @@ export function buildLinkedPanelGuides(directory, check) {
         (domain === 'travel-issuance' &&
           ['delivery', 'delivery-exception'].includes(id) &&
           href === '/finance/delivery') ||
+        (domain === 'purchase' &&
+          fields.specific === true &&
+          href === '/purchases') ||
         (domain === 'tour' &&
           [
             '/integrations',
@@ -128,12 +131,13 @@ export function buildLinkedPanelGuides(directory, check) {
         id,
         title,
         href,
-        ...(format === 'registry' ? fields : {}),
+        ...(format === 'registry' || fields.specific === true ? fields : {}),
         related,
         steps,
         guideHref: '/assistant-guides/' + domain + '#' + id,
       });
-      topics.push({ id, title, href, steps, fields });
+      if (format === 'registry' || fields.specific !== true)
+        topics.push({ id, title, href, steps, fields });
     }
 
     panels[domain] = { title: header[1], topics: [...index.values()] };

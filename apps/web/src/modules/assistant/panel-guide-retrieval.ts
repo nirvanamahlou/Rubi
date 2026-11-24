@@ -14,6 +14,8 @@ const panelDomains = [
   'package-generator',
   'petty-cash',
   'correspondence',
+  'purchase',
+  'reservation-report',
 ] as const;
 
 function matchPanelGuidance(
@@ -23,7 +25,10 @@ function matchPanelGuidance(
   specificOnly = false,
 ) {
   const normalized = normalizeQuestion(question);
-  if (!procedural.test(normalized) || record.test(normalized)) return;
+  const asksForGuide =
+    procedural.test(normalized) ||
+    (specificOnly && /چرا|مبنای|معنی|فرق|تفاوت/.test(normalized));
+  if (!asksForGuide || record.test(normalized)) return;
   const candidates = panelDomains.flatMap((domain) =>
     assistantGuideCatalogues[domain].topics.flatMap((section) => {
       if (
@@ -31,7 +36,8 @@ function matchPanelGuidance(
         (specificOnly && !('specific' in section && section.specific))
       )
         return [];
-      const score = section.aliases.reduce(
+      const aliases = 'aliases' in section ? section.aliases : [];
+      const score = aliases.reduce(
         (best, alias) =>
           containsQuestionPhrase(normalized, alias)
             ? Math.max(best, normalizeQuestion(alias).split(' ').length)
