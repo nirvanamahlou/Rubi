@@ -496,19 +496,40 @@ export function TourWorkspace({
           packages={packages}
           departures={departures}
           cities={references.cities}
+          branches={branches}
           loading={loading}
           busy={busy || loading}
           onEdit={showEditor}
-          onDelete={(item, sites) =>
-            void run(async () => {
-              await toursApi.deletePackage(
-                item.id,
-                item.version,
-                item.branchId,
-                sites,
-              );
-              setNotice('تور «' + item.name + '» حذف شد.');
-            })
+          onDelete={
+            canManagePeriods
+              ? async (item, sites) => {
+                  setBusy(true);
+                  setProblem('');
+                  setNotice('');
+                  try {
+                    await toursApi.deletePackage(
+                      item.id,
+                      item.version,
+                      item.branchId,
+                      sites,
+                    );
+                    setPackages((current) =>
+                      current.filter((tour) => tour.id !== item.id),
+                    );
+                    if (selected === item.id) {
+                      setSelected('');
+                      resetTickets();
+                    }
+                    if (editing?.id === item.id) {
+                      setEditing(undefined);
+                      setCreating(false);
+                    }
+                    setNotice('تور «' + item.name + '» حذف شد.');
+                  } finally {
+                    setBusy(false);
+                  }
+                }
+              : undefined
           }
           onSelect={selectTour}
           onRepeat={repeatTour}

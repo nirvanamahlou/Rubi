@@ -496,10 +496,10 @@ export class TourPublicService {
           'نسخه تور تغییر کرده است؛ فهرست را تازه‌سازی کنید.',
         );
       }
-      const departureCount = await tx.tourDeparture.count({
-        where: { packageId: id, branchId },
+      const liveDepartures = await tx.tourDeparture.count({
+        where: { packageId: id, branchId, isDeleted: false },
       });
-      if (departureCount)
+      if (liveDepartures)
         throw new ConflictException(
           'این تور نوبت ثبت‌شده دارد و برای حفظ سوابق قابل حذف نیست.',
         );
@@ -512,7 +512,11 @@ export class TourPublicService {
         where: { packageId: id },
         select: { packageId: true },
       });
-      if (catalog) {
+      const historicalDeparture = await tx.tourDeparture.findFirst({
+        where: { packageId: id, branchId },
+        select: { id: true },
+      });
+      if (catalog || historicalDeparture) {
         await tx.tourPackage.update({
           where: { id },
           data: { archivedAt: new Date(), version: { increment: 1 } },

@@ -23,12 +23,15 @@ export function SiteDeleteDialog({
   title: string;
   description: string;
   loadSites: () => Promise<{ data: string[] }>;
-  onConfirm: (sites: string[]) => void;
+  onConfirm: (sites: string[]) => void | Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
   const [sites, setSites] = useState<string[] | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [failed, setFailed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const submittingRef = useRef(false);
   const request = useRef(0);
   function changeOpen(next: boolean) {
     const current = ++request.current;
@@ -37,9 +40,10 @@ export function SiteDeleteDialog({
     setSites(null);
     setSelected([]);
     setFailed(false);
+    setDeleteError('');
     void loadSites().then(
       ({ data }) => {
-        if (current === request.current) setSites(data);
+        if (current === request.current) setSites([...new Set(data)]);
       },
       () => {
         if (current === request.current) setFailed(true);
@@ -47,8 +51,31 @@ export function SiteDeleteDialog({
     );
   }
 
+  async function confirm() {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setSubmitting(true);
+    setDeleteError('');
+    try {
+      await onConfirm(selected);
+      changeOpen(false);
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error ? error.message : 'ثبت ناموفق بود.',
+      );
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={changeOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!submittingRef.current) changeOpen(next);
+      }}
+    >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogTitle>{title}</DialogTitle>
@@ -62,21 +89,28 @@ export function SiteDeleteDialog({
             sites={sites}
             selected={selected}
             onChange={setSelected}
+            disabled={submitting}
           />
+        )}
+        {deleteError && (
+          <p role="alert" className="text-destructive">
+            {deleteError}
+          </p>
         )}
         <div className="mt-6 flex justify-end gap-3">
           <DialogClose asChild>
-            <Button variant="ghost">انصراف</Button>
+            <Button variant="ghost" disabled={submitting}>
+              انصراف
+            </Button>
           </DialogClose>
           <Button
             variant="destructive"
-            disabled={!sites || failed || sites.length !== selected.length}
-            onClick={() => {
-              changeOpen(false);
-              onConfirm(selected);
-            }}
+            disabled={
+              submitting || !sites || failed || sites.length !== selected.length
+            }
+            onClick={() => void confirm()}
           >
-            تأیید حذف
+            {submitting ? 'در حال ثبت…' : 'تأیید حذف'}
           </Button>
         </div>
       </DialogContent>

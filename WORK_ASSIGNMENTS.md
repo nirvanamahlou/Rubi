@@ -13482,3 +13482,7 @@ Reserve the Master Data hotel creation and Excel-create paths, the create form, 
 ## DASHBOARD-AVAILABILITY-NOTES — PC-C — ACTIVE
 
 Reserve Dashboard availability display, its existing tests and the requested audit Markdown. Presentation only; source contracts, metrics and permissions remain unchanged.
+
+## TOUR-LIST-DELETE-1124 — PC-A — READY_FOR_CI
+
+Scope: defined tour list, delete confirmation and archive after the last departure is deleted. Maintain branch, version and website confirmation checks and preserve historical rows.
