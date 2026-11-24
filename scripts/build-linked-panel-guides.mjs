@@ -2,6 +2,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
 const outputs = {
+  marketing: ['', '/marketing', 'registry'],
+  'package-management': ['', '/sales/pricing', 'registry'],
+  'floating-packages': ['', '/sales/pricing/floating', 'registry'],
+  'system-management': ['', '/system', 'registry'],
   'flight-capacity': [
     'flight-capacity.generated',
     '/ticket-management',
@@ -16,12 +20,12 @@ const outputs = {
   'travel-issuance': ['', '/reservations', 'registry'],
   'customer-affairs': ['', '/customer-affairs', 'registry'],
   'package-generator': ['', '/sales/pricing/generator', 'registry'],
-  'petty-cash': ['', '/purchases', 'registry'],
   correspondence: [
     'correspondence-guide.generated',
     '/correspondence',
     'documents',
   ],
+  'petty-cash': ['petty-cash.generated', '/purchases', 'documents'],
   b2b: ['b2b-guide-catalog', '/organizations', 'text'],
   tour: ['tour-guide', '/sales/tours', 'tuple'],
   'flight-pricing': ['flight-pricing-catalog', '/sales/ticket-prices', 'text'],
@@ -85,6 +89,14 @@ export function buildLinkedPanelGuides(directory, check) {
             '/correspondence/internal/send',
             '/correspondence/internal/received',
           ].includes(href)) ||
+        (domain === 'marketing' &&
+          (/^\/marketing\?section=(dashboard|campaigns|audiences|leads|communications|content|offers)$/.test(
+            href,
+          ) ||
+            href === '/system?module=marketing')) ||
+        (domain === 'package-management' &&
+          href === '/sales/pricing/management') ||
+        (domain === 'system-management' && href === '/system/users') ||
         (domain === 'reservations' &&
           [
             '/reservations/processing',
@@ -165,7 +177,16 @@ export function buildLinkedPanelGuides(directory, check) {
       }));
     if (format === 'text')
       products.set(output, { ...copy, topics: textTopics() });
-    if (format === 'purchase') products.set(output, textTopics());
+    if (format === 'purchase')
+      products.set(
+        output,
+        topics.map(({ id, title, steps, fields }) => ({
+          id,
+          title,
+          ...fields,
+          steps,
+        })),
+      );
     if (format === 'documents') {
       products.set(
         output,
