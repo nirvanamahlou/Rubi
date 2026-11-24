@@ -208,7 +208,7 @@ describe('site profile publication', () => {
         .png()
         .toBuffer();
       await sharp({
-        create: { width: 1600, height: 1000, channels: 3, background: 'pink' },
+        create: { width: 1300, height: 130, channels: 3, background: 'pink' },
       })
         .webp()
         .toFile(join(folder, name));
@@ -250,7 +250,7 @@ describe('site profile publication', () => {
       expect(payload.mainImage).not.toEqual(payload.flag);
       await expect(
         sharp(Buffer.from(payload.mainImage, 'base64')).metadata(),
-      ).resolves.toMatchObject({ format: 'webp', width: 1280, height: 800 });
+      ).resolves.toMatchObject({ format: 'webp', width: 1280, height: 128 });
 
       attributes.sourceMainImage = '';
       attributes.sourceGalleryImages = '';
