@@ -75,6 +75,7 @@ function PeriodCard({
   );
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
+  const [saved, setSaved] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [editVersion, setEditVersion] = useState(catalog.version);
@@ -90,12 +91,33 @@ function PeriodCard({
     : period.rows.map(({ index, row }) => ({ index, prices: row.prices }));
   const stopped = period.rows.every(({ row }) => row.salesStopped);
   const first = period.rows[0]!.row;
+  const originalPrices = new Map(
+    period.rows.map(({ index, row }) => [index, row.prices]),
+  );
+  const edits = dirty
+    ? drafts.filter(
+        (draft) =>
+          JSON.stringify(draft.prices) !==
+          JSON.stringify(originalPrices.get(draft.index)),
+      )
+    : [];
+  const validEdits =
+    edits.length > 0 &&
+    edits.every(({ prices }) =>
+      Object.values(prices).every(
+        (group) =>
+          group?.every(({ amount }) =>
+            /^\d{1,15}(?:\.\d{1,4})?$/.test(amount),
+          ) ?? true,
+      ),
+    );
   async function save(
     change: Omit<FloatingTourPeriodChangeV1, 'expectedVersion' | 'periodKey'>,
   ) {
     if (!canManage || busy || pending) return;
     setPending(true);
     setError('');
+    setSaved(false);
     try {
       const updated = await packagePricingApi.floatingPeriodChange(
         tourId,
@@ -109,6 +131,7 @@ function PeriodCard({
       );
       if (active.current) {
         setDirty(false);
+        setSaved(change.action === 'EDIT');
         onChange(updated);
       }
     } catch (cause) {
@@ -137,6 +160,15 @@ function PeriodCard({
             <p className="text-sm text-muted-foreground">
               {catalog.monthly?.calendar === 'PERSIAN' ? 'شمسی' : 'میلادی'} ·{' '}
               {catalog.monthly?.months.join('، ')}
+            </p>
+          )}
+          {first.flightSchedule && (
+            <p className="text-sm text-muted-foreground">
+              {first.flightSchedule.outbound.carrierName} ·{' '}
+              <bdi>{first.flightSchedule.outbound.serviceNumber}</bdi>
+              {' / '}
+              {first.flightSchedule.inbound.carrierName} ·{' '}
+              <bdi>{first.flightSchedule.inbound.serviceNumber}</bdi>
             </p>
           )}
           <span
@@ -282,6 +314,7 @@ function PeriodCard({
                             value={money.amount}
                             disabled={!canManage || pending || busy}
                             onValueChange={(value) => {
+                              setSaved(false);
                               if (!dirty) setEditVersion(catalog.version);
                               setDrafts((current) =>
                                 (dirty
@@ -318,11 +351,12 @@ function PeriodCard({
         </table>
       </div>
       <Button
-        disabled={!canManage || !dirty || pending || busy}
-        onClick={() => void save({ action: 'EDIT', rows: drafts })}
+        disabled={!canManage || !validEdits || pending || busy}
+        onClick={() => void save({ action: 'EDIT', rows: edits })}
       >
         ذخیره قیمت‌های دستی بازه
       </Button>
+      {saved && <p role="status">قیمت‌های فروش ثبت شدند.</p>}
       {dirty && (
         <Button
           disabled={pending || busy}
