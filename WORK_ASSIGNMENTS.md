@@ -12942,6 +12942,10 @@ Isolated work item for Nora OpenAI Responses adapter, agent and guide integratio
 
 Owner requests no product consumption quotas for native danial/demo identities and provider failover Groq/OpenAI for their questions. Base bd301dda3; branch codex/pc-c-nora-provider-failover-1122. Reserve assistant agent-config/data-agent/server/groq-key-pool, a new failover helper and focused tests, own task/status notes. Reuse operator UUID exemption list; never trust client names/headers. Preserve ordinary-user quotas, native authentication/current-scope revalidation, output/evidence/tool validation, wire-size and finite request/turn/query safety bounds. Remove cumulative token/transport-attempt consumption quotas only in trusted exempt request context, audit actual provider usage and fail over only provider quota errors. No migration/dependency/public contract or permission grant changes. Existing Nora source scopes on other branches remain frozen; do not edit peer worktrees.
 
+## NORA-OWNER-REPORT-READS-1124 — PC-C
+
+Base develop 5e5e84659. Reserve Nora-only Reporting aggregate adapters, Assistant dispatch and focused tests, additive English copy and status. Reuse the existing Accounting and Marketing read services with native authorization and no edits to owner modules, schema, dependencies or workflow.
+
 ## NORA-BUSINESS-READ-GRANTS-1123 — PC-C
 
 PR #1901 continuation reserves additive English labels and Nora-only exposure of existing Call Center and Ticket Catalog aggregate reads. Keep owner projections and permissions, require passing exact-head CI for merge, and keep grants bound to the two authenticated account IDs.
