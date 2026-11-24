@@ -345,8 +345,34 @@ export class CustomerAffairsMarketingIntakeService {
           code: 'INTAKE_IDENTITY_EXISTS',
           message: 'برای این شماره در شعبه یک ورودی اولیه وجود دارد.',
         });
+      let attributed = false;
+      let websiteLead = duplicate;
+      if (duplicate && reuseExistingIdentity && entryDate) {
+        const updated = await tx.customerAffairsMarketingIntake.updateMany({
+          where: {
+            id: duplicate.id,
+            OR: [{ entryDate: null }, { entryDate: { lt: entryDate } }],
+          },
+          data: {
+            sourceCategory: safePayload.sourceCategory,
+            entryDate,
+            ...(safePayload.firstName
+              ? { firstName: safePayload.firstName }
+              : {}),
+            ...(safePayload.lastName ? { lastName: safePayload.lastName } : {}),
+            updatedByUserId: actor.userId,
+            version: { increment: 1 },
+          },
+        });
+        attributed = updated.count === 1;
+        if (attributed)
+          websiteLead =
+            await tx.customerAffairsMarketingIntake.findUniqueOrThrow({
+              where: { id: duplicate.id },
+            });
+      }
       const created =
-        duplicate ??
+        websiteLead ??
         (await tx.customerAffairsMarketingIntake.create({
           data: {
             branchId,
@@ -388,8 +414,11 @@ export class CustomerAffairsMarketingIntakeService {
             : 'CREATE_FIRST_CONTACT',
           traceId: traceId ?? null,
           version: created.version,
+          ...(attributed && duplicate
+            ? { beforeSnapshot: json(present(duplicate)) }
+            : {}),
           afterSnapshot: json(
-            duplicate
+            duplicate && !attributed
               ? { sourceCategory: safePayload.sourceCategory, entryDate }
               : present(created),
           ),

@@ -562,6 +562,77 @@ describe('MarketingRecordsService durable boundaries', () => {
 });
 
 describe('CustomerAffairsMarketingIntakeService owner boundary', () => {
+  it('uses the latest website question for an existing contact', async () => {
+    const earlier = new Date('2026-11-24T11:35:00Z');
+    const latest = new Date('2026-11-24T11:35:58Z');
+    const prior = {
+      id: 'existing-intake',
+      entryDate: earlier,
+      sourceCategory: 'قسطی‌رو',
+      status: 'QUALIFIED',
+      createdAt: earlier,
+      updatedAt: earlier,
+    };
+    const intakes = {
+      findUnique: vi.fn().mockResolvedValue(prior),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      findUniqueOrThrow: vi.fn().mockResolvedValue({
+        ...prior,
+        entryDate: latest,
+        sourceCategory: 'نیایش سیر',
+      }),
+      create: vi.fn(),
+    };
+    const tx = {
+      customerAffairsMarketingIntake: intakes,
+      customerAffairsCommand: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn(),
+      },
+      customerAffairsAuditEvent: { create: vi.fn() },
+    };
+    const service = new CustomerAffairsMarketingIntakeService(
+      {
+        client: {
+          $transaction: (run: (value: typeof tx) => unknown) => run(tx),
+        },
+      } as unknown as DatabaseService,
+      {
+        protect: vi
+          .fn()
+          .mockReturnValue({ valueFingerprint: 'phone-fingerprint' }),
+      } as unknown as CustomerContactCrypto,
+      {
+        requireActiveLeadSource: vi.fn(),
+      } as unknown as MarketingRecordsService,
+    );
+    await service.captureWebsiteSupportLead(
+      {
+        phone: '09000000873',
+        firstName: 'آزمایش',
+        sourceCategory: 'نیایش سیر',
+        entryDate: latest.toISOString(),
+        status: 'NEW',
+      },
+      actor(['customer_affairs.lead.create', 'marketing.audience.manage']),
+      'website-support-repeat',
+    );
+    expect(intakes.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: prior.id,
+        OR: [{ entryDate: null }, { entryDate: { lt: latest } }],
+      },
+      data: {
+        entryDate: latest,
+        firstName: 'آزمایش',
+        sourceCategory: 'نیایش سیر',
+        updatedByUserId: userId,
+        version: { increment: 1 },
+      },
+    });
+    expect(intakes.create).not.toHaveBeenCalled();
+  });
+
   it('requires both Customer Affairs and Marketing permission even for a replay', async () => {
     const transaction = vi.fn();
     const intake = new CustomerAffairsMarketingIntakeService(
