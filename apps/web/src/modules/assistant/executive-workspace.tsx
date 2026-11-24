@@ -46,7 +46,9 @@ import {
   readDocumentGuide,
 } from './document-guides';
 
-import { canViewScreen } from '@nora/contracts';
+import { canViewRoute, canViewScreen } from '@nora/contracts';
+import { resolvePilotGuide } from './guide-pilot';
+import { retrievePanelGuidance } from './panel-guide-retrieval';
 import {
   readTourGuideStatus,
   renderTourGuide,
@@ -81,7 +83,10 @@ import {
 import { readHotelPurchaseGuidePack } from './hotel-purchase-guide';
 import { normalizeQuestion } from './question-text';
 import { AssistantResponseContent } from './response-content';
-import { formatAssistantSources } from './response-presentation';
+import {
+  assistantSourceRequest,
+  formatAssistantSources,
+} from './response-presentation';
 import { useChatScroll } from './use-chat-scroll';
 import { usePathname, useSearchParams } from 'next/navigation';
 import contractGuideCatalog from './contract-guide.generated.json';
@@ -435,6 +440,7 @@ function AssistantComposerContent({
   const inspecting = useRef<AbortController | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
   const pathname = usePathname();
+  const pilotTopic = useRef<string | undefined>(undefined);
   const searchParams = useSearchParams();
   const workbenchTab =
     pathname === '/workbench'
@@ -482,10 +488,12 @@ function AssistantComposerContent({
   const contractId = useRef<string | undefined>(undefined);
   const guideTopic = useRef<string | undefined>(undefined);
   const previousAnswer = useRef<AnswerContext | undefined>(undefined);
+  const pendingSalesPeriod = useRef(false);
   useEffect(() => {
     if (denied) {
       previousAnswer.current = undefined;
       reservationGuideTopic.current = undefined;
+      pendingSalesPeriod.current = false;
     }
   }, [denied]);
   useEffect(() => {
@@ -561,9 +569,9 @@ function AssistantComposerContent({
     const decision = routeAssistantQuestion(
       message,
       previousAnswer.current,
-      Boolean(pathname?.startsWith('/sales')),
-      workbenchTab === 'call-center',
+      pendingSalesPeriod.current,
     );
+    pendingSalesPeriod.current = decision.needsSalesPeriod === true;
     const guideQuestion = decision.guideQuestion ?? message;
     const guidanceAllowed = decision.kind === 'guide';
     const replyLocally = (
@@ -596,6 +604,32 @@ function AssistantComposerContent({
     };
     const previousReservationTopic = reservationGuideTopic.current;
     reservationGuideTopic.current = undefined;
+    if (decision.kind === 'capabilities') {
+      replyLocally(
+        english
+          ? 'I can explain ERP workflows, look up accessible records, and answer supported ERP reporting questions. Ask about a module, contract, or report.'
+          : 'می‌توانم مراحل کار در روبی را توضیح بدهم، پرونده‌های در دسترس را بررسی کنم و به سؤال‌های گزارش‌گیری از داده‌های متصل پاسخ بدهم. موضوع یا نام گزارش را بگویید.',
+      );
+      return;
+    }
+    if (decision.kind === 'sales-report-guide') {
+      replyLocally(
+        english
+          ? 'Open Reports, select the sales report from the catalogue, set its filters, and choose View results. If export is available, select Download Excel.'
+          : 'در «اسناد و گزارش‌ها ← گزارش‌ها»، گزارش فروش موردنظر را از کاتالوگ انتخاب کنید. فیلترهای گزارش را تنظیم کنید و «نمایش نتیجه» را بزنید. اگر گزینهٔ خروجی فعال است، «دریافت خروجی اکسل» را انتخاب کنید.',
+        undefined,
+        undefined,
+        {
+          href: '/reports?view=catalog',
+          label: english ? 'Open reports' : 'باز کردن گزارش‌ها',
+        },
+      );
+      return;
+    }
+    if (decision.needsSalesPeriod) {
+      replyLocally(decision.clarification!);
+      return;
+    }
     const operationalMetric = resolveOperationalMetric(message);
     if (operationalMetric) {
       pending.current?.abort();
@@ -689,6 +723,91 @@ function AssistantComposerContent({
       }
       return;
     }
+    if (
+      agentMode &&
+      actor &&
+      !pathname?.startsWith('/sales/contracts/new') &&
+      resolvePilotGuide(message, pathname ?? '', pilotTopic.current)
+    ) {
+      pending.current?.abort();
+      const controller = new AbortController();
+      pending.current = controller;
+      setActionState('loading');
+      const result = await fetch('/api/assistant/v3/guidance', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          version: 3,
+          question: message,
+          panel: pathname ?? '',
+          previous: pilotTopic.current,
+        }),
+        signal: controller.signal,
+      }).catch(() => null);
+      const guide = result?.ok ? await result.json().catch(() => null) : null;
+      if (controller.signal.aborted) return;
+      if (guide?.status === 'answer') {
+        pilotTopic.current = guide.sections[0]?.ref;
+        for (const section of guide.sections) {
+          replyLocally(
+            [
+              section.title,
+              ...(section.route ? [section.route.join(' ← ')] : []),
+              ...section.steps.map(
+                (step: string, index: number) => index + 1 + '. ' + step,
+              ),
+            ].join('\n'),
+            undefined,
+            undefined,
+            {
+              href: section.href,
+              label: english ? 'Open panel' : 'باز کردن پنل',
+              guideHref: section.guideHref,
+            },
+          );
+        }
+        return;
+      }
+      if (
+        guide?.status === 'clarify' ||
+        guide?.status === 'clarify-record' ||
+        guide?.status === 'insufficient' ||
+        result?.status === 401 ||
+        result?.status === 403
+      ) {
+        replyLocally(
+          guide?.status === 'clarify'
+            ? t(c.pilotFollowupClarification)
+            : guide?.status === 'clarify-record'
+              ? t(c.pilotTrackingNumberRequired)
+              : t(c.pilotGuideInsufficient),
+        );
+        return;
+      }
+    }
+    const linkedGuidance = actor
+      ? retrievePanelGuidance(message, pathname, (href) =>
+          canViewRoute(actor.permissions, href),
+        )
+      : [];
+    if (linkedGuidance.length) {
+      for (const section of linkedGuidance) {
+        replyLocally(
+          [
+            section.title,
+            ...section.steps.map((step, index) => index + 1 + '. ' + step),
+          ].join('\n'),
+          undefined,
+          undefined,
+          {
+            href: section.href,
+            label: english ? 'Open panel' : 'باز کردن پنل',
+            guideHref: section.guideHref,
+          },
+        );
+      }
+      return;
+    }
     const composite =
       guidanceAllowed && !decision.guideTopicId
         ? retrieveCompositeGuides(message, decision.domain)
@@ -734,7 +853,7 @@ function AssistantComposerContent({
       }
       return;
     }
-    if (decision.guideTopicId === 'travel-document-workflow') {
+    if (decision.guideTopicId) {
       pending.current?.abort();
       const section = contractGuideCatalog.topics.find(
         ({ id }) => id === decision.guideTopicId,
@@ -1569,7 +1688,11 @@ function AssistantComposerContent({
       return;
     }
     if (guidanceAllowed) {
-      replyLocally(t(c.internalSourceFallback));
+      replyLocally(
+        english
+          ? 'Which ERP workflow, record, or report would you like me to check?'
+          : 'کدام فرایند، پرونده یا گزارش روبی را می‌خواهید بررسی کنم؟ نام بخش، شماره پرونده یا عنوان گزارش را بگویید.',
+      );
       return;
     }
     pending.current?.abort();
@@ -1632,7 +1755,12 @@ function AssistantComposerContent({
           replyLocally(t(c.internalSourceFallback));
           return;
         }
-        const sourceText = formatAssistantSources(result.sources, english);
+        const requestedSources = assistantSourceRequest(message);
+        const sourceText = formatAssistantSources(
+          result.sources,
+          english,
+          requestedSources,
+        );
         const answer = [
           result.text,
           result.status === 'ANSWER' &&
@@ -1640,7 +1768,9 @@ function AssistantComposerContent({
           guide
             ? guide.text
             : '',
-          sourceText ? `${t(c.agentSources)}:\n${sourceText}` : '',
+          sourceText && requestedSources.names
+            ? `${t(c.agentSources)}:\n${sourceText}`
+            : sourceText,
           result.limitations.length
             ? `${t(c.agentLimitations)}:\n${result.limitations.join('\n')}`
             : '',

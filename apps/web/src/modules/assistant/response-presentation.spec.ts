@@ -1,10 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import {
+  assistantSourceRequest,
   formatAssistantSources,
   persianAssistantTerms,
 } from './response-presentation';
 
 describe('public assistant labels', () => {
+  it('shows each observation detail only when explicitly requested', () => {
+    const source = {
+      sources: ['contracts'],
+      observedAt: '2026-11-24T07:34:00Z',
+    };
+    const render = (q: string) =>
+      formatAssistantSources([source], false, assistantSourceRequest(q));
+    expect(render('پرفروش ترین هتل هارا که باهاشون قرارداد بستیمو بده')).toBe(
+      '',
+    );
+    expect(render('منبع آشنایی مشتریان چیست؟')).toBe('');
+    expect(render('منابع پاسخ را بده')).toBe('قراردادها');
+    expect(render('ساعت مشاهده را بگو')).toBe('ساعت مشاهده: ۱۱:۰۴:۰۰');
+    expect(render('تاریخ مشاهده را بگو')).toMatch(/^تاریخ مشاهده:[^\n]*$/);
+  });
   it('localizes aggregation labels observed in live calculation replies', () => {
     expect(
       persianAssistantTerms(

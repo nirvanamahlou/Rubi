@@ -40,6 +40,7 @@ test('rendered ranking cites evidence and discloses missing labels', () => {
     resultId,
   );
   assert.match(report.text, /Hotel A \| ۲/);
+  assert.doesNotMatch(report.text, /مبنای رتبه‌بندی/);
   assert.equal(report.sources[0].resultId, resultId);
   assert.match(report.limitations[0], /فاقد نام/);
 });
