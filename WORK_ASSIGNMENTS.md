@@ -1,3 +1,7 @@
+## DOCUMENT-LOGO-SCAN-DISPLAY-1124 — PC-C — ACTIVE
+
+Reserve document workspace scan label rendering and focused verification. Preserve scan policy, authorization and schema.
+
 ## AVINA-PUBLICATION-SLUGS-1123 — PC-D — ACTIVE
 
 Own validation and use of the canonical public path returned by Avina profile receivers. Preserve the existing receipt checks, links for older receivers and site publication permissions.

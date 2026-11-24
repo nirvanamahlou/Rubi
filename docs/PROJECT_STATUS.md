@@ -1,3 +1,6 @@
+## Master Data logo scan display
+
+The Documents workspace labels uploads carrying the Master Data logo exemption marker as exempt from automatic antivirus scanning. Standard pending and completed results retain their existing labels.
 ## Public links for published profiles
 
 After a profile is published, Avina uses the canonical public path returned by the destination. A receiver that only returns a slug continues to use its established path.
