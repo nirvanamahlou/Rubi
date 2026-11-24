@@ -7121,5 +7121,15 @@
   "شماره قرارداد را بفرستید تا مشخص شود وضعیت سند مالی کدام پرونده را می‌خواهید.": "Provide the contract number so I can identify the financial document status you want to check.",
   "کدام فرایند، پرونده یا گزارش روبی را می‌خواهید بررسی کنم؟ نام بخش، شماره پرونده یا عنوان گزارش را بگویید.": "Which ERP workflow, record, or report would you like me to check? Provide the module, record number, or report title.",
   "منظورتان از «ماه اخیر» کدام بازه است؟ ۳۰ روز کامل گذشته، ماه شمسی جاری یا ماه شمسی قبل؟ می‌توانید تاریخ شروع و پایان را هم مشخص کنید.": "Which period do you mean by recent month? The previous 30 full days, the current Persian calendar month, or the previous Persian calendar month? You can also specify start and end dates.",
-  "می‌توانم مراحل کار در روبی را توضیح بدهم، پرونده‌های در دسترس را بررسی کنم و به سؤال‌های گزارش‌گیری از داده‌های متصل پاسخ بدهم. موضوع یا نام گزارش را بگویید.": "I can explain ERP workflows, look up accessible records, and answer supported reporting questions. Ask about a module, contract, or report."
+  "می‌توانم مراحل کار در روبی را توضیح بدهم، پرونده‌های در دسترس را بررسی کنم و به سؤال‌های گزارش‌گیری از داده‌های متصل پاسخ بدهم. موضوع یا نام گزارش را بگویید.": "I can explain ERP workflows, look up accessible records, and answer supported reporting questions. Ask about a module, contract, or report.",
+  "» است یا «": "” or “",
+  "منظورتان «": "Do you mean “",
+  "برای تأیید وضعیت این پرونده، مورد را در پنل بررسی کنید.": "Check this record in the panel to confirm its status.",
+  "در رزرواسیون درباره صف، پرواز، هتل، بیمه، مانیفست یا تحویل سؤال دارید؟": "Do you have a Reservations question about the queue, flights, hotels, insurance, manifests, or delivery?",
+  "(پایان غیرشامل)": "(end date excluded)",
+  "بازهٔ ذخیره‌شده:": "Saved period:",
+  "بسته در دامنهٔ قابل مشاهدهٔ این نشست پیدا نشد.": "The pack was not found within this session’s accessible scope.",
+  "دریافت وضعیت بسته ناموفق بود.": "The pack status could not be retrieved.",
+  "منظورتان قیمت خرید هتل، قیمت فروش تور یا مبلغ یک قرارداد است؟": "Do you mean a hotel purchase rate, a tour selling price, or a contract amount?",
+  "نسخهٔ ذخیره‌شده:": "Saved version:"
 }
