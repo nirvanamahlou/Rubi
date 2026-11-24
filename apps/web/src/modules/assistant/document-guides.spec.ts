@@ -121,3 +121,12 @@ describe('Documents help in Nora', () => {
     ).toBeUndefined();
   });
 });
+
+it('matches document download when the object precedes the action', () => {
+  expect(
+    resolveDocumentQuestion('چطور سند را دانلود کنم؟', true),
+  ).toMatchObject({
+    kind: 'guide',
+    topic: { id: 'download' },
+  });
+});

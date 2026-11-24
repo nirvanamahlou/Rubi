@@ -2,7 +2,22 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
 const outputs = {
+  'flight-capacity': [
+    'flight-capacity.generated',
+    '/ticket-management',
+    'documents',
+  ],
+  'hotel-purchase-rates': [
+    'hotel-purchase-rates.generated',
+    '/reservations/hotel-rates',
+    'documents',
+  ],
+  reservations: ['reservation-guide.generated', '/reservations', 'documents'],
+  'travel-issuance': ['', '/reservations', 'registry'],
+  'customer-affairs': ['', '/customer-affairs', 'registry'],
+  'package-generator': ['', '/sales/pricing/generator', 'registry'],
   'petty-cash': ['petty-cash.generated', '/purchases', 'documents'],
+  correspondence: ['', '/correspondence', 'registry'],
   b2b: ['b2b-guide-catalog', '/organizations', 'text'],
   tour: ['tour-guide', '/sales/tours', 'tuple'],
   'flight-pricing': ['flight-pricing-catalog', '/sales/ticket-prices', 'text'],
@@ -59,6 +74,18 @@ export function buildLinkedPanelGuides(directory, check) {
       const { id: metadataId, href, related, ...fields } = JSON.parse(metadata);
       const validAction =
         href === action ||
+        (domain === 'reservations' &&
+          [
+            '/reservations/processing',
+            '/reservations/insurance',
+            '/reservations/hotel-rates',
+          ].includes(href)) ||
+        (domain === 'travel-issuance' &&
+          ['delivery', 'delivery-exception'].includes(id) &&
+          href === '/finance/delivery') ||
+        (domain === 'purchase' &&
+          fields.specific === true &&
+          href === '/purchases') ||
         (domain === 'tour' &&
           [
             '/integrations',
@@ -104,11 +131,13 @@ export function buildLinkedPanelGuides(directory, check) {
         id,
         title,
         href,
+        ...(format === 'registry' || fields.specific === true ? fields : {}),
         related,
         steps,
         guideHref: '/assistant-guides/' + domain + '#' + id,
       });
-      topics.push({ id, title, href, steps, fields });
+      if (format === 'registry' || fields.specific !== true)
+        topics.push({ id, title, href, steps, fields });
     }
 
     panels[domain] = { title: header[1], topics: [...index.values()] };
@@ -125,9 +154,12 @@ export function buildLinkedPanelGuides(directory, check) {
     if (format === 'documents') {
       products.set(
         output,
-        topics.map(({ id, title, steps, fields }) => ({
+        topics.map(({ id, title, href, steps, fields }) => ({
           id,
           title,
+          ...(['reservations', 'hotel-purchase-rates'].includes(domain)
+            ? { href }
+            : {}),
           steps,
           ...fields,
         })),

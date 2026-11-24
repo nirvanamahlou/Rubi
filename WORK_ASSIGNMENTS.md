@@ -1,3 +1,19 @@
+## NORA-GUIDE-RELEASE-ACCEPTANCE-1124 — PC-C — REVIEW
+
+Stage 6 on top of #1922 and current develop. Reserve isolated role-based acceptance, bounded document download aliases, daily-package routing, explicit issuance-guide precedence and Nora guide regressions and acceptance evidence. No production deployment or merge in this unit before acceptance and release approval.
+
+## NORA-EXISTING-GUIDES-AUDIT-1124 — PC-C — REVIEW
+
+Stage 5 based on #1920. Reserve only the eight existing guide documents and their generated catalogues, regression tests, coverage and status notes. ERP producers, screen controls, policy, migrations and deployments are outside this unit.
+
+## NORA-PURCHASE-RESERVATION-GUIDES-1124 — PC-C — REVIEW
+
+Stage 4, based on #1917. Reserve only the purchase and reservation-report guide documents, generated linked catalogue, bounded retrieval/generator integration, tests and status notes. Existing Procurement and Reservations code is read-only evidence. No schema, permissions, dependencies or production changes.
+
+## NORA-GUIDE-DEPTH-1124 — PC-C — REVIEW
+
+Stacked on #1907. Reserve the five Stage 3 guide documents, their generated catalogue, bounded pilot retrieval integration, focused tests and acceptance notes. Producer modules are referenced read-only. No migration, dependency, merge or deployment.
+
 ## NORA-PETTY-CASH-GUIDE-1124 — PC-C — ACTIVE
 
 Reserve Nora petty cash guide, generation, read-only Composer dispatch and focused tests. Reuse native Procurement access and workflows.
@@ -5,6 +21,26 @@ Reserve Nora petty cash guide, generation, read-only Composer dispatch and focus
 ## WEBSITE-DATED-TOUR-CONTRACTS-1124 — PC-D — ACTIVE
 
 Own the additive site-commerce dated-tour draft route, authoritative rate and hotel-itinerary validation, and coordinated Jahan Bastan and Ghestiroo checkout callers. Preserve payment verification, floating-tour policy, and other publishing changes. No migration or dependency changes.
+
+## NORA-FLIGHT-CAPACITY-GUIDE-1124 — PC-C — ACTIVE
+
+Reserve additive Nora flight capacity guide, registration, read-only Composer dispatch and tests. Reuse the authenticated managed offers reader and preserve producer workflows and permissions.
+
+## WEBSITE-AGENCY-ONBOARDING-1124 — PC-D — ACTIVE
+
+Reserve the additive website-agency account model and migration, Master Data intake, matching and approval, and the Organizations account panel. Coordinate the three storefront callers. Preserve all IAM, credit, existing agency records and website password stores.
+
+## WEBSITE-DATED-TOUR-CONTRACTS-1124 — PC-D — ACTIVE
+
+Own the additive site-commerce dated-tour draft route, authoritative rate and hotel-itinerary validation, and coordinated Jahan Bastan and Ghestiroo checkout callers. Preserve payment verification, floating-tour policy, and other publishing changes. No migration or dependency changes.
+
+## NORA-GUIDE-DEPTH-1124 — PC-C — REVIEW
+
+Stacked on #1907. Reserve the five Stage 3 guide documents, their generated catalogue, bounded pilot retrieval integration, focused tests and acceptance notes. Producer modules are referenced read-only. No migration, dependency, merge or deployment.
+
+## NORA-HOTEL-PURCHASE-GUIDE-1124 — PC-C — ACTIVE
+
+Reserve Nora's hotel purchase guide, generated files, and additive guide routing and tests. Stacked on PR #1915. Reuse the authenticated pack reader and existing producer workflow.
 
 ## GEOGRAPHY-SITE-IMAGES-1124 — PC-D — ACTIVE
 
@@ -14,7 +50,23 @@ Own the city and country photo fields, geography dialog, additive migration, and
 
 Reserve Nora Web routing, supported guide selection, and the assistant sales period parser with focused regressions. Keep producer permissions and APIs unchanged.
 
+## NORA-OPT-IN-EVIDENCE-1124 — PC-C — ACTIVE
+
+Reserve Nora v3 reply presentation, native report formatting and focused tests. Preserve authenticated reads and evidence validation.
+
+## NORA-RESERVATION-GUIDE-1124 — PC-C — ACTIVE
+
+Reserve the Nora Reservations guide document, generated guide entries, local routing and bounded Composer dispatch, coverage and focused tests. Reuse the existing report reader, routes and permissions. No producer, API, schema, dependency or deployment work.
+
 ## DOCUMENT-LOGO-SCAN-DISPLAY-1124 — PC-C — ACTIVE
+
+## NORA-GUIDE-PILOT-1124 — PC-C — REVIEW
+
+Stacked on #1906. Reserve the new authored-guide retrieval endpoint and pilot tests plus bounded Composer call site and three additive pilot messages in the Assistant copy catalogue. Preserve existing model and record-read routes. Authenticated local acceptance complete. PR #1907 retains this scope pending CI and review. No production migration or deployment.
+
+## NORA-GUIDE-COVERAGE-1124 — PC-C — ACTIVE
+
+Reserve new procedural guides, additive linked catalogue inputs and shared lexical retrieval with a bounded Composer integration. Preserve producer modules, existing record readers and policies. No migration or deployment.
 
 Reserve document workspace scan label rendering and focused verification. Preserve scan policy, authorization and schema.
 
@@ -13510,3 +13562,7 @@ Scope: expanded tour periods, saved departure pricing, and direct editing of imp
 ## TOUR-DELETE-REPAIR-1124 — PC-A — READY_FOR_CI
 
 Scope: add the existing departure withdrawal flow under each expanded tour, apply successful removal immediately and keep errors in confirmation. Production 409 for a previously deleted period is resolved by the archive logic already in develop (#1911). No schema or deployment change.
+
+## WEBSITE-EXCHANGE-RATES-TOUR-INSURANCE-1124 — PC-D
+
+Branch `codex/pc-d-site-customer-services` from develop `ba9b26331`. Reserve the read-only Master Data sell-rate projection, the Site Commerce rate and test tour-insurance routes, and focused tests. Consumers are Jahan Bastan, Niyayesh Seir and Ghestiroo for rates, and Niyayesh Seir for test insurance. Existing pricing and document contracts keep their behavior. No schema, dependency, customer data, role or provider changes.
