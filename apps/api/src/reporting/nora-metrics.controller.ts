@@ -46,7 +46,6 @@ const metrics = new Set([
   ...noraOwnerMetrics,
 ]);
 const businessReadPermissions: IamPermissionCode[] = [
-  'reporting.read',
   'hr.read',
   'reservations.read',
   'documents.list',
@@ -78,7 +77,7 @@ export class NoraMetricsController {
   @Header('Cache-Control', 'private, no-store')
   async metric(
     @Query('id') id: string,
-    @Query('range') range: string,
+    @Query('range') range: 'today' | 'week' | 'month' | 'current',
     @Query('aggregate') aggregate: string,
     @Req() request: AuthenticatedRequest,
   ) {
@@ -117,7 +116,7 @@ export class NoraMetricsController {
       const result = await readNoraOwnerMetric(
         this.modules,
         id,
-        range as 'today' | 'week' | 'month' | 'current',
+        range,
         reportingActor,
         now,
       );
@@ -129,6 +128,8 @@ export class NoraMetricsController {
       )
         value = result.total.toLocaleString('fa-IR');
     } else if (id === 'registered-service-purchases') {
+      if (range === 'current')
+        throw new BadRequestException('NORA_METRIC_UNSUPPORTED');
       if (!globalRead && !actor.permissions.includes('reservations.read'))
         throw new ForbiddenException();
       const purchases = await readReservationReporting(
@@ -155,7 +156,12 @@ export class NoraMetricsController {
     } else {
       const result = await this.reporting.dashboardProjection(
         { range, kpiIds: id, visualIds: '', dateBasis: 'effective' },
-        reportingActor,
+        globalRead
+          ? {
+              ...reportingActor,
+              permissions: [...reportingActor.permissions, 'reporting.read'],
+            }
+          : reportingActor,
       );
       denied = result.unavailableMetrics?.[id] === 'SOURCE_PERMISSION_REQUIRED';
       if (

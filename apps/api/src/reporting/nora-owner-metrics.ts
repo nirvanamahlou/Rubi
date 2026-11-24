@@ -51,7 +51,7 @@ export async function readNoraOwnerMetric(
   }
   const service = modules.get(AccountingService, { strict: false });
   const inventory = await service.books(actor);
-  const companyScoped = inventory.isAggregate === false;
+  const companyScoped = 'isAggregate' in inventory && !inventory.isAggregate;
   if (id === 'accounting-books')
     return { total: inventory.books.length, companyScoped };
   if (range === 'current' || inventory.books.length > 12)
@@ -71,7 +71,8 @@ export async function readNoraOwnerMetric(
   }
   const latest = await service.books(actor);
   if (
-    inventory.selection !== latest.selection ||
+    ('selection' in inventory ? inventory.selection : undefined) !==
+      ('selection' in latest ? latest.selection : undefined) ||
     JSON.stringify(inventory.books.map(({ id: key }) => key).sort()) !==
       JSON.stringify(latest.books.map(({ id: key }) => key).sort())
   )
