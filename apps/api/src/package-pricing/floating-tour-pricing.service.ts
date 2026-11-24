@@ -341,7 +341,12 @@ export class FloatingTourPricingService {
     const { row } = await this.definition(id, actor);
     return this.db.client.$transaction(async (tx) => {
       const locked = await tx.tourPackage.updateMany({
-        where: { id, branchId: row.branchId, version: row.version },
+        where: {
+          id,
+          branchId: row.branchId,
+          version: row.version,
+          archivedAt: null,
+        },
         data: { version: row.version },
       });
       if (locked.count !== 1)

@@ -1,4 +1,9 @@
 {
+  "پیش‌نویس ·": "Draft ·",
+  "در حال دریافت قیمت‌ها…": "Loading prices…",
+  "هنوز نوبتی ثبت نشده است.": "No departure has been registered yet.",
+  "حذف تور «": "Delete tour «",
+  "ابتدا نوبت‌های باقی‌مانده را حذف کنید. سوابق سفر حفظ می‌شوند.": "Remove any remaining departures first. Travel history is retained.",
   "ادامه فروش بازه": "Resume period sales",
   "ارزهای ردیف قیمت را تغییر ندهید.": "Do not change the currencies of a price row.",
   "اعمال تغییر گروهی": "Apply bulk adjustment",
@@ -7106,5 +7111,15 @@
   "اسناد قطعی حسابداری بر اساس تاریخ سند": "Posted journals by document date",
   "درخواست‌های خرید و تأمین در همهٔ وضعیت‌ها": "Purchase and supply requests across all statuses",
   "حال حاضر": "at present",
-  "در محدودهٔ مجاز شرکت انتخاب‌شده": "within your access in the selected company"
+  "در محدودهٔ مجاز شرکت انتخاب‌شده": "within your access in the selected company",
+  "30 روز گذشته": "Past 30 days",
+  "این ماه شمسی": "This Persian calendar month",
+  "ماه قبل شمسی": "Previous Persian calendar month",
+  "باز کردن گزارش‌ها": "Open reports",
+  "چقدر است؟": "How much is it?",
+  "در «اسناد و گزارش‌ها ← گزارش‌ها»، گزارش فروش موردنظر را از کاتالوگ انتخاب کنید. فیلترهای گزارش را تنظیم کنید و «نمایش نتیجه» را بزنید. اگر گزینهٔ خروجی فعال است، «دریافت خروجی اکسل» را انتخاب کنید.": "Open Reports, select a sales report from the catalogue, set its filters, and choose View results. If export is available, select Download Excel.",
+  "شماره قرارداد را بفرستید تا مشخص شود وضعیت سند مالی کدام پرونده را می‌خواهید.": "Provide the contract number so I can identify the financial document status you want to check.",
+  "کدام فرایند، پرونده یا گزارش روبی را می‌خواهید بررسی کنم؟ نام بخش، شماره پرونده یا عنوان گزارش را بگویید.": "Which ERP workflow, record, or report would you like me to check? Provide the module, record number, or report title.",
+  "منظورتان از «ماه اخیر» کدام بازه است؟ ۳۰ روز کامل گذشته، ماه شمسی جاری یا ماه شمسی قبل؟ می‌توانید تاریخ شروع و پایان را هم مشخص کنید.": "Which period do you mean by recent month? The previous 30 full days, the current Persian calendar month, or the previous Persian calendar month? You can also specify start and end dates.",
+  "می‌توانم مراحل کار در روبی را توضیح بدهم، پرونده‌های در دسترس را بررسی کنم و به سؤال‌های گزارش‌گیری از داده‌های متصل پاسخ بدهم. موضوع یا نام گزارش را بگویید.": "I can explain ERP workflows, look up accessible records, and answer supported reporting questions. Ask about a module, contract, or report."
 }

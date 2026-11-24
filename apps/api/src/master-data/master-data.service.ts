@@ -64,6 +64,7 @@ import {
   completeTravelReferenceDetails,
   prepareTravelReferenceForm,
 } from './travel-reference-form.policy';
+import { normalizeMasterDataImages } from './public-image-storage';
 import {
   MasterDataRepository,
   toMasterDataRecord,
@@ -308,9 +309,19 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'gmtOffset',
     'displayOrder',
     'logoFileReference',
+    'sourceMainImage',
+    'sourceGalleryImages',
   ],
   regions: ['code', 'name', 'englishName', 'countryId'],
-  cities: ['code', 'name', 'englishName', 'countryId', 'regionId'],
+  cities: [
+    'code',
+    'name',
+    'englishName',
+    'countryId',
+    'regionId',
+    'sourceMainImage',
+    'sourceGalleryImages',
+  ],
   airports: [
     'name',
     'englishName',
@@ -1890,6 +1901,8 @@ export class MasterDataService {
         throw new BadRequestException(`فیلد الزامی: ${missing.join(', ')}`);
     }
     const data: Record<string, unknown> = { ...values };
+    if (resource === 'countries' || resource === 'cities')
+      normalizeMasterDataImages(data, '');
     if (resource === 'brokers' && Object.hasOwn(data, 'cityIds')) {
       const ids = brokerCityIds(data.cityIds);
       data.cityId = ids[0] ?? null;

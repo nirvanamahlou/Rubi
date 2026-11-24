@@ -74,13 +74,13 @@ function setup({ status = 200, changeScope = false, rows = [row] } = {}) {
     },
   };
 }
-test('exact total count uses fresh authorized native evidence with zero model calls and full calculation', async () => {
+test('exact total count uses fresh authorized native evidence with zero model calls and the total by default', async () => {
   const h = setup();
   const result = await h.run();
   assert.equal(h.modelCalls, 0);
   assert.equal(result.status, 'ANSWER');
   assert.match(result.text, /۱۲/);
-  assert.match(result.text, /۷.*۲.*۳.*۱۲/);
+  assert.doesNotMatch(result.text, /۷.*۲.*۳.*۱۲/);
   assert.equal(result.sources[0].resultId, resultId);
   assert.equal(
     h.paths.filter((path) => path.endsWith('/count-breakdown')).length,

@@ -78,7 +78,10 @@ import {
 } from './reservation-report-guide';
 import { normalizeQuestion } from './question-text';
 import { AssistantResponseContent } from './response-content';
-import { formatAssistantSources } from './response-presentation';
+import {
+  assistantSourceRequest,
+  formatAssistantSources,
+} from './response-presentation';
 import { useChatScroll } from './use-chat-scroll';
 import { usePathname, useSearchParams } from 'next/navigation';
 import contractGuideCatalog from './contract-guide.generated.json';
@@ -479,8 +482,12 @@ function AssistantComposerContent({
   const contractId = useRef<string | undefined>(undefined);
   const guideTopic = useRef<string | undefined>(undefined);
   const previousAnswer = useRef<AnswerContext | undefined>(undefined);
+  const pendingSalesPeriod = useRef(false);
   useEffect(() => {
-    if (denied) previousAnswer.current = undefined;
+    if (denied) {
+      previousAnswer.current = undefined;
+      pendingSalesPeriod.current = false;
+    }
   }, [denied]);
   useEffect(() => {
     const resetRecord = () => {
@@ -555,9 +562,9 @@ function AssistantComposerContent({
     const decision = routeAssistantQuestion(
       message,
       previousAnswer.current,
-      Boolean(pathname?.startsWith('/sales')),
-      workbenchTab === 'call-center',
+      pendingSalesPeriod.current,
     );
+    pendingSalesPeriod.current = decision.needsSalesPeriod === true;
     const guideQuestion = decision.guideQuestion ?? message;
     const guidanceAllowed = decision.kind === 'guide';
     const replyLocally = (
@@ -588,6 +595,32 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    if (decision.kind === 'capabilities') {
+      replyLocally(
+        english
+          ? 'I can explain ERP workflows, look up accessible records, and answer supported ERP reporting questions. Ask about a module, contract, or report.'
+          : 'می‌توانم مراحل کار در روبی را توضیح بدهم، پرونده‌های در دسترس را بررسی کنم و به سؤال‌های گزارش‌گیری از داده‌های متصل پاسخ بدهم. موضوع یا نام گزارش را بگویید.',
+      );
+      return;
+    }
+    if (decision.kind === 'sales-report-guide') {
+      replyLocally(
+        english
+          ? 'Open Reports, select the sales report from the catalogue, set its filters, and choose View results. If export is available, select Download Excel.'
+          : 'در «اسناد و گزارش‌ها ← گزارش‌ها»، گزارش فروش موردنظر را از کاتالوگ انتخاب کنید. فیلترهای گزارش را تنظیم کنید و «نمایش نتیجه» را بزنید. اگر گزینهٔ خروجی فعال است، «دریافت خروجی اکسل» را انتخاب کنید.',
+        undefined,
+        undefined,
+        {
+          href: '/reports?view=catalog',
+          label: english ? 'Open reports' : 'باز کردن گزارش‌ها',
+        },
+      );
+      return;
+    }
+    if (decision.needsSalesPeriod) {
+      replyLocally(decision.clarification!);
+      return;
+    }
     const operationalMetric = resolveOperationalMetric(message);
     if (operationalMetric) {
       pending.current?.abort();
@@ -739,7 +772,7 @@ function AssistantComposerContent({
       }
       return;
     }
-    if (decision.guideTopicId === 'travel-document-workflow') {
+    if (decision.guideTopicId) {
       pending.current?.abort();
       const section = contractGuideCatalog.topics.find(
         ({ id }) => id === decision.guideTopicId,
@@ -1574,7 +1607,11 @@ function AssistantComposerContent({
       return;
     }
     if (guidanceAllowed) {
-      replyLocally(t(c.internalSourceFallback));
+      replyLocally(
+        english
+          ? 'Which ERP workflow, record, or report would you like me to check?'
+          : 'کدام فرایند، پرونده یا گزارش روبی را می‌خواهید بررسی کنم؟ نام بخش، شماره پرونده یا عنوان گزارش را بگویید.',
+      );
       return;
     }
     pending.current?.abort();
@@ -1637,7 +1674,12 @@ function AssistantComposerContent({
           replyLocally(t(c.internalSourceFallback));
           return;
         }
-        const sourceText = formatAssistantSources(result.sources, english);
+        const requestedSources = assistantSourceRequest(message);
+        const sourceText = formatAssistantSources(
+          result.sources,
+          english,
+          requestedSources,
+        );
         const answer = [
           result.text,
           result.status === 'ANSWER' &&
@@ -1645,7 +1687,9 @@ function AssistantComposerContent({
           guide
             ? guide.text
             : '',
-          sourceText ? `${t(c.agentSources)}:\n${sourceText}` : '',
+          sourceText && requestedSources.names
+            ? `${t(c.agentSources)}:\n${sourceText}`
+            : sourceText,
           result.limitations.length
             ? `${t(c.agentLimitations)}:\n${result.limitations.join('\n')}`
             : '',
