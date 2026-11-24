@@ -1,3 +1,7 @@
+## NORA-GUIDE-DEPTH-1124 — PC-C
+
+Stage 3 expands five procedural guides with 15 additional source-linked topics and permission-scoped server retrieval. The acceptance matrix and unresolved policy dependencies are in docs/tasks/NORA-GUIDE-DEPTH-1124.md. No producer or runtime deployment changes.
+
 ## NORA-GUIDE-PILOT-1124 — PC-C
 
 Stage 2 completed its 18 authenticated local browser cases across Sales, Travel Issuance and Customer Affairs. Customer-status questions without a tracking number now request it and identify the appropriate panel. Evidence and fixture limitations are in docs/tasks/NORA-GUIDE-PILOT-VERIFICATION-1124.md. Draft PR #1907 remains subject to CI and review.

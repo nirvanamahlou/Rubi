@@ -1,3 +1,7 @@
+## NORA-GUIDE-DEPTH-1124 — PC-C — REVIEW
+
+Stacked on #1907. Reserve the five Stage 3 guide documents, their generated catalogue, bounded pilot retrieval integration, focused tests and acceptance notes. Producer modules are referenced read-only. No migration, dependency, merge or deployment.
+
 ## DOCUMENT-LOGO-SCAN-DISPLAY-1124 — PC-C — ACTIVE
 
 ## NORA-GUIDE-PILOT-1124 — PC-C — REVIEW
