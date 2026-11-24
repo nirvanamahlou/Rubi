@@ -58,6 +58,7 @@ import { AgencyConnectionsPanel } from './agency-connections-panel';
 import { AgreementWorkflowPanel } from './agreement-workflow-panel';
 import { OrganizationAddressesPanel } from './organization-addresses-panel';
 import { AgencyProfilePanel } from './agency-profile-panel';
+import { WebsiteAgencyAccounts } from './website-agency-accounts';
 import { OrganizationSignatoriesPanel } from './organization-signatories-panel';
 import { AgencyDossierSummary } from './agency-dossier-summary';
 import { loadCommercialSummary } from '../model/commercial-summary';
@@ -425,6 +426,11 @@ export function OrganizationsWorkspace() {
       data-selected={profileOpen ? selected?.id : undefined}
     >
       <div hidden={profileOpen}>
+        {role === 'AGENCY' && permissions.includes('b2b.agency.read') && (
+          <WebsiteAgencyAccounts
+            canApprove={permissions.includes('b2b.agency.manage')}
+          />
+        )}
         <div className="page-head">
           <div className="title">
             <h1 ref={directoryHeading} tabIndex={-1}>

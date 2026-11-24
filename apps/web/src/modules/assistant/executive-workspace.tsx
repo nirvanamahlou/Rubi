@@ -47,7 +47,7 @@ import {
 } from './document-guides';
 
 import { canViewRoute, canViewScreen } from '@nora/contracts';
-import { resolvePilotGuide } from './guide-pilot';
+import { prefersTravelIssuanceGuide, resolvePilotGuide } from './guide-pilot';
 import { retrievePanelGuidance } from './panel-guide-retrieval';
 import {
   readTourGuideStatus,
@@ -76,9 +76,23 @@ import {
   resolveReservationReportQuestion,
   type ReservationReportTopic,
 } from './reservation-report-guide';
+import {
+  flightCapacityHref,
+  readFlightCapacity,
+  renderFlightCapacityGuide,
+  resolveFlightCapacityQuestion,
+} from './flight-capacity-guide';
+import {
+  renderReservationGuide,
+  resolveReservationGuide,
+} from './reservation-guide';
+import { readHotelPurchaseGuidePack } from './hotel-purchase-guide';
 import { normalizeQuestion } from './question-text';
 import { AssistantResponseContent } from './response-content';
-import { formatAssistantSources } from './response-presentation';
+import {
+  assistantSourceRequest,
+  formatAssistantSources,
+} from './response-presentation';
 import { useChatScroll } from './use-chat-scroll';
 import { usePathname, useSearchParams } from 'next/navigation';
 import contractGuideCatalog from './contract-guide.generated.json';
@@ -472,15 +486,23 @@ function AssistantComposerContent({
   const b2bTopic = useRef<string | undefined>(undefined);
   const b2bRead = useRef<AbortController | null>(null);
   useEffect(() => () => b2bRead.current?.abort(), [pathname]);
+  const reservationGuideTopic = useRef<string | undefined>(undefined);
   const reportTopic = useRef<ReservationReportTopic | undefined>(undefined);
   const documentTopic = useRef<string | undefined>(undefined);
   const workbenchTopic = useRef<string | undefined>(undefined);
   const lastVersion = useRef<number | undefined>(undefined);
   const contractId = useRef<string | undefined>(undefined);
   const guideTopic = useRef<string | undefined>(undefined);
+  const flightCapacityTopic = useRef<string | undefined>(undefined);
   const previousAnswer = useRef<AnswerContext | undefined>(undefined);
+  const pendingSalesPeriod = useRef(false);
   useEffect(() => {
-    if (denied) previousAnswer.current = undefined;
+    if (denied) {
+      previousAnswer.current = undefined;
+      flightCapacityTopic.current = undefined;
+      reservationGuideTopic.current = undefined;
+      pendingSalesPeriod.current = false;
+    }
   }, [denied]);
   useEffect(() => {
     const resetRecord = () => {
@@ -555,9 +577,9 @@ function AssistantComposerContent({
     const decision = routeAssistantQuestion(
       message,
       previousAnswer.current,
-      Boolean(pathname?.startsWith('/sales')),
-      workbenchTab === 'call-center',
+      pendingSalesPeriod.current,
     );
+    pendingSalesPeriod.current = decision.needsSalesPeriod === true;
     const guideQuestion = decision.guideQuestion ?? message;
     const guidanceAllowed = decision.kind === 'guide';
     const replyLocally = (
@@ -588,6 +610,93 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    const flightCapacity = resolveFlightCapacityQuestion(
+      message,
+      pathname,
+      flightCapacityTopic.current,
+    );
+    flightCapacityTopic.current = undefined;
+    if (flightCapacity) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      guideTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      const link = { href: flightCapacityHref, label: 'تعریف و ظرفیت پرواز' };
+      if (flightCapacity.kind === 'guide') {
+        flightCapacityTopic.current = flightCapacity.topic.id;
+        replyLocally(
+          renderFlightCapacityGuide(
+            flightCapacity.topic,
+            flightCapacity.followUp,
+          ),
+          undefined,
+          undefined,
+          documentGuideLink(link, 'flight-capacity', flightCapacity.topic.id),
+        );
+      } else if (flightCapacity.kind === 'clarify') {
+        replyLocally(flightCapacity.text, undefined, undefined, link);
+      } else if (!actor?.permissions.includes('ticket_catalog.manage')) {
+        replyLocally(
+          'خواندن وضعیت پرواز به دسترسی مدیریت بلیط نیاز دارد.',
+          undefined,
+          undefined,
+          link,
+        );
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readFlightCapacity(
+            flightCapacity.lookup,
+            actor.branchIds,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer, undefined, undefined, link);
+        } catch {
+          if (!controller.signal.aborted) {
+            replyLocally(
+              'دریافت وضعیت پرواز ناموفق بود. دسترسی و اتصال را در پنل بررسی کنید.',
+              undefined,
+              undefined,
+              link,
+            );
+          }
+        } finally {
+          if (pending.current === controller) setActionState(null);
+        }
+      }
+      return;
+    }
+    const previousReservationTopic = reservationGuideTopic.current;
+    reservationGuideTopic.current = undefined;
+    if (decision.kind === 'capabilities') {
+      replyLocally(
+        english
+          ? 'I can explain ERP workflows, look up accessible records, and answer supported ERP reporting questions. Ask about a module, contract, or report.'
+          : 'می‌توانم مراحل کار در روبی را توضیح بدهم، پرونده‌های در دسترس را بررسی کنم و به سؤال‌های گزارش‌گیری از داده‌های متصل پاسخ بدهم. موضوع یا نام گزارش را بگویید.',
+      );
+      return;
+    }
+    if (decision.kind === 'sales-report-guide') {
+      replyLocally(
+        english
+          ? 'Open Reports, select the sales report from the catalogue, set its filters, and choose View results. If export is available, select Download Excel.'
+          : 'در «اسناد و گزارش‌ها ← گزارش‌ها»، گزارش فروش موردنظر را از کاتالوگ انتخاب کنید. فیلترهای گزارش را تنظیم کنید و «نمایش نتیجه» را بزنید. اگر گزینهٔ خروجی فعال است، «دریافت خروجی اکسل» را انتخاب کنید.',
+        undefined,
+        undefined,
+        {
+          href: '/reports?view=catalog',
+          label: english ? 'Open reports' : 'باز کردن گزارش‌ها',
+        },
+      );
+      return;
+    }
+    if (decision.needsSalesPeriod) {
+      replyLocally(decision.clarification!);
+      return;
+    }
     const operationalMetric = resolveOperationalMetric(message);
     if (operationalMetric) {
       pending.current?.abort();
@@ -609,12 +718,81 @@ function AssistantComposerContent({
       }
       return;
     }
-    if (
-      agentMode &&
-      actor &&
-      !pathname?.startsWith('/sales/contracts/new') &&
-      resolvePilotGuide(message, pathname ?? '', pilotTopic.current)
-    ) {
+    const pilotGuide =
+      agentMode && actor && !pathname?.startsWith('/sales/contracts/new')
+        ? resolvePilotGuide(message, pathname ?? '', pilotTopic.current)
+        : null;
+    const reservationGuide = prefersTravelIssuanceGuide(message, pilotGuide)
+      ? undefined
+      : resolveReservationGuide(message, pathname, previousReservationTopic);
+    if (reservationGuide) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      reportTopic.current = undefined;
+      guideTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      if ('clarification' in reservationGuide) {
+        replyLocally(reservationGuide.clarification);
+      } else {
+        const { topic, followUp, inspection, packId } = reservationGuide;
+        reservationGuideTopic.current = topic.id;
+        const link = documentGuideLink(
+          { href: topic.href, label: 'باز کردن پنل' },
+          topic.id.startsWith('hotel-purchase-')
+            ? 'hotel-purchase-rates'
+            : 'reservations',
+          topic.id,
+        );
+        if (packId) {
+          const controller = new AbortController();
+          pending.current = controller;
+          setActionState('loading');
+          try {
+            const evidence = await readHotelPurchaseGuidePack(
+              packId,
+              controller.signal,
+            );
+            if (!controller.signal.aborted) {
+              replyLocally(
+                [evidence, renderReservationGuide(topic, followUp, false)].join(
+                  '\n\n',
+                ),
+                undefined,
+                undefined,
+                link,
+              );
+            }
+          } catch (error) {
+            if (!controller.signal.aborted) {
+              const message = error instanceof Error ? error.message : '';
+              const reason =
+                message === 'بستهٔ نرخ پیدا نشد.'
+                  ? 'بسته در دامنهٔ قابل مشاهدهٔ این نشست پیدا نشد.'
+                  : message === 'دسترسی این بخش برای حساب شما فعال نیست.'
+                    ? message
+                    : 'دریافت وضعیت بسته ناموفق بود.';
+              replyLocally(
+                [reason, renderReservationGuide(topic, followUp, true)].join(
+                  '\n\n',
+                ),
+                undefined,
+                undefined,
+                link,
+              );
+            }
+          }
+        } else {
+          replyLocally(
+            renderReservationGuide(topic, followUp, inspection),
+            undefined,
+            undefined,
+            link,
+          );
+        }
+      }
+      return;
+    }
+    if (pilotGuide) {
       pending.current?.abort();
       const controller = new AbortController();
       pending.current = controller;
@@ -739,7 +917,7 @@ function AssistantComposerContent({
       }
       return;
     }
-    if (decision.guideTopicId === 'travel-document-workflow') {
+    if (decision.guideTopicId) {
       pending.current?.abort();
       const section = contractGuideCatalog.topics.find(
         ({ id }) => id === decision.guideTopicId,
@@ -1574,7 +1752,11 @@ function AssistantComposerContent({
       return;
     }
     if (guidanceAllowed) {
-      replyLocally(t(c.internalSourceFallback));
+      replyLocally(
+        english
+          ? 'Which ERP workflow, record, or report would you like me to check?'
+          : 'کدام فرایند، پرونده یا گزارش روبی را می‌خواهید بررسی کنم؟ نام بخش، شماره پرونده یا عنوان گزارش را بگویید.',
+      );
       return;
     }
     pending.current?.abort();
@@ -1637,7 +1819,12 @@ function AssistantComposerContent({
           replyLocally(t(c.internalSourceFallback));
           return;
         }
-        const sourceText = formatAssistantSources(result.sources, english);
+        const requestedSources = assistantSourceRequest(message);
+        const sourceText = formatAssistantSources(
+          result.sources,
+          english,
+          requestedSources,
+        );
         const answer = [
           result.text,
           result.status === 'ANSWER' &&
@@ -1645,7 +1832,9 @@ function AssistantComposerContent({
           guide
             ? guide.text
             : '',
-          sourceText ? `${t(c.agentSources)}:\n${sourceText}` : '',
+          sourceText && requestedSources.names
+            ? `${t(c.agentSources)}:\n${sourceText}`
+            : sourceText,
           result.limitations.length
             ? `${t(c.agentLimitations)}:\n${result.limitations.join('\n')}`
             : '',

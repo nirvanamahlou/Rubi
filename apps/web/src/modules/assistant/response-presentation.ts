@@ -28,6 +28,22 @@ export function persianAssistantTerms(text: string) {
   return text.replace(termPattern, (term) => publicTerms[term]!);
 }
 
+export function assistantSourceRequest(message: string) {
+  const text = message.replace(/[‌‍]/g, ' ');
+  return {
+    names:
+      /(?:منبع|منابع) (?:پاسخ|داده|گزارش|این)|منبعش|(?:^| )(?:منبع|منابع)(?:[؟?]|$)|از کجا.*(?:آوردی|اوردی|آمده|میاری|گرفتی)|\b(?:sources?|citations?)\b/i.test(
+        text,
+      ),
+    date: /(?:تاریخ|زمان) (?:مشاهده|استخراج)|\b(?:observation date|observed at|as of when)\b/i.test(
+      text,
+    ),
+    time: /(?:ساعت|زمان) (?:مشاهده|استخراج)|\b(?:observation time|observed at|as of when)\b/i.test(
+      text,
+    ),
+  };
+}
+
 export function formatAssistantSources(
   sources: readonly {
     kind?: string | undefined;
@@ -35,6 +51,7 @@ export function formatAssistantSources(
     observedAt: string;
   }[],
   english = false,
+  requested = { names: true, date: true, time: true },
 ) {
   const language = english ? 1 : 0;
   const names: Record<string, readonly [string, string]> = {
@@ -58,9 +75,24 @@ export function formatAssistantSources(
             ].join('، ');
       const date = new Date(source.observedAt);
       if (!Number.isFinite(date.getTime()))
-        return `${label}\n${c.sourceTimeUnavailable[language]}`;
+        return [
+          requested.names && label,
+          (requested.date || requested.time) &&
+            c.sourceTimeUnavailable[language],
+        ]
+          .filter(Boolean)
+          .join('\n');
       const locale = english ? 'en-GB' : 'fa-IR';
-      return `${label}\n${c.sourceDate[language]}: ${date.toLocaleDateString(locale, { timeZone: 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit' })}\n${c.sourceTime[language]}: ${date.toLocaleTimeString(locale, { timeZone: 'Asia/Tehran', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}`;
+      return [
+        requested.names && label,
+        requested.date &&
+          `${c.sourceDate[language]}: ${date.toLocaleDateString(locale, { timeZone: 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit' })}`,
+        requested.time &&
+          `${c.sourceTime[language]}: ${date.toLocaleTimeString(locale, { timeZone: 'Asia/Tehran', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}`,
+      ]
+        .filter(Boolean)
+        .join('\n');
     })
+    .filter(Boolean)
     .join('\n\n');
 }
