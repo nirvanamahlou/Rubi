@@ -1,6 +1,6 @@
 ## NORA-GUIDE-COVERAGE-1124 — PC-C
 
-Initial linked guides for travel issuance, Customer Affairs, package generator, petty cash and correspondence. Scoped lexical retrieval uses accessible destinations and existing record dispatch. Build-time catalogue consistency and 11 focused retrieval tests passed. Comprehensive policy inventory and server-side cross-module retrieval remain pending.
+Initial linked guides for travel issuance, Customer Affairs, package generator, petty cash and correspondence. Scoped lexical retrieval uses accessible destinations and existing record dispatch. Build-time catalogue consistency and 11 focused retrieval tests passed. Stage 1 acceptance baseline records 15 module coverage rows, 18 pilot questions and policy evidence gaps in docs/tasks/NORA-GUIDE-ACCEPTANCE-BASELINE-1124.md. Server-side retrieval and execution of the pilot belong to Stage 2.
 
 ## Master Data logo scan display
 
