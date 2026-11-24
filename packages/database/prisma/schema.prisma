@@ -1129,6 +1129,8 @@ model MasterCountry {
   englishName           String?                     @db.VarChar(160)
   gmtOffset             String?                     @db.VarChar(6)
   logoFileReference     String?                     @db.Uuid
+  sourceMainImage       String?                     @db.VarChar(2000)
+  sourceGalleryImages   String?                     @db.VarChar(2000)
   displayOrder          Int                         @default(0)
   isActive              Boolean                     @default(true)
   version               Int                         @default(1)
@@ -1166,6 +1168,8 @@ model MasterCity {
   code                        String                      @db.VarChar(32)
   name                        String                      @db.VarChar(160)
   englishName                 String?                     @db.VarChar(160)
+  sourceMainImage             String?                     @db.VarChar(2000)
+  sourceGalleryImages         String?                     @db.VarChar(2000)
   displayOrder                Int                         @default(0)
   isActive                    Boolean                     @default(true)
   version                     Int                         @default(1)

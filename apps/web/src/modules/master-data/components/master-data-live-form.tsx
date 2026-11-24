@@ -1,5 +1,5 @@
 'use client';
-import { HotelImageUpload } from './hotel-images';
+import { HotelImageStrip, HotelImageUpload } from './hotel-images';
 import { hotelMultilineFields } from '../model/hotel-profile-fields';
 import { MasterDataBrokerForm } from './master-data-broker-form';
 import { MasterDataCompositeHotelForm } from './master-data-composite-hotel-form';
@@ -260,6 +260,27 @@ function GenericMasterDataLiveForm({
   const [referenceRevision, setReferenceRevision] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imagesBusy, setImagesBusy] = useState(false);
+  const [geographyImageEdits, setGeographyImageEdits] = useState<
+    Record<string, string>
+  >({});
+  const geographySubject =
+    definition.key === 'countries'
+      ? 'کشور'
+      : definition.key === 'cities'
+        ? 'شهر'
+        : undefined;
+  const geographyImages = {
+    main: String(
+      geographyImageEdits.sourceMainImage ??
+        record?.attributes.sourceMainImage ??
+        '',
+    ),
+    gallery: String(
+      geographyImageEdits.sourceGalleryImages ??
+        record?.attributes.sourceGalleryImages ??
+        '',
+    ),
+  };
   const [logoChange, setLogoChange] = useState<MasterDataLogoChange>();
   const [saving, setSaving] = useState(false);
   const [supplierPhoneTouched, setSupplierPhoneTouched] = useState(false);
@@ -338,7 +359,10 @@ function GenericMasterDataLiveForm({
             if (!partnerContactTouched.has(key)) delete persistedValues[key];
           }
       }
-      await onPersist(persistedValues, logoChange);
+      await onPersist(
+        { ...persistedValues, ...geographyImageEdits },
+        logoChange,
+      );
     } catch (error) {
       setErrors({
         form:
@@ -393,6 +417,15 @@ function GenericMasterDataLiveForm({
                   />
                 ))}
               </MasterDataDetailSection>
+              {geographySubject && (
+                <section className="space-y-3 rounded-xl border border-border p-4">
+                  <h3 className="text-sm font-bold">عکس‌های مقصد</h3>
+                  <HotelImageStrip
+                    {...geographyImages}
+                    subject={geographySubject}
+                  />
+                </section>
+              )}
               {definition.key === 'airlines' ? (
                 <MasterDataAirlineBaggageEditor
                   {...(record ? { airline: record } : {})}
@@ -748,6 +781,21 @@ function GenericMasterDataLiveForm({
                   </FormField>
                 );
               })}
+              {geographySubject && (
+                <HotelImageUpload
+                  {...geographyImages}
+                  idPrefix={`live-${definition.key}`}
+                  subject={geographySubject}
+                  disabled={saving}
+                  onBusy={setImagesBusy}
+                  onChange={(key, value) =>
+                    setGeographyImageEdits((current) => ({
+                      ...current,
+                      [key]: value,
+                    }))
+                  }
+                />
+              )}
               {definition.key === 'airlines' ? (
                 <MasterDataAirlineBaggageEditor
                   {...(record ? { airline: record } : {})}
