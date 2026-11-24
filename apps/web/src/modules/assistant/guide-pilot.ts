@@ -3,7 +3,11 @@ import {
   isAssistantGuideModule,
 } from './assistant-guide-registry';
 import { retrieveSpecificPanelGuide } from './panel-guide-retrieval';
-import { findCatalogueTopics, workflowDestination } from './catalogue-search';
+import {
+  catalogueLookupMode,
+  findCatalogueTopics,
+  workflowDestination,
+} from './catalogue-search';
 import { routeAssistantQuestion } from './question-routing';
 import type { GuideSection } from './assistant-guide-registry';
 import { normalizeQuestion } from './question-text';
@@ -115,14 +119,23 @@ export function pilotGuideResponse(
         )
       : undefined;
   if (linked === null) return { status: 'insufficient', sections: [] };
-  if (
-    linked ||
-    (/^راهنمای?\s/.test(normalizeQuestion(message)) &&
-      routeAssistantQuestion(message).kind === 'guide')
-  ) {
-    const topics = linked
-      ? [linked]
-      : findCatalogueTopics(message, panel, allowed);
+  const mode = catalogueLookupMode(message, routeAssistantQuestion(message));
+  const decision =
+    linked || mode === 'explicit'
+      ? null
+      : resolvePilotGuide(message, panel, previous);
+  const topics = linked
+    ? [linked]
+    : mode === 'explicit' ||
+        (mode === 'procedure' && (!decision || decision.status === 'clarify'))
+      ? findCatalogueTopics(
+          message,
+          panel,
+          allowed,
+          mode === 'explicit' ? 1 : 2,
+        )
+      : [];
+  if (topics.length || mode === 'explicit') {
     const [section, second] = topics;
     if (!section || second)
       return { status: second ? 'clarify' : 'insufficient', sections: [] };
@@ -142,7 +155,6 @@ export function pilotGuideResponse(
       ],
     };
   }
-  const decision = resolvePilotGuide(message, panel, previous);
   if (!decision || decision.status !== 'answer')
     return { status: decision?.status ?? 'unmatched', sections: [] };
   const sections = decision.ids.flatMap((ref) => {

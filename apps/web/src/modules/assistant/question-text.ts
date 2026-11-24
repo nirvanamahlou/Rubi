@@ -28,16 +28,21 @@ function boundedPattern(pattern: RegExp) {
 }
 
 // Routing patterns are supplied by code and catalogues. Never use a user's question as a cache key.
-const routingPatterns = new Map<string, RegExp>();
+const routingPatterns = new Map<
+  string,
+  { candidate: RegExp; bounded?: RegExp }
+>();
 
 export function matchesQuestion(text: string, pattern: RegExp) {
-  let bounded = routingPatterns.get(pattern.source);
-  if (!bounded) {
-    bounded = boundedPattern(pattern);
+  let compiled = routingPatterns.get(pattern.source);
+  if (!compiled) {
+    compiled = { candidate: new RegExp(pattern.source, 'iu') };
     if (routingPatterns.size < 512)
-      routingPatterns.set(pattern.source, bounded);
+      routingPatterns.set(pattern.source, compiled);
   }
-  return bounded.test(text);
+  // Most routing phrases are absent. Only compile their Unicode word boundaries on a hit.
+  if (!compiled.candidate.test(text)) return false;
+  return (compiled.bounded ??= boundedPattern(pattern)).test(text);
 }
 
 export function compileQuestionPhrase(phrase: string) {

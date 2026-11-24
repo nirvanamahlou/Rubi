@@ -53,6 +53,7 @@ import { canViewRoute, canViewScreen } from '@nora/contracts';
 import {
   catalogueLookupMode,
   findCatalogueTopics,
+  prepareCatalogueSearch,
   workflowDestination,
 } from './catalogue-search';
 import { prefersTravelIssuanceGuide, resolvePilotGuide } from './guide-pilot';
@@ -438,6 +439,12 @@ function AssistantComposerContent({
   const inputId = useId();
   const input = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState('');
+  useEffect(() => {
+    if (denied) return;
+    // Build the shared index once while the composer is open.
+    const timer = setTimeout(prepareCatalogueSearch, 0);
+    return () => clearTimeout(timer);
+  }, [denied]);
   useEffect(() => {
     const field = input.current;
     if (!field) return;

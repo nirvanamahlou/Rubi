@@ -33,6 +33,7 @@ export function buildGuidePhraseIndex<T>(
         if (!bucket || checked.has(prefix)) continue;
         checked.add(prefix);
         for (const posting of bucket) {
+          if (!normalized.includes(posting.phrase)) continue;
           const pattern = (posting.pattern ??= compileQuestionPhrase(
             posting.phrase,
           ));

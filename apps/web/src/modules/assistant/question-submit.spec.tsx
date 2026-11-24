@@ -1,3 +1,9 @@
+import { IAM_PERMISSION_CODES, USER_ACCESS_SCREENS } from '@nora/contracts';
+import {
+  assistantGuideCatalogues,
+  type AssistantGuideModule,
+} from './assistant-guide-registry';
+import { catalogueQuestions } from '../../../tests/fixtures/catalogue-questions';
 import { assistantCopy } from '@/i18n/assistant-copy';
 import type * as ReactModule from 'react';
 import type { ReactElement } from 'react';
@@ -738,3 +744,25 @@ it('reads a tracked HR request through Workbench and only shows its status', asy
   expect(chat().at(-1)).not.toContain('private evidence');
   expect(h.fetcher).toHaveBeenCalledTimes(1);
 });
+
+it.each(catalogueQuestions)(
+  'renders the documented answer for %s in chat',
+  async (question, ref) => {
+    h.path = '/assistant-guides/package-management';
+    h.permissions = [
+      ...IAM_PERMISSION_CODES,
+      'ui.administrator',
+      ...USER_ACCESS_SCREENS.map(({ id }) => 'ui.screen.' + id),
+    ];
+    await send(question);
+    const [domain, id] = ref.split('#');
+    const section = assistantGuideCatalogues[
+      domain as AssistantGuideModule
+    ].topics.find((topic) => topic.id === id)!;
+    expect(chat().at(-1)).toContain(section.steps[0]);
+    expect(render().some((node) => node.props.href === section.guideHref)).toBe(
+      true,
+    );
+    expect(h.fetcher).not.toHaveBeenCalled();
+  },
+);

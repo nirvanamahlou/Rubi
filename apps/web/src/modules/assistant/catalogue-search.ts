@@ -27,6 +27,16 @@ const panels = Object.entries(assistantGuideCatalogues).map(
 const searchPanelNames = buildGuidePhraseIndex(panels, (panel) => [panel.name]);
 let search: ReturnType<typeof buildGuidePhraseIndex<Entry>> | undefined;
 
+export function prepareCatalogueSearch() {
+  return (search ??= buildGuidePhraseIndex(entries, ({ section }) => [
+    section.title,
+    ...(section.aliases ?? []),
+    ...(section.terms ?? []).filter((term) =>
+      normalizeQuestion(term).includes(' '),
+    ),
+  ]));
+}
+
 /** Ask the index only for an instruction. Leave composite, record and provenance questions to their readers. */
 export function catalogueLookupMode(
   question: string,
@@ -57,13 +67,7 @@ export function findCatalogueTopics(
   minimumWords = 1,
 ) {
   const text = normalizeQuestion(message);
-  search ??= buildGuidePhraseIndex(entries, ({ section }) => [
-    section.title,
-    ...(section.aliases ?? []),
-    ...(section.terms ?? []).filter((term) =>
-      normalizeQuestion(term).includes(' '),
-    ),
-  ]);
+  const searchTopics = prepareCatalogueSearch();
   const named = searchPanelNames(text);
   const longest = Math.max(0, ...named.map((hit) => hit.score));
   // The panel name narrows the search. Its own words should not outscore the requested action.
@@ -72,12 +76,12 @@ export function findCatalogueTopics(
     .reduce((rest, { item }) => rest.replace(item.name, ' '), text)
     .replace(/\s+/g, ' ')
     .trim();
-  const subjectHits = search(subject);
+  const subjectHits = searchTopics(subject);
   const hasScopedHit = subjectHits.some(({ item }) =>
     explicit.some((hit) => hit.item.domain === item.domain),
   );
   const candidates = (
-    explicit.length && !hasScopedHit ? search(text) : subjectHits
+    explicit.length && !hasScopedHit ? searchTopics(text) : subjectHits
   )
     .filter(
       ({ item, score }) =>
