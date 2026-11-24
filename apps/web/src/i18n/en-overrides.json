@@ -7143,5 +7143,7 @@
   "شمارهٔ پرواز و تاریخ حرکت را با قالب میلادی 2026-11-24 بنویسید. اگر کلاس مشخصی مدنظر است، آن را هم ذکر کنید.": "Enter the flight number and departure date in Gregorian YYYY-MM-DD format. Include the class if applicable.",
   "کلاس:": "Class:",
   "وضعیت فروش:": "Sales status:",
-  "منظورتان خرید کدام خدمت قرارداد است، یا می‌خواهید درخواست خرید تنخواه ثبت کنید؟": "Do you mean a contract service purchase or a petty cash purchase request?"
+  "منظورتان خرید کدام خدمت قرارداد است، یا می‌خواهید درخواست خرید تنخواه ثبت کنید؟": "Do you mean a contract service purchase or a petty cash purchase request?",
+  "راهنمای کدام گردش را می‌خواهید؟ بازاریابی، بستن پکیج یا پکیج‌های شناور؟": "Which workflow do you need help with: marketing, standard packages, or floating packages?",
+  "وضعیت این مورد را در نمای مجاز ERP بررسی کنید.": "Review this record in the authorized ERP view."
 }

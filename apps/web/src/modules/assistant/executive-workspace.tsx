@@ -48,7 +48,10 @@ import {
 
 import { canViewRoute, canViewScreen } from '@nora/contracts';
 import { prefersTravelIssuanceGuide, resolvePilotGuide } from './guide-pilot';
-import { retrievePanelGuidance } from './panel-guide-retrieval';
+import {
+  retrievePanelGuidance,
+  retrieveSalesPanelGuide,
+} from './panel-guide-retrieval';
 import {
   readTourGuideStatus,
   renderTourGuide,
@@ -450,6 +453,7 @@ function AssistantComposerContent({
   const inspecting = useRef<AbortController | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
   const pathname = usePathname();
+  const salesPanelTopic = useRef<string | undefined>(undefined);
   const pilotTopic = useRef<string | undefined>(undefined);
   const searchParams = useSearchParams();
   const workbenchTab =
@@ -503,6 +507,7 @@ function AssistantComposerContent({
   const pendingSalesPeriod = useRef(false);
   useEffect(() => {
     if (denied) {
+      salesPanelTopic.current = undefined;
       systemGuideTopic.current = undefined;
       previousAnswer.current = undefined;
       flightCapacityTopic.current = undefined;
@@ -616,6 +621,51 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    const newGuide = retrieveSalesPanelGuide(
+      message,
+      pathname,
+      salesPanelTopic.current,
+    );
+    salesPanelTopic.current = undefined;
+    if (newGuide) {
+      pending.current?.abort();
+      pendingSalesPeriod.current = false;
+      previousAnswer.current = undefined;
+      pilotTopic.current = undefined;
+      guideTopic.current = undefined;
+      if (newGuide === 'record') {
+        replyLocally(
+          english
+            ? 'Open the authorized ERP panel to review the record and its current status.'
+            : 'وضعیت این مورد را در نمای مجاز ERP بررسی کنید.',
+        );
+        return;
+      }
+      if (newGuide === 'clarify') {
+        replyLocally(
+          english
+            ? 'Which workflow do you need: marketing, standard packages, or floating packages?'
+            : 'راهنمای کدام گردش را می‌خواهید؟ بازاریابی، بستن پکیج یا پکیج‌های شناور؟',
+        );
+        return;
+      }
+      if (!actor || !canViewRoute(actor.permissions, newGuide.href)) {
+        replyLocally(t(c.pilotGuideInsufficient));
+        return;
+      }
+      salesPanelTopic.current = newGuide.guideHref;
+      replyLocally(
+        [newGuide.route.join(' ← '), ...newGuide.steps].join('\n\n'),
+        undefined,
+        undefined,
+        {
+          href: newGuide.href,
+          label: english ? 'Open panel' : 'باز کردن پنل',
+          guideHref: newGuide.guideHref,
+        },
+      );
+      return;
+    }
     const systemGuidance = resolveSystemManagementGuide(
       message,
       pathname,
