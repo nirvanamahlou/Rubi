@@ -360,7 +360,7 @@ model RolePermission {
 }
 
 model Branch {
-  websiteAgencyAccounts WebsiteAgencyAccount[]
+  websiteAgencyAccounts   WebsiteAgencyAccount[]
   websiteCheckoutSessions WebsiteCheckoutSession[]
 
   websiteCatalogDeliveries      WebsiteCatalogDelivery[]
@@ -1482,7 +1482,7 @@ model MasterPaymentMethod {
 }
 
 model MasterOrganization {
-  websiteAgencyAccounts WebsiteAgencyAccount[]
+  websiteAgencyAccounts       WebsiteAgencyAccount[]
   accountingCode              String?                      @unique @db.VarChar(7)
   partnerFinanceRequests      FinanceOperationalRequest[]
   marketingPromotions         MarketingAsset[]             @relation("MarketingPromotionAgency")
