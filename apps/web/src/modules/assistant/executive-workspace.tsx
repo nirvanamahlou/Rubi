@@ -585,6 +585,28 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    if (decision.kind === 'capabilities') {
+      replyLocally(
+        english
+          ? 'I can explain ERP workflows, look up accessible records, and answer supported ERP reporting questions. Ask about a module, contract, or report.'
+          : 'می‌توانم مراحل کار در روبی را توضیح بدهم، پرونده‌های در دسترس را بررسی کنم و به سؤال‌های گزارش‌گیری از داده‌های متصل پاسخ بدهم. موضوع یا نام گزارش را بگویید.',
+      );
+      return;
+    }
+    if (decision.kind === 'sales-report-guide') {
+      replyLocally(
+        english
+          ? 'Open Reports, select the sales report from the catalogue, set its filters, and choose View results. If export is available, select Download Excel.'
+          : 'در «اسناد و گزارش‌ها ← گزارش‌ها»، گزارش فروش موردنظر را از کاتالوگ انتخاب کنید. فیلترهای گزارش را تنظیم کنید و «نمایش نتیجه» را بزنید. اگر گزینهٔ خروجی فعال است، «دریافت خروجی اکسل» را انتخاب کنید.',
+        undefined,
+        undefined,
+        {
+          href: '/reports?view=catalog',
+          label: english ? 'Open reports' : 'باز کردن گزارش‌ها',
+        },
+      );
+      return;
+    }
     const operationalMetric = resolveOperationalMetric(message);
     if (operationalMetric) {
       pending.current?.abort();
@@ -651,7 +673,7 @@ function AssistantComposerContent({
       }
       return;
     }
-    if (decision.guideTopicId === 'travel-document-workflow') {
+    if (decision.guideTopicId) {
       pending.current?.abort();
       const section = contractGuideCatalog.topics.find(
         ({ id }) => id === decision.guideTopicId,
@@ -1486,7 +1508,11 @@ function AssistantComposerContent({
       return;
     }
     if (guidanceAllowed) {
-      replyLocally(t(c.internalSourceFallback));
+      replyLocally(
+        english
+          ? 'Which ERP workflow, record, or report would you like me to check?'
+          : 'کدام فرایند، پرونده یا گزارش روبی را می‌خواهید بررسی کنم؟ نام بخش، شماره پرونده یا عنوان گزارش را بگویید.',
+      );
       return;
     }
     pending.current?.abort();

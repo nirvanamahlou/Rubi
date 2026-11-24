@@ -1,3 +1,7 @@
+## Nora ERP question routing
+
+Nora routes workflow questions to existing guides, record and report questions to authorized ERP readers, and unmatched requests to clarification. The Web composer has no generic conversation dispatch.
+
 ## Master Data logo scan display
 
 The Documents workspace labels uploads carrying the Master Data logo exemption marker as exempt from automatic antivirus scanning. Standard pending and completed results retain their existing labels.

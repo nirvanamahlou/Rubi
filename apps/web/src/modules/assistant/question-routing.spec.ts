@@ -22,6 +22,30 @@ const guide: AnswerContext = {
 };
 
 describe('shared intent arbitration before every guide', () => {
+  it.each([
+    ['داداش چی بلدی؟', 'capabilities', undefined],
+    ['سند های مالی برای قرار داد صادر شده؟', 'clarify', undefined],
+    ['رویه ی کار بین واحد فروش', 'guide', undefined],
+    [
+      'رویه ی کار بین واحد فروش و رزرواسیون رو به من بگو و بکش',
+      'guide',
+      'travel-document-workflow',
+    ],
+    ['روند قرارداد زدن در واحد فروش چطور هست؟', 'guide', 'create'],
+    ['چجوری گزارش فروش بگیریم', 'sales-report-guide', undefined],
+    [
+      'فرض کنیم اصل چک هنوز به شرکت نرسیده، اما مالی اجازه صدور زودهنگام بلیط و واچر را داده است. آیا همین مجوز باید باعث شود مشتری هم بتواند بلیط و واچر را در سایت مشاهده و دانلود کند؟',
+      'guide',
+      'travel-document-workflow',
+    ],
+  ])(
+    'checks approved ERP sources before handling %s',
+    (message, kind, guideTopicId) => {
+      const decision = routeAssistantQuestion(message);
+      expect(decision.kind).toBe(kind);
+      expect(decision.guideTopicId).toBe(guideTopicId);
+    },
+  );
   it('clarifies competing workflow domains and lets an explicit form problem override a data follow-up', () => {
     expect(
       routeAssistantQuestion('قرارداد و مرخصی را چطور ثبت کنم؟', data, true)
@@ -39,7 +63,7 @@ describe('shared intent arbitration before every guide', () => {
   });
   it('applies lexical boundaries to evidence keywords as well as guide aliases', () => {
     expect(routeAssistantQuestion('نامنبع', undefined, true).kind).toBe(
-      'conversation',
+      'guide',
     );
     expect(routeAssistantQuestion('منبعش؟', data, true).kind).toBe('follow-up');
   });

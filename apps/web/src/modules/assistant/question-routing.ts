@@ -15,10 +15,11 @@ export type QuestionDecision = {
     | 'follow-up'
     | 'data-with-guide'
     | 'clarify'
-    | 'conversation';
+    | 'capabilities'
+    | 'sales-report-guide';
   domain?: AnswerContext['domain'] | undefined;
   guideQuestion?: string;
-  guideTopicId?: 'travel-document-workflow';
+  guideTopicId?: 'travel-document-workflow' | 'create';
   dataMessage: string;
   clarification?: string;
 };
@@ -49,6 +50,51 @@ export function routeAssistantQuestion(
     )
   )
     return { kind: 'data', domain: 'sales', dataMessage: message };
+  if (
+    /^(?:(?:سلام|داداش|نورا) )?(?:چی بلدی|چه کارهایی می تونی انجام بدی|چه کار می کنی|قابلیت هات چیه)$/.test(
+      q,
+    )
+  )
+    return { kind: 'capabilities', dataMessage: message };
+  if (
+    has(procedure) &&
+    has(/گزارش فروش/) &&
+    has(/بگیرم|بگیریم|بگیر|خروجی|اجرا|ساخت/)
+  )
+    return { kind: 'sales-report-guide', dataMessage: message };
+  if (
+    has(/سند(?: های)? (?:مالی|حسابداری)/) &&
+    has(/قرارداد/) &&
+    has(/صادر شده|ثبت شده/) &&
+    !/\d/.test(q)
+  )
+    return {
+      kind: 'clarify',
+      domain: 'sales',
+      dataMessage: message,
+      clarification:
+        'شماره قرارداد را بفرستید تا مشخص شود وضعیت سند مالی کدام پرونده را می‌خواهید.',
+    };
+  if (
+    has(/(?:روند|رویه|نحوه)/) &&
+    has(/قرارداد (?:زدن|بستن|ثبت)|(?:زدن|بستن|ثبت) قرارداد/) &&
+    !/\d/.test(q)
+  )
+    return {
+      kind: 'guide',
+      domain: 'sales',
+      guideTopicId: 'create',
+      dataMessage: message,
+    };
+  const crossTeamWorkflow =
+    has(/رویه|روند|فرایند|فرآیند/) && has(/فروش/) && has(/رزرواسیون/);
+  const customerDeliveryPolicy =
+    has(/مجوز|اجازه/) &&
+    has(/صدور/) &&
+    has(/بلی[تط]|واچر/) &&
+    has(/مشتری/) &&
+    has(/دانلود|مشاهده/) &&
+    !/\d/.test(q);
   const documentProcedure =
     has(/رویه|فرایند|فرآیند|به چه صورت/) || has(procedure);
   const travelDocument =
@@ -63,6 +109,8 @@ export function routeAssistantQuestion(
     !has(/مبلغ|چقدر|تعداد|چند تا|مانده|وضعیت/);
   if (
     travelDocument ||
+    crossTeamWorkflow ||
+    customerDeliveryPolicy ||
     (previous?.kind === 'guide' &&
       previous.topicId === 'travel-document-workflow' &&
       shortFollowup.test(q))
@@ -250,7 +298,16 @@ export function routeAssistantQuestion(
       clarification:
         'راهنمای انجام کار می‌خواهید یا بررسی اطلاعات واقعی؟ موضوع یا بخش موردنظر را مشخص کنید.',
     };
-  return { ...base, kind: 'conversation' };
+  if (
+    dataIntent &&
+    !has(procedure) &&
+    !has(/رویه|روند|فرایند|فرآیند/) &&
+    has(/گزارش|فروش|سفارش|حسابداری|دریافت|پرداخت|خرید|مشتری|انبار/)
+  )
+    return { ...base, kind: 'data' };
+  if (sales && !has(/رویه|روند|فرایند|فرآیند/))
+    return { ...base, kind: 'data' };
+  return { ...base, kind: 'guide' };
 }
 
 function followupMessage(message: string, question: string) {

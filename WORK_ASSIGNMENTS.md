@@ -1,3 +1,7 @@
+## NORA-ERP-FIRST-1124 — PC-C — ACTIVE
+
+Reserve Nora Web routing and supported guide selection with focused regressions. Keep producer permissions and APIs unchanged.
+
 ## DOCUMENT-LOGO-SCAN-DISPLAY-1124 — PC-C — ACTIVE
 
 Reserve document workspace scan label rendering and focused verification. Preserve scan policy, authorization and schema.
