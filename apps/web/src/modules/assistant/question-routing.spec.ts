@@ -22,26 +22,43 @@ const guide: AnswerContext = {
 };
 
 describe('shared intent arbitration before every guide', () => {
+  it.each([
+    ['داداش چی بلدی؟', 'capabilities', undefined],
+    ['سند های مالی برای قرار داد صادر شده؟', 'clarify', undefined],
+    ['رویه ی کار بین واحد فروش', 'guide', undefined],
+    [
+      'رویه ی کار بین واحد فروش و رزرواسیون رو به من بگو و بکش',
+      'guide',
+      'travel-document-workflow',
+    ],
+    ['روند قرارداد زدن در واحد فروش چطور هست؟', 'guide', 'create'],
+    ['چجوری گزارش فروش بگیریم', 'sales-report-guide', undefined],
+    [
+      'فرض کنیم اصل چک هنوز به شرکت نرسیده، اما مالی اجازه صدور زودهنگام بلیط و واچر را داده است. آیا همین مجوز باید باعث شود مشتری هم بتواند بلیط و واچر را در سایت مشاهده و دانلود کند؟',
+      'guide',
+      'travel-document-workflow',
+    ],
+  ])(
+    'checks approved ERP sources before handling %s',
+    (message, kind, guideTopicId) => {
+      const decision = routeAssistantQuestion(message);
+      expect(decision.kind).toBe(kind);
+      expect(decision.guideTopicId).toBe(guideTopicId);
+    },
+  );
   it('clarifies competing workflow domains and lets an explicit form problem override a data follow-up', () => {
     expect(
-      routeAssistantQuestion('قرارداد و مرخصی را چطور ثبت کنم؟', data, true)
-        .kind,
+      routeAssistantQuestion('قرارداد و مرخصی را چطور ثبت کنم؟', data).kind,
     ).toBe('clarify');
-    const result = routeAssistantQuestion(
-      'چرا پروازم تو فهرست نیست؟',
-      data,
-      true,
-    );
+    const result = routeAssistantQuestion('چرا پروازم تو فهرست نیست؟', data);
     expect(result.kind).toBe('guide');
     expect(resolveContractGuide(result.guideQuestion!, true)?.topicId).toBe(
       'flight',
     );
   });
   it('applies lexical boundaries to evidence keywords as well as guide aliases', () => {
-    expect(routeAssistantQuestion('نامنبع', undefined, true).kind).toBe(
-      'conversation',
-    );
-    expect(routeAssistantQuestion('منبعش؟', data, true).kind).toBe('follow-up');
+    expect(routeAssistantQuestion('نامنبع', undefined).kind).toBe('guide');
+    expect(routeAssistantQuestion('منبعش؟', data).kind).toBe('follow-up');
   });
   it('preserves explicit date ranges and hyphenated identifiers for existing native readers', () => {
     expect(normalizeQuestion('قرارداد AB-12 از ۲۰۲۶/۱۱/۰۱ تا ۲۰۲۶-۱۱-۰۳')).toBe(
@@ -50,24 +67,19 @@ describe('shared intent arbitration before every guide', () => {
   });
   it('keeps conceptual definitions out of SQL even when they contain status or amount words', () => {
     expect(
-      routeAssistantQuestion('وضعیت تسویه قرارداد یعنی چی؟', data, true).kind,
+      routeAssistantQuestion('وضعیت تسویه قرارداد یعنی چی؟', data).kind,
     ).toBe('guide');
     expect(
-      routeAssistantQuestion(
-        'تفاوت پیش‌نویس و ثبت نهایی قرارداد چیه؟',
-        data,
-        true,
-      ).kind,
+      routeAssistantQuestion('تفاوت پیش‌نویس و ثبت نهایی قرارداد چیه؟', data)
+        .kind,
     ).toBe('guide');
   });
   it('recognizes explicit editing and source-field instructions instead of treating field names as evidence requests', () => {
     expect(
-      routeAssistantQuestion('میخوام اطلاعات قرارداد رو تغییر بدم', data, true)
-        .kind,
+      routeAssistantQuestion('میخوام اطلاعات قرارداد رو تغییر بدم', data).kind,
     ).toBe('guide');
     expect(
-      routeAssistantQuestion('از کجا منبع آشنایی را انتخاب کنم؟', data, true)
-        .kind,
+      routeAssistantQuestion('از کجا منبع آشنایی را انتخاب کنم؟', data).kind,
     ).toBe('guide');
   });
   it.each([
@@ -83,7 +95,7 @@ describe('shared intent arbitration before every guide', () => {
   ])(
     'sends evidence follow-up to fresh data, never a procedural fallback: %s',
     (message) => {
-      const result = routeAssistantQuestion(message, data, true);
+      const result = routeAssistantQuestion(message, data);
       expect(['data', 'follow-up']).toContain(result.kind);
       expect(result.dataMessage).toContain(message);
       expect(result.dataMessage).toContain(data.question);
@@ -101,7 +113,7 @@ describe('shared intent arbitration before every guide', () => {
     'رسیدها را از کجا بارگذاری کنم؟',
     'از کجا رسیدهای پرداخت رو آپلود کنم؟',
   ])('retains real receipt instructions: %s', (message) => {
-    const result = routeAssistantQuestion(message, data, true);
+    const result = routeAssistantQuestion(message, data);
     expect(result.kind).toBe('guide');
     expect(
       resolveContractGuide(result.guideQuestion ?? message, true)?.topicId,
@@ -120,7 +132,7 @@ describe('shared intent arbitration before every guide', () => {
   });
   it('does not route personal Workbench facts to the Sales data reader', () => {
     expect(
-      routeAssistantQuestion('مبلغ حقوق من از کجا آمده؟', data, true),
+      routeAssistantQuestion('مبلغ حقوق من از کجا آمده؟', data),
     ).toMatchObject({ kind: 'guide', domain: 'workbench' });
   });
   it.each([
@@ -129,7 +141,7 @@ describe('shared intent arbitration before every guide', () => {
   ])(
     'reads data before offering grounded correction instructions: %s',
     (message) => {
-      const result = routeAssistantQuestion(message, data, true);
+      const result = routeAssistantQuestion(message, data);
       expect(result.kind).toBe('data-with-guide');
       expect(result.dataMessage).toContain(data.question);
       expect(resolveContractGuide(result.guideQuestion!, true)?.topicId).toBe(
@@ -143,21 +155,17 @@ describe('shared intent arbitration before every guide', () => {
     expect(
       resolveContractGuide(next.guideQuestion!, false, guide.topicId),
     ).toBeTruthy();
-    const leave = routeAssistantQuestion(
-      'چطور مرخصی ساعتی ثبت کنم؟',
-      data,
-      true,
-    );
+    const leave = routeAssistantQuestion('چطور مرخصی ساعتی ثبت کنم؟', data);
     expect(leave).toMatchObject({ kind: 'guide', domain: 'workbench' });
     expect(resolveWorkbenchGuide('چطور مرخصی ساعتی ثبت کنم؟')?.topic?.id).toBe(
       'leave-hourly',
     );
   });
   it('keeps data intent after navigation but allows a new contract guide', () => {
-    expect(routeAssistantQuestion('از کجا آوردی؟', data, false).kind).toBe(
+    expect(routeAssistantQuestion('از کجا آوردی؟', data).kind).toBe(
       'follow-up',
     );
-    expect(routeAssistantQuestion('چجور قرارداد بزنم؟', data, false).kind).toBe(
+    expect(routeAssistantQuestion('چجور قرارداد بزنم؟', data).kind).toBe(
       'guide',
     );
   });
@@ -180,4 +188,13 @@ it.each([
     domain: 'sales',
     dataMessage: message,
   });
+});
+
+it('routes a daily package lookup to Workbench guidance', () => {
+  expect(routeAssistantQuestion('پکیج های روز رو از کجا ببینم؟')).toMatchObject(
+    {
+      kind: 'guide',
+      domain: 'workbench',
+    },
+  );
 });

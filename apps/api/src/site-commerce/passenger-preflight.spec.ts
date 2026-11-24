@@ -34,6 +34,7 @@ function fixture() {
     {} as never,
     { checkWebsitePassenger } as never,
     {} as never,
+    {} as never,
   );
   return { controller, checkWebsitePassenger };
 }

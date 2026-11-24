@@ -2,6 +2,17 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
 const outputs = {
+  'flight-capacity': [
+    'flight-capacity.generated',
+    '/ticket-management',
+    'documents',
+  ],
+  'hotel-purchase-rates': [
+    'hotel-purchase-rates.generated',
+    '/reservations/hotel-rates',
+    'documents',
+  ],
+  reservations: ['reservation-guide.generated', '/reservations', 'documents'],
   'travel-issuance': ['', '/reservations', 'registry'],
   'customer-affairs': ['', '/customer-affairs', 'registry'],
   'package-generator': ['', '/sales/pricing/generator', 'registry'],
@@ -63,6 +74,12 @@ export function buildLinkedPanelGuides(directory, check) {
       const { id: metadataId, href, related, ...fields } = JSON.parse(metadata);
       const validAction =
         href === action ||
+        (domain === 'reservations' &&
+          [
+            '/reservations/processing',
+            '/reservations/insurance',
+            '/reservations/hotel-rates',
+          ].includes(href)) ||
         (domain === 'travel-issuance' &&
           ['delivery', 'delivery-exception'].includes(id) &&
           href === '/finance/delivery') ||
@@ -137,9 +154,12 @@ export function buildLinkedPanelGuides(directory, check) {
     if (format === 'documents') {
       products.set(
         output,
-        topics.map(({ id, title, steps, fields }) => ({
+        topics.map(({ id, title, href, steps, fields }) => ({
           id,
           title,
+          ...(['reservations', 'hotel-purchase-rates'].includes(domain)
+            ? { href }
+            : {}),
           steps,
           ...fields,
         })),

@@ -193,7 +193,7 @@ export function salesFinalChoices(details) {
   );
 }
 
-export function renderSalesWindow(answer, report, request) {
+export function renderSalesWindow(answer, report, request, showMethod = true) {
   if (answer.status !== 'ANSWER') return null;
   const note = answer.calculationExplanation;
   const text =
@@ -281,12 +281,20 @@ export function renderSalesWindow(answer, report, request) {
       ? `\nبرای ${digits(report.missing)} قرارداد مبلغی در منبع وجود ندارد؛ جمع مالی پوشش کامل آن قراردادها را ندارد.`
       : '');
   const displayed = markers
+    .filter((marker) => showMethod || marker !== '[[sales:method]]')
     .map((m) =>
       m === '[[sales:method]]'
         ? method
         : m.includes(':summary:')
           ? summary(m.split(':')[2].slice(0, -2))
           : details(m.split(':')[2].slice(0, -2)),
+    )
+    .concat(
+      !showMethod && report.missing !== '0'
+        ? [
+            `برای ${digits(report.missing)} قرارداد مبلغی ثبت نشده است؛ جمع مالی پوشش کامل ندارد.`,
+          ]
+        : [],
     )
     .join('\n\n');
   if (displayed.length > 6000)
@@ -295,10 +303,12 @@ export function renderSalesWindow(answer, report, request) {
 }
 
 export function relativeSalesRequest(request, now) {
-  const text = normalizeSalesText(request.message);
+  const text = normalizeSalesText(request.message)
+    .replace(/^(?:لطفا )?(?:مجموع|جمع|مبلغ|کل) (?=فروش)/u, '')
+    .replace(/ (?:رو|را) (?:بده|بگو)[؟?!.]*$/u, '');
   const words = text.replace(/[؟?،.]/g, '').split(' ');
   const allowed = new Set(
-    'فروش فروشمون شرکت ما امروز دیروز پریروز این هفته ی ماه سال قبل قبلی تر پیش گذشته هفت 7 روز شمسی میلادی نسبت به در مقایسه با چقدر چطوره چطور چقدره بوده بود شد است هست تا همین موقع زمان بگو و'.split(
+    'فروش فروشمون شرکت ما امروز دیروز پریروز این هفته ی ماه سال قبل قبلی تر پیش گذشته هفت 7 سی 30 روز شمسی میلادی نسبت به در مقایسه با چقدر چطوره چطور چقدره بوده بود شد است هست تا همین موقع زمان بگو و'.split(
       ' ',
     ),
   );
@@ -321,7 +331,7 @@ export function relativeSalesRequest(request, now) {
   return periods;
 }
 
-export function renderRelativeSales(periods, reports) {
+export function renderRelativeSales(periods, reports, showMethod = true) {
   const labels = periods.map((p) => {
     const formatter = new Intl.DateTimeFormat(
       p.calendar === 'persian' ? 'fa-IR-u-ca-persian' : 'fa-IR-u-ca-gregory',
@@ -397,6 +407,8 @@ export function renderRelativeSales(periods, reports) {
     (reports.some((r) => r.missing !== '0')
       ? '\nپوشش مبالغ کامل نیست. اختلاف و درصد برای دادهٔ ناقص محاسبه نشده است.'
       : '') +
-    '\n\n**روش محاسبه**\nفروش قراردادی پس از تخفیف، بر اساس زمان ایجاد قرارداد به وقت تهران، با فیلتر وضعیت یکسان و در محدودهٔ دسترسی فعلی. درصد تغییر بر اساس اختلاف تقسیم بر مبلغ بازهٔ دوم محاسبه می‌شود.'
+    (showMethod
+      ? '\n\n**روش محاسبه**\nفروش قراردادی پس از تخفیف، بر اساس زمان ایجاد قرارداد به وقت تهران، با فیلتر وضعیت یکسان و در محدودهٔ دسترسی فعلی. درصد تغییر بر اساس اختلاف تقسیم بر مبلغ بازهٔ دوم محاسبه می‌شود.'
+      : '')
   );
 }

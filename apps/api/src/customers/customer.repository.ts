@@ -619,6 +619,7 @@ export class CustomerRepository {
     key: string,
     requestHash: string,
     traceId?: string,
+    refreshNames = false,
   ) {
     return this.database.client.$transaction(async (transaction) => {
       const receipt = `sales-person:${key}`;
@@ -640,7 +641,7 @@ export class CustomerRepository {
         const snapshot = previous.afterSnapshot as {
           requestHash?: string;
         } | null;
-        if (snapshot?.requestHash !== requestHash)
+        if (!refreshNames && snapshot?.requestHash !== requestHash)
           throw new ConflictException(
             'Registration key was already used for different input.',
           );
@@ -658,6 +659,41 @@ export class CustomerRepository {
           throw new ConflictException(
             'Registered person is no longer available.',
           );
+        if (refreshNames) {
+          const names = {
+            firstName: String(data.firstName ?? ''),
+            lastName: String(data.lastName ?? ''),
+            displayName: String(data.displayName ?? ''),
+          };
+          if (
+            names.firstName !== row.firstName ||
+            names.lastName !== row.lastName ||
+            names.displayName !== row.displayName
+          ) {
+            const changed = await transaction.customer.update({
+              where: { id: row.id, version: row.version },
+              data: {
+                ...names,
+                version: { increment: 1 },
+                updatedByUserId: actorUserId,
+              },
+              include: detailInclude,
+            });
+            await transaction.customerAuditEvent.create({
+              data: {
+                actorUserId,
+                actorBranchId,
+                action: 'customers.update',
+                outcome: AuditOutcome.SUCCESS,
+                entityType: 'customer',
+                entityId: row.id,
+                afterSnapshot: json(customerAuditSnapshot(changed)),
+                traceId: traceId ?? null,
+              },
+            });
+            return changed as unknown as CustomerRow;
+          }
+        }
         return row as unknown as CustomerRow;
       }
       const row = await this.create(
