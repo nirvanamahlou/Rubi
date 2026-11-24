@@ -3,6 +3,7 @@ import {
   ProcurementApiError,
   procurementRequest,
 } from '@/modules/procurement/api';
+import type * as ProcurementApi from '@/modules/procurement/api';
 import catalog from './petty-cash.generated.json';
 import {
   pettyCashReadError,
@@ -11,7 +12,7 @@ import {
 } from './petty-cash-guide';
 
 vi.mock('@/modules/procurement/api', async (actual) => ({
-  ...(await actual<typeof import('@/modules/procurement/api')>()),
+  ...(await actual<typeof ProcurementApi>()),
   procurementRequest: vi.fn(),
 }));
 
