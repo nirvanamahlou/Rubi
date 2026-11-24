@@ -64,6 +64,24 @@ const metrics = [
     label: 'خریدهای جاری ثبت‌شدهٔ خدمات رزرواسیون',
     unit: 'خرید',
   },
+  {
+    id: 'employee-call-count',
+    phrase: /(?:تعداد )?تماس های منتسب به کارشناسان کال سنتر/,
+    label: 'انتساب‌های تماس به کارشناسان کال‌سنتر',
+    unit: 'مورد',
+  },
+  {
+    id: 'employee-connected-call-count',
+    phrase: /(?:تعداد )?تماس های متصل منتسب به کارشناسان کال سنتر/,
+    label: 'انتساب‌های تماس متصل به کارشناسان کال‌سنتر',
+    unit: 'مورد',
+  },
+  {
+    id: 'active-offers',
+    phrase: /(?:تعداد )?پیشنهادهای فعال بلیت با حرکت/,
+    label: 'پیشنهادهای فعال بلیت با تاریخ حرکت در بازه',
+    unit: 'پیشنهاد',
+  },
 ] as const;
 
 const periods = {
@@ -141,7 +159,9 @@ export async function readOperationalMetric(
     const decimal = '[۰-۹0-9]+(?:٬[۰-۹0-9]{3})*(?:٫[۰-۹0-9]+)?';
     const money = `${decimal} [A-Z]{3}`;
     const format = new RegExp(
-      metric.unit ? `^${decimal}$` : `^(?:[۰0]|${money}(?: · ${money})*)$`,
+      metric.unit
+        ? `^${decimal}$`
+        : `^(?:${/[۰0]/u.source}|${money}(?: · ${money})*)$`,
       'u',
     );
     if (

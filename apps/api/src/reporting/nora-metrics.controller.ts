@@ -32,6 +32,9 @@ const metrics = new Set([
   'collected',
   'refunded',
   'registered-service-purchases',
+  'employee-call-count',
+  'employee-connected-call-count',
+  'active-offers',
 ]);
 const businessReadPermissions = [
   'reporting.read',
@@ -41,6 +44,8 @@ const businessReadPermissions = [
   'customers.read',
   'customer_affairs.lead.read',
   'customer_affairs.ticket.read',
+  'customer_affairs.call_center.read',
+  'ticket_catalog.read',
   'sales.contracts.read.all',
   'sales.payments.read',
 ];

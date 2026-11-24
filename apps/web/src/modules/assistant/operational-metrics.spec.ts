@@ -19,6 +19,15 @@ describe('Nora operational reads', () => {
     ['مجموع دریافت‌های تأییدشده مشتریان این هفته', 'collected'],
     ['استردادهای قطعی مشتریان امروز', 'refunded'],
     ['تعداد خریدهای ثبت‌شده خدمات این ماه', 'registered-service-purchases'],
+    [
+      'تعداد تماس‌های منتسب به کارشناسان کال سنتر این هفته',
+      'employee-call-count',
+    ],
+    [
+      'تعداد تماس‌های متصل منتسب به کارشناسان کال سنتر امروز',
+      'employee-connected-call-count',
+    ],
+    ['تعداد پیشنهادهای فعال بلیت با حرکت این ماه', 'active-offers'],
   ])('resolves %s to its native metric', (question, id) => {
     expect(resolveOperationalMetric(question)?.metric.id).toBe(id);
   });

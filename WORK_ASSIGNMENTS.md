@@ -12924,6 +12924,8 @@ Owner requests no product consumption quotas for native danial/demo identities a
 
 ## NORA-BUSINESS-READ-GRANTS-1123 — PC-C
 
+PR #1901 continuation reserves additive English labels and Nora-only exposure of existing Call Center and Ticket Catalog aggregate reads. Keep owner projections and permissions, require passing exact-head CI for merge, and keep grants bound to the two authenticated account IDs.
+
 Owner authorizes read-only business-data access for danial and demo and confirms module-owner consent. Reserve the IAM-owned assistant grant lookup, Sales assistant scope, Reporting assistant aggregate endpoint, Assistant Web consumer and targeted tests. Based on PR #1899 head da897be46. No IAM role commands, database grants, migration, dependency or deployment changes.
 
 ## NORA-OPERATIONAL-READS-1123 — PC-C

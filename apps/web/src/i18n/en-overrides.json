@@ -7085,5 +7085,17 @@
   "عدد تأییدشدهٔ این شاخص در دسترس نیست.": "A verified value for this metric is unavailable.",
   "ماه جاری شمسی تا اکنون": "Current Persian month to date",
   "مشتریان ثبت‌نام‌شده": "Registered customers",
-  "هفتهٔ جاری تا اکنون": "Current week to date"
+  "هفتهٔ جاری تا اکنون": "Current week to date",
+  "، **": ", **",
+  "، مبلغی ثبت نشده است.": ", no amount was recorded.",
+  "استردادهای قطعی مشتریان": "Executed customer refunds",
+  "این شاخص در نمای «همه شرکت‌ها» و در محدودهٔ دسترسی شما قابل خواندن است.": "This metric is available in the All companies view within your access scope.",
+  "خریدهای جاری ثبت‌شدهٔ خدمات رزرواسیون": "Current registered reservation service purchases",
+  "در کل سازمان": "Across the organization",
+  "در محدودهٔ شعب مجاز شما": "Across the branches you can access",
+  "دریافت‌های تأییدشدهٔ مشتریان": "Confirmed customer receipts",
+  "سرنخ‌های ثبت‌شده": "Registered leads",
+  "انتساب‌های تماس به کارشناسان کال‌سنتر": "Calls attributed to call center agents",
+  "انتساب‌های تماس متصل به کارشناسان کال‌سنتر": "Connected calls attributed to call center agents",
+  "پیشنهادهای فعال بلیت با تاریخ حرکت در بازه": "Active ticket offers departing in the selected period"
 }
