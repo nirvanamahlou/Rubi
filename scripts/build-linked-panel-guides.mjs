@@ -3,6 +3,10 @@ import { isDeepStrictEqual } from 'node:util';
 
 const outputs = {
   'human-resources': ['', '/hr', 'registry'],
+  marketing: ['', '/marketing', 'registry'],
+  'package-management': ['', '/sales/pricing', 'registry'],
+  'floating-packages': ['', '/sales/pricing/floating', 'registry'],
+  'system-management': ['', '/system', 'registry'],
   'flight-capacity': [
     'flight-capacity.generated',
     '/ticket-management',
@@ -17,8 +21,12 @@ const outputs = {
   'travel-issuance': ['', '/reservations', 'registry'],
   'customer-affairs': ['', '/customer-affairs', 'registry'],
   'package-generator': ['', '/sales/pricing/generator', 'registry'],
-  'petty-cash': ['', '/purchases', 'registry'],
-  correspondence: ['', '/correspondence', 'registry'],
+  correspondence: [
+    'correspondence-guide.generated',
+    '/correspondence',
+    'documents',
+  ],
+  'petty-cash': ['petty-cash.generated', '/purchases', 'documents'],
   b2b: ['b2b-guide-catalog', '/organizations', 'text'],
   tour: ['tour-guide', '/sales/tours', 'tuple'],
   'flight-pricing': ['flight-pricing-catalog', '/sales/ticket-prices', 'text'],
@@ -79,6 +87,21 @@ export function buildLinkedPanelGuides(directory, check) {
           /^\/hr\?section=(dashboard|employees|organization|recruitment|time|development|expenses|assets|requests|surveys|reports|payroll)$/.test(
             href,
           )) ||
+        (domain === 'correspondence' &&
+          [
+            '/correspondence/incoming',
+            '/correspondence/outgoing',
+            '/correspondence/internal/send',
+            '/correspondence/internal/received',
+          ].includes(href)) ||
+        (domain === 'marketing' &&
+          (/^\/marketing\?section=(dashboard|campaigns|audiences|leads|communications|content|offers)$/.test(
+            href,
+          ) ||
+            href === '/system?module=marketing')) ||
+        (domain === 'package-management' &&
+          href === '/sales/pricing/management') ||
+        (domain === 'system-management' && href === '/system/users') ||
         (domain === 'reservations' &&
           [
             '/reservations/processing',
@@ -136,7 +159,11 @@ export function buildLinkedPanelGuides(directory, check) {
         id,
         title,
         href,
-        ...(format === 'registry' || fields.specific === true ? fields : {}),
+        ...(format === 'registry' ||
+        domain === 'correspondence' ||
+        fields.specific === true
+          ? fields
+          : {}),
         related,
         steps,
         guideHref: '/assistant-guides/' + domain + '#' + id,
@@ -155,19 +182,36 @@ export function buildLinkedPanelGuides(directory, check) {
       }));
     if (format === 'text')
       products.set(output, { ...copy, topics: textTopics() });
-    if (format === 'purchase') products.set(output, textTopics());
+    if (format === 'purchase')
+      products.set(
+        output,
+        topics.map(({ id, title, steps, fields }) => ({
+          id,
+          title,
+          ...fields,
+          steps,
+        })),
+      );
     if (format === 'documents') {
       products.set(
         output,
-        topics.map(({ id, title, href, steps, fields }) => ({
-          id,
-          title,
-          ...(['reservations', 'hotel-purchase-rates'].includes(domain)
-            ? { href }
-            : {}),
-          steps,
-          ...fields,
-        })),
+        topics
+          .filter(
+            ({ fields }) => domain !== 'correspondence' || 'terms' in fields,
+          )
+          .map(({ id, title, href, steps, fields }) => ({
+            id,
+            title,
+            ...([
+              'reservations',
+              'hotel-purchase-rates',
+              'correspondence',
+            ].includes(domain)
+              ? { href }
+              : {}),
+            steps,
+            ...fields,
+          })),
       );
     }
     if (format === 'tuple') {
