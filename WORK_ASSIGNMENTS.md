@@ -1,3 +1,7 @@
+## GEOGRAPHY-SITE-IMAGES-1124 — PC-D — ACTIVE
+
+Own the city and country photo fields, geography dialog, additive migration, and signed profile delivery of the main photo and gallery. Coordinate the three website receivers and verify the publication contract.
+
 ## DOCUMENT-LOGO-SCAN-DISPLAY-1124 — PC-C — ACTIVE
 
 Reserve document workspace scan label rendering and focused verification. Preserve scan policy, authorization and schema.

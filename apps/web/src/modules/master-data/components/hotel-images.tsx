@@ -77,6 +77,7 @@ export function HotelImageUpload({
   onChange,
   onBusy,
   idPrefix = 'live-hotels',
+  subject = idPrefix === 'visa-services' ? 'ویزا' : 'هتل',
 }: {
   main: string;
   gallery: string;
@@ -84,6 +85,7 @@ export function HotelImageUpload({
   onChange: (key: string, value: string) => void;
   onBusy: (busy: boolean) => void;
   idPrefix?: string;
+  subject?: string;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -161,11 +163,7 @@ export function HotelImageUpload({
       <p className="text-xs text-muted-foreground">
         عکس‌ها با فرمت WebP ذخیره می‌شوند. حداکثر حجم هر عکس ۱۰ مگابایت.
       </p>
-      <HotelImageStrip
-        main={main}
-        gallery={gallery}
-        subject={idPrefix === 'visa-services' ? 'ویزا' : 'هتل'}
-      />
+      <HotelImageStrip main={main} gallery={gallery} subject={subject} />
       <div className="flex flex-wrap gap-2">
         {galleryUrls.map((url, index) => (
           <button

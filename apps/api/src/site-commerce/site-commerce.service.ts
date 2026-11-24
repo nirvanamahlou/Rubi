@@ -1,4 +1,6 @@
 import { MasterDataLogoService } from '../master-data/master-data-logo.service';
+import { ConfigService } from '@nestjs/config';
+import { geographyPublicationImages } from './geography-images';
 import sharp from 'sharp';
 import { WebsiteCheckoutHoldsService } from './website-checkout-holds.service';
 import { commerceSites, isDeliverySite } from './commerce-sites';
@@ -129,6 +131,9 @@ export class SiteCommerceService {
     @Optional()
     @Inject(MasterDataLogoService)
     private readonly logos?: MasterDataLogoService,
+    @Optional()
+    @Inject(ConfigService)
+    private readonly environment?: ConfigService,
   ) {}
 
   private scoped(site: string, actor: AuthenticatedActor) {
@@ -274,6 +279,10 @@ export class SiteCommerceService {
       site === 'nss' && kind === 'cities' && typeof countryId === 'string'
         ? (await this.references.detail('countries', countryId)).data
         : undefined;
+    const images = await geographyPublicationImages(
+      data.attributes,
+      this.environment?.get<string>('DOCUMENTS_STORAGE_ROOT'),
+    );
     return this.references.withProfilePublication(data, () =>
       this.sendProfile(site, secret, '/geography-profile', {
         site,
@@ -281,6 +290,7 @@ export class SiteCommerceService {
         id,
         name: data.name,
         flag,
+        ...images,
         ...((site === 'ghestiroo' ||
           (site === 'nss' && kind === 'countries')) &&
         data.attributes.englishName

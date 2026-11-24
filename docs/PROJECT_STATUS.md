@@ -1,3 +1,7 @@
+## City and country website photos
+
+Avina geography records support a main photo and up to six gallery photos. The row publication action includes the saved photos in the signed profile sent to Jahan Bastan, Ghestiroo, or Niyayesh Seir. Country flags use their existing independent field. Profiles created before this change omit photo fields until an image is added.
+
 ## Master Data logo scan display
 
 The Documents workspace labels uploads carrying the Master Data logo exemption marker as exempt from automatic antivirus scanning. Standard pending and completed results retain their existing labels.

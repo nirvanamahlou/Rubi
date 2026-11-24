@@ -25,6 +25,7 @@ import { AuthGuard } from '../iam/auth.guard';
 import { Public } from '../iam/iam.decorators';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import type { UploadedDocumentFile } from '../documents/documents.service';
+import { publicMasterDataImageRoot } from './public-image-storage';
 
 export async function hotelImageWebp(buffer: Buffer): Promise<Buffer> {
   try {
@@ -49,9 +50,8 @@ export class HotelImagesController {
   constructor(@Inject(ConfigService) private readonly config: ConfigService) {}
 
   private root() {
-    return join(
+    return publicMasterDataImageRoot(
       this.config.getOrThrow<string>('DOCUMENTS_STORAGE_ROOT'),
-      'public-hotel-images',
     );
   }
 

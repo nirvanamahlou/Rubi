@@ -1,7 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { createHmac } from 'node:crypto';
+import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { Readable } from 'node:stream';
+import sharp from 'sharp';
 import { SiteCommerceService } from './site-commerce.service';
 import { commerceSites } from './commerce-sites';
 // Dependencies are injected below; unit publication tests must not start the application graph.
@@ -40,7 +44,7 @@ const actor = {
   branchIds: ['branch-a'],
   permissions: ['ticket_catalog.manage'],
 } as AuthenticatedActor;
-function setup() {
+function setup(storageRoot?: string) {
   vi.stubEnv(
     'SITE_COMMERCE_BINDINGS',
     JSON.stringify({
@@ -128,6 +132,7 @@ function setup() {
     undefined,
     undefined,
     logos as never,
+    { get: () => storageRoot } as never,
   );
   return { service, publication, tickets, tours, floating, references, logos };
 }
@@ -167,6 +172,9 @@ describe('site profile publication', () => {
     expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toMatchObject({
       englishName: 'Athens',
     });
+    expect(
+      JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body)),
+    ).not.toHaveProperty('mainImage');
 
     for (const urlPath of [
       'https://ghestiroo.ir/destinations/athens',
@@ -184,6 +192,83 @@ describe('site profile publication', () => {
           publisher,
         ),
       ).rejects.toThrow();
+    }
+  });
+
+  it('signs separate country flag, cover and gallery and publishes explicit photo removals', async () => {
+    const storageRoot = await mkdtemp(join(tmpdir(), 'geography-images-'));
+    try {
+      const folder = join(storageRoot, 'public-hotel-images');
+      const name = `${'a'.repeat(64)}.webp`;
+      const path = `/api/v1/master-data/hotel-images/${name}`;
+      await mkdir(folder);
+      const flag = await sharp({
+        create: { width: 2, height: 2, channels: 3, background: 'green' },
+      })
+        .png()
+        .toBuffer();
+      await sharp({
+        create: { width: 1600, height: 1000, channels: 3, background: 'pink' },
+      })
+        .webp()
+        .toFile(join(folder, name));
+
+      const f = setup(storageRoot);
+      vi.stubEnv('GHESTIROO_CATALOG_WEBHOOK_SECRET', secret);
+      const attributes = {
+        iso2Code: 'GR',
+        logoFileReference: 'flag',
+        sourceMainImage: path,
+        sourceGalleryImages: path,
+      };
+      f.references.detail.mockResolvedValue({
+        data: { name: 'یونان', attributes },
+      });
+      f.logos.preview.mockImplementation(async () => ({
+        stream: Readable.from([flag]),
+      }));
+      const fetcher = vi
+        .fn<typeof fetch>()
+        .mockImplementation(async () => Response.json({ slug: 'greece' }));
+      vi.stubGlobal('fetch', fetcher);
+
+      await f.service.publishGeography(
+        'ghestiroo',
+        'countries',
+        'gr',
+        publisher,
+      );
+      const request = fetcher.mock.calls[0]?.[1];
+      const payload = JSON.parse(String(request?.body));
+      const headers = new Headers(request?.headers);
+      expect(headers.get('x-erp-signature')).toBe(
+        createHmac('sha256', secret)
+          .update(`${headers.get('x-erp-timestamp')}.${String(request?.body)}`)
+          .digest('hex'),
+      );
+      expect(payload.galleryImages).toEqual([payload.mainImage]);
+      expect(payload.mainImage).not.toEqual(payload.flag);
+      await expect(
+        sharp(Buffer.from(payload.mainImage, 'base64')).metadata(),
+      ).resolves.toMatchObject({ format: 'webp', width: 1280, height: 800 });
+
+      attributes.sourceMainImage = '';
+      attributes.sourceGalleryImages = '';
+      await f.service.publishGeography(
+        'ghestiroo',
+        'countries',
+        'gr',
+        publisher,
+      );
+      expect(
+        JSON.parse(String(fetcher.mock.calls[1]?.[1]?.body)),
+      ).toMatchObject({
+        flag: payload.flag,
+        mainImage: null,
+        galleryImages: [],
+      });
+    } finally {
+      await rm(storageRoot, { recursive: true, force: true });
     }
   });
 
