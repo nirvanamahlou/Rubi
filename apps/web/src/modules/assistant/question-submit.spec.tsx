@@ -534,3 +534,25 @@ describe('HR guide in the Composer', () => {
     expect(h.fetcher).not.toHaveBeenCalled();
   });
 });
+
+it('reads a tracked HR request through Workbench and only shows its status', async () => {
+  h.path = '/hr';
+  vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '/api/v1');
+  h.fetcher.mockResolvedValueOnce(
+    Response.json({
+      data: [
+        {
+          id: 'leave-id',
+          trackingNumber: 'HR-123',
+          subject: 'private evidence',
+          status: 'APPROVED',
+          direction: 'outgoing',
+        },
+      ],
+    }),
+  );
+  await send('درخواست من کجاست؟ کد پیگیری HR-123');
+  expect(chat().at(-1)).toContain('وضعیت ثبت‌شده');
+  expect(chat().at(-1)).not.toContain('private evidence');
+  expect(h.fetcher).toHaveBeenCalledTimes(1);
+});

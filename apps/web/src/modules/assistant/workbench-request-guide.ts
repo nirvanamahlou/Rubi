@@ -30,6 +30,7 @@ export function describeWorkbenchRequest(
   message: string,
   rows: readonly WorkbenchRequestItemV1[],
   selectedId?: string | null,
+  statusOnly = false,
 ) {
   const text = normalizeQuestion(message);
   const inQuestion = (value?: string | null) =>
@@ -60,6 +61,11 @@ export function describeWorkbenchRequest(
       text: 'در کارتابل مجاز شما درخواستی مطابق این پرسش پیدا نشد. کد پیگیری را بررسی کنید.',
       href: '/workbench?tab=requests',
     };
+  if (statusOnly && candidates.length !== 1)
+    return {
+      text: 'نتیجهٔ یکتا پیدا نشد. کد را در کارتابل درخواست‌ها بررسی کنید.',
+      href: '/workbench?tab=requests',
+    };
   if (candidates.length !== 1)
     return {
       text: [
@@ -72,6 +78,12 @@ export function describeWorkbenchRequest(
     };
   const row = candidates[0]!;
   const status = row.status?.trim().toUpperCase();
+  if (statusOnly) {
+    return {
+      text: 'وضعیت ثبت‌شده: ' + workbenchRequestStatusLabel(status),
+      href: '/workbench?tab=requests&request=' + encodeURIComponent(row.id),
+    };
+  }
   const holder = [row.recipientName, row.destinationUnit]
     .filter(Boolean)
     .join('، ');

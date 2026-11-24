@@ -1528,6 +1528,7 @@ function AssistantComposerContent({
           message,
           data,
           pathname === '/workbench' ? searchParams.get('request') : undefined,
+          hrTrackedRequest,
         );
         previousAnswer.current = undefined;
         workbenchTopic.current = undefined;
