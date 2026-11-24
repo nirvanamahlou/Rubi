@@ -1,6 +1,6 @@
 # ممیزی مرحلهٔ پنجم راهنمای نورا
 
-موجودی این مرحله ۱۶۳ موضوع در هشت سند است. جدول محدودهٔ موجود را ثبت می‌کند. در ۱۴ بخش، متن راهنما با رفتار فرم یا کنترل مربوط تکمیل شد. مرجع هر اصلاح در ادامه آمده است و آزمون کاتالوگ وجود مرجع، مسیر راهنما و متن بازیابی‌شده را بررسی می‌کند.
+موجودی این مرحله ۱۶۵ موضوع در هشت سند است. جدول محدودهٔ موجود را ثبت می‌کند. در ۱۴ بخش، متن راهنما با رفتار فرم یا کنترل مربوط تکمیل شد. وجود فایل‌های مرجعِ ثبت‌شده در فرادادهٔ هر هشت سند نیز بررسی شد. مرجع هر اصلاح در ادامه آمده است و آزمون کاتالوگ وجود مرجع، مسیر راهنما و متن بازیابی‌شده را بررسی می‌کند.
 
 | ماژول | موضوع‌های موجود | پوشش | بخش‌های به‌روزشده |
 | --- | --- | --- | --- |
@@ -8,9 +8,9 @@
 | مشتریان حقیقی | 12 | شاخص و فهرست، ثبت و پروندهٔ ۳۶۰، رضایت و روابط، موارد مشابه، مدارک و اکسل | [register](../assistant/guides/b2c.md#register)، [duplicate](../assistant/guides/b2c.md#duplicate) |
 | تعریف تور و خدمات | 10 | تعریف و ویرایش، نوبت و ظرفیت، هتل و قیمت، انتشار و توقف | [price](../assistant/guides/tour.md#price)، [period](../assistant/guides/tour.md#period) |
 | کال‌سنتر | 22 | تماس، ثبت نتیجه، صف و ارجاع، پرونده، گزارش، صوت و اعلان | [call-center-assignment](../assistant/guides/call-center.md#call-center-assignment)، [call-center-notification](../assistant/guides/call-center.md#call-center-notification) |
-| اطلاعات پایه | 37 | مراجع جغرافیا، بانک و ارز، اشخاص حقوقی، سفر و هتل، فایل و تاریخچه | [hotels](../assistant/guides/master-data.md#hotels) |
+| اطلاعات پایه | 38 | مراجع جغرافیا، بانک و ارز، اشخاص حقوقی، سفر و هتل، فایل و تاریخچه | [hotels](../assistant/guides/master-data.md#hotels) |
 | اسناد و فایل | 23 | رده‌بندی، بارگذاری و نسخه، مشاهده، اشتراک، نگهداری و آرشیو | [upload](../assistant/guides/documents.md#upload)، [download](../assistant/guides/documents.md#download) |
-| میزکار من | 35 | درخواست و منابع انسانی، پیام و فایل، یادداشت، تقویم، پکیج و حساب | [daily-packages](../assistant/guides/workbench.md#daily-packages) |
+| میزکار من | 36 | درخواست و منابع انسانی، پیام و فایل، یادداشت، تقویم، پکیج و حساب | [daily-packages](../assistant/guides/workbench.md#daily-packages) |
 | مشتریان سازمانی | 15 | هویت و ارتباطات، توافق و نرخ، اعتبار، مدارک، فعالیت و اسناد فروش | [credit](../assistant/guides/b2b.md#credit)، [finance](../assistant/guides/b2b.md#finance) |
 
 ## مراجع اصلاح‌ها
