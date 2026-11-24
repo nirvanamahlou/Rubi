@@ -1,3 +1,7 @@
+## WEBSITE-DATED-TOUR-CONTRACTS-1124 — PC-D — ACTIVE
+
+Own the additive site-commerce dated-tour draft route, authoritative rate and hotel-itinerary validation, and coordinated Jahan Bastan and Ghestiroo checkout callers. Preserve payment verification, floating-tour policy, and other publishing changes. No migration or dependency changes.
+
 ## GEOGRAPHY-SITE-IMAGES-1124 — PC-D — ACTIVE
 
 Own the city and country photo fields, geography dialog, additive migration, and signed profile delivery of the main photo and gallery. Coordinate the three website receivers and verify the publication contract.
