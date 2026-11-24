@@ -163,6 +163,20 @@ afterEach(() => {
 });
 
 describe('actual Composer submit routing and transport', () => {
+  it.each(['/workbench', '/sales', '/finance/delivery'])(
+    'clarifies the sales period and reads the same ERP report from %s',
+    async (path) => {
+      h.path = path;
+      await send('مجموع فروش ماه اخیر رو بده');
+      expect(h.fetcher).not.toHaveBeenCalled();
+      expect(chat().at(-1)).toContain('۳۰ روز کامل گذشته');
+      await send('۳۰ روز گذشته');
+      expect(h.fetcher).toHaveBeenCalledOnce();
+      const [url, init] = h.fetcher.mock.calls[0]!;
+      expect(url).toBe('/api/assistant/v3/conversation');
+      expect(JSON.parse(init.body).message).toBe('فروش 30 روز گذشته چقدر است؟');
+    },
+  );
   it('answers a supported HR aggregate through the authenticated ERP dashboard only', async () => {
     h.company = 'ALL';
     h.path = '/workbench';
@@ -198,7 +212,7 @@ describe('actual Composer submit routing and transport', () => {
     );
     const field = render().find((node) => node.type === 'textarea')!;
     (field.props.onChange as (event: unknown) => void)({
-      target: { value: 'سلام' },
+      target: { value: 'تعداد قراردادها چقدر است؟' },
     });
     const form = render().find((node) => node.type === 'form')!;
     const submit = form.props.onSubmit as (event: unknown) => void;
@@ -324,7 +338,7 @@ describe('actual Composer submit routing and transport', () => {
   it('keeps unsupported workflow questions local', async () => {
     await send('چطور فرایند ناشناخته را انجام بدهم؟');
     expect(h.fetcher).not.toHaveBeenCalled();
-    expect(chat().at(-1)).toBe(assistantCopy.internalSourceFallback[0]);
+    expect(chat().at(-1)).toContain('کدام فرایند، پرونده یا گزارش روبی');
   });
   it('does not reuse data context after an authorization denial', async () => {
     await send('تعداد قراردادها را بگو');
@@ -357,13 +371,16 @@ describe('actual Composer submit routing and transport', () => {
   it('does not match پرسیدم to receipt and clarifies why without prior evidence', async () => {
     await send('چرا؟');
     expect(h.fetcher).not.toHaveBeenCalled();
+    h.fetcher.mockResolvedValueOnce(Response.json({ status: 'unmatched' }));
     await send('پرسیدم چجور قرارداد بزنم؟');
-    expect(h.fetcher).not.toHaveBeenCalled();
+    expect(h.fetcher.mock.calls.map(([url]) => url)).toEqual([
+      '/api/assistant/v3/guidance',
+    ]);
     expect(chat().at(-1)).toContain('مراحل ثبت قرارداد جدید');
     expect(chat().at(-1)).not.toContain('بارگذاری و پیگیری رسید');
   });
   it('shows both data and grounded correction guidance, but never replaces failed data with guidance', async () => {
-    await send('این مبلغ از کجا آمده و از کجا اصلاحش کنم؟');
+    await send('این مبلغ قرارداد از کجا آمده و از کجا اصلاحش کنم؟');
     expect(h.fetcher).toHaveBeenCalledOnce();
     expect(chat().at(-1)).toContain('شواهد تازه');
     expect(chat().at(-1)).toContain('اصلاح');
@@ -374,7 +391,7 @@ describe('actual Composer submit routing and transport', () => {
         { status: 429 },
       ),
     );
-    await send('این مبلغ از کجا آمده و از کجا اصلاحش کنم؟');
+    await send('این مبلغ قرارداد از کجا آمده و از کجا اصلاحش کنم؟');
     expect(chat()).toHaveLength(before);
   });
   it.each(['company', 'user'])(
@@ -433,5 +450,62 @@ describe('flight capacity guide in the Composer', () => {
     await send('چند صندلی برای پرواز TK۱۲۳ در ۲۰۲۶-۱۲-۰۱ مانده؟');
     expect(chat().at(-1)).toContain('دسترسی مدیریت بلیط');
     expect(h.fetcher).not.toHaveBeenCalled();
+  });
+});
+
+describe('Reservations catalogue in the Composer', () => {
+  it('answers locally and continues after navigation without calling the model', async () => {
+    h.path = '/reservations';
+    await send('چطور خروجی مانیفست بگیرم؟');
+    expect(chat().at(-1)).toContain('رزرواسیون ← MANIFEST');
+
+    h.path = '/workbench';
+    await send('بعدش چی؟');
+    expect(chat().at(-1)).toContain('مسافر جامانده');
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+
+  it('drops the previous topic when the selected company changes', async () => {
+    h.path = '/reservations';
+    await send('چطور خروجی مانیفست بگیرم؟');
+    expect(chat().at(-1)).toContain('MANIFEST');
+
+    h.company = 'company-b';
+    await send('بعدش چی؟');
+    expect(chat().join('\n')).not.toContain('مسافر جامانده');
+  });
+});
+
+describe('hotel purchase guide in the Composer', () => {
+  const id = '12345678-1234-4234-8234-123456789abc';
+
+  it('reads only the existing credentialed GET endpoint for an exact identifier', async () => {
+    h.path = '/reservations/hotel-rates';
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '/api/v1');
+    h.fetcher.mockResolvedValueOnce(
+      Response.json({
+        cityName: 'شهر آزمایشی',
+        version: 2,
+        checkIn: '2026-11-24',
+        checkOut: '2026-11-26',
+      }),
+    );
+    await send(`وضعیت این بسته ${id}`);
+    expect(chat().at(-1)).toContain('نسخهٔ ذخیره‌شده: ۲');
+    expect(h.fetcher).toHaveBeenCalledTimes(1);
+    expect(h.fetcher).toHaveBeenCalledWith(
+      `/api/v1/reservations/hotel-rates/packs/${id}`,
+      expect.objectContaining({ credentials: 'include' }),
+    );
+    expect(h.fetcher.mock.calls[0]?.[1]?.method).toBeUndefined();
+  });
+
+  it('reports a denied read without making a status claim', async () => {
+    h.path = '/reservations/hotel-rates';
+    h.fetcher.mockResolvedValueOnce(Response.json({}, { status: 403 }));
+    await send(`وضعیت این بسته ${id}`);
+    expect(chat().at(-1)).toContain('دسترسی این بخش برای حساب شما فعال نیست');
+    expect(chat().at(-1)).not.toContain('نسخهٔ ذخیره‌شده:');
+    expect(h.fetcher).toHaveBeenCalledTimes(1);
   });
 });

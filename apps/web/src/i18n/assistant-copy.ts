@@ -1,5 +1,17 @@
 export type AssistantText = readonly [string, string];
 export const assistantCopy = {
+  pilotFollowupClarification: [
+    'منظورتان پیگیری در امور مشتریان، کال‌سنتر یا میزکار من است؟',
+    'Do you mean follow-up in Customer Affairs, Call Center, or My Workbench?',
+  ],
+  pilotTrackingNumberRequired: [
+    'شمارهٔ پیگیری درخواست را بفرستید. برای دیدن مسئول فعلی، در امور مشتریان ← درخواست‌های مشتریان، جزئیات همان پرونده را باز کنید.',
+    'Send the request tracking number. To see the current assignee, open the case details from Customer Affairs → Customer Requests.',
+  ],
+  pilotGuideInsufficient: [
+    'برای این سؤال راهنمای قابل استناد در دسترس نیست.',
+    'There is no verified guide for this question.',
+  ],
   internalSourceFallback: [
     'این پاسخ از منابع داخلی روبی قابل تأیید نیست. نام پنل، مرحلهٔ کار یا گزارش موردنظر را مشخص کنید.',
     'This answer could not be verified from internal Rubi sources. Specify the panel, workflow step, or report.',
