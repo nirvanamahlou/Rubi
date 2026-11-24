@@ -40,7 +40,12 @@ input.on('line',async line=>{
 
 function remoteProcess() {
   const expected = Object.fromEntries(
-    ['groq-credentials.mjs', 'agent-config.mjs', 'errors.mjs'].map((name) => [
+    [
+      'groq-credentials.mjs',
+      'agent-config.mjs',
+      'errors.mjs',
+      'openai-responses.mjs',
+    ].map((name) => [
       name,
       createHash('sha256')
         .update(
@@ -58,6 +63,10 @@ function remoteProcess() {
       'utf8',
     )
       .replaceAll("'./errors.mjs'", "'file:///nora-source/errors.mjs'")
+      .replaceAll(
+        "'./openai-responses.mjs'",
+        "'file:///nora-source/openai-responses.mjs'",
+      )
       .replaceAll(
         "'./groq-credentials.mjs'",
         "'file:///nora-source/groq-credentials.mjs'",

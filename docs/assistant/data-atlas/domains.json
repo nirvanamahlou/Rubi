@@ -1,0 +1,268 @@
+[
+  {
+    "family": "sales",
+    "title": "فروش و قرارداد",
+    "owner": "Sales",
+    "concept": "قرارداد فعال، مبلغ پس از تخفیف، مسافر و هتل فروخته‌شده",
+    "sources": [
+      "nora_agent.contracts",
+      "nora_agent.amounts",
+      "sales_by_organization",
+      "route_passengers"
+    ],
+    "status": "قابل استفاده"
+  },
+  {
+    "family": "reservations",
+    "title": "رزرواسیون، صدور و تحویل",
+    "owner": "Reservations",
+    "concept": "خرید ثبت‌شده، آماده‌بودن تحویل، زمان چرخه و مانیفست",
+    "sources": [
+      "purchase_by_supplier",
+      "reservation_delivery_readiness",
+      "reservation_cycle_time",
+      "tickets_manifest"
+    ],
+    "status": "قابل استفاده"
+  },
+  {
+    "family": "procurement",
+    "title": "خرید و تأمین، تنخواه",
+    "owner": "Procurement",
+    "concept": "تعداد درخواست‌های خرید؛ شمارش درخواست معادل پرداخت تنخواه نیست",
+    "sources": [
+      "procurement-request-count",
+      "supplier_payment_queue"
+    ],
+    "status": "قابل استفاده"
+  },
+  {
+    "family": "ticket-catalog",
+    "title": "تعریف پرواز، بلیت و ظرفیت",
+    "owner": "Ticket Catalog",
+    "concept": "ظرفیت و پیشنهاد فعال؛ محاسبه سود قیمت‌گذاری به داده‌های مالی تکمیلی نیاز دارد",
+    "sources": [
+      "ticket_capacity",
+      "active-offers"
+    ],
+    "status": "قابل استفاده"
+  },
+  {
+    "family": "master-data",
+    "title": "اطلاعات پایه، هتل، شهر و کشور",
+    "owner": "Master Data",
+    "concept": "نام مرجع، نرخ هتل، کشور شهر؛ نرخ خرید از مبلغ فروش جدا است",
+    "sources": [
+      "hotel_rate_comparison"
+    ],
+    "status": "قابل استفاده"
+  },
+  {
+    "family": "package-pricing",
+    "title": "تعریف تور، قیمت‌گذاری و پک جنریتور",
+    "owner": "Package Pricing",
+    "concept": "ترکیب پکیج و نسخه منتشرشده؛ اتصال عددی مستقل باید با مالک بررسی شود",
+    "sources": [],
+    "status": "مستند ولی متصل‌نشده"
+  },
+  {
+    "family": "customers",
+    "title": "مشتریان شخصی",
+    "owner": "Customers",
+    "concept": "مشتریان ثبت‌نام‌شده و رشد پرتفوی؛ اطلاعات تماس محدود است",
+    "sources": [
+      "registered-customers",
+      "customer_portfolio_growth"
+    ],
+    "status": "قابل استفاده"
+  },
+  {
+    "family": "b2b",
+    "title": "مشتریان سازمانی",
+    "owner": "B2B",
+    "concept": "عملکرد فروش مشتریان سازمانی از قراردادها؛ سقف اعتبار نیازمند منبع مربوط است",
+    "sources": [
+      "agency_performance",
+      "agency_contract_risk"
+    ],
+    "status": "قابل استفاده"
+  },
+  {
+    "family": "customer-affairs",
+    "title": "امور مشتریان و کال‌سنتر",
+    "owner": "Customer Affairs",
+    "concept": "لید، درخواست پشتیبانی، مهلت رسیدگی و انتساب تماس",
+    "sources": [
+      "new-leads",
+      "customer_service_sla",
+      "employee-call-count",
+      "employee-connected-call-count"
+    ],
+    "status": "قابل استفاده"
+  },
+  {
+    "family": "site-commerce",
+    "title": "سفارش‌های وب‌سایت",
+    "owner": "Site Commerce",
+    "concept": "سفارش وب و تحویل کاتالوگ؛ تبدیل سفارش وب به قرارداد مستلزم تطبیق شناسه‌ها است",
+    "sources": [],
+    "status": "نیازمند تطبیق"
+  },
+  {
+    "family": "finance",
+    "title": "خزانه‌داری و امور مالی",
+    "owner": "Finance",
+    "concept": "گردش نقدینگی، چک، مانده؛ وصول قرارداد فقط از منبع پرداخت مجاز",
+    "sources": [
+      "cash_position",
+      "due_checks",
+      "receivables_payables"
+    ],
+    "status": "مستند ولی متصل‌نشده"
+  },
+  {
+    "family": "accounting",
+    "title": "حسابداری",
+    "owner": "Accounting",
+    "concept": "دفاتر مجاز و اسناد قطعی بر مبنای تاریخ سند؛ مانده دفتر تعریف مستقل دارد",
+    "sources": [
+      "accounting-books",
+      "posted-accounting-journals",
+      "account_balances"
+    ],
+    "status": "قابل استفاده"
+  },
+  {
+    "family": "hr",
+    "title": "منابع انسانی",
+    "owner": "HR",
+    "concept": "روز کارکرد و اضافه‌کاری ثبت‌شده؛ پرونده خصوصی و پزشکی محدود است",
+    "sources": [
+      "employee-overtime",
+      "employee-workdays"
+    ],
+    "status": "قابل استفاده"
+  },
+  {
+    "family": "workbench",
+    "title": "میزکار من",
+    "owner": "Workbench",
+    "concept": "کارهای سررسیدشدهٔ مجاز؛ یادداشت و متن بازخورد خصوصی",
+    "sources": [
+      "workbench_due_actions"
+    ],
+    "status": "قابل استفاده"
+  },
+  {
+    "family": "documents",
+    "title": "اسناد و فایل",
+    "owner": "Documents",
+    "concept": "تعداد و وضعیت سند؛ محتوای فایل، کلید ذخیره و دسترسی به باینری محدود است",
+    "sources": [
+      "document-count",
+      "document_compliance"
+    ],
+    "status": "قابل استفاده"
+  },
+  {
+    "family": "correspondence",
+    "title": "مکاتبات",
+    "owner": "Correspondence",
+    "concept": "نامه، پیوست و تحویل؛ بدون انتقال متن نامه",
+    "sources": [],
+    "status": "محدود"
+  },
+  {
+    "family": "messaging",
+    "title": "پیام‌رسان داخلی",
+    "owner": "Messaging",
+    "concept": "عضویت و گفت‌وگو؛ محتوای پیام خصوصی",
+    "sources": [],
+    "status": "محدود"
+  },
+  {
+    "family": "notifications",
+    "title": "اعلان‌ها",
+    "owner": "Notifications",
+    "concept": "اعلان کاربر و وضعیت خواندن",
+    "sources": [],
+    "status": "محدود"
+  },
+  {
+    "family": "marketing",
+    "title": "بازاریابی",
+    "owner": "Marketing",
+    "concept": "تعداد کمپین فعال؛ اثربخشی مالی شاخص مستقلی است",
+    "sources": [
+      "active-marketing-campaigns",
+      "marketing_performance"
+    ],
+    "status": "قابل استفاده"
+  },
+  {
+    "family": "tasks",
+    "title": "کارها و وظایف",
+    "owner": "Automation",
+    "concept": "وظایف و وضعیت فرایند",
+    "sources": [],
+    "status": "مستند ولی متصل‌نشده"
+  },
+  {
+    "family": "settings",
+    "title": "تنظیمات",
+    "owner": "Settings",
+    "concept": "پیکربندی سامانه",
+    "sources": [],
+    "status": "محدود"
+  },
+  {
+    "family": "system-management",
+    "title": "مدیریت سامانه",
+    "owner": "System Management",
+    "concept": "عملیات مدیریتی، ممیزی و سلامت",
+    "sources": [],
+    "status": "محدود"
+  },
+  {
+    "family": "iam",
+    "title": "هویت و دسترسی",
+    "owner": "IAM",
+    "concept": "نقش، مجوز، نشست و هویت؛ مرجع کنترل دسترسی داخلی",
+    "sources": [],
+    "status": "محدود"
+  },
+  {
+    "family": "integrations",
+    "title": "یکپارچه‌سازی‌ها",
+    "owner": "Integrations",
+    "concept": "تحویل پیام بیرونی و وضعیت فنی، بدون بدنه و اعتبارنامه",
+    "sources": [],
+    "status": "محدود"
+  },
+  {
+    "family": "legal-entities",
+    "title": "شرکت و شخصیت حقوقی",
+    "owner": "Legal Entities",
+    "concept": "دامنهٔ شرکت انتخاب‌شده، هویت و برند",
+    "sources": [],
+    "status": "محدود"
+  },
+  {
+    "family": "reporting",
+    "title": "گزارش‌ها و داشبورد",
+    "owner": "Reporting",
+    "concept": "تعریف سنجه، فیلتر، ارز و گزارش ممیزی خروجی خود کاربر",
+    "sources": [
+      "export_audit"
+    ],
+    "status": "قابل استفاده"
+  },
+  {
+    "family": "database",
+    "title": "مهاجرت‌ها",
+    "owner": "Database",
+    "concept": "نسخهٔ ساختار، خارج از گزارش‌های کسب‌وکار",
+    "sources": [],
+    "status": "محدود"
+  }
+]
