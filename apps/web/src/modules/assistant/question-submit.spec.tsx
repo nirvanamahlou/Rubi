@@ -415,3 +415,23 @@ describe('actual Composer submit routing and transport', () => {
     expect(chat()).toHaveLength(1);
   });
 });
+
+describe('flight capacity guide in the Composer', () => {
+  it('answers and continues from the catalogue without contacting the model', async () => {
+    h.path = '/ticket-management';
+    await send('چطور بلیط جدید تعریف کنم؟');
+    expect(chat().at(-1)).toContain('رزرواسیون ← تعریف و ظرفیت پرواز');
+
+    h.path = '/workbench';
+    await send('بعدش چی؟');
+    expect(chat().at(-1)).toContain('روز بعد');
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+
+  it('does not call the managed reader without the native management permission', async () => {
+    h.path = '/ticket-management';
+    await send('چند صندلی برای پرواز TK۱۲۳ در ۲۰۲۶-۱۲-۰۱ مانده؟');
+    expect(chat().at(-1)).toContain('دسترسی مدیریت بلیط');
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+});

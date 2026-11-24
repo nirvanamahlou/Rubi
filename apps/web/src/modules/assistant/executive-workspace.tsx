@@ -74,6 +74,12 @@ import {
   resolveReservationReportQuestion,
   type ReservationReportTopic,
 } from './reservation-report-guide';
+import {
+  flightCapacityHref,
+  readFlightCapacity,
+  renderFlightCapacityGuide,
+  resolveFlightCapacityQuestion,
+} from './flight-capacity-guide';
 import { normalizeQuestion } from './question-text';
 import { AssistantResponseContent } from './response-content';
 import { formatAssistantSources } from './response-presentation';
@@ -475,9 +481,13 @@ function AssistantComposerContent({
   const lastVersion = useRef<number | undefined>(undefined);
   const contractId = useRef<string | undefined>(undefined);
   const guideTopic = useRef<string | undefined>(undefined);
+  const flightCapacityTopic = useRef<string | undefined>(undefined);
   const previousAnswer = useRef<AnswerContext | undefined>(undefined);
   useEffect(() => {
-    if (denied) previousAnswer.current = undefined;
+    if (denied) {
+      previousAnswer.current = undefined;
+      flightCapacityTopic.current = undefined;
+    }
   }, [denied]);
   useEffect(() => {
     const resetRecord = () => {
@@ -585,6 +595,65 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    const flightCapacity = resolveFlightCapacityQuestion(
+      message,
+      pathname,
+      flightCapacityTopic.current,
+    );
+    flightCapacityTopic.current = undefined;
+    if (flightCapacity) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      guideTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      const link = { href: flightCapacityHref, label: 'تعریف و ظرفیت پرواز' };
+      if (flightCapacity.kind === 'guide') {
+        flightCapacityTopic.current = flightCapacity.topic.id;
+        replyLocally(
+          renderFlightCapacityGuide(
+            flightCapacity.topic,
+            flightCapacity.followUp,
+          ),
+          undefined,
+          undefined,
+          documentGuideLink(link, 'flight-capacity', flightCapacity.topic.id),
+        );
+      } else if (flightCapacity.kind === 'clarify') {
+        replyLocally(flightCapacity.text, undefined, undefined, link);
+      } else if (!actor?.permissions.includes('ticket_catalog.manage')) {
+        replyLocally(
+          'خواندن وضعیت پرواز به دسترسی مدیریت بلیط نیاز دارد.',
+          undefined,
+          undefined,
+          link,
+        );
+      } else {
+        const controller = new AbortController();
+        pending.current = controller;
+        setActionState('loading');
+        try {
+          const answer = await readFlightCapacity(
+            flightCapacity.lookup,
+            actor.branchIds,
+            controller.signal,
+          );
+          if (!controller.signal.aborted)
+            replyLocally(answer, undefined, undefined, link);
+        } catch {
+          if (!controller.signal.aborted) {
+            replyLocally(
+              'دریافت وضعیت پرواز ناموفق بود. دسترسی و اتصال را در پنل بررسی کنید.',
+              undefined,
+              undefined,
+              link,
+            );
+          }
+        } finally {
+          if (pending.current === controller) setActionState(null);
+        }
+      }
+      return;
+    }
     const operationalMetric = resolveOperationalMetric(message);
     if (operationalMetric) {
       pending.current?.abort();
