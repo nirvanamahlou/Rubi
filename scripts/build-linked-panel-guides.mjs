@@ -150,7 +150,16 @@ export function buildLinkedPanelGuides(directory, check) {
       }));
     if (format === 'text')
       products.set(output, { ...copy, topics: textTopics() });
-    if (format === 'purchase') products.set(output, textTopics());
+    if (format === 'purchase')
+      products.set(
+        output,
+        topics.map(({ id, title, steps, fields }) => ({
+          id,
+          title,
+          ...fields,
+          steps,
+        })),
+      );
     if (format === 'documents') {
       products.set(
         output,

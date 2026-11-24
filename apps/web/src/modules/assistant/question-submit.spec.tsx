@@ -509,3 +509,14 @@ describe('hotel purchase guide in the Composer', () => {
     expect(h.fetcher).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('Purchase guide depth in the Composer', () => {
+  it('answers a floating ticket question locally from another page and follows up', async () => {
+    h.path = '/workbench';
+    await send('خرید بلیط شناور رو چطور ثبت کنم؟');
+    expect(chat().at(-1)).toContain('خرید و تأمین ← بلیط شناور');
+    await send('بعدش چی؟');
+    expect(chat().at(-1)).toContain('ارز خرید');
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+});

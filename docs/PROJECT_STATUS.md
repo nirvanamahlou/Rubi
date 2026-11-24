@@ -10735,3 +10735,5 @@ Archived dashboard widget availability reasons and expected data in docs/DASHBOA
 2026-11-24 PC-C — NORA-HOTEL-PURCHASE-GUIDE-1124: Added Nora's hotel purchase guide, local routing, scoped read of exact pack identifiers, and coverage matrix. Stacked on PR #1915. See docs/tasks/NORA-HOTEL-PURCHASE-GUIDE-1124.md.
 
 2026-11-24 PC-C — NORA-FLIGHT-CAPACITY-GUIDE-1124: Added the flight capacity guide, scoped managed-offer read and coverage matrix. See docs/tasks/NORA-FLIGHT-CAPACITY-GUIDE-1124.md.
+
+- نورا: پوشش راهنمای خرید و تأمین با موضوع‌های تخصصی هتل، بلیت شناور، ترانسفر، بیمه و ثبت نامطمئن تکمیل شد. جزئیات پذیرش در [سند آزمون](tasks/NORA-PURCHASE-DEPTH-1124.md) ثبت شده‌اند.
