@@ -2,9 +2,13 @@
 
 Stage 6 verified authenticated guide cases, account and company isolation, record clarification, translation coverage and reservation report-to-XLSX parity with three synthetic rows. The draft release PR remains gated on final CI and separate rollout approval. Evidence is in docs/tasks/NORA-GUIDE-RELEASE-ACCEPTANCE-1124.md.
 
+
+
 ## NORA-EXISTING-GUIDES-AUDIT-1124 — PC-C
 
 Stage 5 inventories eight existing guides and updates 14 sections with source-backed steps, preserving existing routes and topic IDs. Coverage, source references and Stage 6 acceptance boundaries are in docs/tasks/NORA-EXISTING-GUIDES-AUDIT-1124.md.
+
+
 
 
 
