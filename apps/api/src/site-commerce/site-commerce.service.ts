@@ -56,6 +56,11 @@ import { assertFloatingFlightAirports } from '../sales/floating-flight-airports'
 import { websiteFlightQuotes } from './ticket-quote';
 import { assertWebsiteBookable, websitePriceOnly } from './price-only-policy';
 import {
+  datedTourDraft,
+  validateDatedTourBooking,
+  type DatedTourBooking,
+} from './dated-tour-booking';
+import {
   floatingBookingIdentity,
   floatingNativeDraft,
   floatingWebsiteRooms,
@@ -1228,6 +1233,7 @@ export class SiteCommerceService {
     site: string,
     input: SalesContractCreateRequest,
     actor: AuthenticatedActor,
+    canonicalDatedTour = false,
   ) {
     const tourIds = [
       ...new Set(
@@ -1244,7 +1250,7 @@ export class SiteCommerceService {
         }));
     if (!resources.length || tourIds.length > 1)
       throw new BadRequestException('محصول ERP را انتخاب کنید.');
-    if (site === 'ghestiroo' && tourIds.length)
+    if (site === 'ghestiroo' && tourIds.length && !canonicalDatedTour)
       throw new ForbiddenException('رزرو تور برای قسطی‌رو فعال نیست.');
     for (const resource of resources) {
       const published = await this.db.client.websitePublication.findUnique({
@@ -1257,7 +1263,16 @@ export class SiteCommerceService {
           },
         },
       });
-      if (!published?.enabled || published.salesStopped)
+      if (
+        !published?.enabled ||
+        published.salesStopped ||
+        (resource.kind === 'tour' &&
+          ((published.presentation &&
+            websitePresentation(published.presentation).previewOnly) ||
+            (site === 'ghestiroo' &&
+              (published.presentation as { operatorApproved?: boolean } | null)
+                ?.operatorApproved !== true)))
+      )
         throw new ForbiddenException('این محصول برای سایت منتشر نشده است.');
     }
     if (tourIds.length) {
@@ -1437,11 +1452,58 @@ export class SiteCommerceService {
     };
   }
 
+  async draftDatedTour(
+    site: string,
+    externalId: string,
+    input: DatedTourBooking,
+    actor: AuthenticatedActor,
+  ) {
+    const scoped = this.scoped(site, actor);
+    externalOrderId(externalId);
+    validateDatedTourBooking(input);
+    const branchId = scoped.branchIds[0]!;
+    const publication = await this.db.client.websitePublication.findFirst({
+      where: {
+        id: input.publicationId,
+        siteCode: site,
+        kind: 'tour',
+        branchId,
+      },
+    });
+    if (
+      !publication?.enabled ||
+      publication.salesStopped ||
+      (publication.presentation &&
+        websitePresentation(publication.presentation).previewOnly) ||
+      (site === 'ghestiroo' &&
+        (publication.presentation as { operatorApproved?: boolean } | null)
+          ?.operatorApproved !== true)
+    )
+      throw new ForbiddenException('این محصول برای سایت منتشر نشده است.');
+    const tour = await this.websiteTour(publication.resourceId, scoped);
+    if (tour.isActive === false || tour.isDeleted === true)
+      throw new ConflictException('این محصول برای سایت منتشر نشده است.');
+    const pricing = await this.packages.saleCatalog(
+      tour.id,
+      scoped,
+      branchId,
+      true,
+    );
+    return this.draft(
+      site,
+      externalId,
+      datedTourDraft(input, tour, pricing.data),
+      actor,
+      true,
+    );
+  }
+
   async draft(
     site: string,
     externalId: string,
     input: SalesContractCreateRequest,
     actor: AuthenticatedActor,
+    canonicalDatedTour = false,
   ) {
     const scoped = this.scoped(site, actor);
     externalOrderId(externalId);
@@ -1469,7 +1531,7 @@ export class SiteCommerceService {
       scoped,
     );
     if (!recovered && !checkout)
-      await this.assertPublished(site, input, scoped);
+      await this.assertPublished(site, input, scoped, canonicalDatedTour);
     const ticketTargetId = input.services.some(
       (s) => s.metadata?.tourDepartureId,
     )
