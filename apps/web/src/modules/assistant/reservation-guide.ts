@@ -6,6 +6,9 @@ import {
 } from './question-text';
 
 type Topic = (typeof catalog)[number];
+type ReservationGuideIntent =
+  | { topic: Topic; followUp: boolean; inspection: boolean }
+  | { clarification: string };
 
 const panels = new Set([
   '/reservations',
@@ -19,7 +22,7 @@ export function resolveReservationGuide(
   message: string,
   pathname: string | null,
   previous?: string,
-) {
+): ReservationGuideIntent | undefined {
   const text = normalizeQuestion(message);
   const followUp = /^(?:بعدش چی|بعدش|ادامه بده|مرحله بعد چیه)$/.test(text);
   if (followUp && previous) {

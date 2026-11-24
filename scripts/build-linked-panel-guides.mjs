@@ -131,9 +131,10 @@ export function buildLinkedPanelGuides(directory, check) {
     if (format === 'documents') {
       products.set(
         output,
-        topics.map(({ id, title, steps, fields }) => ({
+        topics.map(({ id, title, href, steps, fields }) => ({
           id,
           title,
+          ...(domain === 'reservations' ? { href } : {}),
           steps,
           ...fields,
         })),
