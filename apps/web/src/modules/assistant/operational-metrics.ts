@@ -118,12 +118,19 @@ const periods = {
   'این ماه': { range: 'month', label: 'ماه جاری شمسی تا اکنون' },
   'ماه جاری': { range: 'month', label: 'ماه جاری شمسی تا اکنون' },
 } as const;
+const currentPeriod = { range: 'current', label: 'حال حاضر' } as const;
+type OperationalMetricRequest = {
+  metric: (typeof metrics)[number];
+  period: (typeof periods)[keyof typeof periods] | typeof currentPeriod | null;
+};
 
 const questionPrefix = /^(?:لطفا )?/u;
 const questionSuffix =
   /(?: (امروز|این هفته|هفته جاری|این ماه|ماه جاری))?(?: (?:چقدر بود|چقدر است|چقدره|چند تاست|چند بود|رو بگو|را بگو|بگو))?$/u;
 
-export function resolveOperationalMetric(question: string) {
+export function resolveOperationalMetric(
+  question: string,
+): OperationalMetricRequest | null {
   const text = normalizeQuestion(question);
   for (const metric of metrics) {
     // Only admit complete recognized queries. Extra filters must never be ignored.
@@ -133,9 +140,7 @@ export function resolveOperationalMetric(question: string) {
     ).exec(text);
     if (!match) continue;
     if ('snapshot' in metric)
-      return match[1]
-        ? null
-        : { metric, period: { range: 'current', label: 'حال حاضر' } as const };
+      return match[1] ? null : { metric, period: currentPeriod };
     const period = periods[match[1] as keyof typeof periods];
     return period ? { metric, period } : { metric, period: null };
   }
@@ -143,7 +148,7 @@ export function resolveOperationalMetric(question: string) {
 }
 
 export async function readOperationalMetric(
-  request: NonNullable<ReturnType<typeof resolveOperationalMetric>>,
+  request: OperationalMetricRequest,
   company: string | undefined,
   signal: AbortSignal,
   fetcher = fetch,
