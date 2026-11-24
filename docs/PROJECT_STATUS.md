@@ -10708,3 +10708,5 @@ Archived dashboard widget availability reasons and expected data in docs/DASHBOA
 2026-11-24 PC-C — NORA-RESERVATION-GUIDE-1124: Added the versioned Reservations guide, local Composer dispatch and coverage matrix. Existing report record reads remain scoped to the current session. See docs/tasks/NORA-RESERVATION-GUIDE-1124.md.
 
 2026-11-24 PC-C — NORA-HOTEL-PURCHASE-GUIDE-1124: Added Nora's hotel purchase guide, local routing, scoped read of exact pack identifiers, and coverage matrix. Stacked on PR #1915. See docs/tasks/NORA-HOTEL-PURCHASE-GUIDE-1124.md.
+
+2026-11-24 PC-C — NORA-FLIGHT-CAPACITY-GUIDE-1124: Added the flight capacity guide, scoped managed-offer read and coverage matrix. See docs/tasks/NORA-FLIGHT-CAPACITY-GUIDE-1124.md.

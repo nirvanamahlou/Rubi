@@ -2,6 +2,11 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
 const outputs = {
+  'flight-capacity': [
+    'flight-capacity.generated',
+    '/ticket-management',
+    'documents',
+  ],
   'hotel-purchase-rates': [
     'hotel-purchase-rates.generated',
     '/reservations/hotel-rates',

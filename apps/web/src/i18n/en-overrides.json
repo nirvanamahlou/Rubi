@@ -7131,5 +7131,13 @@
   "بسته در دامنهٔ قابل مشاهدهٔ این نشست پیدا نشد.": "The pack was not found within this session’s accessible scope.",
   "دریافت وضعیت بسته ناموفق بود.": "The pack status could not be retrieved.",
   "منظورتان قیمت خرید هتل، قیمت فروش تور یا مبلغ یک قرارداد است؟": "Do you mean a hotel purchase rate, a tour selling price, or a contract amount?",
-  "نسخهٔ ذخیره‌شده:": "Saved version:"
+  "نسخهٔ ذخیره‌شده:": "Saved version:",
+  "پرواز منطبق در فهرست قابل مشاهدهٔ مدیریت بلیط پیدا نشد. شماره، تاریخ، کلاس و شعبه را در لود بررسی کنید.": "No matching flight was found in the accessible ticket management list. Check the flight number, date, class, and branch.",
+  "چند ردیف منطبق وجود دارد. اگر کلاس را مشخص نکرده‌اید، آن را بنویسید. برای ردیف‌های یک کلاس، شعبه و مسیر را در لود بررسی کنید.": "Multiple rows match. Specify the class if you have not already. For rows in the same class, verify the branch and route in the load.",
+  "خواندن وضعیت پرواز به دسترسی مدیریت بلیط نیاز دارد.": "Ticket management access is required to read flight status.",
+  "دریافت وضعیت پرواز ناموفق بود. دسترسی و اتصال را در پنل بررسی کنید.": "Flight status could not be retrieved. Check access and connectivity in the panel.",
+  "راهنمای تعریف بلیط، لود چارتر، ویرایش یا بررسی ظرفیت را می‌خواهید؟": "Do you need help defining tickets, loading charter flights, editing flights, or checking capacity?",
+  "شمارهٔ پرواز و تاریخ حرکت را با قالب میلادی 2026-11-24 بنویسید. اگر کلاس مشخصی مدنظر است، آن را هم ذکر کنید.": "Enter the flight number and departure date in Gregorian YYYY-MM-DD format. Include the class if applicable.",
+  "کلاس:": "Class:",
+  "وضعیت فروش:": "Sales status:"
 }
