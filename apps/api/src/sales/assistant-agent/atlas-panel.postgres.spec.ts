@@ -52,16 +52,27 @@ it.skipIf(process.env.NORA_RUN_AGENT_POSTGRES_TESTS !== '1')(
       )?.[0];
       if (!archiveDefault) throw Error('Missing archive default in migration');
       await fixture.query(archiveDefault);
-      execFileSync(
+      const ddl = execFileSync(
         process.execPath,
-        ['node_modules/prisma/build/index.js', 'db', 'push'],
+        [
+          'node_modules/prisma/build/index.js',
+          'migrate',
+          'diff',
+          '--from-empty',
+          '--to-schema',
+          'prisma/schema.prisma',
+          '--script',
+        ],
         {
           cwd: folder,
           env: { ...process.env, DATABASE_URL: address.toString() },
-          stdio: 'ignore',
-          timeout: 90000,
+          encoding: 'utf8',
+          maxBuffer: 8 * 1024 * 1024,
+          stdio: ['ignore', 'pipe', 'ignore'],
+          timeout: 60000,
         },
       );
+      await fixture.query(ddl);
       await fixture.query(
         readFileSync(
           resolve(
