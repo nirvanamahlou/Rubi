@@ -61,10 +61,10 @@ export interface DatedTour {
 }
 
 const invalid = () =>
-  new BadRequestException('اطلاعات ثبت قرارداد تور معتبر نیست.');
+  new BadRequestException('درخواست قرارداد سایت معتبر نیست.');
 const changed = () =>
   new ConflictException(
-    'قیمت، ظرفیت یا اتاق تور تغییر کرده است. تور را دوباره بررسی کنید.',
+    'اطلاعات تغییر کرده است. صفحه را دوباره بارگذاری کنید.',
   );
 const uuid = (id: unknown) =>
   typeof id === 'string' &&

@@ -1251,9 +1251,7 @@ export class SiteCommerceService {
     if (!resources.length || tourIds.length > 1)
       throw new BadRequestException('محصول ERP را انتخاب کنید.');
     if (site === 'ghestiroo' && tourIds.length && !canonicalDatedTour)
-      throw new ForbiddenException(
-        'رزرو تور قسطی‌رو از مسیر کاتالوگ انجام می‌شود.',
-      );
+      throw new ForbiddenException('رزرو تور برای قسطی‌رو فعال نیست.');
     for (const resource of resources) {
       const published = await this.db.client.websitePublication.findUnique({
         where: {
@@ -1481,12 +1479,10 @@ export class SiteCommerceService {
         (publication.presentation as { operatorApproved?: boolean } | null)
           ?.operatorApproved !== true)
     )
-      throw new ForbiddenException(
-        'این تور برای خرید از این سایت منتشر نشده است.',
-      );
+      throw new ForbiddenException('این محصول برای سایت منتشر نشده است.');
     const tour = await this.websiteTour(publication.resourceId, scoped);
     if (tour.isActive === false || tour.isDeleted === true)
-      throw new ConflictException('این تور دیگر در دسترس نیست.');
+      throw new ConflictException('این محصول برای سایت منتشر نشده است.');
     const pricing = await this.packages.saleCatalog(
       tour.id,
       scoped,
