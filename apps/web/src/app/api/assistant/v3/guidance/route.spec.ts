@@ -67,6 +67,44 @@ describe('authenticated guidance transport', () => {
     ).toEqual(['travel-issuance/ticket']);
   });
 
+  it('serves the requested catalogue from another panel only with its topic permission', async () => {
+    vi.stubEnv('ERP_AUTH_API_BASE_URL', 'http://localhost:4301/api/v1');
+    const access = (permissions: string[]) => Response.json({ permissions });
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce(access(['/system', 'system.audit.read']))
+        .mockResolvedValueOnce(access(['/system'])),
+    );
+    const question = 'راهنمای مدیریت سیستم، تاریخچه فعالیت';
+    const ok = await (await POST(request(question))).json();
+    expect(ok.sections.map((s: { ref: string }) => s.ref)).toEqual([
+      'system-management/history',
+    ]);
+    const forbidden = await (await POST(request(question))).json();
+    expect(forbidden.sections).toEqual([]);
+  });
+
+  it('returns the approved campaign steps for a natural question from reservations', async () => {
+    vi.stubEnv('ERP_AUTH_API_BASE_URL', 'http://localhost:4301/api/v1');
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          Response.json({ permissions: ['/marketing?section=campaigns'] }),
+        )
+        .mockResolvedValueOnce(Response.json({ permissions: [] })),
+    );
+    const question = 'ساخت کمپین رو از کجا شروع کنم؟';
+    const answer = await (await POST(request(question))).json();
+    expect(answer.sections).toHaveLength(1);
+    expect(answer.sections[0].ref).toBe('marketing/campaign');
+    expect(answer.sections[0].steps[0]).toContain('فرم کمپین');
+    expect((await (await POST(request(question))).json()).sections).toEqual([]);
+  });
+
   it('never returns evidence for rejected sessions or unavailable IAM', async () => {
     vi.stubEnv('ERP_AUTH_API_BASE_URL', 'http://localhost:4301/api/v1');
     const fetcher = vi

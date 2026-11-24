@@ -130,12 +130,15 @@
 
 ## اسناد فروش
 
-<!-- nora-guide {"source":"apps/web/src/modules/organizations/components/organization-sales-documents.tsx","related":[],"next":"سابقهٔ مجاز همان پرونده را باز کنید.","href":"/organizations","roles":"مشترک","pattern":"اسناد فروش","id":"sales-history","path":["مشتریان B2B","اسناد فروش"],"example":"اسناد فروش این سازمان رو از کجا ببینم؟","prerequisite":"دسترسی به پرونده یا فهرست B2B و مجوز اقدام مربوط"} -->
+<!-- nora-guide {"source":"apps/web/src/modules/organizations/components/organization-sales-documents.tsx","related":["sales/list"],"next":"سابقهٔ مجاز همان پرونده را باز کنید.","href":"/organizations","roles":"مشترک","pattern":"اسناد فروش","id":"sales-history","path":["مشتریان B2B","اسناد فروش"],"example":"اسناد فروش این سازمان رو از کجا ببینم؟","prerequisite":"دسترسی به پرونده یا فهرست B2B و مجوز اقدام مربوط"} -->
 
 ### مراحل
 
 1. پرونده و شعبهٔ اطلاعات تجاری را انتخاب کنید و اسناد فروش را باز کنید. برای جزئیات، ردیف مجاز همان سابقه را در پنل باز کنید.
 
+### راهنماهای مرتبط
+
+- [پیداکردن قرارداد و استفاده از فهرست](sales.md#list)
 
 <a id="activity"></a>
 

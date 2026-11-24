@@ -1,3 +1,7 @@
+## NORA-GUIDE-SEARCH-1124 — PC-C — REVIEW
+
+Delivered the Nora index, workflow links, shared sidebar groups, scoped chat/guidance integration and tests on codex/pc-c-nora-guide-search-1124. No schema, dependency or producer lock. See docs/tasks/NORA-GUIDE-SEARCH-1124.md for acceptance.
+
 ## NORA-DATA-ATLAS-1124 — PC-C — REVIEW
 
 Release follow-up for #1933 reserves the four report-discovery translations in en-overrides.json and the report search grammar for CI and production verification.

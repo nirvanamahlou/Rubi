@@ -65,8 +65,13 @@ export async function POST(request: Request) {
       return response(503, { status: 'unavailable' });
     return response(
       200,
-      pilotGuideResponse(input.question, input.panel, input.previous, (href) =>
-        canViewRoute(actor.permissions, href),
+      pilotGuideResponse(
+        input.question,
+        input.panel,
+        input.previous,
+        (href, permission) =>
+          canViewRoute(actor.permissions, href) &&
+          (!permission || actor.permissions.includes(permission)),
       ),
     );
   } catch {

@@ -1,6 +1,10 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 import {
+  buildGuideIndex,
+  validateGuideLinks,
+} from './build-assistant-guide-index.mjs';
+import {
   buildLinkedPanelGuides,
   linkedPanelDomains,
 } from './build-linked-panel-guides.mjs';
@@ -16,6 +20,7 @@ const workbenchTabs =
   /^(today|requests|messages|files|notes|stars|calendar|activity|performance|daily-packages|account)$/;
 const catalogues = new Map();
 const sections = new Map();
+const documents = {};
 
 for (const file of readdirSync(directory).sort()) {
   if (!file.endsWith('.md')) continue;
@@ -75,6 +80,7 @@ for (const file of readdirSync(directory).sort()) {
         !Array.isArray(metadata.related)
       )
         throw new Error('Invalid or duplicate guide: ' + id);
+      validateGuideLinks(domain, anchor, metadata.related, section);
       if (domain === 'sales' || domain === 'b2c')
         new RegExp(metadata.pattern, metadata.flags);
       else if (!validTextList(metadata.aliases))
@@ -92,13 +98,7 @@ for (const file of readdirSync(directory).sort()) {
     });
   if (!topics.length) throw new Error('Empty guide: ' + file);
   catalogues.set(domain, topics);
-}
-
-for (const [id, section] of sections) {
-  for (const ref of section.related) {
-    if (ref === id || !sections.has(ref))
-      throw new Error('Invalid guide relation: ' + id + ' -> ' + ref);
-  }
+  documents[domain] = { title: text.split('\n')[0].replace(/^# /, ''), topics };
 }
 
 for (const [domain, output] of Object.entries(outputs)) {
@@ -121,7 +121,9 @@ for (const [domain, output] of Object.entries(outputs)) {
   }
 }
 
-buildLinkedPanelGuides(directory, process.argv.includes('--check'));
+const check = process.argv.includes('--check');
+const panels = buildLinkedPanelGuides(directory, check);
+buildGuideIndex({ ...documents, ...panels }, check);
 
 const compositeSales = catalogues
   .get('sales')

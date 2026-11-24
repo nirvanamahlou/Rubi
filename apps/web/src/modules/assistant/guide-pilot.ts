@@ -3,6 +3,13 @@ import {
   isAssistantGuideModule,
 } from './assistant-guide-registry';
 import { retrieveSpecificPanelGuide } from './panel-guide-retrieval';
+import {
+  catalogueLookupMode,
+  findCatalogueTopics,
+  workflowDestination,
+} from './catalogue-search';
+import { routeAssistantQuestion } from './question-routing';
+import type { GuideSection } from './assistant-guide-registry';
 import { normalizeQuestion } from './question-text';
 
 export function resolvePilotGuide(
@@ -99,16 +106,62 @@ export function pilotGuideResponse(
   message: string,
   panel: string,
   previous: string | undefined,
-  canOpen: (href: string) => boolean,
+  canOpen: (href: string, permission?: string) => boolean,
 ) {
-  const decision = resolvePilotGuide(message, panel, previous);
+  const allowed = (s: GuideSection) => canOpen(s.href, s.permission);
+  const from = previous?.split('/');
+  const linked =
+    from?.length === 2
+      ? workflowDestination(
+          message,
+          '/assistant-guides/' + from[0] + '#' + from[1],
+          allowed,
+        )
+      : undefined;
+  if (linked === null) return { status: 'insufficient', sections: [] };
+  const mode = catalogueLookupMode(message, routeAssistantQuestion(message));
+  const decision =
+    linked || mode === 'explicit'
+      ? null
+      : resolvePilotGuide(message, panel, previous);
+  const topics = linked
+    ? [linked]
+    : mode === 'explicit' ||
+        (mode === 'procedure' && (!decision || decision.status === 'clarify'))
+      ? findCatalogueTopics(
+          message,
+          panel,
+          allowed,
+          mode === 'explicit' ? 1 : 2,
+        )
+      : [];
+  if (topics.length || mode === 'explicit') {
+    const [section, second] = topics;
+    if (!section || second)
+      return { status: second ? 'clarify' : 'insufficient', sections: [] };
+    const { title, steps, route, path, href, guideHref, conditions } = section;
+    return {
+      status: 'answer',
+      sections: [
+        {
+          title,
+          steps,
+          route: route ?? path,
+          href,
+          guideHref,
+          conditions,
+          ref: guideHref.slice('/assistant-guides/'.length).replace('#', '/'),
+        },
+      ],
+    };
+  }
   if (!decision || decision.status !== 'answer')
     return { status: decision?.status ?? 'unmatched', sections: [] };
   const sections = decision.ids.flatMap((ref) => {
     const [domain, id] = ref.split('/');
     if (!domain || !isAssistantGuideModule(domain)) return [];
     const section = assistantGuideSection(domain, id);
-    return section && canOpen(section.href) ? [{ ...section, ref }] : [];
+    return section && allowed(section) ? [{ ...section, ref }] : [];
   });
   if (sections[0]?.ref !== decision.ids[0])
     return { status: 'insufficient', sections: [] };

@@ -6,11 +6,15 @@
 
 ## انتخاب یا تعریف تور شناور
 
-<!-- nora-guide {"id":"tour","href":"/sales/pricing/floating","related":[],"route":["فروش و ارتباط با مشتری","مدیریت پکیج","پکیج‌های شناور","انتخاب یا تعریف تور شناور"],"aliases":["تور شناور نیست","تعریف تور شناور","پکیج شناور"],"examples":["چطور تور شناور نیست را بررسی کنم؟","از کجا تور شناور نیست رو ببینم؟"],"conditions":["دسترسی به شرکت و نمای مربوط و اختیار اقدام لازم است."],"sources":["apps/web/src/modules/pricing-management/components/floating-tour-pricing-workspace.tsx"],"specific":true} -->
+<!-- nora-guide {"id":"tour","href":"/sales/pricing/floating","related":["tour/create"],"route":["فروش و ارتباط با مشتری","مدیریت پکیج","پکیج‌های شناور","انتخاب یا تعریف تور شناور"],"aliases":["تور شناور نیست","تعریف تور شناور","پکیج شناور"],"examples":["چطور تور شناور نیست را بررسی کنم؟","از کجا تور شناور نیست رو ببینم؟"],"conditions":["دسترسی به شرکت و نمای مربوط و اختیار اقدام لازم است."],"sources":["apps/web/src/modules/pricing-management/components/floating-tour-pricing-workspace.tsx"],"specific":true,"workflow":{"prerequisite":"tour/create"}} -->
 
 ### مراحل
 
 1. در «پکیج‌های شناور» تور را انتخاب کنید. اگر فهرست تور خالی است، ابتدا تور شناور را در «تعریف تور» ثبت و شرکت فعال را بررسی کنید.
+
+### راهنماهای مرتبط
+
+- [تعریف تور جدید](tour.md#create)
 
 <a id="flights"></a>
 

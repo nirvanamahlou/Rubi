@@ -22,7 +22,7 @@
 
 ## صدور واچر هتل
 
-<!-- nora-guide {"id":"voucher","href":"/reservations","related":["travel-issuance/delivery"],"aliases":["صدور واچر","واچر هتل"],"route":["صدور مدارک سفر","صدور واچر هتل"],"conditions":["دسترسی مجاز به پنل و اقدام مربوط"]} -->
+<!-- nora-guide {"id":"voucher","href":"/reservations","related":["travel-issuance/delivery"],"aliases":["صدور واچر","واچر هتل"],"route":["صدور مدارک سفر","صدور واچر هتل"],"conditions":["دسترسی مجاز به پنل و اقدام مربوط"],"workflow":{"next":"travel-issuance/delivery"}} -->
 
 ### مراحل
 
@@ -38,12 +38,16 @@
 
 ## مجوز تحویل مدرک
 
-<!-- nora-guide {"id":"delivery","href":"/finance/delivery","related":[],"aliases":["مجوز تحویل","تحویل بلیت","تحویل واچر"],"route":["صدور مدارک سفر","مجوز تحویل مدرک"],"conditions":["دسترسی مجاز به پنل و اقدام مربوط"]} -->
+<!-- nora-guide {"id":"delivery","href":"/finance/delivery","related":["finance-delivery/status"],"aliases":["مجوز تحویل","تحویل بلیت","تحویل واچر"],"route":["صدور مدارک سفر","مجوز تحویل مدرک"],"conditions":["دسترسی مجاز به پنل و اقدام مربوط"],"workflow":{"status":"finance-delivery/status"}} -->
 
 ### مراحل
 
 1. شمارهٔ قرارداد را در مالی ← تحویل مدارک پیدا کنید.
 2. وضعیت مجاز یا مسدود، مبنای مجوز و انقضای استثنای ثبت‌شده را بررسی کنید.
+
+### راهنماهای مرتبط
+
+- [وضعیت مجوز](finance-delivery.md#status)
 
 <a id="voucher-readiness"></a>
 

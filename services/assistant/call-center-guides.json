@@ -649,7 +649,10 @@
       ],
       "next": "برای درخواست ارجاع‌شده، صف رسیدگی و پیگیری و نمای کارهای من را باز کنید. برای پاپ‌آپ تماس، سابقهٔ همان تماس را در پنل بررسی کنید.",
       "sources": ["apps/web/src/modules/call-center/workflow.tsx"],
-      "related": [],
+      "related": ["call-center/call-center-queue"],
+      "workflow": {
+        "next": "call-center/call-center-queue"
+      },
       "steps": [
         "برای درخواست ارجاع‌شده، صف رسیدگی و پیگیری و نمای کارهای من را باز کنید.",
         "برای پاپ‌آپ تماس، سابقهٔ همان تماس را در پنل بررسی کنید.",

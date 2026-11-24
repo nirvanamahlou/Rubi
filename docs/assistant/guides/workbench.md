@@ -129,13 +129,17 @@
 
 ## اصلاح تردد
 
-<!-- nora-guide {"id":"attendance-correction","related":[],"tab":"requests","href":"/workbench?tab=requests","path":["فضای کار","میزکار من","درخواست جدید","اصلاح تردد"],"aliases":["اصلاح تردد","فراموشی ورود","فراموشی خروج","ساعت ورود اشتباه","ثبت تردد"],"conditions":["ورود به حساب ERP","وجود دسترسی بخش یا عملیات در حساب کاربر"],"troubleshooting":["پیام خطای خود فرم، فیلدهای الزامی و پایان بارگذاری را بررسی کنید.","نبود مجوز، خطای دریافت و نبود نتیجه را از هم تفکیک کنید."],"limitations":["ثبت درخواست به معنی اصلاح قطعی رکورد تردد نیست؛ نتیجه رسیدگی ملاک است."],"next":"در کارتابل درخواست‌ها نتیجه را ببینید.","sources":["apps/web/src/modules/workbench/new-request-dialog.tsx","apps/api/src/customer-affairs/customer-affairs.controller.ts"]} -->
+<!-- nora-guide {"id":"attendance-correction","related":["workbench/request-status"],"tab":"requests","href":"/workbench?tab=requests","path":["فضای کار","میزکار من","درخواست جدید","اصلاح تردد"],"aliases":["اصلاح تردد","فراموشی ورود","فراموشی خروج","ساعت ورود اشتباه","ثبت تردد"],"conditions":["ورود به حساب ERP","وجود دسترسی بخش یا عملیات در حساب کاربر"],"troubleshooting":["پیام خطای خود فرم، فیلدهای الزامی و پایان بارگذاری را بررسی کنید.","نبود مجوز، خطای دریافت و نبود نتیجه را از هم تفکیک کنید."],"limitations":["ثبت درخواست به معنی اصلاح قطعی رکورد تردد نیست؛ نتیجه رسیدگی ملاک است."],"next":"در کارتابل درخواست‌ها نتیجه را ببینید.","sources":["apps/web/src/modules/workbench/new-request-dialog.tsx","apps/api/src/customer-affairs/customer-affairs.controller.ts"],"workflow":{"status":"workbench/request-status"}} -->
 
 ### مراحل
 
 1. درخواست جدید را باز کنید و اصلاح تردد را بزنید.
 2. تاریخ و ساعت‌های ورود یا خروج موردنیاز و توضیحات را مطابق فیلدهای فرم کامل کنید.
 3. واحد و کاربر گیرنده، عنوان و شرح را بررسی کنید و درخواست را ثبت کنید.
+
+### راهنماهای مرتبط
+
+- [وضعیت درخواست و رسیدگی](#request-status)
 
 <a id="advance"></a>
 
@@ -384,12 +388,16 @@
 
 ## پیگیری‌های خرید
 
-<!-- nora-guide {"id":"procurement","related":[],"tab":"today","href":"/workbench?tab=today","path":["فضای کار","میزکار من","خانه"],"aliases":["پیگیری خرید","پیگیری های خرید","درخواست خرید"],"conditions":["ورود به حساب ERP","وجود دسترسی بخش یا عملیات در حساب کاربر"],"troubleshooting":["پیام خطای خود فرم، فیلدهای الزامی و پایان بارگذاری را بررسی کنید.","نبود مجوز، خطای دریافت و نبود نتیجه را از هم تفکیک کنید."],"limitations":["نمایش پیگیری خرید در میزکار به معنی اختیار تأیید یا پرداخت خرید نیست؛ راهنمای کامل خرید در این مرحله ارائه نمی‌شود."],"next":"اقدام مجاز را در پرونده خرید بررسی کنید.","sources":["apps/web/src/modules/workbench/workbench-procurement-follow-ups.tsx","apps/api/src/workbench/workbench.controller.ts"]} -->
+<!-- nora-guide {"id":"procurement","related":["purchase/dashboard"],"tab":"today","href":"/workbench?tab=today","path":["فضای کار","میزکار من","خانه"],"aliases":["پیگیری خرید","پیگیری های خرید","درخواست خرید"],"conditions":["ورود به حساب ERP","وجود دسترسی بخش یا عملیات در حساب کاربر"],"troubleshooting":["پیام خطای خود فرم، فیلدهای الزامی و پایان بارگذاری را بررسی کنید.","نبود مجوز، خطای دریافت و نبود نتیجه را از هم تفکیک کنید."],"limitations":["نمایش پیگیری خرید در میزکار به معنی اختیار تأیید یا پرداخت خرید نیست؛ راهنمای کامل خرید در این مرحله ارائه نمی‌شود."],"next":"اقدام مجاز را در پرونده خرید بررسی کنید.","sources":["apps/web/src/modules/workbench/workbench-procurement-follow-ups.tsx","apps/api/src/workbench/workbench.controller.ts"],"workflow":{"next":"purchase/dashboard"}} -->
 
 ### مراحل
 
 1. در خانه میزکار من، پیگیری خرید یا اعلان مربوط را بررسی کنید.
 2. از لینک همان مورد به پرونده خرید مجاز بروید و وضعیت و اقدام محول‌شده را بخوانید.
+
+### راهنماهای مرتبط
+
+- [داشبورد خرید خدمات](purchase.md#dashboard)
 
 <a id="notifications"></a>
 
@@ -457,7 +465,7 @@
 
 ## مأموریت
 
-<!-- nora-guide {"id":"mission","related":[],"tab":"requests","href":"/workbench?tab=requests","path":["فضای کار","میزکار من","درخواست جدید","مأموریت"],"aliases":["ماموریت","هزینه مأموریت","مدارک مأموریت"],"conditions":["دسترسی به درخواست‌های میزکار"],"troubleshooting":["اگر گزینه ویرایش اطلاعات مالی را نمی‌بینید، زمان پایان ثبت‌شده، حساب درخواست‌دهنده و وجود هزینهٔ ثبت‌شده را بررسی کنید."],"limitations":["هزینه در فرم اولیه ثبت نمی‌شود. ارجاع به مالی به معنی پرداخت نیست."],"next":"از کارتابل درخواست‌ها وضعیت مأموریت را دنبال کنید.","sources":["apps/web/src/modules/workbench/mission-fields.tsx","apps/web/src/modules/workbench/workbench-own-requests.tsx","apps/api/src/customer-affairs/customer-affairs.service.ts"]} -->
+<!-- nora-guide {"id":"mission","related":["human-resources/expenses"],"tab":"requests","href":"/workbench?tab=requests","path":["فضای کار","میزکار من","درخواست جدید","مأموریت"],"aliases":["ماموریت","هزینه مأموریت","مدارک مأموریت"],"conditions":["دسترسی به درخواست‌های میزکار"],"troubleshooting":["اگر گزینه ویرایش اطلاعات مالی را نمی‌بینید، زمان پایان ثبت‌شده، حساب درخواست‌دهنده و وجود هزینهٔ ثبت‌شده را بررسی کنید."],"limitations":["هزینه در فرم اولیه ثبت نمی‌شود. ارجاع به مالی به معنی پرداخت نیست."],"next":"از کارتابل درخواست‌ها وضعیت مأموریت را دنبال کنید.","sources":["apps/web/src/modules/workbench/mission-fields.tsx","apps/web/src/modules/workbench/workbench-own-requests.tsx","apps/api/src/customer-affairs/customer-affairs.service.ts"]} -->
 
 ### مراحل
 
@@ -466,6 +474,10 @@
 3. بعد از پایان مأموریت، جزئیات درخواست ارسالی را باز کنید و «ویرایش اطلاعات مالی مأموریت» را بزنید. مبلغ را به ریال وارد کنید و عنوان، مرکز هزینه و مدارک مربوط را تکمیل کنید.
 4. «ثبت هزینه و ارسال به منابع انسانی» را بزنید و نتیجه را از کارتابل پیگیری کنید.
 5. منابع انسانی هزینه و مدارک را بررسی می‌کند. در صورت ارجاع، مالی هزینه و مستندات را در درخواست ارجاع‌شده بررسی می‌کند.
+
+### راهنماهای مرتبط
+
+- [مأموریت و هزینه‌ها](human-resources.md#expenses)
 
 <a id="leave-approval"></a>
 

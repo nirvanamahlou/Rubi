@@ -5,7 +5,10 @@ import {
   selectCompositeChecklist,
 } from './composite-guide';
 
-import { documentGuideLink } from './assistant-guide-registry';
+import {
+  documentGuideLink,
+  type GuideSection,
+} from './assistant-guide-registry';
 
 import {
   purchaseGuideLink,
@@ -47,6 +50,12 @@ import {
 } from './document-guides';
 
 import { canViewRoute, canViewScreen } from '@nora/contracts';
+import {
+  catalogueLookupMode,
+  findCatalogueTopics,
+  prepareCatalogueSearch,
+  workflowDestination,
+} from './catalogue-search';
 import { prefersTravelIssuanceGuide, resolvePilotGuide } from './guide-pilot';
 import {
   retrievePanelGuidance,
@@ -431,6 +440,12 @@ function AssistantComposerContent({
   const input = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState('');
   useEffect(() => {
+    if (denied) return;
+    // Build the shared index once while the composer is open.
+    const timer = setTimeout(prepareCatalogueSearch, 0);
+    return () => clearTimeout(timer);
+  }, [denied]);
+  useEffect(() => {
     const field = input.current;
     if (!field) return;
     field.style.height = 'auto';
@@ -468,6 +483,7 @@ function AssistantComposerContent({
   const inspecting = useRef<AbortController | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
   const pathname = usePathname();
+  const indexedTopic = useRef<GuideSection | undefined>(undefined);
   const salesPanelTopic = useRef<string | undefined>(undefined);
   const pilotTopic = useRef<string | undefined>(undefined);
   const searchParams = useSearchParams();
@@ -649,11 +665,108 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    const mayReadGuide = (section: GuideSection) =>
+      Boolean(
+        actor &&
+        canViewRoute(actor.permissions, section.href) &&
+        (!section.permission ||
+          actor.permissions.some((p) => p === section.permission)),
+      );
+    const priorIndexed = indexedTopic.current;
+    indexedTopic.current = undefined;
+    const showSection = (section: GuideSection) => {
+      indexedTopic.current = section;
+      systemGuideTopic.current = section.guideHref.startsWith(
+        '/assistant-guides/system-management#',
+      )
+        ? section.id
+        : undefined;
+      salesPanelTopic.current =
+        /^\/assistant-guides\/(marketing|package-management|floating-packages)#/.test(
+          section.guideHref,
+        )
+          ? section.guideHref
+          : undefined;
+      pendingSalesPeriod.current = false;
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      replyLocally(
+        [
+          section.title,
+          ...((section.route ?? section.path)?.length
+            ? [(section.route ?? section.path)!.join(' ← ')]
+            : []),
+          ...(section.conditions ?? []),
+          ...section.steps.map((step, i) => i + 1 + '. ' + step),
+        ].join('\n'),
+        undefined,
+        undefined,
+        {
+          href: section.href,
+          label: english ? 'Open panel' : 'باز کردن پنل',
+          guideHref: section.guideHref,
+        },
+      );
+    };
+    const lastReply = messages.at(-1);
+    const linkedNext =
+      lastReply?.role === 'assistant' &&
+      workflowDestination(
+        message,
+        lastReply.guideLink?.guideHref,
+        mayReadGuide,
+      );
+    if (linkedNext === null) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      replyLocally(t(c.pilotGuideInsufficient));
+      return;
+    }
+    if (linkedNext) {
+      showSection(linkedNext);
+      return;
+    }
+    if (
+      priorIndexed &&
+      lastReply?.guideLink?.guideHref === priorIndexed.guideHref &&
+      !systemGuideTopic.current &&
+      !salesPanelTopic.current &&
+      /^(?:بعدش چی|بعدش|ادامه بده|مرحله بعد چیه)$/.test(
+        normalizeQuestion(message),
+      )
+    ) {
+      if (mayReadGuide(priorIndexed)) showSection(priorIndexed);
+      else replyLocally(t(c.pilotGuideInsufficient));
+      return;
+    }
+    // An explicit manual lookup can start on any page.
     const newGuide = retrieveSalesPanelGuide(
       message,
       pathname,
       salesPanelTopic.current,
     );
+    const lookupMode = catalogueLookupMode(message, decision);
+    if (
+      lookupMode &&
+      (lookupMode === 'explicit' || !newGuide) &&
+      !pathname?.startsWith('/sales/contracts/new')
+    ) {
+      const [section, other] = findCatalogueTopics(
+        message,
+        pathname,
+        mayReadGuide,
+        lookupMode === 'explicit' ? 1 : 2,
+      );
+      if (
+        section &&
+        !other &&
+        (lookupMode === 'explicit' ||
+          section.href.split(/[?#]/)[0] !== pathname)
+      ) {
+        showSection(section);
+        return;
+      }
+    }
     salesPanelTopic.current = undefined;
     if (newGuide) {
       pending.current?.abort();
@@ -2033,6 +2146,20 @@ function AssistantComposerContent({
       return;
     }
     if (guidanceAllowed) {
+      const matches = findCatalogueTopics(message, pathname, mayReadGuide);
+      if (matches.length === 1 && matches[0]) {
+        showSection(matches[0]);
+        return;
+      }
+      if (matches.length > 1) {
+        const options = matches.slice(0, 3).map((s) => s.title);
+        replyLocally(
+          (english
+            ? 'Which topic do you mean? '
+            : 'راهنمای کدام بخش را می‌خواهید؟ ') + options.join(' / '),
+        );
+        return;
+      }
       replyLocally(
         english
           ? 'Which ERP workflow, record, or report would you like me to check?'

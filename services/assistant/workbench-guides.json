@@ -269,7 +269,7 @@
     {
       "id": "attendance-correction",
       "title": "اصلاح تردد",
-      "related": [],
+      "related": ["workbench/request-status"],
       "tab": "requests",
       "href": "/workbench?tab=requests",
       "path": ["فضای کار", "میزکار من", "درخواست جدید", "اصلاح تردد"],
@@ -296,6 +296,9 @@
         "apps/web/src/modules/workbench/new-request-dialog.tsx",
         "apps/api/src/customer-affairs/customer-affairs.controller.ts"
       ],
+      "workflow": {
+        "status": "workbench/request-status"
+      },
       "steps": [
         "درخواست جدید را باز کنید و اصلاح تردد را بزنید.",
         "تاریخ و ساعت‌های ورود یا خروج موردنیاز و توضیحات را مطابق فیلدهای فرم کامل کنید.",
@@ -971,7 +974,7 @@
     {
       "id": "procurement",
       "title": "پیگیری‌های خرید",
-      "related": [],
+      "related": ["purchase/dashboard"],
       "tab": "today",
       "href": "/workbench?tab=today",
       "path": ["فضای کار", "میزکار من", "خانه"],
@@ -992,6 +995,9 @@
         "apps/web/src/modules/workbench/workbench-procurement-follow-ups.tsx",
         "apps/api/src/workbench/workbench.controller.ts"
       ],
+      "workflow": {
+        "next": "purchase/dashboard"
+      },
       "steps": [
         "در خانه میزکار من، پیگیری خرید یا اعلان مربوط را بررسی کنید.",
         "از لینک همان مورد به پرونده خرید مجاز بروید و وضعیت و اقدام محول‌شده را بخوانید."
@@ -1175,7 +1181,7 @@
     {
       "id": "mission",
       "title": "مأموریت",
-      "related": [],
+      "related": ["human-resources/expenses"],
       "tab": "requests",
       "href": "/workbench?tab=requests",
       "path": ["فضای کار", "میزکار من", "درخواست جدید", "مأموریت"],

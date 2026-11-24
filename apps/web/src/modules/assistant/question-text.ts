@@ -19,18 +19,40 @@ export function normalizeQuestion(text: string) {
   );
 }
 
-export function matchesQuestion(text: string, pattern: RegExp) {
+function boundedPattern(pattern: RegExp) {
   // Allow ordinary attached Persian plural/possessive endings, not arbitrary substrings.
   return new RegExp(
     `(?:^|[^\\p{L}\\p{N}])(?:${pattern.source})(?=$|[^\\p{L}\\p{N}]|(?:ها(?:یی?)?(?:م|ت|ش|مان|تان|شان)?|ان|ش|شان|مان|تان|م|ت)(?:$|[^\\p{L}\\p{N}]))`,
     'iu',
-  ).test(text);
+  );
 }
 
-export function containsQuestionPhrase(text: string, phrase: string) {
+// Routing patterns are supplied by code and catalogues. Never use a user's question as a cache key.
+const routingPatterns = new Map<
+  string,
+  { candidate: RegExp; bounded?: RegExp }
+>();
+
+export function matchesQuestion(text: string, pattern: RegExp) {
+  let compiled = routingPatterns.get(pattern.source);
+  if (!compiled) {
+    compiled = { candidate: new RegExp(pattern.source, 'iu') };
+    if (routingPatterns.size < 512)
+      routingPatterns.set(pattern.source, compiled);
+  }
+  // Most routing phrases are absent. Only compile their Unicode word boundaries on a hit.
+  if (!compiled.candidate.test(text)) return false;
+  return (compiled.bounded ??= boundedPattern(pattern)).test(text);
+}
+
+export function compileQuestionPhrase(phrase: string) {
   const literal = normalizeQuestion(phrase).replace(
     /[.*+?^${}()|[\]\\]/g,
     '\\$&',
   );
-  return Boolean(literal) && matchesQuestion(text, new RegExp(literal));
+  return boundedPattern(new RegExp(literal || '(?!)'));
+}
+
+export function containsQuestionPhrase(text: string, phrase: string) {
+  return compileQuestionPhrase(phrase).test(text);
 }
