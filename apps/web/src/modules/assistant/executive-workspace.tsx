@@ -663,10 +663,10 @@ function AssistantComposerContent({
       ) {
         replyLocally(
           guide?.status === 'clarify'
-            ? 'منظورتان پیگیری در امور مشتریان، کال‌سنتر یا میزکار من است؟'
+            ? t(c.pilotFollowupClarification)
             : guide?.status === 'clarify-record'
-              ? 'شمارهٔ پیگیری درخواست را بفرستید. برای دیدن مسئول فعلی، در امور مشتریان ← درخواست‌های مشتریان، جزئیات همان پرونده را باز کنید.'
-              : 'برای این سؤال راهنمای قابل استناد در دسترس نیست.',
+              ? t(c.pilotTrackingNumberRequired)
+              : t(c.pilotGuideInsufficient),
         );
         return;
       }

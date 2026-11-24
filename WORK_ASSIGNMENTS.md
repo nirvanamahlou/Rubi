@@ -2,7 +2,7 @@
 
 ## NORA-GUIDE-PILOT-1124 — PC-C — REVIEW
 
-Stacked on #1906. Reserve the new authored-guide retrieval endpoint and pilot tests plus bounded Composer call site. Preserve existing model and record-read routes. Authenticated local acceptance complete. PR #1907 retains this scope pending CI and review. No production migration or deployment.
+Stacked on #1906. Reserve the new authored-guide retrieval endpoint and pilot tests plus bounded Composer call site and three additive pilot messages in the Assistant copy catalogue. Preserve existing model and record-read routes. Authenticated local acceptance complete. PR #1907 retains this scope pending CI and review. No production migration or deployment.
 
 ## NORA-GUIDE-COVERAGE-1124 — PC-C — ACTIVE
 
