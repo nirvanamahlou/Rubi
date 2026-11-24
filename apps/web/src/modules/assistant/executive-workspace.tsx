@@ -47,6 +47,7 @@ import {
 } from './document-guides';
 
 import { canViewRoute, canViewScreen } from '@nora/contracts';
+import { resolvePilotGuide } from './guide-pilot';
 import { retrievePanelGuidance } from './panel-guide-retrieval';
 import {
   readTourGuideStatus,
@@ -431,6 +432,7 @@ function AssistantComposerContent({
   const inspecting = useRef<AbortController | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
   const pathname = usePathname();
+  const pilotTopic = useRef<string | undefined>(undefined);
   const searchParams = useSearchParams();
   const workbenchTab =
     pathname === '/workbench'
@@ -606,6 +608,65 @@ function AssistantComposerContent({
         if (pending.current === controller) setActionState(null);
       }
       return;
+    }
+    if (
+      agentMode &&
+      actor &&
+      !pathname?.startsWith('/sales/contracts/new') &&
+      resolvePilotGuide(message, pathname ?? '', pilotTopic.current)
+    ) {
+      pending.current?.abort();
+      const controller = new AbortController();
+      pending.current = controller;
+      setActionState('loading');
+      const result = await fetch('/api/assistant/v3/guidance', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          version: 3,
+          question: message,
+          panel: pathname ?? '',
+          previous: pilotTopic.current,
+        }),
+        signal: controller.signal,
+      }).catch(() => null);
+      const guide = result?.ok ? await result.json().catch(() => null) : null;
+      if (controller.signal.aborted) return;
+      if (guide?.status === 'answer') {
+        pilotTopic.current = guide.sections[0]?.ref;
+        for (const section of guide.sections) {
+          replyLocally(
+            [
+              section.title,
+              ...(section.route ? [section.route.join(' ← ')] : []),
+              ...section.steps.map(
+                (step: string, index: number) => index + 1 + '. ' + step,
+              ),
+            ].join('\n'),
+            undefined,
+            undefined,
+            {
+              href: section.href,
+              label: english ? 'Open panel' : 'باز کردن پنل',
+              guideHref: section.guideHref,
+            },
+          );
+        }
+        return;
+      }
+      if (
+        guide?.status === 'clarify' ||
+        guide?.status === 'insufficient' ||
+        result?.status === 401 ||
+        result?.status === 403
+      ) {
+        replyLocally(
+          guide?.status === 'clarify'
+            ? 'منظورتان پیگیری در امور مشتریان، کال‌سنتر یا میزکار من است؟'
+            : 'برای این سؤال راهنمای قابل استناد در دسترس نیست.',
+        );
+        return;
+      }
     }
     const linkedGuidance = actor
       ? retrievePanelGuidance(message, pathname, (href) =>

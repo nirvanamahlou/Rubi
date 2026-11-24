@@ -1,5 +1,9 @@
 ## DOCUMENT-LOGO-SCAN-DISPLAY-1124 — PC-C — ACTIVE
 
+## NORA-GUIDE-PILOT-1124 — PC-C — ACTIVE
+
+Stacked on #1906. Reserve the new authored-guide retrieval endpoint and pilot tests plus bounded Composer call site. Preserve existing model and record-read routes. No migration or deployment.
+
 ## NORA-GUIDE-COVERAGE-1124 — PC-C — ACTIVE
 
 Reserve new procedural guides, additive linked catalogue inputs and shared lexical retrieval with a bounded Composer integration. Preserve producer modules, existing record readers and policies. No migration or deployment.
