@@ -539,18 +539,39 @@ export function TourWorkspace({
           onRepeat={repeatTour}
           onPeriodStatus={
             canManagePeriods
-              ? (item, status, sites) =>
-                  void run(async () => {
+              ? async (item, status, sites) => {
+                  if (status === 'DELETED') {
+                    setBusy(true);
+                    setProblem('');
+                    setNotice('');
+                    try {
+                      await toursApi.setDepartureStatus(
+                        item.id,
+                        false,
+                        item.salesVersion ?? 1,
+                        item.branchId,
+                        true,
+                        sites,
+                      );
+                      setDepartures((current) =>
+                        current.filter((period) => period.id !== item.id),
+                      );
+                      setNotice('وضعیت بازه به‌روز شد.');
+                    } finally {
+                      setBusy(false);
+                    }
+                    return;
+                  }
+                  await run(async () => {
                     await toursApi.setDepartureStatus(
                       item.id,
                       status === 'ACTIVE',
                       item.salesVersion ?? 1,
                       item.branchId,
-                      status === 'DELETED' ? true : undefined,
-                      sites,
                     );
                     setNotice('وضعیت بازه به‌روز شد.');
-                  })
+                  });
+                }
               : undefined
           }
           definitionMode={mode === 'definition'}

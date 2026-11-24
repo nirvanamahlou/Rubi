@@ -69,7 +69,7 @@ export function TourOverview({
         item: TourDepartureV1,
         status: 'ACTIVE' | 'PAUSED' | 'DELETED',
         sites?: string[],
-      ) => void)
+      ) => void | Promise<void>)
     | undefined;
   definitionMode?: boolean;
   packages: TourPackageV1[];
@@ -129,6 +129,28 @@ export function TourOverview({
         (view === 'current' ? item.startsOn <= today : item.startsOn > today)),
   );
   const number = (value: number) => value.toLocaleString('fa-IR');
+  const deletePeriod = (departure: TourDepartureV1) =>
+    onPeriodStatus && (
+      <SiteDeleteDialog
+        trigger={
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-destructive"
+            disabled={busy}
+          >
+            <Trash2 aria-hidden size={15} />
+            حذف بازه
+          </Button>
+        }
+        title="حذف بازه"
+        description="این بازه از انتخاب‌های جدید حذف می‌شود؛ سوابق قراردادها و قیمت‌های قبلی حفظ می‌شوند."
+        loadSites={() =>
+          toursApi.deletionSites('tour', departure.id, departure.branchId)
+        }
+        onConfirm={(sites) => onPeriodStatus(departure, 'DELETED', sites)}
+      />
+    );
   const definitions = (
     <Card className="space-y-4 p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -267,42 +289,49 @@ export function TourOverview({
                       key={departure.id}
                       className="rounded-lg border bg-muted/20 p-3"
                     >
-                      <button
-                        type="button"
-                        aria-expanded={pricedDeparture === departure.id}
-                        onClick={() =>
-                          setPricedDeparture((current) =>
-                            current === departure.id ? '' : departure.id,
-                          )
-                        }
-                        className="flex w-full flex-wrap items-center gap-x-4 gap-y-1 text-start text-sm"
-                      >
-                        <ChevronDown
-                          aria-hidden
-                          size={16}
-                          className={
-                            pricedDeparture === departure.id ? 'rotate-180' : ''
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          aria-expanded={pricedDeparture === departure.id}
+                          onClick={() =>
+                            setPricedDeparture((current) =>
+                              current === departure.id ? '' : departure.id,
+                            )
                           }
-                        />
-                        <strong>
-                          {tourDate(departure.startsOn)} تا{' '}
-                          {tourDate(departure.endsOn)}
-                        </strong>
-                        <span>
-                          {departure.outbound.carrierName} ·{' '}
-                          <bdi>{departure.outbound.serviceNumber}</bdi>
-                          {departure.returning && (
-                            <>
-                              {' '}
-                              / <bdi>{departure.returning.serviceNumber}</bdi>
-                            </>
+                          className="flex flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-start text-sm"
+                        >
+                          <ChevronDown
+                            aria-hidden
+                            size={16}
+                            className={
+                              pricedDeparture === departure.id
+                                ? 'rotate-180'
+                                : ''
+                            }
+                          />
+                          <strong>
+                            {tourDate(departure.startsOn)} تا{' '}
+                            {tourDate(departure.endsOn)}
+                          </strong>
+                          <span>
+                            {departure.outbound.carrierName} ·{' '}
+                            <bdi>{departure.outbound.serviceNumber}</bdi>
+                            {departure.returning && (
+                              <>
+                                {' '}
+                                / <bdi>{departure.returning.serviceNumber}</bdi>
+                              </>
+                            )}
+                          </span>
+                          <span>
+                            ظرفیت {number(departure.remainingCapacity)}
+                          </span>
+                          {departure.isActive === false && (
+                            <Badge>فروش بازه متوقف است</Badge>
                           )}
-                        </span>
-                        <span>ظرفیت {number(departure.remainingCapacity)}</span>
-                        {departure.isActive === false && (
-                          <Badge>فروش بازه متوقف است</Badge>
-                        )}
-                      </button>
+                        </button>
+                        {deletePeriod(departure)}
+                      </div>
                       {pricedDeparture === departure.id && (
                         <div className="mt-3">
                           <InlineDeparturePrices departure={departure} />
@@ -560,28 +589,7 @@ export function TourOverview({
                                     ? 'فعال‌سازی بازه'
                                     : 'توقف بازه'}
                                 </Button>
-                                <SiteDeleteDialog
-                                  trigger={
-                                    <Button
-                                      variant="destructive"
-                                      disabled={busy}
-                                    >
-                                      حذف بازه
-                                    </Button>
-                                  }
-                                  title="حذف بازه"
-                                  description="این بازه از انتخاب‌های جدید حذف می‌شود؛ سوابق قراردادها و قیمت‌های قبلی حفظ می‌شوند."
-                                  loadSites={() =>
-                                    toursApi.deletionSites(
-                                      'tour',
-                                      item.id,
-                                      item.branchId,
-                                    )
-                                  }
-                                  onConfirm={(sites) =>
-                                    onPeriodStatus(item, 'DELETED', sites)
-                                  }
-                                />
+                                {deletePeriod(item)}
                               </>
                             )}
                           </div>
