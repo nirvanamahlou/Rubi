@@ -10754,3 +10754,5 @@ Archived dashboard widget availability reasons and expected data in docs/DASHBOA
 ## Website sell rates and test tour insurance
 
 Website-bound connectors can read the latest active and approved USD, EUR and TRY sell rates to IRR with decimal precision and validity times. Test tour insurance reuses private PDF delivery and the existing issuance queue for a fully settled website tour with insurance included. Test issuance requires `SITE_COMMERCE_TEST_TOUR_INSURANCE=true` outside production, plus the corresponding Niyayesh Seir test setting. The production insurance provider remains an open integration.
+
+- نورا: راهنمای نسخه‌دار مدیریت سیستم برای حساب‌ها، نقش‌ها، تاریخچه، نمایش قراردادها و آرشیو در شاخهٔ مستقل اضافه شد. پوشش و سناریوهای پذیرش در [سند آزمون](tasks/NORA-SYSTEM-GUIDE-1124.md) ثبت شده‌اند.

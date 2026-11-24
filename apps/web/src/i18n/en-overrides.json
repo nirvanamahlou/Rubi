@@ -1,4 +1,7 @@
 {
+  "برای مشاهدهٔ این بخش، حساب فعلی باید مجوز همان بخش مدیریت سیستم را داشته باشد.": "Your account needs permission to view this section of System Management.",
+  "جزئیات این مورد در چت بررسی نشده است. برای بررسی همان مورد، از نمای مجاز ERP استفاده کنید.": "This record was not inspected in chat. Open the authorized ERP view to review it.",
+  "کدام بخش مدیریت سیستم را می‌خواهید بررسی کنید؟ مدیریت کاربران، تاریخچه یا محتوا؟": "Which System Management section do you want to review: User Management, History, or Content?",
   "پیش‌نویس ·": "Draft ·",
   "در حال دریافت قیمت‌ها…": "Loading prices…",
   "هنوز نوبتی ثبت نشده است.": "No departure has been registered yet.",
