@@ -476,8 +476,12 @@ function AssistantComposerContent({
   const contractId = useRef<string | undefined>(undefined);
   const guideTopic = useRef<string | undefined>(undefined);
   const previousAnswer = useRef<AnswerContext | undefined>(undefined);
+  const pendingSalesPeriod = useRef(false);
   useEffect(() => {
-    if (denied) previousAnswer.current = undefined;
+    if (denied) {
+      previousAnswer.current = undefined;
+      pendingSalesPeriod.current = false;
+    }
   }, [denied]);
   useEffect(() => {
     const resetRecord = () => {
@@ -552,9 +556,9 @@ function AssistantComposerContent({
     const decision = routeAssistantQuestion(
       message,
       previousAnswer.current,
-      Boolean(pathname?.startsWith('/sales')),
-      workbenchTab === 'call-center',
+      pendingSalesPeriod.current,
     );
+    pendingSalesPeriod.current = decision.needsSalesPeriod === true;
     const guideQuestion = decision.guideQuestion ?? message;
     const guidanceAllowed = decision.kind === 'guide';
     const replyLocally = (
@@ -605,6 +609,10 @@ function AssistantComposerContent({
           label: english ? 'Open reports' : 'باز کردن گزارش‌ها',
         },
       );
+      return;
+    }
+    if (decision.needsSalesPeriod) {
+      replyLocally(decision.clarification!);
       return;
     }
     const operationalMetric = resolveOperationalMetric(message);

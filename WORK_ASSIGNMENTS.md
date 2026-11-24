@@ -4,7 +4,7 @@ Own the city and country photo fields, geography dialog, additive migration, and
 
 ## NORA-ERP-FIRST-1124 — PC-C — ACTIVE
 
-Reserve Nora Web routing and supported guide selection with focused regressions. Keep producer permissions and APIs unchanged.
+Reserve Nora Web routing, supported guide selection, and the assistant sales period parser with focused regressions. Keep producer permissions and APIs unchanged.
 
 ## DOCUMENT-LOGO-SCAN-DISPLAY-1124 — PC-C — ACTIVE
 

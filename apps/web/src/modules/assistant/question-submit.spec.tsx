@@ -163,6 +163,20 @@ afterEach(() => {
 });
 
 describe('actual Composer submit routing and transport', () => {
+  it.each(['/workbench', '/sales', '/finance/delivery'])(
+    'clarifies the sales period and reads the same ERP report from %s',
+    async (path) => {
+      h.path = path;
+      await send('مجموع فروش ماه اخیر رو بده');
+      expect(h.fetcher).not.toHaveBeenCalled();
+      expect(chat().at(-1)).toContain('۳۰ روز کامل گذشته');
+      await send('۳۰ روز گذشته');
+      expect(h.fetcher).toHaveBeenCalledOnce();
+      const [url, init] = h.fetcher.mock.calls[0]!;
+      expect(url).toBe('/api/assistant/v3/conversation');
+      expect(JSON.parse(init.body).message).toBe('فروش 30 روز گذشته چقدر است؟');
+    },
+  );
   it('answers a supported HR aggregate through the authenticated ERP dashboard only', async () => {
     h.company = 'ALL';
     h.path = '/workbench';
@@ -363,7 +377,7 @@ describe('actual Composer submit routing and transport', () => {
     expect(chat().at(-1)).not.toContain('بارگذاری و پیگیری رسید');
   });
   it('shows both data and grounded correction guidance, but never replaces failed data with guidance', async () => {
-    await send('این مبلغ از کجا آمده و از کجا اصلاحش کنم؟');
+    await send('این مبلغ قرارداد از کجا آمده و از کجا اصلاحش کنم؟');
     expect(h.fetcher).toHaveBeenCalledOnce();
     expect(chat().at(-1)).toContain('شواهد تازه');
     expect(chat().at(-1)).toContain('اصلاح');
@@ -374,7 +388,7 @@ describe('actual Composer submit routing and transport', () => {
         { status: 429 },
       ),
     );
-    await send('این مبلغ از کجا آمده و از کجا اصلاحش کنم؟');
+    await send('این مبلغ قرارداد از کجا آمده و از کجا اصلاحش کنم؟');
     expect(chat()).toHaveLength(before);
   });
   it.each(['company', 'user'])(

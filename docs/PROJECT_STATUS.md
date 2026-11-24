@@ -4,7 +4,7 @@ Avina geography records support a main photo and up to six gallery photos. The r
 
 ## Nora ERP question routing
 
-Nora routes workflow questions to existing guides, record and report questions to authorized ERP readers, and unmatched requests to clarification. The Web composer has no generic conversation dispatch.
+Nora routes workflow questions to existing guides, record and report questions to authorized ERP readers, and unmatched requests to clarification. The Web composer has no generic conversation dispatch. Cross-module intent is independent of the current page. Ambiguous recent-month sales requests ask for a date range before reading scoped ERP sales data.
 
 ## Master Data logo scan display
 

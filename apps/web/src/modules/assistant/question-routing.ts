@@ -22,6 +22,7 @@ export type QuestionDecision = {
   guideTopicId?: 'travel-document-workflow' | 'create';
   dataMessage: string;
   clarification?: string;
+  needsSalesPeriod?: true;
 };
 
 const metric =
@@ -39,11 +40,50 @@ const shortFollowup =
 export function routeAssistantQuestion(
   message: string,
   previous?: AnswerContext,
-  onSalesPage = false,
-  onCallCenterPage = false,
+  pendingSalesPeriod = false,
 ): QuestionDecision {
   const q = normalizeQuestion(message);
   const has = (pattern: RegExp) => matchesQuestion(q, pattern);
+  const salesPeriodClarification: QuestionDecision = {
+    kind: 'clarify',
+    domain: 'sales',
+    dataMessage: message,
+    needsSalesPeriod: true,
+    clarification:
+      'منظورتان از «ماه اخیر» کدام بازه است؟ ۳۰ روز کامل گذشته، ماه شمسی جاری یا ماه شمسی قبل؟ می‌توانید تاریخ شروع و پایان را هم مشخص کنید.',
+  };
+  if (pendingSalesPeriod) {
+    const period =
+      /^(?:همون |منظورم )?(?:(?:30|سی) روز(?: کامل)? (?:گذشته|اخیر|قبل)|این ماه(?: شمسی)?|ماه(?: شمسی)? جاری|ماه(?: شمسی)? (?:قبل|قبلی|گذشته))(?: بود| هست| رو بده)?$/.test(
+        q,
+      )
+        ? /روز/.test(q)
+          ? '30 روز گذشته'
+          : /این ماه|جاری/.test(q)
+            ? 'این ماه شمسی'
+            : 'ماه قبل شمسی'
+        : /^(?:از )?\d{1,2} [\p{L}]+(?: \d{4})? تا \d{1,2} [\p{L}]+(?: \d{4})?$/u.test(
+              q,
+            )
+          ? q.startsWith('از ')
+            ? q
+            : 'از ' + q
+          : undefined;
+    if (period)
+      return {
+        kind: 'data',
+        domain: 'sales',
+        dataMessage: 'فروش ' + period + ' چقدر است؟',
+      };
+    if (/^(?:ماه اخیر|همون|نمی دونم|نمیدونم|ماه)$/.test(q))
+      return salesPeriodClarification;
+  }
+  if (
+    /^(?:لطفا )?(?:(?:مجموع|جمع|مبلغ|کل) )?فروش(?:مون|مان)? (?:در )?(?:یک |1 )?ماه اخیر(?: (?:را|رو))?(?: (?:بده|بگو|چقدر است|چقدر بوده))?$/u.test(
+      q,
+    )
+  )
+    return salesPeriodClarification;
   if (
     /^(?:لطفا )?(?:پر ?فروش ?ترین هتل(?: ?ها(?:یی|ی)?)?(?: ?(?:را|رو))?(?: که (?:باهاشون|با آن ها) قرارداد (?:بستیم|بستیمو|بسته ایم))?|هتل(?: ?ها(?:یی|ی)?)? که بیش ?ترین قرارداد(?: (?:را|رو))? (?:دارن|دارند|دارندو|دارنو))(?: (?:را |رو )?(?:بده|بنویس|بگو|نشون بده|نشان بده))?$/u.test(
       q.replace(/[؟?،.!]/g, ''),
@@ -121,20 +161,14 @@ export function routeAssistantQuestion(
       guideTopicId: 'travel-document-workflow',
       dataMessage: message,
     };
-  const sales = has(/قرارداد|بیمه مسافر|رزرواسیون|رزرو/);
+  const sales = has(/فروش|قرارداد|بیمه مسافر|رزرواسیون|رزرو/);
   const callCenter = has(
     /کال سنتر|صف رسیدگی|تماس بدون نتیجه|تماس های بدون نتیجه|تماس مجدد|پرونده مخاطب|بررسی پیگیری|مدیر ایجادکننده|واحد مسئول مخاطب|تماس امروز|فایل صوتی تماس|ضبط مکالمه/,
   );
   const workbench = has(
     /میز\s*کار|مرخصی|جانشین|مساعده|تردد|پیام|پیام رسان|یادداشت|تقویم|فایل|تنظیمات حساب|حقوق|اضافه کاری|پورسانت|عملکرد من|ماموریت|مأموریت/,
   );
-  if (
-    callCenter ||
-    (onCallCenterPage &&
-      !sales &&
-      !workbench &&
-      (has(procedure) || has(action) || has(metric)))
-  ) {
+  if (callCenter) {
     if (
       has(metric) &&
       !has(procedure) &&
@@ -150,11 +184,7 @@ export function routeAssistantQuestion(
     return { kind: 'guide', domain: 'workbench', dataMessage: message };
   }
   const domain =
-    workbench && !sales
-      ? 'workbench'
-      : sales
-        ? 'sales'
-        : (previous?.domain ?? (onSalesPage ? 'sales' : undefined));
+    workbench && !sales ? 'workbench' : sales ? 'sales' : previous?.domain;
   const changedDomain = Boolean(
     previous && (sales || workbench) && domain !== previous.domain,
   );
@@ -172,7 +202,11 @@ export function routeAssistantQuestion(
       )) ||
     (has(metric) && /چرا|اختلاف|فرق|بجای|به جای/.test(q));
   const dataIntent =
-    asksEvidence || (has(metric) && !explicitProcedure && !locationProcedure);
+    asksEvidence ||
+    (has(metric) &&
+      !explicitProcedure &&
+      !locationProcedure &&
+      !has(/رویه|روند|فرایند|فرآیند/));
   const definition =
     !asksEvidence &&
     !/\d/.test(q) &&
@@ -218,7 +252,7 @@ export function routeAssistantQuestion(
       kind: 'guide',
       guideQuestion: sales ? message : `قرارداد: ${message}`,
     };
-  if (asksEvidence && !previous && !sales && !onSalesPage)
+  if (asksEvidence && !previous && !sales)
     return {
       ...base,
       kind: 'clarify',
@@ -269,7 +303,7 @@ export function routeAssistantQuestion(
       clarification:
         'منظورتان کدام پاسخ، عدد یا پرونده است؟ سؤال یا موضوع مرتبط را مشخص کنید تا همان مورد را بررسی کنم.',
     };
-  if (dataIntent && (sales || previous?.kind === 'data' || onSalesPage))
+  if (dataIntent && (sales || previous?.kind === 'data'))
     return {
       ...base,
       kind: previous?.kind === 'data' && asksEvidence ? 'follow-up' : 'data',
