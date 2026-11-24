@@ -77,3 +77,44 @@ describe('shared pilot guide evidence', () => {
     ).toBe('unmatched');
   });
 });
+
+describe('additional fixed pilot questions', () => {
+  it.each([
+    [
+      'I03',
+      'بلیت صادر شده ولی تحویل بسته است، چیکار کنم؟',
+      '/reservations',
+      'answer',
+      'travel-issuance/delivery',
+    ],
+    [
+      'I05',
+      'چطور واچر صادرشده رو باطل و دوباره صادر کنم؟',
+      '/reservations',
+      'insufficient',
+      undefined,
+    ],
+    [
+      'C04',
+      'درخواست مشتری من الان دست کیه؟',
+      '/customer-affairs',
+      'unmatched',
+      undefined,
+    ],
+    [
+      'C05',
+      'نتیجه رضایت مشتری رو چطور بررسی کنم؟',
+      '/customer-affairs',
+      'answer',
+      'customer-affairs/reports',
+    ],
+    ['C06', 'پیگیری رو از کجا ببینم؟', '', 'clarify', undefined],
+  ])(
+    '%s returns the expected disposition',
+    (_id, question, panel, status, ref) => {
+      const result = pilotGuideResponse(question, panel, undefined, () => true);
+      expect(result.status).toBe(status);
+      expect(result.sections[0]?.ref).toBe(ref);
+    },
+  );
+});
