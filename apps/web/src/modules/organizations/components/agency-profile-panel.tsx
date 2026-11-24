@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/form-controls';
 import { agencyClient } from '../api/agency-client';
 import { DossierFormDialog } from './dossier-form-dialog';
 import { useDossierBranch } from './use-dossier-branch';
+import { WebsiteAgencyAccounts } from './website-agency-accounts';
 import { B2B_COOPERATION_LABELS } from '@nora/contracts';
 
 const statusLabels = {
@@ -81,6 +82,12 @@ export function AgencyProfilePanel({
   );
   return (
     <div className="space-y-4">
+      {role === 'AGENCY' && permissions.includes('b2b.agency.read') && (
+        <WebsiteAgencyAccounts
+          organizationId={organizationId}
+          canApprove={permissions.includes('b2b.agency.manage')}
+        />
+      )}
       <section className="panel">
         <header className="panel-head">
           <h2 className="panel-title">پروفایل همکاری و مدیر حساب</h2>

@@ -24,9 +24,17 @@ export function AssistantGuidePage({
   }, [actor, canOpen, module]);
   if (!actor) return null;
   const catalogue = catalogues[module];
+  const mayOpen = (
+    section: NonNullable<ReturnType<typeof assistantGuideSection>>,
+  ) =>
+    canOpen(section.href) &&
+    (!section.permission ||
+      actor.permissions.some(
+        (permission) => permission === section.permission,
+      ));
   const topics = catalogue.topics.flatMap(({ id }) => {
     const section = assistantGuideSection(module, id);
-    return section && canOpen(section.href) ? [section] : [];
+    return section && mayOpen(section) ? [section] : [];
   });
   return (
     <main className="mx-auto max-w-4xl space-y-6 p-6" dir="rtl">
@@ -58,7 +66,7 @@ export function AssistantGuidePage({
             const [domain, id] = ref.split('/');
             if (!domain || !isAssistantGuideModule(domain)) return null;
             const related = assistantGuideSection(domain, id);
-            return related && canOpen(related.href) ? (
+            return related && mayOpen(related) ? (
               <Link
                 className="block underline"
                 href={related.guideHref}

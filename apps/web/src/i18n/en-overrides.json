@@ -1,5 +1,7 @@
 {
-  "منظورتان خرید کدام خدمت قرارداد است، یا می‌خواهید درخواست خرید تنخواه ثبت کنید؟": "Do you mean a contract service purchase or a petty cash purchase request?",
+  "برای مشاهدهٔ این بخش، حساب فعلی باید مجوز همان بخش مدیریت سیستم را داشته باشد.": "Your account needs permission to view this section of System Management.",
+  "جزئیات این مورد در چت بررسی نشده است. برای بررسی همان مورد، از نمای مجاز ERP استفاده کنید.": "This record was not inspected in chat. Open the authorized ERP view to review it.",
+  "کدام بخش مدیریت سیستم را می‌خواهید بررسی کنید؟ مدیریت کاربران، تاریخچه یا محتوا؟": "Which System Management section do you want to review: User Management, History, or Content?",
   "پیش‌نویس ·": "Draft ·",
   "در حال دریافت قیمت‌ها…": "Loading prices…",
   "هنوز نوبتی ثبت نشده است.": "No departure has been registered yet.",
@@ -7140,5 +7142,6 @@
   "راهنمای تعریف بلیط، لود چارتر، ویرایش یا بررسی ظرفیت را می‌خواهید؟": "Do you need help defining tickets, loading charter flights, editing flights, or checking capacity?",
   "شمارهٔ پرواز و تاریخ حرکت را با قالب میلادی 2026-11-24 بنویسید. اگر کلاس مشخصی مدنظر است، آن را هم ذکر کنید.": "Enter the flight number and departure date in Gregorian YYYY-MM-DD format. Include the class if applicable.",
   "کلاس:": "Class:",
-  "وضعیت فروش:": "Sales status:"
+  "وضعیت فروش:": "Sales status:",
+  "منظورتان خرید کدام خدمت قرارداد است، یا می‌خواهید درخواست خرید تنخواه ثبت کنید؟": "Do you mean a contract service purchase or a petty cash purchase request?"
 }

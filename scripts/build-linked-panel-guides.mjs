@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
 const outputs = {
+  'system-management': ['', '/system', 'registry'],
   'flight-capacity': [
     'flight-capacity.generated',
     '/ticket-management',
@@ -74,6 +75,7 @@ export function buildLinkedPanelGuides(directory, check) {
       const { id: metadataId, href, related, ...fields } = JSON.parse(metadata);
       const validAction =
         href === action ||
+        (domain === 'system-management' && href === '/system/users') ||
         (domain === 'reservations' &&
           [
             '/reservations/processing',
