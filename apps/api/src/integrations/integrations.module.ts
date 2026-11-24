@@ -1,4 +1,5 @@
 import { CustomerAffairsModule } from '../customer-affairs/customer-affairs.module';
+import { WebsiteSupportLeadController } from './website-support-lead.controller';
 import { TelephonyIntegrationService } from './telephony.service';
 import {
   TelephonyIntegrationController,
@@ -43,6 +44,7 @@ import {
     SystemManagementModule,
   ],
   controllers: [
+    WebsiteSupportLeadController,
     TelephonyRelayController,
     TelephonyRecordingReadController,
     GhestirooController,

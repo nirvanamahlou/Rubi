@@ -8,6 +8,7 @@ import {
   Injectable,
   NotFoundException,
   Optional,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import type {
   AuthenticatedActor,
@@ -729,6 +730,18 @@ export class MarketingRecordsService {
       return updated;
     });
     return { data: presentCampaign(row) };
+  }
+
+  async requireActiveLeadSource(
+    tx: Prisma.TransactionClient,
+    branchId: string,
+    name: string,
+  ): Promise<void> {
+    const source = await tx.marketingAsset.findUnique({
+      where: { branchId_kind_name: { branchId, kind: 'SOURCE', name } },
+      select: { status: true },
+    });
+    if (source?.status !== 'ACTIVE') throw new ServiceUnavailableException();
   }
 
   async listAssets(

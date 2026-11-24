@@ -255,6 +255,7 @@ export class CustomerAffairsMarketingIntakeService {
     requestedBranch: string | undefined,
     keyValue: string | undefined,
     traceId?: string,
+    reuseExistingIdentity = false,
   ) {
     this.assertPermissions(
       actor,
@@ -325,6 +326,12 @@ export class CustomerAffairsMarketingIntakeService {
           throw new ConflictException('نتیجه درخواست تکراری دیگر موجود نیست.');
         return prior;
       }
+      if (reuseExistingIdentity)
+        await this.marketing.requireActiveLeadSource(
+          tx,
+          branchId,
+          safePayload.sourceCategory,
+        );
       const duplicate = await tx.customerAffairsMarketingIntake.findUnique({
         where: {
           branchId_phoneFingerprint: {
@@ -333,32 +340,34 @@ export class CustomerAffairsMarketingIntakeService {
           },
         },
       });
-      if (duplicate)
+      if (duplicate && !reuseExistingIdentity)
         throw new ConflictException({
           code: 'INTAKE_IDENTITY_EXISTS',
           message: 'برای این شماره در شعبه یک ورودی اولیه وجود دارد.',
         });
-      const created = await tx.customerAffairsMarketingIntake.create({
-        data: {
-          branchId,
-          phoneEncrypted: protectedPhone.encryptedValue,
-          phoneIv: protectedPhone.encryptionIv,
-          phoneAuthTag: protectedPhone.encryptionAuthTag,
-          phoneKeyVersion: protectedPhone.encryptionKeyVersion,
-          phoneFingerprint: protectedPhone.valueFingerprint,
-          phoneMasked: protectedPhone.maskedValue,
-          firstName: safePayload.firstName ?? null,
-          lastName: safePayload.lastName ?? null,
-          entryDate,
-          sourceCategory: safePayload.sourceCategory,
-          campaignId: safePayload.campaignId,
-          status: safePayload.status,
-          assigneeUserId: safePayload.assigneeUserId,
-          lastFollowUpAt,
-          createdByUserId: actor.userId,
-          updatedByUserId: actor.userId,
-        },
-      });
+      const created =
+        duplicate ??
+        (await tx.customerAffairsMarketingIntake.create({
+          data: {
+            branchId,
+            phoneEncrypted: protectedPhone.encryptedValue,
+            phoneIv: protectedPhone.encryptionIv,
+            phoneAuthTag: protectedPhone.encryptionAuthTag,
+            phoneKeyVersion: protectedPhone.encryptionKeyVersion,
+            phoneFingerprint: protectedPhone.valueFingerprint,
+            phoneMasked: protectedPhone.maskedValue,
+            firstName: safePayload.firstName ?? null,
+            lastName: safePayload.lastName ?? null,
+            entryDate,
+            sourceCategory: safePayload.sourceCategory,
+            campaignId: safePayload.campaignId,
+            status: safePayload.status,
+            assigneeUserId: safePayload.assigneeUserId,
+            lastFollowUpAt,
+            createdByUserId: actor.userId,
+            updatedByUserId: actor.userId,
+          },
+        }));
       await tx.customerAffairsCommand.create({
         data: {
           actorUserId: actor.userId,
@@ -374,15 +383,41 @@ export class CustomerAffairsMarketingIntakeService {
           actorUserId: actor.userId,
           entityType: 'MARKETING_INTAKE',
           entityId: created.id,
-          action: 'CREATE_FIRST_CONTACT',
+          action: duplicate
+            ? 'WEBSITE_SUPPORT_CONTACT'
+            : 'CREATE_FIRST_CONTACT',
           traceId: traceId ?? null,
           version: created.version,
-          afterSnapshot: json(present(created)),
+          afterSnapshot: json(
+            duplicate
+              ? { sourceCategory: safePayload.sourceCategory, entryDate }
+              : present(created),
+          ),
         },
       });
       return created;
     });
     return { data: present(row) };
+  }
+
+  async captureWebsiteSupportLead(
+    input: CustomerAffairsMarketingIntakeInputV1,
+    actor: AuthenticatedActor,
+    key: string,
+  ): Promise<void> {
+    try {
+      await this.create(input, actor, undefined, key, undefined, true);
+    } catch (error) {
+      // A competing intake may create the phone or idempotency key first.
+      if (
+        typeof error !== 'object' ||
+        error === null ||
+        !('code' in error) ||
+        error.code !== 'P2002'
+      )
+        throw error;
+      await this.create(input, actor, undefined, key, undefined, true);
+    }
   }
 
   async score(

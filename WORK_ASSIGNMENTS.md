@@ -1,3 +1,7 @@
+## WEBSITE-SUPPORT-LEADS-1124 — PC-D — ACTIVE
+
+Own the signed website support lead intake and focused verification. Reuse the Marketing Audience lead records and branch-scoped source entries. Coordinate the three site senders. No schema, dependency or role changes.
+
 ## GEOGRAPHY-SITE-IMAGES-1124 — PC-D — ACTIVE
 
 Own the city and country photo fields, geography dialog, additive migration, and signed profile delivery of the main photo and gallery. Coordinate the three website receivers and verify the publication contract.

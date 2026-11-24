@@ -1,3 +1,7 @@
+## Website support leads
+
+Signed support questions from the three travel sites enter Marketing Audience as leads with their site-specific source and original question date. The intake stores only contact details and event metadata. A repeat contact in the same branch retains the original lead and source.
+
 ## City and country website photos
 
 Avina geography records support a main photo and up to six gallery photos. The row publication action includes the saved photos in the signed profile sent to Jahan Bastan, Ghestiroo, or Niyayesh Seir. Country flags use their existing independent field. Profiles created before this change omit photo fields until an image is added.

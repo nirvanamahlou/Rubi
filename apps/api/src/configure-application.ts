@@ -3,18 +3,28 @@ import {
   PayloadTooLargeException,
   ValidationPipe,
   type INestApplication,
+  type RawBodyRequest,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { parseCommaSeparatedList } from '@nora/config';
-import { json, type RequestHandler } from 'express';
+import { json, type Request, type RequestHandler } from 'express';
 
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { requestIdMiddleware } from './common/request-id.middleware';
 
-function boundedJson(limit: string): RequestHandler {
-  const parse = json({ limit });
+function boundedJson(limit: string, preserveBody = false): RequestHandler {
+  const parse = json({
+    limit,
+    ...(preserveBody
+      ? {
+          verify: (request, _response, bytes) => {
+            (request as RawBodyRequest<Request>).rawBody = bytes;
+          },
+        }
+      : {}),
+  });
   return (req, res, next) =>
     parse(req, res, (error: unknown) => {
       // Keep parser limit errors as client errors through the application filter.
@@ -45,6 +55,10 @@ export function configureApplication(app: INestApplication): void {
   app.use(
     `/${apiPrefix}/finance/accounting/books/:bookId/actions/tax-reference-import`,
     boundedJson('3mb'),
+  );
+  app.use(
+    `/${apiPrefix}/site-commerce/:site/support-lead`,
+    boundedJson('2kb', true),
   );
   app.use(boundedJson('100kb'));
   app.setGlobalPrefix(apiPrefix);

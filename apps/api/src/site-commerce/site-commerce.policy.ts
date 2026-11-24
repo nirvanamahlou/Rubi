@@ -37,6 +37,20 @@ export function commerceBindingSites() {
   return Object.keys(readBindings(process.env.SITE_COMMERCE_BINDINGS ?? '{}'));
 }
 
+export function websiteSupportActor(site: string): AuthenticatedActor {
+  const bindings = readBindings(process.env.SITE_COMMERCE_BINDINGS ?? '{}');
+  const binding = Object.hasOwn(bindings, site) ? bindings[site] : undefined;
+  if (!binding?.userId || !binding.branchId) throw new ForbiddenException();
+  const actor: AuthenticatedActor = {
+    userId: binding.userId,
+    sessionId: '',
+    branchIds: [binding.branchId],
+    permissions: ['customer_affairs.lead.create', 'marketing.audience.manage'],
+  };
+  siteBinding(site, actor);
+  return actor;
+}
+
 export function actorSite(actor: AuthenticatedActor) {
   const bindings = readBindings(process.env.SITE_COMMERCE_BINDINGS ?? '{}');
   const matches = Object.keys(bindings).filter(
