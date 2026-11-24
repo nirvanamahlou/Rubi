@@ -38,12 +38,10 @@ describe('website agency terms', () => {
     const service = new WebsiteAgencyTermsController(
       { client: { agencyOperationalProfile: { findFirst: terms } } } as never,
       {
-        activeWebsiteAccount: vi
-          .fn()
-          .mockResolvedValue({
-            organizationId: 'fixture-org',
-            branchId: 'fixture-branch',
-          }),
+        activeWebsiteAccount: vi.fn().mockResolvedValue({
+          organizationId: 'fixture-org',
+          branchId: 'fixture-branch',
+        }),
       } as never,
     );
     const response = await service.terms('nss', 'fixture-account', {
