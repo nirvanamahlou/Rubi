@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
 const outputs = {
+  'petty-cash': ['petty-cash.generated', '/purchases', 'documents'],
   b2b: ['b2b-guide-catalog', '/organizations', 'text'],
   tour: ['tour-guide', '/sales/tours', 'tuple'],
   'flight-pricing': ['flight-pricing-catalog', '/sales/ticket-prices', 'text'],

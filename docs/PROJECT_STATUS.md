@@ -10676,3 +10676,5 @@ New hotels receive an HTL identifier on save using the established city prefix a
 ## DASHBOARD-AVAILABILITY-NOTES — PC-C
 
 Archived dashboard widget availability reasons and expected data in docs/DASHBOARD-DATA-GAPS.md, ordered by the dashboard navigation. Removed long availability and coverage notes from cards and charts. Compact unavailable and empty states, chart units and genuine zeros remain. Dashboard suite: 62 passed, one existing skip.
+
+2026-11-24 PC-C — NORA-PETTY-CASH-GUIDE-1124: Added versioned Nora petty cash guidance, read-only request and balance lookup and coverage. See docs/tasks/NORA-PETTY-CASH-GUIDE-1124.md.
