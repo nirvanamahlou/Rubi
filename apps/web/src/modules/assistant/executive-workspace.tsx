@@ -490,11 +490,13 @@ function AssistantComposerContent({
     [pathname, pettyCashSelected],
   );
   const previousAnswer = useRef<AnswerContext | undefined>(undefined);
+  const pendingSalesPeriod = useRef(false);
   useEffect(() => {
     if (denied) {
       previousAnswer.current = undefined;
       pettyCashTopic.current = undefined;
       pettyCashRead.current?.abort();
+      pendingSalesPeriod.current = false;
     }
   }, [denied]);
   useEffect(() => {
@@ -570,9 +572,9 @@ function AssistantComposerContent({
     const decision = routeAssistantQuestion(
       message,
       previousAnswer.current,
-      Boolean(pathname?.startsWith('/sales')),
-      workbenchTab === 'call-center',
+      pendingSalesPeriod.current,
     );
+    pendingSalesPeriod.current = decision.needsSalesPeriod === true;
     const guideQuestion = decision.guideQuestion ?? message;
     const guidanceAllowed = decision.kind === 'guide';
     const replyLocally = (
@@ -611,6 +613,7 @@ function AssistantComposerContent({
     );
     pettyCashTopic.current = undefined;
     if (pettyCash) {
+      pendingSalesPeriod.current = false;
       pending.current?.abort();
       previousAnswer.current = undefined;
       guideTopic.current = undefined;
@@ -646,6 +649,32 @@ function AssistantComposerContent({
           if (pending.current === controller) setActionState(null);
         }
       }
+      return;
+    }
+    if (decision.kind === 'capabilities') {
+      replyLocally(
+        english
+          ? 'I can explain ERP workflows, look up accessible records, and answer supported ERP reporting questions. Ask about a module, contract, or report.'
+          : 'می‌توانم مراحل کار در روبی را توضیح بدهم، پرونده‌های در دسترس را بررسی کنم و به سؤال‌های گزارش‌گیری از داده‌های متصل پاسخ بدهم. موضوع یا نام گزارش را بگویید.',
+      );
+      return;
+    }
+    if (decision.kind === 'sales-report-guide') {
+      replyLocally(
+        english
+          ? 'Open Reports, select the sales report from the catalogue, set its filters, and choose View results. If export is available, select Download Excel.'
+          : 'در «اسناد و گزارش‌ها ← گزارش‌ها»، گزارش فروش موردنظر را از کاتالوگ انتخاب کنید. فیلترهای گزارش را تنظیم کنید و «نمایش نتیجه» را بزنید. اگر گزینهٔ خروجی فعال است، «دریافت خروجی اکسل» را انتخاب کنید.',
+        undefined,
+        undefined,
+        {
+          href: '/reports?view=catalog',
+          label: english ? 'Open reports' : 'باز کردن گزارش‌ها',
+        },
+      );
+      return;
+    }
+    if (decision.needsSalesPeriod) {
+      replyLocally(decision.clarification!);
       return;
     }
     const operationalMetric = resolveOperationalMetric(message);
@@ -714,7 +743,7 @@ function AssistantComposerContent({
       }
       return;
     }
-    if (decision.guideTopicId === 'travel-document-workflow') {
+    if (decision.guideTopicId) {
       pending.current?.abort();
       const section = contractGuideCatalog.topics.find(
         ({ id }) => id === decision.guideTopicId,
@@ -1549,7 +1578,11 @@ function AssistantComposerContent({
       return;
     }
     if (guidanceAllowed) {
-      replyLocally(t(c.internalSourceFallback));
+      replyLocally(
+        english
+          ? 'Which ERP workflow, record, or report would you like me to check?'
+          : 'کدام فرایند، پرونده یا گزارش روبی را می‌خواهید بررسی کنم؟ نام بخش، شماره پرونده یا عنوان گزارش را بگویید.',
+      );
       return;
     }
     pending.current?.abort();

@@ -295,10 +295,12 @@ export function renderSalesWindow(answer, report, request) {
 }
 
 export function relativeSalesRequest(request, now) {
-  const text = normalizeSalesText(request.message);
+  const text = normalizeSalesText(request.message)
+    .replace(/^(?:لطفا )?(?:مجموع|جمع|مبلغ|کل) (?=فروش)/u, '')
+    .replace(/ (?:رو|را) (?:بده|بگو)[؟?!.]*$/u, '');
   const words = text.replace(/[؟?،.]/g, '').split(' ');
   const allowed = new Set(
-    'فروش فروشمون شرکت ما امروز دیروز پریروز این هفته ی ماه سال قبل قبلی تر پیش گذشته هفت 7 روز شمسی میلادی نسبت به در مقایسه با چقدر چطوره چطور چقدره بوده بود شد است هست تا همین موقع زمان بگو و'.split(
+    'فروش فروشمون شرکت ما امروز دیروز پریروز این هفته ی ماه سال قبل قبلی تر پیش گذشته هفت 7 سی 30 روز شمسی میلادی نسبت به در مقایسه با چقدر چطوره چطور چقدره بوده بود شد است هست تا همین موقع زمان بگو و'.split(
       ' ',
     ),
   );
