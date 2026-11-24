@@ -91,8 +91,9 @@ describe('read-only website passenger preflight', () => {
     expect(f.repo.update).not.toHaveBeenCalled();
   });
   it('reuses a matching passport-only identity on repeated storefront purchases', async () => {
-    const { nationalId: _nationalId, ...passport } = {
+    const passport = {
       ...input,
+      nationalId: null,
       passportFirstName: 'SYNTHETIC',
       passportLastName: 'PASSENGER',
     };
