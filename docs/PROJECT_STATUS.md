@@ -14,6 +14,10 @@ Nora routes workflow questions to existing guides, record and report questions t
 
 Nora v3 shows calculation methods, source names and observation timestamps on explicit request. Report periods, coverage limitations and authorization checks remain part of the normal reporting flow.
 
+## NORA-GUIDE-DEPTH-1124 — PC-C
+
+Stage 3 expands five procedural guides with 15 additional source-linked topics and permission-scoped server retrieval. The acceptance matrix and unresolved policy dependencies are in docs/tasks/NORA-GUIDE-DEPTH-1124.md. No producer or runtime deployment changes.
+
 ## NORA-GUIDE-PILOT-1124 — PC-C
 
 Stage 2 completed its 18 authenticated local browser cases across Sales, Travel Issuance and Customer Affairs. Customer-status questions without a tracking number now request it and identify the appropriate panel. Evidence and fixture limitations are in docs/tasks/NORA-GUIDE-PILOT-VERIFICATION-1124.md. Draft PR #1907 remains subject to CI and review.
@@ -23,6 +27,11 @@ Stage 2 completed its 18 authenticated local browser cases across Sales, Travel 
 
 Initial linked guides for travel issuance, Customer Affairs, package generator, petty cash and correspondence. Scoped lexical retrieval uses accessible destinations and existing record dispatch. Build-time catalogue consistency and 11 focused retrieval tests passed. Stage 1 acceptance baseline records 15 module coverage rows, 18 pilot questions and policy evidence gaps in docs/tasks/NORA-GUIDE-ACCEPTANCE-BASELINE-1124.md. Server-side retrieval and execution of the pilot belong to Stage 2.
 
+
+
+## City and country website photos
+
+Avina geography records support a main photo and up to six gallery photos. The row publication action includes the saved photos in the signed profile sent to Jahan Bastan, Ghestiroo, or Niyayesh Seir. Country flags use their existing independent field. Profiles created before this change omit photo fields until an image is added.
 
 
 ## Master Data logo scan display
@@ -10695,5 +10704,7 @@ New hotels receive an HTL identifier on save using the established city prefix a
 ## DASHBOARD-AVAILABILITY-NOTES — PC-C
 
 Archived dashboard widget availability reasons and expected data in docs/DASHBOARD-DATA-GAPS.md, ordered by the dashboard navigation. Removed long availability and coverage notes from cards and charts. Compact unavailable and empty states, chart units and genuine zeros remain. Dashboard suite: 62 passed, one existing skip.
+
+2026-11-24 PC-C — NORA-RESERVATION-GUIDE-1124: Added the versioned Reservations guide, local Composer dispatch and coverage matrix. Existing report record reads remain scoped to the current session. See docs/tasks/NORA-RESERVATION-GUIDE-1124.md.
 
 2026-11-24 PC-C — NORA-CORRESPONDENCE-GUIDE-1124: Added Nora correspondence guide, scoped read-only inbox status and test matrix. See docs/tasks/NORA-CORRESPONDENCE-GUIDE-1124.md.

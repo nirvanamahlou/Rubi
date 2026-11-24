@@ -433,6 +433,29 @@ describe('actual Composer submit routing and transport', () => {
   });
 });
 
+describe('Reservations catalogue in the Composer', () => {
+  it('answers locally and continues after navigation without calling the model', async () => {
+    h.path = '/reservations';
+    await send('چطور خروجی مانیفست بگیرم؟');
+    expect(chat().at(-1)).toContain('رزرواسیون ← MANIFEST');
+
+    h.path = '/workbench';
+    await send('بعدش چی؟');
+    expect(chat().at(-1)).toContain('مسافر جامانده');
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+
+  it('drops the previous topic when the selected company changes', async () => {
+    h.path = '/reservations';
+    await send('چطور خروجی مانیفست بگیرم؟');
+    expect(chat().at(-1)).toContain('MANIFEST');
+
+    h.company = 'company-b';
+    await send('بعدش چی؟');
+    expect(chat().join('\n')).not.toContain('مسافر جامانده');
+  });
+});
+
 describe('correspondence guide in the Composer', () => {
   it('answers from the local guide without sending a letter or calling the model', async () => {
     h.path = '/hr';

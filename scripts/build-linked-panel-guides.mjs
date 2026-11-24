@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
 const outputs = {
+  reservations: ['reservation-guide.generated', '/reservations', 'documents'],
   'travel-issuance': ['', '/reservations', 'registry'],
   'customer-affairs': ['', '/customer-affairs', 'registry'],
   'package-generator': ['', '/sales/pricing/generator', 'registry'],
@@ -74,8 +75,14 @@ export function buildLinkedPanelGuides(directory, check) {
             '/correspondence/internal/send',
             '/correspondence/internal/received',
           ].includes(href)) ||
+        (domain === 'reservations' &&
+          [
+            '/reservations/processing',
+            '/reservations/insurance',
+            '/reservations/hotel-rates',
+          ].includes(href)) ||
         (domain === 'travel-issuance' &&
-          id === 'delivery' &&
+          ['delivery', 'delivery-exception'].includes(id) &&
           href === '/finance/delivery') ||
         (domain === 'tour' &&
           [
@@ -122,7 +129,7 @@ export function buildLinkedPanelGuides(directory, check) {
         id,
         title,
         href,
-        ...(format === 'registry' ? fields : {}),
+        ...(format === 'registry' || domain === 'correspondence' ? fields : {}),
         related,
         steps,
         guideHref: '/assistant-guides/' + domain + '#' + id,
@@ -151,8 +158,10 @@ export function buildLinkedPanelGuides(directory, check) {
           .map(({ id, title, href, steps, fields }) => ({
             id,
             title,
+            ...(['reservations', 'correspondence'].includes(domain)
+              ? { href }
+              : {}),
             steps,
-            ...(domain === 'correspondence' ? { href } : {}),
             ...fields,
           })),
       );

@@ -35,11 +35,54 @@
 1. در مکاتبات، بخش داخلی را باز کنید. برای اقدام جدید «ارسال» و برای پیگیری نامه‌های دریافت‌شده «دریافتی» را انتخاب کنید.
 2. برای پیگیری، جزئیات نامه را از ردیف همان فهرست باز کنید.
 
+<a id="archive-search"></a>
+
+## یافتن نامهٔ وارده با کد آرشیو
+
+<!-- nora-guide {"id":"archive-search","href":"/correspondence","related":[],"aliases":["کد آرشیو نامه","فیلتر نامه وارده","نامه وارده پیدا نمی شود"],"route":["مکاتبات","یافتن نامهٔ وارده با کد آرشیو"],"conditions":["دسترسی به پنل و اختیار اقدام روی همان پرونده"],"sources":["apps/web/src/modules/correspondence/incoming-letter-workspace.tsx"],"specific":true} -->
+
+### مراحل
+
+1. در نامهٔ وارده کد آرشیو ثبت‌شده را با فهرست تطبیق دهید و از فیلترهای موجود مانند بازهٔ تاریخ ثبت استفاده کنید.
+2. اگر نامه پیدا نشد، بازه و دسترسی خود را بررسی و سپس از ثبت‌کننده کد آرشیو را بگیرید.
+3. در صورت نامشخص بودن نتیجهٔ ذخیره، ابتدا فهرست را بررسی کنید و از ثبت مجدد همان نامه بپرهیزید.
+
+### مرجع
+
+[رفتار پیاده‌سازی](../../../apps/web/src/modules/correspondence/incoming-letter-workspace.tsx)
+
+<a id="letter-export"></a>
+
+## پیش‌نمایش و خروجی نامهٔ صادره
+
+<!-- nora-guide {"id":"letter-export","href":"/correspondence","related":[],"aliases":["چاپ نامه صادره","خروجی نامه صادره","دانلود پی دی اف نامه صادره"],"route":["مکاتبات","پیش‌نمایش و خروجی نامهٔ صادره"],"conditions":["دسترسی به پنل و اختیار اقدام روی همان پرونده"],"sources":["apps/web/src/modules/correspondence/outgoing-letter-workspace.tsx"],"specific":true} -->
+
+### مراحل
+
+1. در نامهٔ صادره سربرگ شرکت، گیرنده، موضوع و متن را در پیش‌نمایش کنترل کنید.
+2. در همان نما خروجی تصویر یا پی‌دی‌اف را دریافت کنید. اگر متن چندصفحه‌ای است انتهای صفحه‌ها و همهٔ صفحات را بررسی کنید.
+3. دانلود فایل به معنی ثبت بایگانی یا ارسال به گیرنده نیست. وضعیت ثبت یا ارسال را در گردش مربوط بررسی کنید.
+
+### مرجع
+
+[رفتار پیاده‌سازی](../../../apps/web/src/modules/correspondence/outgoing-letter-workspace.tsx)
+
+<a id="internal-actions"></a>
+
+## ویرایش، بازارسال و حذف نامهٔ داخلی
+
+<!-- nora-guide {"id":"internal-actions","href":"/correspondence/internal/received","related":[],"aliases":["بازارسال نامه داخلی","ویرایش نامه داخلی","پیوست نامه دریافتی","نامه داخلی خوانده نشده"],"route":["مکاتبات","ویرایش، بازارسال و حذف نامهٔ داخلی"],"conditions":["دسترسی به پنل و اختیار اقدام روی همان پرونده"],"sources":["apps/web/src/modules/correspondence/internal-letter-inbox.tsx"],"specific":true,"terms":["بازارسال","ویرایش نامه","حذف کامل","نیازمند اصلاح","تعارض نسخه"],"examples":["چطور نامه داخلی را برای اصلاح بازارسال کنم؟"],"source":"apps/web/src/modules/correspondence/internal-letter-inbox.tsx"} -->
+
+### مراحل
+
+1. در کارتابل «بازارسال» را بزنید، گیرندگان، وضعیت تأیید، رد یا نیازمند اصلاح و توضیح را انتخاب کنید. برای اصلاح متن از «ویرایش» استفاده کنید؛ شماره، تاریخ و شرکت قابل تغییر نیستند.
+2. در تعارض نسخه نامه را دوباره بارگذاری کنید. «حذف کامل» نامه و تمام ارسال‌های آن را از دسترس همهٔ گیرندگان خارج می‌کند؛ اثر را در دیالوگ بررسی کنید.
+
 <a id="overview"></a>
 
 ## انتخاب مسیر
 
-<!-- nora-guide {"id":"overview","href":"/correspondence","route":["مکاتبات","انتخاب مسیر"],"related":[],"terms":["نوع نامه","کدام بخش","ورود به مکاتبات"],"examples":["نامه را از کجا ثبت کنم؟"],"source":"apps/web/src/modules/correspondence/correspondence-workspace.tsx"} -->
+<!-- nora-guide {"id":"overview","href":"/correspondence","route":["مکاتبات","انتخاب مسیر"],"related":[],"terms":["نوع نامه","کدام بخش","ورود به مکاتبات"],"examples":["نامه را از کجا ثبت کنم؟"],"source":"apps/web/src/modules/correspondence/correspondence-workspace.tsx","aliases":["نوع نامه","کدام بخش","ورود به مکاتبات"],"conditions":["دسترسی مجاز به پنل و اقدام مربوط"]} -->
 
 ### مراحل
 
@@ -50,7 +93,7 @@
 
 ## ثبت نامهٔ ورودی
 
-<!-- nora-guide {"id":"incoming-register","href":"/correspondence/incoming","route":["مکاتبات","ثبت نامهٔ ورودی"],"related":["documents/archive"],"terms":["ثبت نامه ورودی","بارگذاری نامه","کد آرشیو"],"examples":["فایل نامه ورودی را چطور ثبت کنم؟"],"source":"apps/web/src/modules/correspondence/incoming-letter-workspace.tsx"} -->
+<!-- nora-guide {"id":"incoming-register","href":"/correspondence/incoming","route":["مکاتبات","ثبت نامهٔ ورودی"],"related":["documents/archive"],"terms":["ثبت نامه ورودی","بارگذاری نامه","کد آرشیو"],"examples":["فایل نامه ورودی را چطور ثبت کنم؟"],"source":"apps/web/src/modules/correspondence/incoming-letter-workspace.tsx","aliases":["ثبت نامه ورودی","بارگذاری نامه","کد آرشیو"],"conditions":["دسترسی مجاز به پنل و اقدام مربوط"]} -->
 
 ### مراحل
 
@@ -65,7 +108,7 @@
 
 ## جست‌وجو و دریافت نامهٔ ورودی
 
-<!-- nora-guide {"id":"incoming-find","href":"/correspondence/incoming","route":["مکاتبات","جست‌وجو و دریافت نامهٔ ورودی"],"related":["documents/archive"],"terms":["دانلود نامه ورودی","پیش نمایش نامه ورودی","جستجوی نامه ورودی","منقضی"],"examples":["دانلود نامه ورودی چرا غیرفعال است؟"],"source":"apps/web/src/modules/correspondence/incoming-letter-workspace.tsx"} -->
+<!-- nora-guide {"id":"incoming-find","href":"/correspondence/incoming","route":["مکاتبات","جست‌وجو و دریافت نامهٔ ورودی"],"related":["documents/archive"],"terms":["دانلود نامه ورودی","پیش نمایش نامه ورودی","جستجوی نامه ورودی","منقضی"],"examples":["دانلود نامه ورودی چرا غیرفعال است؟"],"source":"apps/web/src/modules/correspondence/incoming-letter-workspace.tsx","aliases":["دانلود نامه ورودی","پیش نمایش نامه ورودی","جستجوی نامه ورودی","منقضی"],"conditions":["دسترسی مجاز به پنل و اقدام مربوط"]} -->
 
 ### مراحل
 
@@ -80,7 +123,7 @@
 
 ## تولید نامهٔ خروجی
 
-<!-- nora-guide {"id":"outgoing-compose","href":"/correspondence/outgoing","route":["مکاتبات","تولید نامهٔ خروجی"],"related":[],"terms":["تولید نامه","شماره نامه خالی","سربرگ","تغییر شرکت","شماره گذاری"],"examples":["شرکت را عوض کردم چرا شماره نامه خالی شد؟"],"source":"apps/web/src/modules/correspondence/outgoing-letter-workspace.tsx"} -->
+<!-- nora-guide {"id":"outgoing-compose","href":"/correspondence/outgoing","route":["مکاتبات","تولید نامهٔ خروجی"],"related":[],"terms":["تولید نامه","شماره نامه خالی","سربرگ","تغییر شرکت","شماره گذاری"],"examples":["شرکت را عوض کردم چرا شماره نامه خالی شد؟"],"source":"apps/web/src/modules/correspondence/outgoing-letter-workspace.tsx","aliases":["تولید نامه","شماره نامه خالی","سربرگ","تغییر شرکت","شماره گذاری"],"conditions":["دسترسی مجاز به پنل و اقدام مربوط"]} -->
 
 ### مراحل
 
@@ -91,7 +134,7 @@
 
 ## فایل نامهٔ خروجی
 
-<!-- nora-guide {"id":"outgoing-export","href":"/correspondence/outgoing","route":["مکاتبات","فایل نامهٔ خروجی"],"related":[],"terms":["pdf","خروجی تصویر","دانلود نامه خروجی","فایل آماده"],"examples":["PDF نامه خروجی آماده است، آیا ارسال شده؟"],"source":"apps/web/src/modules/correspondence/outgoing-letter-workspace.tsx"} -->
+<!-- nora-guide {"id":"outgoing-export","href":"/correspondence/outgoing","route":["مکاتبات","فایل نامهٔ خروجی"],"related":[],"terms":["pdf","خروجی تصویر","دانلود نامه خروجی","فایل آماده"],"examples":["PDF نامه خروجی آماده است، آیا ارسال شده؟"],"source":"apps/web/src/modules/correspondence/outgoing-letter-workspace.tsx","aliases":["pdf","خروجی تصویر","دانلود نامه خروجی","فایل آماده"],"conditions":["دسترسی مجاز به پنل و اقدام مربوط"]} -->
 
 ### مراحل
 
@@ -102,7 +145,7 @@
 
 ## ارسال نامهٔ داخلی
 
-<!-- nora-guide {"id":"internal-send","href":"/correspondence/internal/send","route":["مکاتبات","ارسال نامهٔ داخلی"],"related":[],"terms":["ارسال نامه داخلی","چند نفر","گیرندگان","فایل پیوست"],"examples":["چطور نامه داخلی به چند نفر بفرستم؟"],"source":"apps/web/src/modules/correspondence/outgoing-letter-workspace.tsx"} -->
+<!-- nora-guide {"id":"internal-send","href":"/correspondence/internal/send","route":["مکاتبات","ارسال نامهٔ داخلی"],"related":[],"terms":["ارسال نامه داخلی","چند نفر","گیرندگان","فایل پیوست"],"examples":["چطور نامه داخلی به چند نفر بفرستم؟"],"source":"apps/web/src/modules/correspondence/outgoing-letter-workspace.tsx","aliases":["ارسال نامه داخلی","چند نفر","گیرندگان","فایل پیوست"],"conditions":["دسترسی مجاز به پنل و اقدام مربوط"]} -->
 
 ### مراحل
 
@@ -113,20 +156,9 @@
 
 ## کارتابل نامه‌های دریافتی داخلی
 
-<!-- nora-guide {"id":"internal-inbox","href":"/correspondence/internal/received","route":["مکاتبات","کارتابل نامه‌های دریافتی داخلی"],"related":[],"terms":["خوانده نشده","کارتابل داخلی","فهرست نامه ها","دریافتی داخلی"],"examples":["نامه را باز کردم چرا از خوانده نشده ها رفت؟"],"source":"apps/web/src/modules/correspondence/internal-letter-inbox.tsx"} -->
+<!-- nora-guide {"id":"internal-inbox","href":"/correspondence/internal/received","route":["مکاتبات","کارتابل نامه‌های دریافتی داخلی"],"related":[],"terms":["خوانده نشده","کارتابل داخلی","فهرست نامه ها","دریافتی داخلی"],"examples":["نامه را باز کردم چرا از خوانده نشده ها رفت؟"],"source":"apps/web/src/modules/correspondence/internal-letter-inbox.tsx","aliases":["خوانده نشده","کارتابل داخلی","فهرست نامه ها","دریافتی داخلی"],"conditions":["دسترسی مجاز به پنل و اقدام مربوط"]} -->
 
 ### مراحل
 
 1. در «نامه‌های دریافتی داخلی»، شماره یا موضوع، شرکت و وضعیت را تنظیم کنید. برای دیدن نسخهٔ تازه «بارگذاری مجدد» را بزنید.
 2. بازکردن نامه در کارتابل می‌تواند آن را برای گیرندهٔ جاری خوانده‌شده کند. تیک «فقط خوانده‌نشده» را بردارید و نامه را با شماره پیدا کنید. پیوست از جزئیات مجاز دریافت می‌شود.
-
-<a id="internal-actions"></a>
-
-## ویرایش، بازارسال و حذف نامهٔ داخلی
-
-<!-- nora-guide {"id":"internal-actions","href":"/correspondence/internal/received","route":["مکاتبات","ویرایش، بازارسال و حذف نامهٔ داخلی"],"related":[],"terms":["بازارسال","ویرایش نامه","حذف کامل","نیازمند اصلاح","تعارض نسخه"],"examples":["چطور نامه داخلی را برای اصلاح بازارسال کنم؟"],"source":"apps/web/src/modules/correspondence/internal-letter-inbox.tsx"} -->
-
-### مراحل
-
-1. در کارتابل «بازارسال» را بزنید، گیرندگان، وضعیت تأیید، رد یا نیازمند اصلاح و توضیح را انتخاب کنید. برای اصلاح متن از «ویرایش» استفاده کنید؛ شماره، تاریخ و شرکت قابل تغییر نیستند.
-2. در تعارض نسخه نامه را دوباره بارگذاری کنید. «حذف کامل» نامه و تمام ارسال‌های آن را از دسترس همهٔ گیرندگان خارج می‌کند؛ اثر را در دیالوگ بررسی کنید.

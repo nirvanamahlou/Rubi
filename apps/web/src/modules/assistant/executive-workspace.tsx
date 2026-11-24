@@ -77,6 +77,10 @@ import {
   type ReservationReportTopic,
 } from './reservation-report-guide';
 import {
+  renderReservationGuide,
+  resolveReservationGuide,
+} from './reservation-guide';
+import {
   correspondenceHref,
   internalInboxHref,
   readCorrespondenceStatus,
@@ -482,6 +486,7 @@ function AssistantComposerContent({
   const b2bTopic = useRef<string | undefined>(undefined);
   const b2bRead = useRef<AbortController | null>(null);
   useEffect(() => () => b2bRead.current?.abort(), [pathname]);
+  const reservationGuideTopic = useRef<string | undefined>(undefined);
   const reportTopic = useRef<ReservationReportTopic | undefined>(undefined);
   const documentTopic = useRef<string | undefined>(undefined);
   const workbenchTopic = useRef<string | undefined>(undefined);
@@ -494,6 +499,7 @@ function AssistantComposerContent({
   useEffect(() => {
     if (denied) {
       previousAnswer.current = undefined;
+      reservationGuideTopic.current = undefined;
       pendingSalesPeriod.current = false;
       correspondenceTopic.current = undefined;
     }
@@ -604,6 +610,8 @@ function AssistantComposerContent({
       setActionResult(null);
       setActionState(null);
     };
+    const previousReservationTopic = reservationGuideTopic.current;
+    reservationGuideTopic.current = undefined;
     const correspondence = resolveCorrespondenceGuide(
       message,
       pathname,
@@ -709,6 +717,35 @@ function AssistantComposerContent({
         if (!controller.signal.aborted) throw error;
       } finally {
         if (pending.current === controller) setActionState(null);
+      }
+      return;
+    }
+    const reservationGuide = resolveReservationGuide(
+      message,
+      pathname,
+      previousReservationTopic,
+    );
+    if (reservationGuide) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      reportTopic.current = undefined;
+      guideTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      if ('clarification' in reservationGuide) {
+        replyLocally(reservationGuide.clarification);
+      } else {
+        const { topic, followUp, inspection } = reservationGuide;
+        reservationGuideTopic.current = topic.id;
+        replyLocally(
+          renderReservationGuide(topic, followUp, inspection),
+          undefined,
+          undefined,
+          documentGuideLink(
+            { href: topic.href, label: 'باز کردن پنل' },
+            'reservations',
+            topic.id,
+          ),
+        );
       }
       return;
     }
