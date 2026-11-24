@@ -22,6 +22,10 @@ Own the additive site-commerce dated-tour draft route, authoritative rate and ho
 
 Reserve additive Nora flight capacity guide, registration, read-only Composer dispatch and tests. Reuse the authenticated managed offers reader and preserve producer workflows and permissions.
 
+## WEBSITE-AGENCY-ONBOARDING-1124 — PC-D — ACTIVE
+
+Reserve the additive website-agency account model and migration, Master Data intake, matching and approval, and the Organizations account panel. Coordinate the three storefront callers. Preserve all IAM, credit, existing agency records and website password stores.
+
 ## WEBSITE-DATED-TOUR-CONTRACTS-1124 — PC-D — ACTIVE
 
 Own the additive site-commerce dated-tour draft route, authoritative rate and hotel-itinerary validation, and coordinated Jahan Bastan and Ghestiroo checkout callers. Preserve payment verification, floating-tour policy, and other publishing changes. No migration or dependency changes.

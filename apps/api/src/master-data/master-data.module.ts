@@ -1,4 +1,9 @@
 import { HotelImagesController } from './hotel-images.controller';
+import {
+  WebsiteAgencyRegistrationController,
+  WebsiteAgencyStaffController,
+} from './website-agency.controller';
+import { WebsiteAgencyDirectory } from './website-agency-directory';
 import { ManifestTemplateController } from './manifest-template.controller';
 import { Module } from '@nestjs/common';
 import { MasterSelectionController } from './master-selection.controller';
@@ -34,6 +39,8 @@ import {
 @Module({
   imports: [IamModule],
   controllers: [
+    WebsiteAgencyRegistrationController,
+    WebsiteAgencyStaffController,
     HotelImagesController,
     ManifestTemplateController,
     MasterSelectionController,
@@ -46,6 +53,7 @@ import {
     OrganizationAddressController,
   ],
   providers: [
+    WebsiteAgencyDirectory,
     MasterSelectionDirectory,
     MasterSalesDirectory,
     MasterProcurementDirectory,

@@ -360,6 +360,7 @@ model RolePermission {
 }
 
 model Branch {
+  websiteAgencyAccounts WebsiteAgencyAccount[]
   websiteCheckoutSessions WebsiteCheckoutSession[]
 
   websiteCatalogDeliveries      WebsiteCatalogDelivery[]
@@ -1481,6 +1482,7 @@ model MasterPaymentMethod {
 }
 
 model MasterOrganization {
+  websiteAgencyAccounts WebsiteAgencyAccount[]
   accountingCode              String?                      @unique @db.VarChar(7)
   partnerFinanceRequests      FinanceOperationalRequest[]
   marketingPromotions         MarketingAsset[]             @relation("MarketingPromotionAgency")
@@ -1522,6 +1524,33 @@ model MasterOrganization {
 
   @@index([isActive, displayName])
   @@map("master_organizations")
+}
+
+model WebsiteAgencyAccount {
+  id                   String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  site                 String              @db.VarChar(24)
+  externalId           String              @db.VarChar(100)
+  branchId             String              @db.Uuid
+  organizationId       String?             @db.Uuid
+  fingerprint          String              @db.VarChar(64)
+  legalName            String              @db.VarChar(160)
+  nationalId           String?             @db.VarChar(11)
+  registrationNumber   String?             @db.VarChar(80)
+  economicCode         String?             @db.VarChar(80)
+  tourismLicenseNumber String?             @db.VarChar(80)
+  email                String?             @db.VarChar(254)
+  username             String?             @db.VarChar(254)
+  status               String              @db.VarChar(12)
+  siteApproved         Boolean             @default(false)
+  profile              Json
+  createdAt            DateTime            @default(now()) @db.Timestamptz(3)
+  branch               Branch              @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  organization         MasterOrganization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@unique([site, externalId])
+  @@index([branchId, status])
+  @@index([organizationId, branchId])
+  @@map("website_agency_accounts")
 }
 
 model MasterOrganizationRole {
