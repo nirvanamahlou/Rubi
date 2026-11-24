@@ -8,8 +8,13 @@ describe('Purchase guidance', () => {
   it.each([
     ['کارت داشبورد خرید و تامین', 'dashboard'],
     ['فیلتر تاریخ خرید و تامین', 'filters'],
-    ['خرید هتل چطور ثبت میشه', 'save'],
+    ['خرید هتل چطور ثبت میشه', 'hotel'],
     ['قیمت صندلی کجاست', 'flight'],
+    ['خرید هتل رو چطور ثبت کنم؟', 'hotel'],
+    ['خرید بلیط شناور هر مسافر رو چطور بزنم؟', 'floating'],
+    ['خرید ترانسفر رفت و برگشت رو چجوری ثبت کنم؟', 'transfer'],
+    ['خرید بیمه قرارداد رو از کجا ثبت کنم؟', 'insurance'],
+    ['پاسخ ذخیره خرید نیومد، دوباره ثبت کنم؟', 'recovery'],
     ['چرا تسویه مالی خرید انجام نشده', 'finance'],
     ['چرا دکمه ثبت خرید ندارم', 'access'],
   ])('routes %s', (question, id) => {
@@ -27,6 +32,26 @@ describe('Purchase guidance', () => {
     expect(resolvePurchaseQuestion('بعدش چی؟', false, 'save')).toMatchObject({
       topic: { id: 'save' },
     });
+  });
+  it('clarifies multiple service candidates and preserves the hotel rate workflow', () => {
+    expect(resolvePurchaseQuestion('از کجا خرید رو ثبت کنم؟', false)).toEqual({
+      kind: 'clarify',
+    });
+    expect(
+      resolvePurchaseQuestion('خرید هتل یا خرید بیمه رو چطور ثبت کنم؟', true),
+    ).toEqual({ kind: 'clarify' });
+    expect(
+      resolvePurchaseQuestion(
+        'قیمت خرید هتل و نرخ هتل رو چطور وارد کنم؟',
+        true,
+      ),
+    ).toBeUndefined();
+    expect(
+      resolvePurchaseQuestion(
+        'صدور بیمه نامه قرارداد رو از کجا انجام بدم؟',
+        true,
+      ),
+    ).toBeUndefined();
   });
   it('requests a full code and avoids reading until it is supplied', async () => {
     vi.mocked(loadPurchaseInbox).mockClear();

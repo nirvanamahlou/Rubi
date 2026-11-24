@@ -1080,6 +1080,14 @@ function AssistantComposerContent({
       documentTopic.current = undefined;
       workbenchTopic.current = undefined;
       guideTopic.current = undefined;
+      if (purchaseQuestion.kind === 'clarify') {
+        replyLocally(
+          english
+            ? 'Do you mean a contract service purchase or a petty cash purchase request?'
+            : 'منظورتان خرید کدام خدمت قرارداد است، یا می‌خواهید درخواست خرید تنخواه ثبت کنید؟',
+        );
+        return;
+      }
       if (purchaseQuestion.kind === 'guide') {
         purchaseTopic.current = purchaseQuestion.topic.id;
         replyLocally(

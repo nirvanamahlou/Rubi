@@ -7,7 +7,7 @@ import {
   purchaseServiceLabel,
   servicePurchase,
 } from '../reservation-purchases/model';
-import { normalizeQuestion } from './question-text';
+import { matchesQuestion, normalizeQuestion } from './question-text';
 
 const path = '/ticket-purchases';
 const topics = guideCatalogue.map(({ pattern, flags, ...topic }) => ({
@@ -22,16 +22,27 @@ export function resolvePurchaseQuestion(
   previous?: Topic['id'] | 'status',
 ) {
   const text = normalizeQuestion(message);
-  if (/تنخواه|قیمت فروش/.test(text)) return;
+  if (
+    matchesQuestion(
+      text,
+      /تنخواه|قیمت فروش|نرخ هتل|قیمت خرید هتل|صدور بیمه نامه|اصلاح بیمه نامه/,
+    )
+  )
+    return;
   if (previous === 'status' && /^[a-z0-9][a-z0-9_/-]{0,99}$/i.test(text))
     return { kind: 'status' as const, code: text };
-  const continuation = /^(?:بعدش چی|بعدش|مرحله بعد|بیشتر توضیح بده)$/.test(
-    text,
-  );
+  const continuation =
+    /^(?:بعدش چی|بعدش|مرحله بعد چیه|مرحله بعد|بیشتر توضیح بده)$/.test(text);
   const last = continuation && topics.find((topic) => topic.id === previous);
   if (last) return { kind: 'guide' as const, topic: last };
+  if (
+    !onPanel &&
+    /^(?:از کجا|کجا|چطور|چجور|چگونه) خرید(?: را| رو)? ثبت کنم$/.test(text)
+  ) {
+    return { kind: 'clarify' as const };
+  }
   const explicit =
-    /خرید و تامین|خرید خدمات|خرید پرواز|خرید هتل|خرید بیمه|خرید ترانسفر|قیمت صندلی|خرید.*قرارداد|قرارداد.*خرید/.test(
+    /خرید و تامین|خرید خدمات|خرید اقامت|خرید بلی[تط] شناور|خرید پرواز|خرید هتل|خرید بیمه|خرید ترانسفر|قیمت صندلی|خرید.*قرارداد|قرارداد.*خرید/.test(
       text,
     );
   if (
@@ -55,15 +66,31 @@ export function resolvePurchaseQuestion(
       )?.[1];
     return { kind: 'status' as const, code };
   }
+  const matching = topics.filter((topic) => matchesQuestion(text, topic.match));
+  const specialized = matching.filter(({ id }) =>
+    ['hotel', 'floating', 'transfer', 'insurance'].includes(id),
+  );
+  const priority = matching.find(
+    ({ id }) => id === 'recovery' || id === 'access',
+  );
+  if (!priority && specialized.length > 1) return { kind: 'clarify' as const };
   const topic =
-    topics.find((item) => item.match.test(text)) ??
-    topics.find((item) => item.id === 'dashboard');
+    priority ??
+    matching.find(({ id }) => id === 'finance') ??
+    specialized[0] ??
+    matching[0] ??
+    (explicit ? topics.find(({ id }) => id === 'dashboard') : undefined);
   if (topic) return { kind: 'guide' as const, topic };
 }
 
 export const purchaseGuideLink = { href: path, label: 'خرید و تأمین' };
 export function renderPurchaseGuide(topic: Topic) {
-  return [topic.title, purchaseGuideLink.label, topic.text].join('\n\n');
+  const route =
+    'route' in topic ? topic.route : [purchaseGuideLink.label, topic.title];
+  return [
+    route.join(' ← '),
+    ...topic.steps.map((step, index) => index + 1 + '. ' + step),
+  ].join('\n\n');
 }
 
 export async function readPurchaseGuide(

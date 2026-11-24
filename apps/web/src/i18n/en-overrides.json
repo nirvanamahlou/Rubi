@@ -7142,5 +7142,6 @@
   "راهنمای تعریف بلیط، لود چارتر، ویرایش یا بررسی ظرفیت را می‌خواهید؟": "Do you need help defining tickets, loading charter flights, editing flights, or checking capacity?",
   "شمارهٔ پرواز و تاریخ حرکت را با قالب میلادی 2026-11-24 بنویسید. اگر کلاس مشخصی مدنظر است، آن را هم ذکر کنید.": "Enter the flight number and departure date in Gregorian YYYY-MM-DD format. Include the class if applicable.",
   "کلاس:": "Class:",
-  "وضعیت فروش:": "Sales status:"
+  "وضعیت فروش:": "Sales status:",
+  "منظورتان خرید کدام خدمت قرارداد است، یا می‌خواهید درخواست خرید تنخواه ثبت کنید؟": "Do you mean a contract service purchase or a petty cash purchase request?"
 }
