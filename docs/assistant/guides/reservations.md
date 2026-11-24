@@ -156,7 +156,7 @@
 
 ## نرخ هتل
 
-<!-- nora-guide {"id":"hotel-rates","href":"/reservations/hotel-rates","related":["master-data/hotels"],"route":["رزرواسیون","نرخ هتل"],"conditions":["مشاهده پرونده و اقدام‌ها تابع دسترسی کاربر، شرکت فعال و وضعیت پرونده است."],"terms":["نرخ هتل","قیمت هتل","نرخ اقامت"],"examples":["نرخ هتل رو کجا بررسی کنم؟"],"source":"apps/web/src/modules/reservations/hotel-rates/hotel-rate-hub.tsx"} -->
+<!-- nora-guide {"id":"hotel-rates","href":"/reservations/hotel-rates","related":["hotel-purchase-rates/hotel-purchase-start","master-data/hotels"],"route":["رزرواسیون","نرخ هتل"],"conditions":["مشاهده پرونده و اقدام‌ها تابع دسترسی کاربر، شرکت فعال و وضعیت پرونده است."],"terms":["نرخ هتل","قیمت هتل","نرخ اقامت"],"examples":["نرخ هتل رو کجا بررسی کنم؟"],"source":"apps/web/src/modules/reservations/hotel-rates/hotel-rate-hub.tsx"} -->
 
 ### مراحل
 
@@ -165,6 +165,7 @@
 
 ### راهنماهای مرتبط
 
+- [راهنمای قیمت خرید هتل](hotel-purchase-rates.md#hotel-purchase-start)
 - [مرجع هتل‌ها](master-data.md#hotels)
 
 <a id="queue-export"></a>

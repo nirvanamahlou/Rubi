@@ -78,6 +78,7 @@ import {
   renderReservationGuide,
   resolveReservationGuide,
 } from './reservation-guide';
+import { readHotelPurchaseGuidePack } from './hotel-purchase-guide';
 import { normalizeQuestion } from './question-text';
 import { AssistantResponseContent } from './response-content';
 import { formatAssistantSources } from './response-presentation';
@@ -630,18 +631,61 @@ function AssistantComposerContent({
       if ('clarification' in reservationGuide) {
         replyLocally(reservationGuide.clarification);
       } else {
-        const { topic, followUp, inspection } = reservationGuide;
+        const { topic, followUp, inspection, packId } = reservationGuide;
         reservationGuideTopic.current = topic.id;
-        replyLocally(
-          renderReservationGuide(topic, followUp, inspection),
-          undefined,
-          undefined,
-          documentGuideLink(
-            { href: topic.href, label: 'باز کردن پنل' },
-            'reservations',
-            topic.id,
-          ),
+        const link = documentGuideLink(
+          { href: topic.href, label: 'باز کردن پنل' },
+          topic.id.startsWith('hotel-purchase-')
+            ? 'hotel-purchase-rates'
+            : 'reservations',
+          topic.id,
         );
+        if (packId) {
+          const controller = new AbortController();
+          pending.current = controller;
+          setActionState('loading');
+          try {
+            const evidence = await readHotelPurchaseGuidePack(
+              packId,
+              controller.signal,
+            );
+            if (!controller.signal.aborted) {
+              replyLocally(
+                [evidence, renderReservationGuide(topic, followUp, false)].join(
+                  '\n\n',
+                ),
+                undefined,
+                undefined,
+                link,
+              );
+            }
+          } catch (error) {
+            if (!controller.signal.aborted) {
+              const message = error instanceof Error ? error.message : '';
+              const reason =
+                message === 'بستهٔ نرخ پیدا نشد.'
+                  ? 'بسته در دامنهٔ قابل مشاهدهٔ این نشست پیدا نشد.'
+                  : message === 'دسترسی این بخش برای حساب شما فعال نیست.'
+                    ? message
+                    : 'دریافت وضعیت بسته ناموفق بود.';
+              replyLocally(
+                [reason, renderReservationGuide(topic, followUp, true)].join(
+                  '\n\n',
+                ),
+                undefined,
+                undefined,
+                link,
+              );
+            }
+          }
+        } else {
+          replyLocally(
+            renderReservationGuide(topic, followUp, inspection),
+            undefined,
+            undefined,
+            link,
+          );
+        }
       }
       return;
     }

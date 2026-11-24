@@ -1,3 +1,7 @@
+## NORA-HOTEL-PURCHASE-GUIDE-1124 — PC-C — ACTIVE
+
+Reserve Nora's hotel purchase guide, generated files, and additive guide routing and tests. Stacked on PR #1915. Reuse the authenticated pack reader and existing producer workflow.
+
 ## GEOGRAPHY-SITE-IMAGES-1124 — PC-D — ACTIVE
 
 Own the city and country photo fields, geography dialog, additive migration, and signed profile delivery of the main photo and gallery. Coordinate the three website receivers and verify the publication contract.
