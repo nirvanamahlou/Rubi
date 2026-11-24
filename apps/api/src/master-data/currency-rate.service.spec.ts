@@ -62,6 +62,44 @@ function fixture(options?: {
 }
 
 describe('CurrencyRateService decisions', () => {
+  it('publishes the latest active approved sale rate without internal fields', async () => {
+    const findMany = vi.fn().mockResolvedValue([
+      {
+        rate: { toFixed: () => '618530.245' },
+        fromCurrency: { code: 'EUR' },
+        validFrom: draft.validFrom,
+        validTo: null,
+        source: 'internal',
+      },
+    ]);
+    const service = new CurrencyRateService({
+      client: { masterDraftExchangeRate: { findMany } },
+    } as unknown as DatabaseService);
+
+    await expect(service.websiteSellRates()).resolves.toEqual([
+      {
+        currencyCode: 'EUR',
+        quoteCurrencyCode: 'IRR',
+        rateType: 'SELL',
+        rate: '618530.245',
+        validFrom: draft.validFrom.toISOString(),
+        validTo: null,
+      },
+    ]);
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        distinct: ['fromCurrencyId'],
+        where: expect.objectContaining({
+          isActive: true,
+          rateType: 'SELL',
+          status: 'APPROVED',
+          validFrom: { lte: expect.any(Date) },
+          OR: [{ validTo: null }, { validTo: { gt: expect.any(Date) } }],
+        }),
+      }),
+    );
+  });
+
   it('returns safe successful change notifications without exposing snapshots', async () => {
     const occurredAt = new Date('2026-09-07T08:00:00.000Z');
     const findMany = vi.fn().mockResolvedValue([

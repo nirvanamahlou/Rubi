@@ -13482,3 +13482,7 @@ Reserve the Master Data hotel creation and Excel-create paths, the create form, 
 ## DASHBOARD-AVAILABILITY-NOTES — PC-C — ACTIVE
 
 Reserve Dashboard availability display, its existing tests and the requested audit Markdown. Presentation only; source contracts, metrics and permissions remain unchanged.
+
+## WEBSITE-EXCHANGE-RATES-TOUR-INSURANCE-1124 — PC-D
+
+Branch `codex/pc-d-site-customer-services` from develop `ba9b26331`. Reserve the read-only Master Data sell-rate projection, the Site Commerce rate and test tour-insurance routes, and focused tests. Consumers are Jahan Bastan, Niyayesh Seir and Ghestiroo for rates, and Niyayesh Seir for test insurance. Existing pricing and document contracts keep their behavior. No schema, dependency, customer data, role or provider changes.

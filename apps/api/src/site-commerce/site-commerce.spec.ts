@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type {
   AuthenticatedActor,
   SalesContractCreateRequest,
@@ -30,6 +30,7 @@ const actor = {
 const binding = JSON.stringify({
   nss: { userId: ids.user, branchId: ids.branch },
 });
+afterEach(() => vi.unstubAllEnvs());
 const flight = {
   id: ids.offer,
   version: 1,
@@ -186,6 +187,7 @@ function fixture() {
   const output = { prepare: vi.fn().mockResolvedValue({ data: { contract } }) };
   const travel = {
     forContract: vi.fn().mockResolvedValue({
+      id: 'intake-1',
       workflow: { supplierStatus: 'PENDING' },
       snapshot: { serviceSelections: [] },
       ticketDocuments: [],
@@ -193,6 +195,23 @@ function fixture() {
   };
   const delivery = {
     readCustomerContract: vi.fn().mockResolvedValue({ approved: false }),
+  };
+  const insurance = {
+    enqueue: vi.fn().mockResolvedValue(undefined),
+    requestImmediate: vi.fn(),
+    summary: vi.fn().mockResolvedValue({
+      policies: [
+        {
+          id: 'policy-1',
+          passengerName: 'Synthetic Traveller',
+          policyNumber: null,
+          status: 'PENDING',
+          ready: false,
+          automatic: true,
+          error: 'internal',
+        },
+      ],
+    }),
   };
   const service = new SiteCommerceService(
     db as never,
@@ -205,9 +224,93 @@ function fixture() {
     travel as never,
     delivery as never,
     {} as never,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    insurance as never,
   );
-  return { service, db, sales, tickets, contract, link, delivery, output };
+  return {
+    service,
+    db,
+    sales,
+    tickets,
+    contract,
+    link,
+    delivery,
+    output,
+    insurance,
+  };
 }
+
+describe('website test tour insurance', () => {
+  it('only queues insurance for a settled tour with insurance included', async () => {
+    vi.stubEnv('SITE_COMMERCE_TEST_TOUR_INSURANCE', 'true');
+    const f = fixture();
+    await f.service.draft('nss', 'order-1', draft(), actor);
+    await expect(
+      f.service.websiteTourInsurance('nss', 'order-1', actor, true),
+    ).rejects.toHaveProperty('status', 404);
+
+    const [leg] = f.contract.servicesDetail;
+    f.contract.servicesDetail = [
+      { ...leg!, metadata: { ...leg!.metadata, tourDepartureId: 'test-tour' } },
+      { kind: 'HOTEL', clientKey: 'hotel', titleSnapshot: 'Test hotel' },
+      {
+        kind: 'INSURANCE',
+        clientKey: 'insurance',
+        titleSnapshot: 'Test policy',
+      },
+    ];
+    await expect(
+      f.service.websiteTourInsurance('nss', 'order-1', actor, true),
+    ).rejects.toHaveProperty('status', 403);
+    expect(f.insurance.enqueue).not.toHaveBeenCalled();
+
+    f.sales.financeCustomerDocumentDeliveryFacts.mockResolvedValue({
+      cancelled: false,
+      hasConfirmedPayment: true,
+      fullySettled: true,
+    });
+    f.delivery.readCustomerContract.mockResolvedValue({ approved: true });
+    await expect(
+      f.service.websiteTourInsurance('nss', 'order-1', actor),
+    ).resolves.toEqual({
+      data: {
+        sandbox: true,
+        policies: [
+          {
+            id: 'policy-1',
+            passengerName: 'Synthetic Traveller',
+            policyNumber: null,
+            status: 'PENDING',
+            ready: false,
+          },
+        ],
+      },
+    });
+    expect(f.insurance.enqueue).not.toHaveBeenCalled();
+    await f.service.websiteTourInsurance('nss', 'order-1', actor, true);
+    expect(f.insurance.enqueue).toHaveBeenCalledExactlyOnceWith(
+      'intake-1',
+      true,
+    );
+    expect(f.insurance.requestImmediate).toHaveBeenCalledExactlyOnceWith(
+      'policy-1',
+    );
+  });
+
+  it('cannot use the sandbox provider in production', async () => {
+    vi.stubEnv('SITE_COMMERCE_TEST_TOUR_INSURANCE', 'true');
+    vi.stubEnv('NODE_ENV', 'production');
+    const f = fixture();
+    await expect(
+      f.service.websiteTourInsurance('nss', 'order-1', actor, true),
+    ).rejects.toHaveProperty('status', 404);
+    expect(f.insurance.enqueue).not.toHaveBeenCalled();
+  });
+});
 
 describe('website connection policy', () => {
   it('rejects publishing to another staff-accessible branch outside the configured website binding', async () => {
