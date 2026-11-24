@@ -2,15 +2,35 @@
 
 Own the additive site-commerce dated-tour draft route, authoritative rate and hotel-itinerary validation, and coordinated Jahan Bastan and Ghestiroo checkout callers. Preserve payment verification, floating-tour policy, and other publishing changes. No migration or dependency changes.
 
+## NORA-GUIDE-DEPTH-1124 — PC-C — REVIEW
+
+Stacked on #1907. Reserve the five Stage 3 guide documents, their generated catalogue, bounded pilot retrieval integration, focused tests and acceptance notes. Producer modules are referenced read-only. No migration, dependency, merge or deployment.
+
 ## GEOGRAPHY-SITE-IMAGES-1124 — PC-D — ACTIVE
 
 Own the city and country photo fields, geography dialog, additive migration, and signed profile delivery of the main photo and gallery. Coordinate the three website receivers and verify the publication contract.
+
+## NORA-ERP-FIRST-1124 — PC-C — ACTIVE
+
+Reserve Nora Web routing, supported guide selection, and the assistant sales period parser with focused regressions. Keep producer permissions and APIs unchanged.
+
+## NORA-OPT-IN-EVIDENCE-1124 — PC-C — ACTIVE
+
+Reserve Nora v3 reply presentation, native report formatting and focused tests. Preserve authenticated reads and evidence validation.
 
 ## NORA-RESERVATION-GUIDE-1124 — PC-C — ACTIVE
 
 Reserve the Nora Reservations guide document, generated guide entries, local routing and bounded Composer dispatch, coverage and focused tests. Reuse the existing report reader, routes and permissions. No producer, API, schema, dependency or deployment work.
 
 ## DOCUMENT-LOGO-SCAN-DISPLAY-1124 — PC-C — ACTIVE
+
+## NORA-GUIDE-PILOT-1124 — PC-C — REVIEW
+
+Stacked on #1906. Reserve the new authored-guide retrieval endpoint and pilot tests plus bounded Composer call site and three additive pilot messages in the Assistant copy catalogue. Preserve existing model and record-read routes. Authenticated local acceptance complete. PR #1907 retains this scope pending CI and review. No production migration or deployment.
+
+## NORA-GUIDE-COVERAGE-1124 — PC-C — ACTIVE
+
+Reserve new procedural guides, additive linked catalogue inputs and shared lexical retrieval with a bounded Composer integration. Preserve producer modules, existing record readers and policies. No migration or deployment.
 
 Reserve document workspace scan label rendering and focused verification. Preserve scan policy, authorization and schema.
 
