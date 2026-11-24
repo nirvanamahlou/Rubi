@@ -32,6 +32,7 @@ import {
 import { SiteCommerceService } from './site-commerce.service';
 import { SiteCommerceWriteGuard } from './site-commerce-write.guard';
 import type { FloatingWebsiteBooking } from './floating-tour-booking';
+import type { DatedTourBooking } from './dated-tour-booking';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { PassengerPreflightDto } from './passenger-preflight.dto';
 
@@ -238,6 +239,16 @@ export class SiteCommerceController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.status(site, id, req.actor);
+  }
+  @Post('dated-tour-orders/:externalId')
+  @Header('Cache-Control', 'private, no-store')
+  datedTourDraft(
+    @Param('site') site: string,
+    @Param('externalId') id: string,
+    @Body() body: DatedTourBooking,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.draftDatedTour(site, id, body, req.actor);
   }
   @Post('floating-orders/:externalId')
   @Header('Cache-Control', 'private, no-store')
