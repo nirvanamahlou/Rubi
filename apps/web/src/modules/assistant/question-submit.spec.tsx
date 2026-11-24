@@ -198,7 +198,7 @@ describe('actual Composer submit routing and transport', () => {
     );
     const field = render().find((node) => node.type === 'textarea')!;
     (field.props.onChange as (event: unknown) => void)({
-      target: { value: 'سلام' },
+      target: { value: 'تعداد قراردادها چقدر است؟' },
     });
     const form = render().find((node) => node.type === 'form')!;
     const submit = form.props.onSubmit as (event: unknown) => void;
@@ -324,7 +324,7 @@ describe('actual Composer submit routing and transport', () => {
   it('keeps unsupported workflow questions local', async () => {
     await send('چطور فرایند ناشناخته را انجام بدهم؟');
     expect(h.fetcher).not.toHaveBeenCalled();
-    expect(chat().at(-1)).toBe(assistantCopy.internalSourceFallback[0]);
+    expect(chat().at(-1)).toContain('کدام فرایند، پرونده یا گزارش روبی');
   });
   it('does not reuse data context after an authorization denial', async () => {
     await send('تعداد قراردادها را بگو');
