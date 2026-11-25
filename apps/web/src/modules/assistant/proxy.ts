@@ -219,6 +219,7 @@ export async function proxyAssistantConversation(
   fetcher: typeof fetch = fetch,
   agent = false,
   workbenchGuide = false,
+  handleValidatedBody?: (raw: string, cookie: string) => Promise<Response>,
 ) {
   const reject = (status: number) =>
     Response.json(
@@ -261,6 +262,12 @@ export async function proxyAssistantConversation(
       buffer.set(chunk, offset);
       offset += chunk.length;
     }
+    const raw = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+    if (handleValidatedBody)
+      return await handleValidatedBody(
+        raw,
+        tokenCookie(request.headers.get('cookie'))!,
+      );
     return await proxyRead(
       request,
       configuredUrl,
@@ -271,7 +278,7 @@ export async function proxyAssistantConversation(
           : '/v2/assistant/conversation',
       fetcher,
       false,
-      new TextDecoder('utf-8', { fatal: true }).decode(buffer),
+      raw,
       agent,
     );
   } catch {
@@ -280,4 +287,31 @@ export async function proxyAssistantConversation(
     signal.removeEventListener('abort', abort);
     reader.releaseLock();
   }
+}
+
+export function proxyQuestionPlan(request: Request, message: string) {
+  return proxyRead(
+    request,
+    process.env.ASSISTANT_SERVICE_URL,
+    '/v3/assistant/plan',
+    fetch,
+    false,
+    JSON.stringify({ version: 1, history: [], message }),
+    true,
+  );
+}
+
+export function proxyPlannedSales(
+  request: Request,
+  input: { message: string; context?: { salesPeriodAsOf: string } },
+) {
+  return proxyRead(
+    request,
+    process.env.ASSISTANT_SERVICE_URL,
+    '/v3/assistant/conversation',
+    fetch,
+    false,
+    JSON.stringify({ version: 1, history: [], ...input }),
+    true,
+  );
 }

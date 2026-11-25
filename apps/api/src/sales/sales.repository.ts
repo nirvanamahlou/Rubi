@@ -1,3 +1,4 @@
+import { rollingSalesFilter } from './assistant-agent/rolling-sales';
 import { captureSalesContractAccounting } from '../finance/accounting/sales-contract-accounting.public';
 import { readReservationReportingCancellations } from '../reservations/reservation-reporting-cancellations.public';
 import {
@@ -409,6 +410,9 @@ export class SalesRepository {
     const where: Prisma.SalesContractWhereInput = {
       AND: [
         whereScope,
+        ...(query.salesPeriodAsOf !== undefined
+          ? [rollingSalesFilter(query.salesPeriodAsOf)]
+          : []),
         query.search
           ? {
               OR: [

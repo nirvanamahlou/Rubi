@@ -49,6 +49,7 @@ import {
   readDocumentGuide,
 } from './document-guides';
 
+import { canOpenAssistantGuide } from './guide-access';
 import { canViewRoute, canViewScreen } from '@nora/contracts';
 import {
   catalogueLookupMode,
@@ -116,6 +117,12 @@ import {
   renderPettyCashGuide,
   resolvePettyCashGuide,
 } from './petty-cash-guide';
+import { planQuestion, mightNeedModelPlan } from './question-plan';
+import {
+  plannedAnswer,
+  summarizeParts,
+  type AnswerPart,
+} from './planned-answer';
 import { normalizeQuestion } from './question-text';
 import {
   renderSystemManagementGuide,
@@ -142,8 +149,13 @@ import {
   callCenterIntent,
   callCenterQueueHref,
   readCallCenterMetric,
+  readHistoricalWithoutOutcome,
   readCallCenterRequestStatus,
 } from './call-center-request-guide';
+import {
+  asksHistoricalOwnRequestCount,
+  historicalReportPeriod,
+} from './historical-report-period';
 import { CallCenterHttpError } from '@/modules/call-center/client';
 import {
   customerAffairsApi,
@@ -463,6 +475,7 @@ function AssistantComposerContent({
       links?: ContractLink[];
       targets?: { id: string; label: string }[];
       guideLink?: { href: string; label: string; guideHref?: string };
+      parts?: AnswerPart[];
       submissionId?: number;
     }>
   >([]);
@@ -474,6 +487,10 @@ function AssistantComposerContent({
   );
   const submissionSequence = useRef(0);
   const submitting = useRef(false);
+  const composedContext = useRef<{
+    question: string;
+    cutoff?: string | undefined;
+  } | null>(null);
   const {
     viewport: chatViewportRef,
     content: chatContentRef,
@@ -670,10 +687,85 @@ function AssistantComposerContent({
     const mayReadGuide = (section: GuideSection) =>
       Boolean(
         actor &&
-        canViewRoute(actor.permissions, section.href) &&
-        (!section.permission ||
-          actor.permissions.some((p) => p === section.permission)),
+        canOpenAssistantGuide(
+          actor.permissions,
+          section.href,
+          section.permission,
+        ),
       );
+    const previousPlan = composedContext.current;
+    composedContext.current = null;
+    if (
+      agentMode &&
+      (planQuestion(message, previousPlan?.question).length ||
+        (process.env.NEXT_PUBLIC_NORA_MODEL_PLANNER_ENABLED === 'true' &&
+          mightNeedModelPlan(message)))
+    ) {
+      pending.current?.abort();
+      const controller = new AbortController();
+      pending.current = controller;
+      setActionState('loading');
+      try {
+        const result = await fetch('/api/assistant/v3/conversation', {
+          method: 'POST',
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: {
+            'content-type': 'application/json',
+            'x-nora-composition': '1',
+          },
+          body: JSON.stringify({
+            version: 3,
+            message,
+            previous: previousPlan?.question,
+            salesPeriodAsOf: previousPlan?.cutoff,
+          }),
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+        if (result.status === 204) setActionState(null);
+        else {
+          if (!result.ok) {
+            if ([401, 403, 409].includes(result.status)) {
+              setMessages([]);
+              previousAnswer.current = undefined;
+            }
+            throw new Error('UNAVAILABLE');
+          }
+          const { parts } = plannedAnswer.parse(await result.json());
+          if (controller.signal.aborted) return;
+          const reportHref = parts
+            .flatMap((p) => p.links)
+            .find((l) => l.href.startsWith('/sales?salesPeriodAsOf='))?.href;
+          composedContext.current = {
+            question: reportHref ? 'فروش دو هفته اخیر' : message,
+            cutoff: reportHref
+              ? (new URLSearchParams(reportHref.split('?')[1]).get(
+                  'salesPeriodAsOf',
+                ) ?? undefined)
+              : undefined,
+          };
+          previousAnswer.current = undefined;
+          indexedTopic.current = undefined;
+          setMessages((previous) =>
+            appendChatExchange(previous, [
+              {
+                role: 'assistant',
+                local: true,
+                content: summarizeParts(parts),
+                parts,
+              },
+            ]),
+          );
+          setActionState(null);
+          return;
+        }
+      } catch {
+        if (!controller.signal.aborted)
+          replyLocally(t(c.internalSourceFallback));
+        return;
+      }
+    }
     const priorIndexed = indexedTopic.current;
     indexedTopic.current = undefined;
     const showSection = (
@@ -728,7 +820,10 @@ function AssistantComposerContent({
       lastReply?.role === 'assistant' &&
       workflowDestination(
         message,
-        lastReply.guideLink?.guideHref,
+        lastReply.guideLink?.guideHref ??
+          lastReply.parts?.findLast((p) =>
+            p.source?.startsWith('/assistant-guides/'),
+          )?.source,
         mayReadGuide,
       );
     if (linkedNext === null) {
@@ -1860,6 +1955,7 @@ function AssistantComposerContent({
       message,
       pathname === '/workbench' || hrTrackedRequest,
     );
+    const ownRequestCount = asksHistoricalOwnRequestCount(message);
     if (
       !callCenterStatus &&
       workbenchStatus &&
@@ -1872,7 +1968,7 @@ function AssistantComposerContent({
       replyLocally(t(c.pilotTrackingNumberRequired));
       return;
     }
-    if (callCenterStatus || workbenchStatus) {
+    if (callCenterStatus || workbenchStatus || ownRequestCount) {
       pending.current?.abort();
       const controller = new AbortController();
       pending.current = controller;
@@ -1886,11 +1982,17 @@ function AssistantComposerContent({
                   actor,
                   controller.signal,
                 )
-              : await readCallCenterMetric(
-                  callCenterStatus,
-                  actor,
-                  controller.signal,
-                )
+              : callCenterStatus === 'historicalWithoutOutcome'
+                ? await readHistoricalWithoutOutcome(
+                    message,
+                    actor,
+                    controller.signal,
+                  )
+                : await readCallCenterMetric(
+                    callCenterStatus,
+                    actor,
+                    controller.signal,
+                  )
             : 'اطلاعات دسترسی حساب برای خواندن کال‌سنتر آماده نیست.';
           if (!controller.signal.aborted) {
             previousAnswer.current = undefined;
@@ -1902,6 +2004,28 @@ function AssistantComposerContent({
                   : '/customer-affairs/call-center',
               label: 'کال‌سنتر',
             });
+          }
+          return;
+        }
+        if (ownRequestCount) {
+          const range = historicalReportPeriod(message);
+          if (!range) {
+            replyLocally(
+              'روز یا بازهٔ ثبت درخواست‌ها را با ماه و سال مشخص کنید.',
+            );
+            return;
+          }
+          const { total } = await customerAffairsApi.countOwnWorkbenchRequests(
+            range.from,
+            range.to,
+            controller.signal,
+          );
+          if (!controller.signal.aborted) {
+            previousAnswer.current = undefined;
+            workbenchTopic.current = undefined;
+            replyLocally(
+              `در بازهٔ ${range.label} به وقت تهران، ${total.toLocaleString('fa-IR')} درخواست ثبت‌شده توسط شما در کارتابل قابل مشاهده است.`,
+            );
           }
           return;
         }
@@ -2440,6 +2564,31 @@ function AssistantComposerContent({
                       />
                     ) : (
                       item.content
+                    )}
+                    {item.parts && (
+                      <details>
+                        <summary>{t(c.agentSources)}</summary>
+                        {item.parts.map((part, i) => (
+                          <div key={i}>
+                            <p>{part.question}</p>
+                            <p>{part.text}</p>
+                            <p>
+                              {[part.source, part.observedAt]
+                                .filter(Boolean)
+                                .join(' · ')}
+                            </p>
+                            {part.links.map((link) => (
+                              <Link
+                                className="block underline"
+                                key={link.href}
+                                href={link.href}
+                              >
+                                {link.label}
+                              </Link>
+                            ))}
+                          </div>
+                        ))}
+                      </details>
                     )}
                     {item.guideLink?.guideHref && (
                       <Link

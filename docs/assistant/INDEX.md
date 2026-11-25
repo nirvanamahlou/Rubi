@@ -6,6 +6,7 @@
 
 ### [راهنمای منابع پاسخ نورا](guides/nora-sources.md)
 
+- [انتخاب شرکت فعال](guides/nora-sources.md#company-scope)
 - [مشاهده منبع و بازه پاسخ نورا](guides/nora-sources.md#evidence)
 - [عیب یابی گزارش در نورا](guides/nora-sources.md#troubleshoot)
 
@@ -278,6 +279,7 @@
 - [خروجی اکسل درخواست‌ها](guides/reservations.md#queue-export) ← [دانلود اکسل و PDF](guides/reservation-report.md#exports)
 - [ارسال به کارگزار](guides/reservations.md#hotel-mail) ← [ثبت و اصلاح خرید خدمات قرارداد](guides/purchase.md#save)
 - [اصلاح بیمه‌نامه](guides/reservations.md#insurance-correction) ← [سفر و رزرواسیون](guides/documents.md#travel)
+- [اقامت‌های بدون واچر در قراردادهای تسویه‌شده](guides/reservations.md#settled-vouchers) ← [تسویه کامل قرارداد](guides/finance-delivery.md#settlement)
 
 ### [راهنمای صدور مدارک سفر](guides/travel-issuance.md)
 

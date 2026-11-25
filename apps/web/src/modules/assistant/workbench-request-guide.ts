@@ -5,12 +5,32 @@ import {
 } from '@/modules/workbench/workbench-request-status';
 import { containsQuestionPhrase, normalizeQuestion } from './question-text';
 
+// Native workbench tickets use CA-T-YYYY-<eight hexadecimal characters>.
+const trackingToken = /^[a-z]+(?:-[a-z0-9]+)+$/i;
+const lookupWord =
+  /^(?:لطفا|الان|حالا|فعلا|درخواستم?|من|خودم|مرخصیم?|م[اأ]موریتم?|میز|کار|میزکار|کارتابل|با|کد|پیگیری|شماره|دست|کی|کیه|کیست|چه|کسی|هستش?|است|کجاست|کجا|رسیده?|وضعیتش?|چیه|چیست|مسئولش?|گیرنده|گیرندش|اش|کدوم|مرحله|ای|در|به|رو|را|بگو|میشه|ببینم|شده?|ت[اأ]یید|رد|یا)$/u;
+
+export function ownRequestLookup(question: string) {
+  const words = normalizeQuestion(question).split(' ');
+  const codes = words.filter((w) => trackingToken.test(w));
+  if (
+    new Set(codes).size > 1 ||
+    codes.some((code) => code.length > 32) ||
+    words.some((w) => !trackingToken.test(w) && !lookupWord.test(w)) ||
+    (!codes.length &&
+      words.some((w) => ['کد', 'شماره', 'پیگیری'].includes(w))) ||
+    (/مرخصی/.test(question) && /م[اأ]موریت/.test(question))
+  )
+    return null;
+  return { trackingNumber: codes[0]?.toUpperCase() };
+}
+
 export function asksWorkbenchRequestStatus(
   message: string,
   onWorkbench: boolean,
 ) {
   const text = normalizeQuestion(message);
-  if (onWorkbench && /^(?:کد پیگیری\s+)?[a-z]+(?:-[a-z\d]+)*-\d+$/i.test(text))
+  if (onWorkbench && trackingToken.test(text.replace(/^کد پیگیری\s+/, '')))
     return true;
   if (/کال سنتر|تماس مجدد|قرارداد/.test(text)) return false;
   if (/چطور|چگونه|چجوری|نحوه|راهنما|مراحل/.test(text)) return false;
@@ -38,9 +58,12 @@ export function describeWorkbenchRequest(
   const own = rows.filter(
     (row) => row.direction === 'outgoing' || row.direction === 'self',
   );
-  const explicit = rows.filter((row) => inQuestion(row.trackingNumber));
+  const codes = text.split(' ').filter((w) => trackingToken.test(w));
+  const explicit = rows.filter((row) =>
+    codes.includes(row.trackingNumber.toLowerCase()),
+  );
   const suppliedCode =
-    /کد پیگیری\s+[\p{L}\d-]*\d|\b[a-z]+(?:-[a-z\d]+)*-\d+/iu.test(text);
+    codes.length > 0 || /کد پیگیری\s+[\p{L}\d-]*\d/iu.test(text);
   const titleMatches = own.filter((row) => inQuestion(row.subject));
   const byKind = /مرخصی/.test(text)
     ? own.filter((row) => row.leave)

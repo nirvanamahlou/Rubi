@@ -280,6 +280,8 @@ export interface SalesPaymentCreateRequest extends SalesPaymentInput {
 }
 
 export interface SalesContractListQuery {
+  /** Confirmed contractual sales during fourteen Tehran days through this cutoff. */
+  salesPeriodAsOf?: string;
   supplyType?: 'ALL' | 'FLOATING' | 'CHARTER' | undefined;
   customerType?: SalesReceivablesQuery['customerType'];
   agencyCustomerId?: string | undefined;

@@ -6,7 +6,7 @@
 
 ## جست‌وجوی قرارداد
 
-<!-- nora-guide {"id":"search","href":"/finance/delivery","related":["finance-delivery/status","finance-delivery/issue"]} -->
+<!-- nora-guide {"id":"search","href":"/finance/delivery","related":["finance-delivery/status","finance-delivery/issue"],"terms":["جستجوی شماره قرارداد","شماره قرارداد در تحویل مدارک"]} -->
 
 ### مراحل
 
@@ -22,7 +22,7 @@
 
 ## وضعیت مجوز
 
-<!-- nora-guide {"id":"status","href":"/finance/delivery","related":[]} -->
+<!-- nora-guide {"id":"status","href":"/finance/delivery","related":[],"terms":["تحویل مسدود","معنی وضعیت مسدود"]} -->
 
 ### مراحل
 
@@ -62,7 +62,7 @@
 
 ## تسویه کامل قرارداد
 
-<!-- nora-guide {"id":"settlement","href":"/finance/delivery","related":[]} -->
+<!-- nora-guide {"id":"settlement","href":"/finance/delivery","related":[],"terms":["وضعیت تسویه قرارداد","تسویه کامل مجوز"]} -->
 
 ### مراحل
 
@@ -73,7 +73,7 @@
 
 ## استثنای مدیر
 
-<!-- nora-guide {"id":"exception","href":"/finance/delivery","related":[]} -->
+<!-- nora-guide {"id":"exception","href":"/finance/delivery","related":[],"terms":["انقضای استثنا","تاریخ انقضای استثنا"]} -->
 
 ### مراحل
 

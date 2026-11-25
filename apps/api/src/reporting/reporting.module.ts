@@ -7,6 +7,8 @@ import { DocumentsModule } from '../documents/documents.module';
 import { SettingsModule } from '../settings/settings.module';
 import { ReportingController } from './reporting.controller';
 import { NoraMetricsController } from './nora-metrics.controller';
+import { SettledVouchersController } from './settled-vouchers.controller';
+import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
 import { ReportingService } from './reporting.service';
 import { ReportingRepository } from './reporting.repository';
 import { ReportingExportQueue } from './reporting-export-queue.service';
@@ -22,6 +24,7 @@ import { SalesDashboardCustomersModule } from '../sales/sales-dashboard-customer
 
 @Module({
   imports: [
+    LegalEntitiesModule,
     IamModule,
     DocumentsModule,
     SettingsModule,
@@ -31,7 +34,11 @@ import { SalesDashboardCustomersModule } from '../sales/sales-dashboard-customer
     SalesDashboardPaymentsModule,
     SalesDashboardCustomersModule,
   ],
-  controllers: [ReportingController, NoraMetricsController],
+  controllers: [
+    ReportingController,
+    NoraMetricsController,
+    SettledVouchersController,
+  ],
   providers: [
     ReportingService,
     ReportingNativeDashboard,

@@ -454,6 +454,26 @@ export class TravelWorkflowService {
           !next.branding
         )
           throw new BadRequestException('ابتدا سربرگ خروجی را ثبت کنید.');
+        if (
+          next.voucherIssued &&
+          (command.action === 'ISSUE_VOUCHER' ||
+            command.action === 'CONFIRM_SUPPLIER')
+        ) {
+          // Both commands atomically issue the voucher. The rendered hotel pages
+          // cover the current execution snapshot unless hotel output was disabled.
+          next.issuedHotelStays =
+            next.voucherSettings?.flags?.hotel === false
+              ? []
+              : reservationHotelStays(intake.snapshot).map(
+                  ({ key, hotel }) => ({
+                    key,
+                    hotelId: hotel.hotelId,
+                    checkInDate: hotel.checkInDate,
+                    checkOutDate: hotel.checkOutDate,
+                  }),
+                );
+        }
+        if (command.action === 'REOPEN') delete next.issuedHotelStays;
         next.updatedAt = new Date().toISOString();
         next.updatedByUserId = actor.userId;
         if (

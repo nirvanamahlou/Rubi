@@ -109,6 +109,9 @@ export function buildLinkedPanelGuides(directory, check) {
           id === 'customer-receipt' &&
           href === '/finance') ||
         (domain === 'reservations' &&
+          id === 'settled-vouchers' &&
+          href === '/reservations?report=settled-vouchers') ||
+        (domain === 'reservations' &&
           [
             '/reservations/processing',
             '/reservations/insurance',
