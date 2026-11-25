@@ -1,3 +1,7 @@
+## NORA-ROLE-GUIDE-AUDIT — PC-C
+
+Audited 220 production guidance prompts under the all-companies administrator scope. Updated catalogue routing and the company selector, internal request and reservation-report guidance. Individual role sessions and production retesting of this branch remain pending.
+
 ## Charter package Excel prices
 
 For a dated charter departure without hotel purchase rates, Package Pricing can preview and publish the existing floating workbook format. It resolves active hotel rooms and projects per-traveler prices into the native dated package sale catalog, where Sales validates the current tour tickets and allocates seats through the existing Ticket Catalog. Imports are immutable, versioned, and scoped to the departure. The additive database migration creates a dedicated price-publication table.

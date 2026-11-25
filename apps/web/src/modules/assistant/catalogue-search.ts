@@ -29,6 +29,72 @@ let search: ReturnType<typeof buildGuidePhraseIndex<Entry>> | undefined;
 
 const workflowIntents: readonly [RegExp, readonly string[]][] = [
   [
+    /ویزا.*(?:کارتابل|درخواست داخلی)|(?:کارتابل|درخواست داخلی).*ویزا/,
+    ['workbench/request-create', 'workbench/request-status'],
+  ],
+  [/مرخصی استعلاجی/, ['workbench/leave-medical']],
+  [/جانشین.*مرخصی|مرخصی.*جانشین/, ['workbench/substitute']],
+  [/اصلاح تردد.*ثبت|ثبت.*اصلاح تردد/, ['workbench/attendance-correction']],
+  [/مساعده.*درخواست|درخواست.*مساعده/, ['workbench/advance']],
+  [/کد پیگیری|کارتابل.*دلیل رد/, ['workbench/request-status']],
+  [/یادداشت.*یادآوری/, ['workbench/note-checklist']],
+  [/یادداشت.*بایگانی/, ['workbench/note-organize']],
+  [/اعلان.*خوانده نشده/, ['workbench/notifications']],
+  [/میزکار.*تنظیمات حساب/, ['workbench/account']],
+  [/میزکار.*سوابق تردد/, ['workbench/performance']],
+  [/تغییر شرکت فعال|شرکت فعال.*تغییر/, ['nora-sources/company-scope']],
+  [/نقش.*شعب.*کاربر/, ['system-management/permissions']],
+  [/مکاتبه داخلی.*بفرستم/, ['correspondence/internal-send']],
+  [/نامه صادره.*چاپ/, ['correspondence/outgoing-export']],
+  [
+    /گزارش رزرواسیون.*(?:اختلاف|کارت.*اکسل)|اختلاف.*گزارش رزرواسیون/,
+    ['reservation-report/count-difference'],
+  ],
+  [/گزارش رزرواسیون.*(?:تاریخ حرکت|تاریخ صدور)/, ['reservation-report/dates']],
+  [
+    /گزارش رزرواسیون.*(?:pnr|فیلتر وضعیت)|(?:pnr|فیلتر وضعیت).*گزارش رزرواسیون/i,
+    ['reservation-report/filters'],
+  ],
+  [/قرارداد.*(?:رسیده|ورودی).*فروش/, ['reservations/handoff']],
+  [/نرخ خرید.*هتل|هتل.*نرخ خرید/, ['reservations/hotel-rates']],
+  [/ایمیل کارگزار.*رزرو/, ['reservations/hotel-mail']],
+  [/پرواز رفت و برگشت.*جدا/, ['reservations/flight']],
+  [/هتل.*پرونده رزرو/, ['reservations/hotel']],
+  [/قرارداد.*چندتا هتل|چندتا هتل.*قرارداد/, ['sales/multi-hotel']],
+  [/اسم انگلیسی مسافر/, ['sales/passport']],
+  [/قرارداد.*مدرک پرداخت|رسید پرداخت.*قرارداد/, ['sales/receipt']],
+  [/(?:پی دی اف|اکسل).*قرارداد|قرارداد.*پی دی اف/, ['sales/output']],
+  [/مسافر.*تخصیص/, ['sales/allocation']],
+  [/پیش نویس قرارداد.*ادامه/, ['sales/draft']],
+  [/اصلاح.*مبلغ قرارداد/, ['sales/correction']],
+  [/قرارداد آژانس/, ['sales/agency']],
+  [/برنامه پرداخت قرارداد/, ['sales/payment']],
+  [
+    /قرارداد.*انتخاب.*پرواز|قرارداد بلی[تط] پرواز.*پرواز انتخاب/,
+    ['sales/flight'],
+  ],
+  [/قرارداد.*بیمه.*انتخاب/, ['sales/insurance']],
+  [/تاریخ مسیر قرارداد/, ['sales/route']],
+  [/کمیسیون.*قرارداد/, ['sales/commission']],
+  [/مجوز.*تسویه کامل|تسویه کامل.*مجوز/, ['finance-delivery/settlement']],
+  [/رسید.*تایید نشده.*مجوز/, ['finance-delivery/receipt']],
+  [
+    /حساب مشتری و آژانس|واریزی مشتری.*مانده|دریافت در انتظار تایید/,
+    ['finance-delivery/customer-receipt'],
+  ],
+  [/تنخواه.*ببند/, ['petty-cash/settlement-policy']],
+  [/شارژ تنخواه/, ['petty-cash/recharge']],
+  [/فایل.*آپلود.*آرشیو/, ['documents/upload', 'documents/archive']],
+  [/سند بایگانی/, ['documents/archive']],
+  [/مغایرت خرید/, ['purchase/discrepancy']],
+  [/ارسال پکیج روز/, ['package-generator/daily-publication']],
+  [/پاپ اپ تماس/, ['call-center/call-center-notification']],
+  [/تیکت.*تشدید/, ['customer-affairs/ticket-escalation']],
+  [
+    /کارمند سابق|اکسل کارکنان|کد پرسنلی.*لیست|فیلتر کارکنان/,
+    ['human-resources/employees'],
+  ],
+  [
     /نورا.*(?:نتوانست|دسترسی نداشت|عیب یابی)|عیب یابی.*نورا/,
     ['nora-sources/troubleshoot'],
   ],
@@ -109,14 +175,27 @@ const workflowIntents: readonly [RegExp, readonly string[]][] = [
 ];
 
 export function resolveDocumentedWorkflow(message: string) {
-  const question = normalizeQuestion(message);
+  const question = normalizeQuestion(message)
+    .replace(/مرخسی/g, 'مرخصی')
+    .replace(/اسعلاجی/g, 'استعلاجی')
+    .replace(/تردود|ترددو/g, 'تردد')
+    .replace(/پیگری/g, 'پیگیری')
+    .replace(/بایگونی/g, 'بایگانی')
+    .replace(/ثپت/g, 'ثبت')
+    .replace(/اصلح/g, 'اصلاح')
+    .replace(/تخصیس/g, 'تخصیص')
+    .replace(/تنخاه/g, 'تنخواه')
+    .replace(/درخاست/g, 'درخواست')
+    .replace(/گزارش رزرو(?!اسیون)/g, 'گزارش رزرواسیون')
+    .replace(/قرارداد جدیو/g, 'قرارداد جدید');
   const instruction =
-    /چطور|چگونه|چجور|کجا|نحوه|مراحل|راهنما|چه چیز|چه (?:مدارک|تأیید|تایید)|از کدام (?:پنل|گزارش)|برای عیب یابی/.test(
+    /چطور|چگونه|چجور|چطوری|چه جوری|کجا|چیه|چیکار|چی چک|چی تایپ|نحوه|مراحل|راهنما|چه چیز|چه (?:مدارک|تأیید|تایید)|از کدام (?:پنل|گزارش)|از چه گزارشی|برای عیب یابی/.test(
       question,
     );
   const explicitManifest =
     /^(?:منظورم )?(?:مانیفست|مانيفست|manifest)(?: است)?$/.test(question);
   if (!instruction && !explicitManifest) return [];
+  if (/(?:کد پیگیری|شماره درخواست)\s+(?:[a-z]+-)?\d/i.test(question)) return [];
   const match = workflowIntents.find(([pattern]) => pattern.test(question));
   return (match?.[1] ?? []).flatMap((ref) => {
     const [domain, id] = ref.split('/');
