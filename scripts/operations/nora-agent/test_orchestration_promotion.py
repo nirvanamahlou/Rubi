@@ -44,26 +44,31 @@ class PromotionTests(TestCase):
     ):
         initial = b"services:\n  web:\n    image: web:v0\n    environment:\n      EXISTING: enabled\n"
         previous = promotion.modify_compose(initial, "web", "web:v0", "web:v1", True)
-        patched = promotion.modify_compose(
-            previous, "web", "web:v1", "web:v2", True, True
-        )
-        self.assertEqual(patched, previous.replace(b"web:v1", b"web:v2"))
-        self.assertEqual(
-            promotion.modify_compose(patched, "web", "web:v2", "web:v1", False, True),
-            previous,
-        )
-        with self.assertRaisesRegex(RuntimeError, "Existing Web options"):
-            promotion.modify_compose(
-                patched.replace(
-                    b"NORA_COMPOSITION_ENABLED: 'true'",
-                    b"NORA_COMPOSITION_ENABLED: 'false'",
-                ),
-                "web",
-                "web:v2",
-                "web:v1",
-                False,
-                True,
+        enabled = b"      NORA_COMPOSITION_TELEMETRY: 'true'\n"
+        for original_line in (enabled, enabled.replace(b"true", b"false"), b""):
+            before = previous.replace(enabled, original_line)
+            saved = promotion.web_option_lines(promotion.service_block(before, "web"))
+            patched = promotion.modify_compose(
+                before, "web", "web:v1", "web:v2", True, saved
             )
+            self.assertIn(enabled, patched)
+            self.assertEqual(
+                promotion.modify_compose(
+                    patched, "web", "web:v2", "web:v1", False, saved
+                ),
+                before,
+            )
+            with self.assertRaisesRegex(RuntimeError, "changed since release"):
+                promotion.modify_compose(
+                    patched.replace(enabled, b""),
+                    "web",
+                    "web:v2",
+                    "web:v1",
+                    False,
+                    saved,
+                )
+        with self.assertRaisesRegex(RuntimeError, "Review concurrent Web option"):
+            promotion.web_option_lines(previous.replace(enabled, enabled + enabled))
 
     def test_compose_failure_restores_immutable_image_and_allows_retry(self):
         with TemporaryDirectory() as d, ExitStack() as ctx:
