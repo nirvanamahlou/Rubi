@@ -2539,6 +2539,25 @@ export class CustomerAffairsService {
     );
   }
 
+  async countOwnWorkbenchRequests(
+    actor: AuthenticatedActor,
+    from: string,
+    to: string,
+  ) {
+    const start = new Date(from);
+    const end = new Date(to);
+    if (!Number.isFinite(+start) || !Number.isFinite(+end) || start >= end)
+      throw new BadRequestException('بازهٔ تاریخ درخواست معتبر نیست.');
+    return {
+      total: await this.repository.countOwnWorkbenchRequests(
+        actor.userId,
+        actor.branchIds,
+        start,
+        end,
+      ),
+    };
+  }
+
   async workbenchRequests(
     actor: AuthenticatedActor,
   ): Promise<{ data: WorkbenchRequestItemV1[] }> {

@@ -60,7 +60,7 @@
 
 ## کشور
 
-<!-- nora-guide {"id":"countries","href":"/master-data/geography","pattern":"کشور|iso","related":[]} -->
+<!-- nora-guide {"id":"countries","href":"/master-data/geography","pattern":"کشور|iso","related":[],"terms":["تعریف کشور"]} -->
 
 ### مراحل
 
@@ -150,7 +150,7 @@
 
 ## هتل
 
-<!-- nora-guide {"id":"hotels","href":"/master-data/accommodation","pattern":"هتل|ورود فایل هتل|تصویر هتل","related":["master-data/hotel-rates"]} -->
+<!-- nora-guide {"id":"hotels","href":"/master-data/accommodation","pattern":"هتل|ورود فایل هتل|تصویر هتل","related":["master-data/hotel-rates"],"terms":["تعریف هتل"]} -->
 
 ### مراحل
 

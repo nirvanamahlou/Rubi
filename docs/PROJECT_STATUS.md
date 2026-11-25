@@ -10810,3 +10810,9 @@ Nora combines authorized catalog sections for independently recognizable procedu
 Align sales, finance, reservations and HR guidance with the UI and add documented organizational-report and answer-source workflows.
 
 The explicit Tehran today/yesterday contract comparison reads both server-bounded counts without model-generated queries.
+
+## NORA-ERP-ORCHESTRATION — PC-C
+
+The v3 composer can combine independently scoped ERP reads and documented workflows. The first release units cover rolling sales with a reproducible contract list, hotel-stay voucher reconciliation, and execution of authorized native reports. The integrated historical call-center and workbench readers preserve the other workstation's date-filter work.
+
+The generated workflow inventory and guide acceptance corpus live in [workflow coverage](assistant/WORKFLOW-COVERAGE.md). Production parity and the four-unit rollback sequence are tracked in the [rollout record](tasks/NORA-ERP-ORCHESTRATION-ROLLOUT.md). The current live acceptance account is the administrator in the all-companies context. Limited-role live acceptance is deferred by product decision. No schema migration or dependency upgrade.

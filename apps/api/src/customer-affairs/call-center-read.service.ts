@@ -590,6 +590,7 @@ export class CallCenterReadService {
       revision: input.revision,
       outcome:
         period === 'today' ? input.outcome : period ? undefined : 'UNKNOWN',
+      ...(!period ? { from: input.from, to: input.to } : {}),
       ...(period === 'today'
         ? { direction: input.direction, unit: input.unit }
         : {}),

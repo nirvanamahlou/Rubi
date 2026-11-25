@@ -6,7 +6,7 @@
 
 ## درخواست‌ها
 
-<!-- nora-guide {"id":"queue","href":"/reservations","related":["reservation-report/filters"],"route":["رزرواسیون","درخواست‌ها"],"conditions":["مشاهده پرونده و اقدام‌ها تابع دسترسی کاربر، شرکت فعال و وضعیت پرونده است."],"terms":["صف درخواست‌ها","داشبورد","رنگ ردیف","فیلتر","مرتب سازی"],"examples":["چطور درخواست‌ها را فیلتر کنم؟"],"source":"apps/web/src/modules/reservations/foundation/live-workspace.tsx"} -->
+<!-- nora-guide {"id":"queue","href":"/reservations","related":["reservation-report/filters"],"route":["رزرواسیون","درخواست‌ها"],"conditions":["مشاهده پرونده و اقدام‌ها تابع دسترسی کاربر، شرکت فعال و وضعیت پرونده است."],"terms":["صف درخواست‌ها","داشبورد","رنگ ردیف","فیلتر","مرتب سازی","فیلتر صف درخواست","صف درخواست رزرواسیون"],"examples":["چطور درخواست‌ها را فیلتر کنم؟"],"source":"apps/web/src/modules/reservations/foundation/live-workspace.tsx"} -->
 
 ### مراحل
 
@@ -36,7 +36,7 @@
 
 ## اصلاحیه فروش
 
-<!-- nora-guide {"id":"amendment","href":"/reservations/processing","related":["documents/version"],"route":["رزرواسیون","اصلاحیه فروش"],"conditions":["مشاهده پرونده و اقدام‌ها تابع دسترسی کاربر، شرکت فعال و وضعیت پرونده است."],"terms":["اصلاحیه","نسخه قرارداد","تغییر مسافر"],"examples":["اصلاحیه فروش رو کجا ببینم؟"],"source":"apps/web/src/modules/reservations/components/reservation-sales-amendment.tsx"} -->
+<!-- nora-guide {"id":"amendment","href":"/reservations/processing","related":["documents/version"],"route":["رزرواسیون","اصلاحیه فروش"],"conditions":["مشاهده پرونده و اقدام‌ها تابع دسترسی کاربر، شرکت فعال و وضعیت پرونده است."],"terms":["اصلاحیه","نسخه قرارداد","تغییر مسافر","اصلاحیه فروش","اصلاحیه قرارداد"],"examples":["اصلاحیه فروش رو کجا ببینم؟"],"source":"apps/web/src/modules/reservations/components/reservation-sales-amendment.tsx"} -->
 
 ### مراحل
 

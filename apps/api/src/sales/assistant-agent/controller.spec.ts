@@ -70,6 +70,26 @@ describe('Sales public agent source authorization', () => {
     ).rejects.toThrow();
   });
 
+  it('never grants the new rolling report through the legacy global-read exception and rechecks scope before release', async () => {
+    const h = setup();
+    const id = '00000000-0000-4000-8000-000000000001';
+    h.current.userId = id;
+    h.request.actor = { ...h.request.actor, userId: id };
+    h.current.permissions = [];
+    vi.stubEnv('NORA_DANIAL_BUSINESS_READ_USER_ID', id);
+    h.database.client.user.findFirst.mockResolvedValue({ id });
+    await expect(h.controller.rollingSales(h.request, {})).rejects.toThrow();
+    expect(h.database.client.$transaction).not.toHaveBeenCalled();
+    h.current.permissions = ['sales.contracts.read.own'];
+    h.database.client.$transaction.mockImplementation(async () => {
+      h.companies.selected.mockResolvedValue('other-company');
+      return { version: 1, rows: [] };
+    });
+    await expect(h.controller.rollingSales(h.request, {})).rejects.toThrow(
+      'AGENT_CONTEXT_CHANGED',
+    );
+  });
+
   it('rejects count scope injection, stale scope and revocation before result release', async () => {
     const h = setup();
     const { contextId } = await h.controller.catalog(h.request);

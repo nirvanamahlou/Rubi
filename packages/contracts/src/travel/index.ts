@@ -601,6 +601,13 @@ export interface ReservationTableSummaryV1 {
   debtForeign: string | null;
 }
 export interface TravelWorkflowStateV1 {
+  /** Hotel stays included in the most recently recorded voucher issuance. Older revisions have no item-level evidence. */
+  issuedHotelStays?: Array<{
+    key: string;
+    hotelId: string;
+    checkInDate: string;
+    checkOutDate: string;
+  }>;
   /** Server-owned base for rebasing current output; never accepted in a workflow command. */
   outputSourceSnapshot?: SalesReservationRequestV1;
 

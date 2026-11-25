@@ -1,5 +1,7 @@
 import { Prisma } from '@nora/database';
 
+export const fullySettledStatuses = ['SETTLED', 'OVERPAID'] as const;
+
 export interface CustomerFinancialReleaseFacts {
   contractId: string;
   branchId: string;

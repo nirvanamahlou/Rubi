@@ -25,6 +25,7 @@ import {
 } from './catalog';
 import { SalesAgentQueryService, type AgentScope } from './query.service';
 import { DatabaseService } from '../../database/database.service';
+import { readRollingSales } from './rolling-sales';
 import { readHotelRanking } from './hotel-ranking';
 import { readContractCountBreakdown } from './count-breakdown';
 import { hasNoraGlobalBusinessRead } from '../../iam/nora-business-read';
@@ -41,17 +42,19 @@ export class SalesAgentController {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
-  private async context(request: AuthenticatedRequest) {
+  private async context(
+    request: AuthenticatedRequest,
+    allowNoraBusinessRead = true,
+  ) {
     if (process.env.ASSISTANT_AGENT_ENABLED !== 'true')
       throw new ServiceUnavailableException('AGENT_DISABLED');
     const token = readCookie(request, ACCESS_COOKIE);
     if (!token) throw new ForbiddenException();
     const actor = await this.iam.authenticate(decodeURIComponent(token));
     if (actor.userId !== request.actor.userId) throw new ForbiddenException();
-    const globalRead = await hasNoraGlobalBusinessRead(
-      this.database.client,
-      actor,
-    );
+    const globalRead =
+      allowNoraBusinessRead &&
+      (await hasNoraGlobalBusinessRead(this.database.client, actor));
     if (!globalRead && !canViewRoute(actor.permissions, '/sales'))
       throw new ForbiddenException();
     const has = (permission: string) =>
@@ -158,6 +161,38 @@ export class SalesAgentController {
     }
     const release = await this.context(request);
     if (release.contextId !== context.contextId)
+      throw new ForbiddenException('AGENT_CONTEXT_CHANGED');
+    return { ...result, contextId: context.contextId };
+  }
+
+  @Post('rolling-sales')
+  @Header('Cache-Control', 'private, no-store')
+  async rollingSales(
+    @Req() request: AuthenticatedRequest,
+    @Body() body: unknown,
+  ) {
+    if (
+      !body ||
+      typeof body !== 'object' ||
+      Array.isArray(body) ||
+      Object.keys(body).some((key) => key !== 'salesPeriodAsOf')
+    )
+      throw new BadRequestException('INVALID_QUERY');
+    const context = await this.context(request, false);
+    const supplied = (body as Record<string, unknown>).salesPeriodAsOf;
+    const cutoff = supplied === undefined ? new Date().toISOString() : supplied;
+    if (
+      typeof cutoff !== 'string' ||
+      !Number.isFinite(Date.parse(cutoff)) ||
+      Date.parse(cutoff) > Date.now()
+    )
+      throw new BadRequestException('INVALID_SALES_PERIOD');
+    const result = await readRollingSales(
+      this.database.client,
+      context.scope,
+      cutoff,
+    );
+    if ((await this.context(request, false)).contextId !== context.contextId)
       throw new ForbiddenException('AGENT_CONTEXT_CHANGED');
     return { ...result, contextId: context.contextId };
   }

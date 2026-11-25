@@ -10,11 +10,19 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ contract?: string; record?: string }>;
+  searchParams: Promise<{
+    contract?: string;
+    record?: string;
+    salesPeriodAsOf?: string;
+  }>;
 }) {
-  const { contract, record } = await searchParams;
+  const { contract, record, salesPeriodAsOf } = await searchParams;
   return (
     <SalesWorkspace
+      key={salesPeriodAsOf ?? record ?? contract ?? ''}
+      initialSalesPeriodAsOf={
+        typeof salesPeriodAsOf === 'string' ? salesPeriodAsOf : ''
+      }
       initialContract={
         typeof contract === 'string' ? contract.slice(0, 100) : ''
       }

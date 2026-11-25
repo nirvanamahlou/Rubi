@@ -1,4 +1,8 @@
 {
+  "اقامت‌های بدون واچر در قراردادهای تسویه‌شده": "Hotel stays awaiting vouchers on settled contracts",
+  "اقامت‌های فاقد سابقهٔ قابل‌تشخیص صدور واچر": "Stays with insufficient voucher issuance evidence",
+  "تعداد اقامت‌های بدون واچر": "Stays awaiting vouchers",
+  "دسترسی مجاز نیست.": "Access denied.",
   "پرداخت‌های آنلاین سایت نیایش": "Niyayesh website payments",
   "پرداختی پیدا نشد.": "No payments found.",
   "دریافت پرداخت‌های سایت ناموفق بود. دوباره تلاش کنید.": "Website payments could not be loaded. Try again.",

@@ -3,6 +3,7 @@ import {
   type GuideSection,
   type AssistantGuideModule,
 } from './assistant-guide-registry';
+import { buildGuideWordSearch, normalizeGuideQuery } from './guide-word-search';
 import { buildGuidePhraseIndex } from './guide-phrase-index';
 import type { QuestionDecision } from './question-routing';
 import { normalizeQuestion } from './question-text';
@@ -27,17 +28,91 @@ const panels = Object.entries(assistantGuideCatalogues).map(
 const searchPanelNames = buildGuidePhraseIndex(panels, (panel) => [panel.name]);
 let search: ReturnType<typeof buildGuidePhraseIndex<Entry>> | undefined;
 
+let wordSearch: ReturnType<typeof buildGuideWordSearch> | undefined;
+
 const workflowIntents: readonly [RegExp, readonly string[]][] = [
   [
-    /نورا.*(?:نتوانست|دسترسی نداشت|عیب یابی)|عیب یابی.*نورا/,
+    /ویزا.*(?:کارتابل|درخواست داخلی)|(?:کارتابل|درخواست داخلی).*ویزا|درخواست ویزا.*پیگیری/,
+    ['workbench/request-create', 'workbench/request-status'],
+  ],
+  [/مرخصی استعلاجی/, ['workbench/leave-medical']],
+  [/جانشین.*مرخصی|مرخصی.*جانشین/, ['workbench/substitute']],
+  [/اصلاح تردد.*ثبت|ثبت.*اصلاح تردد/, ['workbench/attendance-correction']],
+  [/مساعده.*درخواست|درخواست.*مساعده/, ['workbench/advance']],
+  [/کد پیگیری|کارتابل.*دلیل رد/, ['workbench/request-status']],
+  [/یادداشت.*یادآوری/, ['workbench/note-checklist']],
+  [/یادداشت.*بایگانی/, ['workbench/note-organize']],
+  [/اعلان.*خوانده نشده/, ['workbench/notifications']],
+  [/میزکار.*تنظیمات حساب/, ['workbench/account']],
+  [/میزکار.*سوابق تردد/, ['workbench/performance']],
+  [/(?=.*لغو)(?=.*صدور)(?=.*مجوز تحویل)(?!.*تایید).*/, ['finance-delivery/issue','finance-delivery/revoke']],
+  [/پیگیری.*پس از ثبت قرارداد|(?:بعد|پس از) ثبت قرارداد.*پیگیری/, ['sales/reservation']],
+  [/قرارداد (?:رو |را )?(?:چطور|چگونه|چجوری).*جستجو/, ['sales/list']],
+  [/درخواست.*کار های من|کار های من.*درخواست/, ['call-center/call-center-queue','workbench/requests']],
+  [/مرخصی.*(?:نیازمند اصلاح|برگشت خورده)/, ['workbench/request-status']],
+  [/ترتیب.*(?:تایید|تأیید).*منابع انسانی/, ['workbench/leave-approval','human-resources/requests']],
+  [/تغییر شرکت فعال|شرکت فعال.*تغییر/, ['nora-sources/company-scope']],
+  [/نقش.*شعب.*کاربر/, ['system-management/permissions']],
+  [/مکاتبه داخلی.*بفرستم/, ['correspondence/internal-send']],
+  [/نامه صادره.*چاپ/, ['correspondence/outgoing-export']],
+  [
+    /گزارش رزرواسیون.*(?:اختلاف|کارت.*اکسل)|اختلاف.*گزارش رزرواسیون/,
+    ['reservation-report/count-difference'],
+  ],
+  [/گزارش رزرواسیون.*(?:تاریخ حرکت|تاریخ صدور)/, ['reservation-report/dates']],
+  [
+    /گزارش رزرواسیون.*(?:pnr|فیلتر وضعیت)|(?:pnr|فیلتر وضعیت).*گزارش رزرواسیون/i,
+    ['reservation-report/filters'],
+  ],
+  [/قرارداد.*(?:رسیده|ورودی).*فروش/, ['reservations/handoff']],
+  [/نرخ خرید.*هتل|هتل.*نرخ خرید/, ['reservations/hotel-rates']],
+  [/ایمیل کارگزار.*رزرو/, ['reservations/hotel-mail']],
+  [/پرواز رفت و برگشت.*جدا/, ['reservations/flight']],
+  [/هتل.*پرونده رزرو/, ['reservations/hotel']],
+  [/قرارداد.*چندتا هتل|چندتا هتل.*قرارداد/, ['sales/multi-hotel']],
+  [/اسم انگلیسی مسافر/, ['sales/passport']],
+  [/قرارداد.*مدرک پرداخت|رسید پرداخت.*قرارداد/, ['sales/receipt']],
+  [/(?:پی دی اف|اکسل).*قرارداد|قرارداد.*پی دی اف/, ['sales/output']],
+  [/مسافر.*تخصیص/, ['sales/allocation']],
+  [/پیش نویس قرارداد.*ادامه/, ['sales/draft']],
+  [/اصلاح.*مبلغ قرارداد/, ['sales/correction']],
+  [/قرارداد آژانس/, ['sales/agency']],
+  [/برنامه پرداخت قرارداد/, ['sales/payment']],
+  [
+    /قرارداد.*انتخاب.*پرواز|قرارداد بلی[تط] پرواز.*پرواز انتخاب/,
+    ['sales/flight'],
+  ],
+  [/قرارداد.*بیمه.*انتخاب/, ['sales/insurance']],
+  [/تاریخ مسیر قرارداد/, ['sales/route']],
+  [/کمیسیون.*قرارداد/, ['sales/commission']],
+  [/مجوز.*تسویه کامل|تسویه کامل.*مجوز/, ['finance-delivery/settlement']],
+  [/رسید.*ت[اأ]یید نشده.*مجوز/, ['finance-delivery/receipt']],
+  [
+    /حساب مشتری و آژانس|واریزی مشتری.*مانده|دریافت در انتظار تایید/,
+    ['finance-delivery/customer-receipt'],
+  ],
+  [/تنخواه.*ببند/, ['petty-cash/settlement-policy']],
+  [/شارژ تنخواه/, ['petty-cash/recharge']],
+  [/فایل.*آپلود.*آرشیو/, ['documents/upload', 'documents/archive']],
+  [/سند بایگانی/, ['documents/archive']],
+  [/مغایرت خرید/, ['purchase/discrepancy']],
+  [/ارسال پکیج روز/, ['package-generator/daily-publication']],
+  [/پاپ اپ تماس/, ['call-center/call-center-notification']],
+  [/تیکت.*تشدید/, ['customer-affairs/ticket-escalation']],
+  [
+    /کارمند سابق|اکسل کارکنان|کد پرسنلی.*لیست|فیلتر کارکنان/,
+    ['human-resources/employees'],
+  ],
+  [
+    /نورا.*(?:نتوانست|دسترسی نداشت|عیب یابی|گزارش.*(?:جستجو|پیدا) نکرد)|عیب یابی.*نورا/,
     ['nora-sources/troubleshoot'],
   ],
   [
-    /(?:نورا|پاسخ).*(?:شواهد|منبع داده|منبع داخلی)|(?:منبع داده|منبع داخلی|شواهد).*نورا/,
+    /(?:نورا|پاسخ).*(?:شواهد|منبع داده|منبع داخلی)|(?:منبع|شواهد).*نورا/,
     ['nora-sources/evidence'],
   ],
   [/مطالبات.*تحویل مدارک/, ['reporting/receivables', 'reporting/delivery']],
-  [/مانده مطالبات|مطالبات مشتریان/, ['reporting/receivables']],
+  [/مانده مطالبات|مطالبات مشتریان|گزارش مطالبات/, ['reporting/receivables']],
   [
     /(?=.*فروش)(?=.*رزرواسیون)(?=.*(?:شعب|داشبورد)).*/,
     ['reporting/branch-sales', 'reporting/branch-reservations'],
@@ -109,14 +184,30 @@ const workflowIntents: readonly [RegExp, readonly string[]][] = [
 ];
 
 export function resolveDocumentedWorkflow(message: string) {
-  const question = normalizeQuestion(message);
+  const question = normalizeGuideQuery(message)
+    .replace(/یاداشت/g, 'یادداشت')
+    .replace(/یاداوری/g, 'یادآوری')
+    .replace(/خونده/g, 'خوانده')
+    .replace(/مرخسی/g, 'مرخصی')
+    .replace(/اسعلاجی/g, 'استعلاجی')
+    .replace(/تردود|ترددو/g, 'تردد')
+    .replace(/پیگری/g, 'پیگیری')
+    .replace(/بایگونی/g, 'بایگانی')
+    .replace(/ثپت/g, 'ثبت')
+    .replace(/اصلح/g, 'اصلاح')
+    .replace(/تخصیس/g, 'تخصیص')
+    .replace(/تنخاه/g, 'تنخواه')
+    .replace(/درخاست/g, 'درخواست')
+    .replace(/(?:^|\s)رزرو(?=\s|$)/g, ' رزرواسیون')
+    .replace(/قرارداد جدیو/g, 'قرارداد جدید');
   const instruction =
-    /چطور|چگونه|چجور|کجا|نحوه|مراحل|راهنما|چه چیز|چه (?:مدارک|تأیید|تایید)|از کدام (?:پنل|گزارش)|برای عیب یابی/.test(
+    /چطور|چگونه|چجور|چطوری|چه جوری|کجا|چیه|چیکار|چی چک|چی تایپ|نحوه|مراحل|راهنما|چه چیز|چه (?:مدارک|تأیید|تایید)|از کدام (?:پنل|گزارش)|از چه گزارشی|برای عیب یابی/.test(
       question,
     );
   const explicitManifest =
     /^(?:منظورم )?(?:مانیفست|مانيفست|manifest)(?: است)?$/.test(question);
   if (!instruction && !explicitManifest) return [];
+  if (/(?:کد پیگیری|شماره درخواست)\s+(?:[a-z]+-)?\d/i.test(question)) return [];
   const match = workflowIntents.find(([pattern]) => pattern.test(question));
   return (match?.[1] ?? []).flatMap((ref) => {
     const [domain, id] = ref.split('/');
@@ -142,21 +233,31 @@ export function catalogueLookupMode(
   question: string,
   decision: QuestionDecision,
 ) {
-  const text = normalizeQuestion(question);
+  const text = normalizeGuideQuery(question);
+  // Colloquial location questions can otherwise be classified as numerical queries by
+  // a noun such as «گزارش» or «مبلغ». Record identifiers and provenance keep their readers.
+  const locateAction = /(?:از کجا|کجا.*(?:چک|بررسی)|کجاس|کجاست|کدوم (?:بخش|صفحه|کارتابل|دکمه)|چی چک|چی تایپ)/.test(text) &&
+    !/\d|چقدر|چند تا|دست کی|چرا|از کجا.*(?:آوردی|آمده|میاری)|درخواستم|کد پیگیری/.test(text);
   if (
     decision.guideTopicId ||
     decision.needsSalesPeriod ||
-    !['guide', 'clarify'].includes(decision.kind)
+    (!['guide', 'clarify'].includes(decision.kind) && !(locateAction && decision.kind === 'data'))
   )
     return;
+  if (/ت[اأ]یید مدیر/.test(text) && /مانده مرخصی/.test(text) && !/[0-9]|کد پیگیری|مرخصی من/.test(text)) return 'procedure';
   if (
     /\d{3,}|چقدر|دست کی|از کجا آوردی|این (?:عدد|مبلغ|نتیجه|قرارداد|پرونده|درخواست|کمپین)|همین|پیگیری من|چرا|قبل (?:از )?ارسال/.test(
       text,
     )
   )
     return;
+  if (locateAction) return 'procedure';
   if (/^راهنمای?\s/.test(text)) return 'explicit';
-  if (/چطور|چجور|چگونه|کجا|نحوه|مراحل|انجام بدم|انجام بدهم/.test(text))
+  if (
+    /چطور|چجور|چگونه|چه جوری|چیه|کجا|کدوم (?:بخش|کارتابل|دکمه)|نحوه|مراحل|انجام بدم|انجام بدهم/.test(
+      text,
+    )
+  )
     return 'procedure';
 }
 
@@ -166,7 +267,7 @@ export function findCatalogueTopics(
   allowed: (s: GuideSection) => boolean,
   minimumWords = 1,
 ) {
-  const text = normalizeQuestion(message);
+  const text = normalizeGuideQuery(message);
   const searchTopics = prepareCatalogueSearch();
   const named = searchPanelNames(text);
   const longest = Math.max(0, ...named.map((hit) => hit.score));
@@ -194,12 +295,23 @@ export function findCatalogueTopics(
     )
     .map(({ item, score }) => ({
       section: item.section,
-      score,
+      score: score + (normalizeGuideQuery(text).includes(normalizeGuideQuery(item.section.title)) ? 0.25 : 0),
       current: item.section.href.split(/[?#]/)[0] === pathname,
     }))
     .sort((a, b) => b.score - a.score || Number(b.current) - Number(a.current));
   const first = candidates[0];
-  if (!first) return [];
+  if (!first) {
+    if (minimumWords < 2) return [];
+    wordSearch ??= buildGuideWordSearch(entries.map(({ section }) => section));
+    return wordSearch(message).filter(
+      (section) =>
+        allowed(section) &&
+        (!explicit.length ||
+          explicit.some(
+            ({ item }) => byHref.get(section.guideHref)?.domain === item.domain,
+          )),
+    );
+  }
   return candidates
     .filter((c) => c.score === first.score && c.current === first.current)
     .map((c) => c.section);

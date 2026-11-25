@@ -510,6 +510,23 @@ export class CustomerAffairsRepository {
     });
   }
 
+  countOwnWorkbenchRequests(
+    userId: string,
+    branchIds: string[],
+    from: Date,
+    to: Date,
+  ) {
+    return this.database.client.customerAffairsTicket.count({
+      where: {
+        createdByUserId: userId,
+        branchId: { in: branchIds },
+        category: { startsWith: 'WORKBENCH_' },
+        createdAt: { gte: from, lt: to },
+        timeline: { none: { type: 'WORKBENCH_REMOVED', actorUserId: userId } },
+      },
+    });
+  }
+
   workbenchRequests(userId: string, branchIds: string[]) {
     return this.database.client.customerAffairsTicket.findMany({
       where: {

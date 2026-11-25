@@ -1,4 +1,5 @@
 import { reservationSnapshot } from './reservation-snapshot.public';
+import { fullySettledStatuses } from '../finance/document-delivery/financial-release.public';
 import type { PackagePublishedSaleV1 } from '@nora/contracts';
 import { ContractCompanyScope } from '../sales/contract-company-scope.public';
 import { salesSupplyWhere } from './sales-supply-filter';
@@ -835,6 +836,7 @@ export class SalesService {
     if (!has(actor, 'sales.export'))
       throw new ForbiddenException('مجوز دریافت خروجی قرارداد وجود ندارد.');
     const validated = Joi.object({
+      salesPeriodAsOf: Joi.string().isoDate(),
       ownerUserId: Joi.string().guid(),
       supplyType: Joi.string().valid('ALL', 'FLOATING', 'CHARTER'),
       search: Joi.string().trim().max(160).allow(''),
@@ -1090,7 +1092,7 @@ export class SalesService {
         hasConfirmedReceiptFunds(row.payments, row.receiptAllocations ?? []),
       fullySettled:
         row.status !== 'CANCELLED' &&
-        ['SETTLED', 'OVERPAID'].includes(row.settlementStatus),
+        fullySettledStatuses.some(status => status === row.settlementStatus),
     };
   }
   async financeReceiptHistory(

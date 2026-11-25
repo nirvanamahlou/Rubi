@@ -6,6 +6,7 @@
 
 ### [راهنمای منابع پاسخ نورا](guides/nora-sources.md)
 
+- [انتخاب شرکت فعال](guides/nora-sources.md#company-scope)
 - [مشاهده منبع و بازه پاسخ نورا](guides/nora-sources.md#evidence)
 - [عیب یابی گزارش در نورا](guides/nora-sources.md#troubleshoot)
 

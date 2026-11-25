@@ -26,6 +26,7 @@
 4. اولویت و پیوست موردنیاز را مشخص کنید؛ پس از اتمام بارگذاری، ثبت و پیگیری درخواست را بزنید.
 5. کد پیگیری نمایش‌داده‌شده را نگه دارید و درخواست را در کارتابل درخواست‌ها بررسی کنید.
 6. برای مرخصی و مأموریت، گیرنده از گردش همان نوع درخواست تعیین می‌شود. مسیر مدیر واحد و منابع انسانی را در راهنمای مرخصی ببینید.
+7. برای پیگیری ویزا در قالب درخواست داخلی، عنوان روشنی مثل «بررسی وضعیت پرونده ویزا» و گیرندهٔ مجاز را وارد کنید. کد پیگیری درخواست را نگه دارید. وضعیت کارتابل گردش درخواست داخلی را نشان می‌دهد. مرحلهٔ سفارت یا فهرست نقص مدارک فقط وقتی معلوم است که مسئول آن را در همان درخواست ثبت کرده باشد.
 
 <a id="request-recipient"></a>
 
@@ -187,7 +188,7 @@
 
 ## پیام‌ها
 
-<!-- nora-guide {"id":"messages","related":[],"tab":"messages","href":"/workbench?tab=messages","path":["فضای کار","میزکار من","پیام‌ها"],"aliases":["پیام","پیام رسان","پیامرسان","چت داخلی","گفتگو","گفت وگو"],"conditions":["ورود به حساب ERP","وجود دسترسی بخش یا عملیات در حساب کاربر"],"troubleshooting":["پیام خطای خود فرم، فیلدهای الزامی و پایان بارگذاری را بررسی کنید.","نبود مجوز، خطای دریافت و نبود نتیجه را از هم تفکیک کنید."],"limitations":["پیام با درخواست قابل پیگیری یکسان نیست؛ محتوای پیام شخصی را به نورا ندهید."],"next":"گفتگوی مخاطب صحیح را قبل از ارسال بررسی کنید.","sources":["apps/web/src/modules/workbench/message-composer.tsx","apps/web/src/modules/workbench/messaging-api.ts"]} -->
+<!-- nora-guide {"id":"messages","related":[],"tab":"messages","href":"/workbench?tab=messages","path":["فضای کار","میزکار من","پیام‌ها"],"aliases":["پیام","پیام رسان","پیامرسان","چت داخلی","گفتگو","گفت وگو"],"conditions":["ورود به حساب ERP","وجود دسترسی بخش یا عملیات در حساب کاربر"],"troubleshooting":["پیام خطای خود فرم، فیلدهای الزامی و پایان بارگذاری را بررسی کنید.","نبود مجوز، خطای دریافت و نبود نتیجه را از هم تفکیک کنید."],"limitations":["پیام با درخواست قابل پیگیری یکسان نیست؛ محتوای پیام شخصی را به نورا ندهید."],"next":"گفتگوی مخاطب صحیح را قبل از ارسال بررسی کنید.","sources":["apps/web/src/modules/workbench/message-composer.tsx","apps/web/src/modules/workbench/messaging-api.ts"],"terms":["ارسال مجدد پیام داخلی","فوروارد پیام","پیام داخلی","ارسال مجدد","فوروارد"]} -->
 
 ### مراحل
 
@@ -225,7 +226,7 @@
 
 ## فایل‌های من
 
-<!-- nora-guide {"id":"files","related":[],"tab":"files","href":"/workbench?tab=files","path":["فضای کار","میزکار من","فایل‌های من"],"aliases":["فایل های من","فایلام","فایل هام","بارگذاری سند","آپلود","دانلود فایل","فایل","دریافت سند"],"conditions":["ورود به حساب ERP","وجود دسترسی بخش یا عملیات در حساب کاربر"],"troubleshooting":["پیام خطای خود فرم، فیلدهای الزامی و پایان بارگذاری را بررسی کنید.","نبود مجوز، خطای دریافت و نبود نتیجه را از هم تفکیک کنید."],"limitations":["نبود نتیجه جست‌وجو با نداشتن مجوز و خطای دریافت متفاوت است؛ فایل خصوصی را در چت ارسال نکنید."],"next":"فیلتر و دسترسی فایل را کنترل کنید.","sources":["apps/web/src/modules/workbench/workbench-files.tsx","apps/web/src/modules/workbench/api.ts"]} -->
+<!-- nora-guide {"id":"files","related":[],"tab":"files","href":"/workbench?tab=files","path":["فضای کار","میزکار من","فایل‌های من"],"aliases":["فایل های من","فایلام","فایل هام","بارگذاری سند","آپلود","دانلود فایل","فایل","دریافت سند"],"conditions":["ورود به حساب ERP","وجود دسترسی بخش یا عملیات در حساب کاربر"],"troubleshooting":["پیام خطای خود فرم، فیلدهای الزامی و پایان بارگذاری را بررسی کنید.","نبود مجوز، خطای دریافت و نبود نتیجه را از هم تفکیک کنید."],"limitations":["نبود نتیجه جست‌وجو با نداشتن مجوز و خطای دریافت متفاوت است؛ فایل خصوصی را در چت ارسال نکنید."],"next":"فیلتر و دسترسی فایل را کنترل کنید.","sources":["apps/web/src/modules/workbench/workbench-files.tsx","apps/web/src/modules/workbench/api.ts"],"terms":["جستجوی فایل شخصی","فایل های من"]} -->
 
 ### مراحل
 
@@ -287,7 +288,7 @@
 
 ## تقویم من
 
-<!-- nora-guide {"id":"calendar","related":[],"tab":"calendar","href":"/workbench?tab=calendar","path":["فضای کار","میزکار من","تقویم من"],"aliases":["تقویم","رویداد","برنامه ثبت","جلسه ثبت"],"conditions":["ورود به حساب ERP","وجود دسترسی بخش یا عملیات در حساب کاربر"],"troubleshooting":["پیام خطای خود فرم، فیلدهای الزامی و پایان بارگذاری را بررسی کنید.","نبود مجوز، خطای دریافت و نبود نتیجه را از هم تفکیک کنید."],"limitations":["فرم رویداد موجود تاریخ دارد؛ ساعت مستقل یا اتصال خودکار به درخواست را اگر در همان فرم نیست فرض نکنید."],"next":"رویداد ذخیره‌شده و وضعیت آن را در تقویم بررسی کنید.","sources":["apps/web/src/modules/workbench/workbench-calendar.tsx","apps/api/src/workbench/workbench.controller.ts"]} -->
+<!-- nora-guide {"id":"calendar","related":[],"tab":"calendar","href":"/workbench?tab=calendar","path":["فضای کار","میزکار من","تقویم من"],"aliases":["تقویم","رویداد","برنامه ثبت","جلسه ثبت"],"conditions":["ورود به حساب ERP","وجود دسترسی بخش یا عملیات در حساب کاربر"],"troubleshooting":["پیام خطای خود فرم، فیلدهای الزامی و پایان بارگذاری را بررسی کنید.","نبود مجوز، خطای دریافت و نبود نتیجه را از هم تفکیک کنید."],"limitations":["فرم رویداد موجود تاریخ دارد؛ ساعت مستقل یا اتصال خودکار به درخواست را اگر در همان فرم نیست فرض نکنید."],"next":"رویداد ذخیره‌شده و وضعیت آن را در تقویم بررسی کنید.","sources":["apps/web/src/modules/workbench/workbench-calendar.tsx","apps/api/src/workbench/workbench.controller.ts"],"terms":["تقویم شخصی","جلسه تقویم","برنامه امروز"]} -->
 
 ### مراحل
 
@@ -338,7 +339,7 @@
 
 ## پکیج‌های روز
 
-<!-- nora-guide {"id":"daily-packages","related":[],"tab":"daily-packages","href":"/workbench?tab=daily-packages","path":["فضای کار","میزکار من","پکیج‌های روز"],"aliases":["پکیج های روز","پکیج روز","دانلود پکیج"],"conditions":["ورود به حساب ERP","وجود دسترسی بخش یا عملیات در حساب کاربر"],"troubleshooting":["پیام خطای خود فرم، فیلدهای الزامی و پایان بارگذاری را بررسی کنید.","نبود مجوز، خطای دریافت و نبود نتیجه را از هم تفکیک کنید."],"limitations":["فهرست خالی ممکن است به تاریخ، شعبه یا نبود پکیج مربوط باشد؛ خطای دریافت را نبود پکیج تلقی نکنید."],"next":"شعبه و تاریخ را کنترل و به‌روزرسانی کنید.","sources":["apps/web/src/modules/workbench/workbench-daily-packages.tsx","apps/api/src/workbench/workbench-daily-packages.controller.ts"]} -->
+<!-- nora-guide {"id":"daily-packages","related":[],"tab":"daily-packages","href":"/workbench?tab=daily-packages","path":["فضای کار","میزکار من","پکیج‌های روز"],"aliases":["پکیج های روز","پکیج روز","دانلود پکیج"],"conditions":["ورود به حساب ERP","وجود دسترسی بخش یا عملیات در حساب کاربر"],"troubleshooting":["پیام خطای خود فرم، فیلدهای الزامی و پایان بارگذاری را بررسی کنید.","نبود مجوز، خطای دریافت و نبود نتیجه را از هم تفکیک کنید."],"limitations":["فهرست خالی ممکن است به تاریخ، شعبه یا نبود پکیج مربوط باشد؛ خطای دریافت را نبود پکیج تلقی نکنید."],"next":"شعبه و تاریخ را کنترل و به‌روزرسانی کنید.","sources":["apps/web/src/modules/workbench/workbench-daily-packages.tsx","apps/api/src/workbench/workbench-daily-packages.controller.ts"],"terms":["پکیج روز","پکیج های روز"]} -->
 
 ### مراحل
 
@@ -403,7 +404,7 @@
 
 ## اعلان‌های من
 
-<!-- nora-guide {"id":"notifications","related":[],"tab":"today","href":"/workbench?tab=today","path":["فضای کار","میزکار من","خانه"],"aliases":["اعلان","نوتیف","خوانده نشده"],"conditions":["ورود به حساب ERP","وجود دسترسی بخش یا عملیات در حساب کاربر"],"troubleshooting":["پیام خطای خود فرم، فیلدهای الزامی و پایان بارگذاری را بررسی کنید.","نبود مجوز، خطای دریافت و نبود نتیجه را از هم تفکیک کنید."],"limitations":["خواندن اعلان به معنی تأیید یا تکمیل درخواست نیست؛ محتوای اعلان شخصی را در چت نفرستید."],"next":"پرونده مربوط به اعلان را از لینک همان مورد باز کنید.","sources":["apps/web/src/modules/workbench/workbench-workspace.tsx","apps/api/src/workbench/workbench.controller.ts"]} -->
+<!-- nora-guide {"id":"notifications","related":[],"tab":"today","href":"/workbench?tab=today","path":["فضای کار","میزکار من","خانه"],"aliases":["اعلان","نوتیف","خوانده نشده"],"conditions":["ورود به حساب ERP","وجود دسترسی بخش یا عملیات در حساب کاربر"],"troubleshooting":["پیام خطای خود فرم، فیلدهای الزامی و پایان بارگذاری را بررسی کنید.","نبود مجوز، خطای دریافت و نبود نتیجه را از هم تفکیک کنید."],"limitations":["خواندن اعلان به معنی تأیید یا تکمیل درخواست نیست؛ محتوای اعلان شخصی را در چت نفرستید."],"next":"پرونده مربوط به اعلان را از لینک همان مورد باز کنید.","sources":["apps/web/src/modules/workbench/workbench-workspace.tsx","apps/api/src/workbench/workbench.controller.ts"],"terms":["اعلان خوانده نشده"]} -->
 
 ### مراحل
 
@@ -483,7 +484,7 @@
 
 ## تأیید و پیگیری مرخصی
 
-<!-- nora-guide {"id":"leave-approval","related":["workbench/request-status"],"tab":"requests","href":"/workbench?tab=requests","path":["فضای کار","میزکار من","درخواست جدید","مرخصی"],"aliases":["مراحل تایید مرخصی","روند تایید مرخصی"],"conditions":["ورود به حساب ERP","وجود دسترسی بخش یا عملیات در حساب کاربر"],"troubleshooting":["پیام خطای خود فرم، فیلدهای الزامی و پایان بارگذاری را بررسی کنید.","نبود مجوز، خطای دریافت و نبود نتیجه را از هم تفکیک کنید."],"limitations":["نورا پرونده شخصی مرخصی یا علت رد را نخوانده است؛ مهلت‌ها و اعتبارسنجی جاری فرم ملاک‌اند."],"next":"وضعیت ثبت‌شده را در کارتابل درخواست‌ها بررسی کنید.","sources":["apps/web/src/modules/workbench/new-request-dialog.tsx","apps/api/src/customer-affairs/customer-affairs.controller.ts","apps/web/src/modules/workbench/workbench-own-requests.tsx"]} -->
+<!-- nora-guide {"id":"leave-approval","related":["workbench/request-status"],"tab":"requests","href":"/workbench?tab=requests","path":["فضای کار","میزکار من","درخواست جدید","مرخصی"],"aliases":["مراحل تایید مرخصی","روند تایید مرخصی"],"conditions":["ورود به حساب ERP","وجود دسترسی بخش یا عملیات در حساب کاربر"],"troubleshooting":["پیام خطای خود فرم، فیلدهای الزامی و پایان بارگذاری را بررسی کنید.","نبود مجوز، خطای دریافت و نبود نتیجه را از هم تفکیک کنید."],"limitations":["نورا پرونده شخصی مرخصی یا علت رد را نخوانده است؛ مهلت‌ها و اعتبارسنجی جاری فرم ملاک‌اند."],"next":"وضعیت ثبت‌شده را در کارتابل درخواست‌ها بررسی کنید.","sources":["apps/web/src/modules/workbench/new-request-dialog.tsx","apps/api/src/customer-affairs/customer-affairs.controller.ts","apps/web/src/modules/workbench/workbench-own-requests.tsx"],"terms":["ترتیب تأیید مدیر","تایید مدیر و منابع انسانی"]} -->
 
 ### مراحل
 

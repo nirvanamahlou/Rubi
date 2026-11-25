@@ -13646,3 +13646,7 @@ Reserve Nora's guide catalogue, document routing, response source display and fo
 ## NORA-NATIVE-TEHRAN-COUNT — PC-C
 
 Reserve the narrowly recognized Tehran day contract-count route and its evidence checks. Reuse the authenticated read contract.
+
+## NORA-ERP-ORCHESTRATION — PC-C
+
+Reserve the v3 conversation planner and Web composer, scoped Sales period and list tools, authorized settlement-to-voucher reconciliation, and the role/capability acceptance inventory. Reuse producer-owned read boundaries. No migration or dependency lock.

@@ -264,7 +264,12 @@ export function paymentReferenceSearchQuery(
 export function SalesWorkspace({
   initialContract = '',
   initialRecord = '',
-}: { initialContract?: string; initialRecord?: string } = {}) {
+  initialSalesPeriodAsOf = '',
+}: {
+  initialContract?: string;
+  initialRecord?: string;
+  initialSalesPeriodAsOf?: string;
+} = {}) {
   const contractsSearchPanel = useRef<HTMLElement>(null);
   const actor = useAccessActor();
   const [purchaseContractId, setPurchaseContractId] = useState<string | null>(
@@ -281,7 +286,15 @@ export function SalesWorkspace({
     initialRecord || null,
   );
   const [query, setQuery] = useState<SalesContractListQuery>(
-    initialContract ? { search: initialContract } : {},
+    initialSalesPeriodAsOf
+      ? {
+          salesPeriodAsOf: initialSalesPeriodAsOf,
+          sortBy: 'createdAt',
+          sortDirection: 'desc',
+        }
+      : initialContract
+        ? { search: initialContract }
+        : {},
   );
   const [total, setTotal] = useState(0);
   const requestVersion = useRef(0);
@@ -293,6 +306,7 @@ export function SalesWorkspace({
   const [exportNotice, setExportNotice] = useState('');
   const dateFilterApplied = hasContractDateFilter(query);
   const filtersApplied = Boolean(
+    query.salesPeriodAsOf ||
     query.ownerUserId ||
     (query.supplyType && query.supplyType !== 'ALL') ||
     query.search ||
@@ -465,6 +479,24 @@ export function SalesWorkspace({
           <p role="status" className="mb-3 text-sm text-emerald-700">
             {exportNotice}
           </p>
+        ) : null}
+        {query.salesPeriodAsOf &&
+        Number.isFinite(Date.parse(query.salesPeriodAsOf)) ? (
+          <div className="flex items-center gap-2 text-sm">
+            <span>فروش تأییدشدهٔ ۱۴ روز اخیر تا</span>
+            <time dateTime={query.salesPeriodAsOf}>
+              {new Date(query.salesPeriodAsOf).toLocaleString('fa-IR', {
+                timeZone: 'Asia/Tehran',
+              })}
+            </time>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setQuery({})}
+            >
+              نمایش همه قراردادها
+            </Button>
+          </div>
         ) : null}
         {dateFilterApplied ? (
           <p className="mt-3 text-xs text-muted-foreground">
