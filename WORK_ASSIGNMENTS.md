@@ -2,6 +2,10 @@
 
 Reserve the NSS standalone receipt validation and amount display. Preserve prior receipts and accept any positive whole rial amount within the existing checkout limit. No schema or shared service changes.
 
+## NORA-COLLOQUIAL-SALES-WEEK — PC-C — REVIEW
+
+Reserve sales-period text normalization and its regression test for colloquial possessive suffixes on relative dates. No API, migration, or dependency change.
+
 ## NSS-CONTRACT-PAYMENT-1125 — PC-A — REVIEW
 
 Reserve Sales website-payment intake, contracts workspace receipt list, the Sales module registration and one additive Prisma migration. Base origin/develop 458e43d31. NSS submits only SEP-verified receipts through its bound integration identity. The operator list is branch-scoped. The supplied number is a reference for a standalone receipt.

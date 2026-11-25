@@ -36,6 +36,10 @@ export function normalizeSalesText(text) {
     .replace(/ك/g, 'ک')
     .replace(/[\u200c\u200e\u200f]/g, ' ')
     .replace(/\s+/g, ' ')
+    .replace(
+      /(?<![\p{L}\p{N}])(هفته|ماه|سال) (پیش|قبل|گذشته) ?(?:مون|مان)(?![\p{L}\p{N}])/gu,
+      '$1 $2',
+    )
     .trim();
 }
 const parts = (formatter, date) =>

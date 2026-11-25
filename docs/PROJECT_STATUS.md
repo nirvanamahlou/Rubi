@@ -1,3 +1,7 @@
+## Nora colloquial sales periods
+
+The sales evidence route recognizes colloquial possessive suffixes on relative periods, including «فروش هفته پیشمون چقدر بوده». The existing Tehran calendar and authorized sales calculations answer the request.
+
 ## NSS-CONTRACT-PAYMENT-1125
 
 Verified Saman receipts from the Niyayesh site are displayed in Sales → Contracts → «پرداخت‌های آنلاین سایت نیایش». Each item has its own ERP receipt number alongside the customer-entered contract number, name, amount and bank tracking number. Intake is limited to the bound NSS service and its configured settlement destination. Only branch-authorized payment readers can list receipts. The customer reference is stored as entered after digit normalization.
