@@ -20,7 +20,10 @@ function overview(permissions: AuthenticatedActor['permissions']) {
 }
 
 it('opens each storefront separately and exposes permitted management actions', () => {
-  const html = overview(['ticket_catalog.manage', 'sales.read']);
+  const html = overview([
+    'ticket_catalog.manage',
+    'sales.contracts.read.branch',
+  ]);
   for (const website of commerceWebsites)
     expect(html).toContain(
       `href="${website.url}" target="_blank" rel="noopener noreferrer"`,
@@ -28,6 +31,7 @@ it('opens each storefront separately and exposes permitted management actions', 
   expect(html).toMatch(/aria-pressed="true"[^>]*>.*ج(?:هان) باستان/);
   expect(html).toContain('تورهای تاریخ‌دار و شناور');
   expect(html).toContain('بلیط‌ها');
+  expect(html).toContain('href="/sales"');
 });
 
 it('keeps storefront links available while hiding unauthorised publication and order shortcuts', () => {
