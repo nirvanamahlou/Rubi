@@ -4,6 +4,8 @@ Owner authorizes `develop` merge after checks. Reserve Package Pricing charter E
 
 The import is scoped to the selected departure, uses its existing charter offers and seat accounting, and preserves previously published rate-based quotes. Excel DBL is per traveler, and the existing Sales quote uses room totals. Local focused API and Web suites and a clean PostgreSQL migration pass. No production deployment is in scope.
 
+CI follow-up reserves only the new API errors in the English overrides and the generated data-atlas index entries for the added charter pricing routes. The atlas builder and Nora read policy are unchanged.
+
 ## Visa media edit permissions
 
 PC-C added visa image fields to the IAM catalog and tested independent grants.

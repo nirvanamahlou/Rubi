@@ -1,4 +1,10 @@
 {
+  "اطلاعات تغییر کرده است؛ پیش‌نمایش را دوباره دریافت کنید.": "The data has changed. Generate a new preview.",
+  "انتخاب هتل‌های اکسل معتبر نیست.": "The workbook hotel selections are invalid.",
+  "برای این نوبت نرخ خرید هتل ثبت شده است.": "Hotel purchase rates are already registered for this departure.",
+  "ترکیب اتاق تکراری در فایل مجاز نیست.": "Duplicate room combinations are not allowed in the workbook.",
+  "تعداد ترکیب‌های قیمت از سقف مجاز بیشتر است.": "The workbook exceeds the maximum number of room price combinations.",
+  "نوبت فعال با بلیت چارتر و ظرفیت فروش لازم است.": "Select an active departure with charter tickets and available seats.",
   "محدوده مرور اسناد بیش از حد بزرگ است؛ بازه تاریخ را محدود کنید.": "The journal browser range is too large; narrow the date range.",
   "فیلتر شرح معتبر نیست.": "The description filter is invalid.",
   "تعداد اسناد به‌صورت یکتا و تعداد ردیف‌ها بر مبنای آخرین نسخهٔ ذخیره‌شده است.": "Journal counts are distinct and line counts use the latest saved version.",
