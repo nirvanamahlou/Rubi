@@ -40,13 +40,7 @@ const groups: Record<string, string[]> = {
     'reports',
     'documents',
   ],
-  'مدیر مالی': [
-    'finance',
-    'procurement',
-    'dashboard',
-    'reports',
-    'documents',
-  ],
+  'مدیر مالی': ['finance', 'procurement', 'dashboard', 'reports', 'documents'],
   'کارشناس ارشد ویزا': ['customer-affairs'],
   'مدیر منابع انسانی': ['hr', 'correspondence'],
   'کارشناس هوش مصنوعی': USER_ACCESS_GROUPS.map((g) => g.id),
@@ -85,14 +79,19 @@ const full = [
   'ui.administrator',
   ...USER_ACCESS_SCREENS.map((s) => 'ui.screen.' + s.id),
 ];
-for (const mode of ['admin', 'employee']) {
+for (const mode of ['admin', 'employee', 'assistant-only']) {
   let matches = 0,
     outOfScope = 0,
     exposed = 0;
   const missed = [];
   const byModule = new Map<string, { cases: number; matches: number }>();
   for (const entry of cases) {
-    const permissions = mode === 'admin' ? full : rights(entry.role);
+    const permissions =
+      mode === 'admin'
+        ? full
+        : mode === 'employee'
+          ? rights(entry.role)
+          : ['ui.manual.v3', 'ui.screen.assistant.executive'];
     const mayOpen = (href: string, permission?: string) =>
       canOpenAssistantGuide(permissions, href, permission);
     const canRead = (s: GuideSection) => mayOpen(s.href, s.permission);

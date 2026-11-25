@@ -33,6 +33,8 @@ export function classify(question: string): PlannedRead {
   if (asksWorkbenchRequestStatus(question, false)) kind = 'request';
   else if (procedure.test(text)) kind = 'guide';
   else if (voucherRequest.test(text)) kind = 'settled-vouchers';
+  else if (/^(?:لطفا )?(?:اجرای گزارش |گزارش .+ اجرا کن$)/u.test(text))
+    kind = 'report';
   else if (fortnight.test(text) && /فروش|قرارداد/.test(text))
     kind = 'rolling-sales';
   else if (resolveOperationalMetric(question)) kind = 'metric';
@@ -105,6 +107,12 @@ export function planQuestion(message: string, previous = ''): PlannedRead[] {
     ];
   }
   if (parts.length > 6) return [{ kind: 'unknown', question: message }];
+  if (
+    parts.length === 1 &&
+    parts[0]?.kind === 'request' &&
+    /درخواستم|درخواست (?:من|خودم)|مرخصی من|م[اأ]موریت من/.test(normalized)
+  )
+    return parts;
   if (
     parts.length === 1 &&
     !['rolling-sales', 'settled-vouchers', 'report', 'operational'].includes(

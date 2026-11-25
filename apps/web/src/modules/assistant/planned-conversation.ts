@@ -16,7 +16,7 @@ import {
   resolveOperationalMetric,
   formatOperationalMetric,
 } from './operational-metrics';
-import { describeWorkbenchRequest } from './workbench-request-guide';
+import { describeWorkbenchRequest, ownRequestLookup } from './workbench-request-guide';
 import { proxyPlannedSales, proxyQuestionPlan } from './proxy';
 import { normalizeQuestion } from './question-text';
 import { describeReportSources } from './report-source-discovery';
@@ -66,7 +66,7 @@ export async function runPlannedConversation(
   let plan = planQuestion(input.message, input.previous);
   if (process.env.NORA_COMPOSITION_ENABLED === 'false') return response(204);
   const useModel =
-    !plan.length &&
+    (!plan.length || plan.some((step) => step.kind === 'unknown')) &&
     mightNeedModelPlan(input.message) &&
     process.env.NORA_MODEL_PLANNER_ENABLED === 'true';
   if (!plan.length && !useModel) return response(204);
@@ -133,17 +133,31 @@ export async function runPlannedConversation(
       signal: AbortSignal.any([signal, AbortSignal.timeout(45000)]),
     });
     if (useModel) {
-      const result = await proxyQuestionPlan(assistantRequest, input.message);
+      const plannerRequest = new Request(request.url, {
+        method: 'POST',
+        headers: request.headers,
+        signal: AbortSignal.any([signal, AbortSignal.timeout(9000)]),
+      });
+      const result = await proxyQuestionPlan(plannerRequest, input.message);
       if ([401, 403].includes(result.status)) return response(result.status);
-      if (!result.ok) return response(204);
-      const segments = z
-        .object({
-          version: z.literal(1),
-          parts: z.array(z.string().min(1).max(4000)).max(5),
-        })
-        .parse(await result.json()).parts;
-      plan = segments.map(classify);
-      if (plan.length < 2) return response(204);
+      if (result.ok) {
+        const segmented = z
+          .object({
+            version: z.literal(1),
+            parts: z.array(z.string().min(1).max(4000)).max(5),
+          })
+          .safeParse(await result.json().catch(() => null));
+        if (segmented.success && segmented.data.parts.length >= 2) {
+          const proposed = segmented.data.parts.map(classify);
+          if (
+            !plan.length ||
+            proposed.filter((s) => s.kind !== 'unknown').length >
+              plan.filter((s) => s.kind !== 'unknown').length
+          )
+            plan = proposed;
+        }
+      }
+      if (!plan.length) return response(204);
     }
     const canOpen = (href: string, permission?: string) =>
       canOpenAssistantGuide(first.actor.permissions, href, permission);
@@ -287,15 +301,26 @@ export async function runPlannedConversation(
           ];
         }
         if (step.kind === 'request') {
-          const result = await read('/customer-affairs/workbench/requests');
-          if (!Array.isArray(result?.data)) throw new Error('INVALID_ROWS');
+          if (!canOpen('/workbench?tab=requests'))
+            return [issue(step, 'denied', 'خواندن این بخش برای حساب فعلی مجاز نیست.')];
+          const lookup = ownRequestLookup(question);
+          const askCode = () => issue(step, 'clarify', 'کد پیگیری یک درخواست را بفرستید.');
+          if (!lookup) return [askCode()];
+          const tracking = lookup.trackingNumber;
+          const result = await read('/customer-affairs/workbench/requests/mine' +
+            (tracking ? '?trackingNumber=' + encodeURIComponent(tracking) : ''));
+          if (!Array.isArray(result?.data) || result?.meta?.ownership !== 'mine' ||
+              typeof result.meta.hasMore !== 'boolean') throw new Error('INVALID_ROWS');
+          if (result.meta.hasMore) return [askCode()];
+          const ownRows = result.data as WorkbenchRequestItemV1[];
+          if (ownRows.some(row => !['self','outgoing'].includes(row.direction) ||
+            typeof row.trackingNumber !== 'string' || (tracking && row.trackingNumber !== tracking)))
+            throw new Error('INVALID_OWN_REQUEST');
           const reply = describeWorkbenchRequest(
             question,
-            (result.data as WorkbenchRequestItemV1[]).filter(
-              (row) => row.direction === 'outgoing' || row.direction === 'self',
-            ),
-            undefined,
-            /کد پیگیری|\b[a-z]+-\d+/iu.test(question),
+            ownRows.filter(row =>
+              (!/مرخصی/.test(question) || row.leave) &&
+              (!/م[اأ]موریت/.test(question) || row.mission)),
           );
           const status = reply.text.startsWith('چند درخواست')
             ? 'clarify'
