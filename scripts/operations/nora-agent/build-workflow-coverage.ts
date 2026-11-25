@@ -65,26 +65,50 @@ for (const [module, guide] of Object.entries(assistantGuideCatalogues)) {
   const markdown = read(path);
   sources.add(path);
   const metadata = new Map(
-    [...markdown.matchAll(/<!-- nora-guide (.+?) -->/g)].map((match) => {
-      const item: {
-        id: string;
-        sources?: string[];
-        source?: string;
-        permission?: string;
-      } = JSON.parse(match[1]);
-      return [item.id, item];
-    }),
+    markdown
+      .split(/^<a id="/m)
+      .slice(1)
+      .map((section) => {
+        const match = /<!-- nora-guide (.+?) -->/.exec(section);
+        if (!match) throw new Error('Missing guide metadata in ' + path);
+        const item: {
+          id: string;
+          sources?: string[];
+          source?: string;
+          permission?: string;
+        } = JSON.parse(match[1]);
+        const references =
+          section.split(/^### مرجع\s*$/m)[1]?.split(/^### /m)[0] ?? '';
+        const linkedSources = [
+          ...references.matchAll(
+            /\]\(\.\.\/\.\.\/\.\.\/((?:apps|packages|services)\/[^)\s#]+)\)/g,
+          ),
+        ].map((link) => link[1]);
+        return [item.id, { ...item, linkedSources }] as const;
+      }),
   );
   for (const topic of guide.topics) {
     const ref = module + '/' + topic.id;
     const meta = metadata.get(topic.id);
     if (!meta) throw new Error('Guide missing authored section ' + ref);
-    for (const source of [
+    const topicSources = [
       ...(meta.sources ?? []),
       ...(meta.source ? [meta.source] : []),
-    ])
-      sources.add(source);
+      ...meta.linkedSources,
+    ];
+    for (const source of topicSources) sources.add(source);
     const scenarios = cases.filter((c) => c.expectedGuides.includes(ref));
+    if (
+      scenarios.length &&
+      !topicSources.some(
+        (source) =>
+          /^(?:apps|packages|services)\/.+\.(?:tsx?|mjs)$/.test(source) &&
+          !/\.(?:spec|test)\./.test(source),
+      )
+    )
+      throw new Error(
+        'Acceptance guide missing an implementation reference: ' + ref,
+      );
     guideRefs.add(ref);
     add({
       owner: module,

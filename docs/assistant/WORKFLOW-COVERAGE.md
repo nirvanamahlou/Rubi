@@ -17,6 +17,8 @@
 
 فرمان‌ها از ریشهٔ ERP و پس از نصب وابستگی‌های مخزن اجرا می‌شوند. اجرای بدون گزینه، جدول را بازتولید می‌کند. کنترل CI تفاوت گام‌های راهنما، اتصال‌ها، منابع صریح فرم‌ها، تعریف شاخص و پیکرهٔ آزمون را آشکار می‌کند. پس از تغییر، مالک بخش تعریف یا مراحل مؤثر را با پنل بازبینی و آزمون مرتبط را تکرار می‌کند.
 
+هر موضوعی که در پرسش‌های پذیرش به آن ارجاع شده باید دست‌کم یک فایل اجرایی مالک داشته باشد. مسیر را در فرادادهٔ موجود `source` یا `sources`، یا به‌شکل پیوند نسبی به فایل کد زیر عنوان «مرجع» همان موضوع بنویسید. فایل‌های آزمون به‌تنهایی برای این شرط کافی نیستند. کنترل CI وجود فایل و اثرانگشت آن را بررسی می‌کند. آزمون سؤال در نشست واقعی و اجرای گام عملیاتی در پنل، شواهد جداگانه می‌خواهند.
+
 ```powershell
 node apps/api/node_modules/tsx/dist/cli.mjs --tsconfig apps/web/tsconfig.json scripts/operations/nora-agent/build-workflow-coverage.ts --check
 node apps/api/node_modules/tsx/dist/cli.mjs --tsconfig apps/web/tsconfig.json scripts/operations/nora-agent/build-workflow-coverage.ts --table

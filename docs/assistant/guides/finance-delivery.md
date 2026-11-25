@@ -13,6 +13,10 @@
 1. شماره کامل یا بخشی از شماره را وارد کنید و «جست‌وجوی قرارداد» را بزنید. شماره کامل ردیف را پیش از ادامه تطبیق دهید.
 2. اگر نتیجه خالی است شماره و دامنهٔ دسترسی را بررسی کنید. در صورت خطای ارتباط، جست‌وجو را دوباره انجام دهید.
 
+### مرجع
+
+[finance-delivery-panel.tsx](../../../apps/web/src/modules/finance/components/finance-delivery-panel.tsx)
+
 ### راهنماهای مرتبط
 
 - [وضعیت مجوز](#status)
@@ -30,6 +34,12 @@
 2. برای استثنای مدیر تاریخ انقضا را هم کنترل کنید. پرداخت خرید، کارگزار یا اجرای رزرواسیون گردش مستقلی دارد.
 3. «مسدود» یعنی برای این ردیف مجوز تحویل برقرار نیست. مبنای مجوز و دریافت تأییدشده را بررسی کنید و تا احراز مجوز، مدارک را تحویل ندهید.
 
+### مرجع
+
+[finance-delivery-panel.tsx](../../../apps/web/src/modules/finance/components/finance-delivery-panel.tsx)
+
+[financial-release.public.ts](../../../apps/api/src/finance/document-delivery/financial-release.public.ts)
+
 <a id="issue"></a>
 
 ## صدور مجوز
@@ -40,6 +50,12 @@
 
 1. قرارداد را جست‌وجو کنید، «صدور مجوز» و مبنای متناسب را انتخاب کنید و پس از بررسی دلیل Audit، «ثبت مجوز تحویل» را بزنید.
 2. اگر قرارداد لغو شده یا مجوز نقش کافی نیست، ثبت را ادامه ندهید. پس از خطای تعارض، ردیف را دوباره بخوانید.
+
+### مرجع
+
+[finance-delivery-panel.tsx](../../../apps/web/src/modules/finance/components/finance-delivery-panel.tsx)
+
+[financial-release.public.ts](../../../apps/api/src/finance/document-delivery/financial-release.public.ts)
 
 ### راهنماهای مرتبط
 
@@ -58,6 +74,12 @@
 1. حداقل یک پرداخت مشتری باید توسط مالی تأیید شده باشد. پس از مشاهده نشان دریافت تأییدشده، مبنای مربوط را در صدور انتخاب کنید.
 2. رسید بارگذاری‌شده یا پرداخت در انتظار بررسی کافی نیست. هنگام تأیید دریافت در کارتابل مالی، اگر گزینه نمایش داده شد می‌توانید صدور هم‌زمان را انتخاب کنید.
 
+### مرجع
+
+[finance-delivery-panel.tsx](../../../apps/web/src/modules/finance/components/finance-delivery-panel.tsx)
+
+[finance-inbox-live-workspace.tsx](../../../apps/web/src/modules/finance/components/finance-inbox-live-workspace.tsx)
+
 <a id="settlement"></a>
 
 ## تسویه کامل قرارداد
@@ -69,6 +91,12 @@
 1. وضعیت تسویهٔ قرارداد را بررسی کنید و در صورت احراز تسویه کامل، مبنای «فقط پس از تسویه کامل قرارداد» را انتخاب کنید.
 2. دریافت جزئی کافی نیست. اگر وضعیت پرداخت هم‌زمان تغییر کرده، دادهٔ تازه را از پنل بررسی کنید.
 
+### مرجع
+
+[finance-delivery-panel.tsx](../../../apps/web/src/modules/finance/components/finance-delivery-panel.tsx)
+
+[financial-release.public.ts](../../../apps/api/src/finance/document-delivery/financial-release.public.ts)
+
 <a id="exception"></a>
 
 ## استثنای مدیر
@@ -79,6 +107,12 @@
 
 1. با مجوز استثنای مالی، دلیل، شناسهٔ معتبر تأییدکنندهٔ دوم متفاوت از ثبت‌کننده و تاریخ و ساعت انقضای آینده به UTC را وارد کنید.
 2. برای شناسهٔ نامعتبر، تأییدکنندهٔ یکسان، دلیل ناقص یا تاریخ گذشته، ورودی را اصلاح کنید. پس از انقضا از استثنای قبلی برای تحویل استفاده نکنید.
+
+### مرجع
+
+[finance-delivery-panel.tsx](../../../apps/web/src/modules/finance/components/finance-delivery-panel.tsx)
+
+[financial-release.public.ts](../../../apps/api/src/finance/document-delivery/financial-release.public.ts)
 
 <a id="reservation"></a>
 
@@ -105,6 +139,12 @@
 
 1. شماره قرارداد و مبنای مجوز را تطبیق دهید، «لغو مجوز» را بزنید، دلیل Audit را بررسی کنید و «ثبت لغو مجوز» را انتخاب کنید.
 2. در صورت تغییر هم‌زمان، جست‌وجو را دوباره انجام دهید. پس از ثبت، نشان مجوز همان قرارداد را بررسی کنید.
+
+### مرجع
+
+[finance-delivery-panel.tsx](../../../apps/web/src/modules/finance/components/finance-delivery-panel.tsx)
+
+[financial-release.public.ts](../../../apps/api/src/finance/document-delivery/financial-release.public.ts)
 
 <a id="customer-receipt"></a>
 

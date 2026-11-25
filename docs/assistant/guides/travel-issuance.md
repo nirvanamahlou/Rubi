@@ -30,6 +30,14 @@
 2. پس از تأیید رزرو، صدور واچر را در همان پرونده پیگیری کنید. در قرارداد چنداقامتی، واچر را با هتل و تاریخ همان اقامت تطبیق دهید.
 3. اگر واچر موجود نیست، وضعیت صدور را در رزرواسیون بررسی کنید. مجوز تحویل جایگزین صدور مدرک نمی‌شود.
 
+### مرجع
+
+[voucher-hotel-documents.ts](../../../apps/web/src/modules/reservations/model/voucher-hotel-documents.ts)
+
+[voucher-readiness.ts](../../../apps/web/src/modules/reservations/model/voucher-readiness.ts)
+
+[voucher-form-sheet.tsx](../../../apps/web/src/modules/reservations/components/voucher-form-sheet.tsx)
+
 ### راهنمای مرتبط
 
 - [مجوز تحویل](#delivery)

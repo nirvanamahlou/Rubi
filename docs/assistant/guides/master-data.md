@@ -66,6 +66,12 @@
 
 1. در جغرافیا، کشور را با کد ISO یا نام پیدا کنید. کد و وضعیت مرجع را پیش از ثبت یا انتخاب در فرم وابسته بررسی کنید.
 
+### مرجع
+
+[sections.ts](../../../apps/web/src/modules/master-data/model/sections.ts)
+
+[catalog.ts](../../../apps/web/src/modules/master-data/model/catalog.ts)
+
 <a id="regions"></a>
 
 ## استان
@@ -156,6 +162,14 @@
 
 1. در اقامت، هتل را با شهر و نام یا کد پیدا کنید. کشور، شهر، پروفایل، فروش‌پذیری و تصاویر را کنترل کنید. برای ورود فایل، از قالب و ابزار همان نما استفاده کنید و خطای ساختار، تکرار و نتیجه جزئی را قبل از ارسال دوباره بررسی کنید.
 2. هنگام افزودن تصویر هتل، عکس اصلی و گالری را جدا بررسی کنید. پس از رسیدن گالری به شش تصویر، برای افزودن عکس دیگر باید یک تصویر موجود را از گالری بردارید؛ کنترل عکس اصلی جداست.
+
+### مرجع
+
+[sections.ts](../../../apps/web/src/modules/master-data/model/sections.ts)
+
+[hotel-images.tsx](../../../apps/web/src/modules/master-data/components/hotel-images.tsx)
+
+[hotel-import-panel.tsx](../../../apps/web/src/modules/master-data/components/hotel-import-panel.tsx)
 
 ### راهنماهای مرتبط
 
