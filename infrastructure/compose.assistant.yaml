@@ -22,6 +22,7 @@ services:
       NORA_COMPOSITION_TELEMETRY: ${NORA_COMPOSITION_TELEMETRY:-false}
       NORA_MODEL_PLANNER_ENABLED: ${NORA_MODEL_PLANNER_ENABLED:-false}
       NORA_ERP_API_BASE_URL: http://api:4000/api/v1
+      NORA_SALES_READ_API_BASE_URL: http://127.0.0.1:4301/api/v1
 
   assistant-read:
     image: ${RUBI_APP_IMAGE:-rubi-app-local:latest}

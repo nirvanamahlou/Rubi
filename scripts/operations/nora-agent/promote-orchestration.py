@@ -25,6 +25,7 @@ COMPOSE = Path("/opt/rubi/compose.yaml")
 NGINX = Path("/etc/nginx/sites-enabled/rubi").resolve()
 WEB_OPTIONS = {
     "NORA_ERP_API_BASE_URL": "http://api:4000/api/v1",
+    "NORA_SALES_READ_API_BASE_URL": "https://avinaofficial.ir/api/v1",
     "NORA_COMPOSITION_ENABLED": "true",
     "NORA_MODEL_PLANNER_ENABLED": "true",
     "NORA_COMPOSITION_TELEMETRY": "true",
@@ -132,11 +133,11 @@ def health(unit, candidate):
             )
             probe(
                 "http://127.0.0.1:4000/api/v1/sales/assistant-agent/my-contract-count",
-                401,
+                404,
             )
             probe(
                 "http://127.0.0.1:4000/api/v1/sales/assistant-agent/standard-sales-summary",
-                401,
+                404,
             )
     elif unit == "read":
         probe("http://127.0.0.1:4301/api/v1/iam/auth/access", 401)

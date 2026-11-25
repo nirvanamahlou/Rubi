@@ -6,20 +6,22 @@ const erp = (
 const ingress = (
   process.env.NORA_PROBE_INGRESS || 'https://avinaofficial.ir'
 ).replace(/\/$/u, '');
+const salesRead = process.env.NORA_SALES_READ_API_BASE_URL?.replace(/\/$/u, '');
+if (!salesRead) throw new Error('NORA_SALES_READ_API_BASE_URL_MISSING');
 const rows = [
   ['full-api-health', 'GET', erp + '/health', 200],
   ['full-api-identity', 'GET', erp + '/iam/auth/access', 401],
   ['full-api-company', 'GET', erp + '/legal-entities/context', 401],
   [
-    'full-api-personal-sales',
+    'read-api-personal-sales',
     'GET',
-    erp + '/sales/assistant-agent/my-contract-count',
+    salesRead + '/sales/assistant-agent/my-contract-count',
     401,
   ],
   [
-    'full-api-standard-sales',
+    'read-api-standard-sales',
     'GET',
-    erp + '/sales/assistant-agent/standard-sales-summary',
+    salesRead + '/sales/assistant-agent/standard-sales-summary',
     401,
   ],
   [
