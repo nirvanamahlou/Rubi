@@ -15,8 +15,11 @@ export function gradeRoleGuides(cases, receipts, release, scope = 'both') {
   const targets = new Map(cases.map((entry) => [entry.id, entry]));
   if (!targets.size || targets.size !== cases.length)
     throw new Error('Missing or duplicate expected case');
-  if (!['admin-all-companies', 'employee', 'both'].includes(scope)) throw new Error('Unexpected acceptance scope');
-  const allowedRuns = new Set(scope === 'both' ? ['admin-all-companies', 'employee'] : [scope]);
+  if (!['admin-all-companies', 'employee', 'both'].includes(scope))
+    throw new Error('Unexpected acceptance scope');
+  const allowedRuns = new Set(
+    scope === 'both' ? ['admin-all-companies', 'employee'] : [scope],
+  );
   const observed = new Map();
   for (const receipt of receipts) {
     const target = targets.get(receipt.caseId);
@@ -115,7 +118,8 @@ if (
   const result = gradeRoleGuides(
     lines('docs/assistant/role-guide-acceptance.jsonl'),
     lines(file),
-    release, scope,
+    release,
+    scope,
   );
   console.log(JSON.stringify(result, null, 2));
   if (!result.pass) process.exitCode = 1;

@@ -66,6 +66,18 @@ test('rolling report recognizer preserves explicit filters and guide clauses', (
     rollingSalesRequest({ message: 'فروش دو هفته اخیر چقدره؟' }),
     { contracts: false },
   );
+  assert.deepEqual(
+    rollingSalesRequest({
+      message: 'فروش دو هفته اخیر چقدر بوده، قراردادهاش رو بده',
+    }),
+    { contracts: true },
+  );
+  assert.deepEqual(
+    rollingSalesRequest({
+      message: 'فروش دو هفته اخیر چقدر بوده، قراردادهاش رو فقط برای شیراز بده',
+    }),
+    { unsupported: true },
+  );
   for (const text of ['فروش هفته گذشته', message + ' و بگو چطور قرارداد بزنم'])
     assert.equal(rollingSalesRequest({ message: text }), null);
 });

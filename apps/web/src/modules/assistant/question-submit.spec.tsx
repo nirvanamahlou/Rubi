@@ -1,5 +1,6 @@
+import { canOpenAssistantGuide } from './guide-access';
 import { readFileSync } from 'node:fs';
-import { IAM_PERMISSION_CODES, USER_ACCESS_SCREENS, canViewRoute } from '@nora/contracts';
+import { IAM_PERMISSION_CODES, USER_ACCESS_SCREENS } from '@nora/contracts';
 import { REPORTING_PERMISSION_MATRIX } from '@/modules/reports/model/reporting';
 import { pilotGuideResponse } from './guide-pilot';
 import { runPlannedConversation } from './planned-conversation';
@@ -785,38 +786,81 @@ it.each(catalogueQuestions)(
   },
 );
 
-type ReplayCase = { id: string; question:string; expectedGuides:string[] };
-const replayCases:ReplayCase[] = readFileSync(
-  new URL('../../../../../docs/assistant/role-guide-acceptance.jsonl', import.meta.url),'utf8',
-).trim().split('\n').map((row)=>JSON.parse(row));
+type ReplayCase = { id: string; question: string; expectedGuides: string[] };
+const replayCases: ReplayCase[] = readFileSync(
+  new URL(
+    '../../../../../docs/assistant/role-guide-acceptance.jsonl',
+    import.meta.url,
+  ),
+  'utf8',
+)
+  .trim()
+  .split('\n')
+  .map((row) => JSON.parse(row));
 
 describe('synthetic full-access Composer replay', () => {
-  it.each(replayCases)('$id', async ({question, expectedGuides}) => {
-    h.path='/assistant';
-    h.company='ALL';
-    h.permissions=[...IAM_PERMISSION_CODES.filter((p)=>!p.startsWith('ui.deny.') && String(p)!=='ui.manual.v3'),...REPORTING_PERMISSION_MATRIX,'ui.administrator',...USER_ACCESS_SCREENS.map(({id})=>'ui.screen.'+id)];
-    h.hrAccess=true;
-    vi.stubEnv('NORA_ERP_API_BASE_URL','https://erp-fixture.invalid/api');
+  it.each(replayCases)('$id', async ({ question, expectedGuides }) => {
+    h.path = '/assistant';
+    h.company = 'ALL';
+    h.permissions = [
+      ...IAM_PERMISSION_CODES.filter(
+        (p) => !p.startsWith('ui.deny.') && String(p) !== 'ui.manual.v3',
+      ),
+      ...REPORTING_PERMISSION_MATRIX,
+      'ui.administrator',
+      ...USER_ACCESS_SCREENS.map(({ id }) => 'ui.screen.' + id),
+    ];
+    h.hrAccess = true;
+    vi.stubEnv('NORA_ERP_API_BASE_URL', 'https://erp-fixture.invalid/api');
     h.fetcher.mockImplementation(async (url, init) => {
       if (url === '/api/assistant/v3/guidance') {
-        const {question:q,panel,previous}=JSON.parse(init.body);
-        return Response.json(pilotGuideResponse(q,panel,previous,(href,perm)=>canViewRoute(h.permissions,href)&&(!perm||h.permissions.includes(perm))));
+        const { question: q, panel, previous } = JSON.parse(init.body);
+        return Response.json(
+          pilotGuideResponse(q, panel, previous, (href, perm) =>
+            canOpenAssistantGuide(h.permissions, href, perm),
+          ),
+        );
       }
-      if (url === '/api/assistant/v3/conversation' && init.headers?.['x-nora-composition'] === '1') {
-        const request=JSON.parse(init.body);
-        return runPlannedConversation(new Request('https://erp-fixture.invalid/api/assistant/v3/conversation',{method:'POST'}),JSON.stringify(request),'nora_access=fixture');
+      if (
+        url === '/api/assistant/v3/conversation' &&
+        init.headers?.['x-nora-composition'] === '1'
+      ) {
+        const request = JSON.parse(init.body);
+        return runPlannedConversation(
+          new Request(
+            'https://erp-fixture.invalid/api/assistant/v3/conversation',
+            { method: 'POST' },
+          ),
+          JSON.stringify(request),
+          'nora_access=fixture',
+        );
       }
-      if (url.endsWith('/iam/auth/access')) return Response.json({userId:'fixture-admin',sessionId:'fixture-session',branchIds:['branch-a'],permissions:h.permissions});
-      if (url.endsWith('/legal-entities/context')) return Response.json({data:{selection:'ALL',version:1}});
-      return new Response(null,{status:503});
+      if (url.endsWith('/iam/auth/access'))
+        return Response.json({
+          userId: 'fixture-admin',
+          sessionId: 'fixture-session',
+          branchIds: ['branch-a'],
+          permissions: h.permissions,
+        });
+      if (url.endsWith('/legal-entities/context'))
+        return Response.json({ data: { selection: 'ALL', version: 1 } });
+      return new Response(null, { status: 503 });
     });
     await send(question);
-    const links=render().map((node)=>node.props.href).filter((v):v is string=>typeof v==='string'&&v.includes('/assistant-guides/'));
+    const links = render()
+      .map((node) => node.props.href)
+      .filter(
+        (v): v is string =>
+          typeof v === 'string' && v.includes('/assistant-guides/'),
+      );
     for (const ref of expectedGuides) {
-      const [module,id] = ref.split('/');
-      const expected = assistantGuideCatalogues[module as AssistantGuideModule].topics.find((t)=>t.id===id)!;
-      expect(links,question).toContain(expected.guideHref);
-      expect(chat().join('\n'),question).toContain(expected.steps[0]);
+      const [module, id] = ref.split('/');
+      const expected = assistantGuideCatalogues[
+        module as AssistantGuideModule
+      ].topics.find((t) => t.id === id)!;
+      expect(links, question).toContain(expected.guideHref);
+      for (const step of expected.steps)
+        expect(chat().join('\n'), question).toContain(step);
     }
   });
 });

@@ -1,12 +1,10 @@
-import {
-  canViewRoute,
-  type AuthenticatedActor,
-  type WorkbenchRequestItemV1,
-} from '@nora/contracts';
+import { canOpenAssistantGuide } from './guide-access';
+import { type WorkbenchRequestItemV1 } from '@nora/contracts';
 import { z } from 'zod';
 import { agentResponseSchema } from './agent-response';
 import { pilotGuideResponse } from './guide-pilot';
 import { resolveDocumentedWorkflow } from './catalogue-search';
+import { assistantGuideSection } from './assistant-guide-registry';
 import {
   planQuestion,
   classify,
@@ -23,6 +21,7 @@ import { proxyPlannedSales, proxyQuestionPlan } from './proxy';
 import { normalizeQuestion } from './question-text';
 import { describeReportSources } from './report-source-discovery';
 import { runNativeReport } from './planned-native-report';
+import { runOperationalPanel } from './planned-operational';
 
 const inputSchema = z
   .object({
@@ -77,12 +76,14 @@ export async function runPlannedConversation(
   if (!base) return response(503);
   const signal = AbortSignal.any([request.signal, AbortSignal.timeout(60000)]);
   // All destinations below are fixed owner routes. Client input never selects an HTTP destination.
-  async function read(path: string, body?: unknown) {
+  async function read(path: string, body?: unknown, branchId?: string) {
+    if (branchId && !firstBranches?.has(branchId)) throw new ReadError(403);
     const result = await fetch(base + path, {
       method: body === undefined ? 'GET' : 'POST',
       headers: {
         cookie,
         accept: 'application/json',
+        ...(branchId ? { 'x-branch-id': branchId } : {}),
         ...(body === undefined ? {} : { 'content-type': 'application/json' }),
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -122,8 +123,10 @@ export async function runPlannedConversation(
     status: AnswerPart['status'],
     text: string,
   ): AnswerPart => ({ question: step.question, status, text, links: [] });
+  let firstBranches: Set<string> | undefined;
   try {
     const first = await scope();
+    firstBranches = new Set(first.actor.branchIds);
     const assistantRequest = new Request(request.url, {
       method: 'POST',
       headers: request.headers,
@@ -143,11 +146,7 @@ export async function runPlannedConversation(
       if (plan.length < 2) return response(204);
     }
     const canOpen = (href: string, permission?: string) =>
-      canViewRoute(
-        first.actor.permissions as AuthenticatedActor['permissions'],
-        href,
-      ) &&
-      (!permission || first.actor.permissions.includes(permission));
+      canOpenAssistantGuide(first.actor.permissions, href, permission);
     const configuredTools = process.env.NORA_COMPOSITION_TOOLS;
     const enabledTools =
       configuredTools === undefined
@@ -168,10 +167,15 @@ export async function runPlannedConversation(
           const voucherFollowup =
             plan.some((s) => s.kind === 'settled-vouchers') &&
             /^(?:از کجا|چطور) پیگیری/.test(normalizeQuestion(question));
-          const lookup = voucherFollowup
-            ? 'واچر هتل را چطور صادر کنم؟'
-            : question;
-          const sections = resolveDocumentedWorkflow(lookup);
+          const lookup = question;
+          const voucherGuide = assistantGuideSection(
+            'reservations',
+            'settled-vouchers',
+          );
+          const sections =
+            voucherFollowup && voucherGuide
+              ? [voucherGuide]
+              : resolveDocumentedWorkflow(lookup);
           const selected = sections.length
             ? sections.filter((s) => canOpen(s.href, s.permission))
             : pilotGuideResponse(lookup, '', undefined, canOpen).sections;
@@ -206,6 +210,15 @@ export async function runPlannedConversation(
             source: s.guideHref,
           }));
         }
+        if (step.kind === 'operational')
+          return [
+            await runOperationalPanel(
+              question,
+              first.actor,
+              first.company,
+              read,
+            ),
+          ];
         if (step.kind === 'report') {
           if (
             first.company?.selection === 'ALL' &&
@@ -327,11 +340,7 @@ export async function runPlannedConversation(
                 'دسترسی به گزارش فروش برای این حساب تأیید نشد.',
               ),
             ];
-          const usePrior =
-            input.salesPeriodAsOf &&
-            /همین دوره|همون دوره|همان دوره|همین بازه|همون بازه|همان بازه/.test(
-              normalizeQuestion(input.message),
-            );
+          const usePrior = input.salesPeriodAsOf && step.reuseSalesCutoff;
           const result = await proxyPlannedSales(assistantRequest, {
             message: question,
             ...(usePrior && step.kind === 'rolling-sales'

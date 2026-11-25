@@ -49,6 +49,7 @@ import {
   readDocumentGuide,
 } from './document-guides';
 
+import { canOpenAssistantGuide } from './guide-access';
 import { canViewRoute, canViewScreen } from '@nora/contracts';
 import {
   catalogueLookupMode,
@@ -686,9 +687,11 @@ function AssistantComposerContent({
     const mayReadGuide = (section: GuideSection) =>
       Boolean(
         actor &&
-        canViewRoute(actor.permissions, section.href) &&
-        (!section.permission ||
-          actor.permissions.some((p) => p === section.permission)),
+        canOpenAssistantGuide(
+          actor.permissions,
+          section.href,
+          section.permission,
+        ),
       );
     const previousPlan = composedContext.current;
     composedContext.current = null;

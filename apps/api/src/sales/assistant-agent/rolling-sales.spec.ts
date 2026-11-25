@@ -47,19 +47,17 @@ describe('rolling contractual sales', () => {
       $executeRaw: vi.fn(),
       salesContract: { findMany },
       reservationIntake: {
-        findMany: vi
-          .fn()
-          .mockResolvedValue([
-            {
-              contractId: '1',
-              workflowRevisions: [
-                {
-                  state: { supplierStatus: 'CANCELLED' },
-                  createdAt: new Date(asOf),
-                },
-              ],
-            },
-          ]),
+        findMany: vi.fn().mockResolvedValue([
+          {
+            contractId: '1',
+            workflowRevisions: [
+              {
+                state: { supplierStatus: 'CANCELLED' },
+                createdAt: new Date(asOf),
+              },
+            ],
+          },
+        ]),
       },
     };
     const db = {

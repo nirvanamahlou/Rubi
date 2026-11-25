@@ -1,9 +1,9 @@
+import { canOpenAssistantGuide } from '../../../apps/web/src/modules/assistant/guide-access';
 import { readFileSync } from 'node:fs';
 import {
   IAM_PERMISSION_CODES,
   USER_ACCESS_GROUPS,
   USER_ACCESS_SCREENS,
-  canViewRoute,
 } from '../../../packages/contracts/src';
 import {
   assistantGuideCatalogues,
@@ -37,21 +37,21 @@ const groups: Record<string, string[]> = {
     'finance',
     'procurement',
     'dashboard',
-    'reporting',
+    'reports',
     'documents',
   ],
   'مدیر مالی': [
     'finance',
     'procurement',
     'dashboard',
-    'reporting',
+    'reports',
     'documents',
   ],
   'کارشناس ارشد ویزا': ['customer-affairs'],
   'مدیر منابع انسانی': ['hr', 'correspondence'],
   'کارشناس هوش مصنوعی': USER_ACCESS_GROUPS.map((g) => g.id),
   'مدیر ارشد مدیریت': USER_ACCESS_GROUPS.map((g) => g.id),
-  'مدیر واحد ثبت‌نشده': ['customer-affairs', 'dashboard', 'reporting'],
+  'مدیر واحد ثبت‌نشده': ['customer-affairs', 'dashboard', 'reports'],
 };
 function rights(role: string) {
   const included = ['assistant', 'workbench', ...(groups[role] ?? [])];
@@ -59,7 +59,8 @@ function rights(role: string) {
     included.includes(g.id),
   ).flatMap((g) => [...g.prefixes]);
   return [
-    ...[...IAM_PERMISSION_CODES,...REPORTING_PERMISSION_MATRIX].filter((p) =>
+    'ui.manual.v3',
+    ...[...IAM_PERMISSION_CODES, ...REPORTING_PERMISSION_MATRIX].filter((p) =>
       codes.some((prefix) => p === prefix || p.startsWith(prefix + '.')),
     ),
     ...USER_ACCESS_SCREENS.filter((s) => included.includes(s.group)).map(
@@ -77,7 +78,9 @@ const cases: {
   .split('\n')
   .map((line) => JSON.parse(line));
 const full = [
-  ...IAM_PERMISSION_CODES.filter((p)=>!p.startsWith('ui.deny.')&&String(p)!=='ui.manual.v3'),
+  ...IAM_PERMISSION_CODES.filter(
+    (p) => !p.startsWith('ui.deny.') && String(p) !== 'ui.manual.v3',
+  ),
   ...REPORTING_PERMISSION_MATRIX,
   'ui.administrator',
   ...USER_ACCESS_SCREENS.map((s) => 'ui.screen.' + s.id),
@@ -91,7 +94,7 @@ for (const mode of ['admin', 'employee']) {
   for (const entry of cases) {
     const permissions = mode === 'admin' ? full : rights(entry.role);
     const mayOpen = (href: string, permission?: string) =>
-      canViewRoute(permissions,href) && (!permission || permissions.includes(permission));
+      canOpenAssistantGuide(permissions, href, permission);
     const canRead = (s: GuideSection) => mayOpen(s.href, s.permission);
     const expected = entry.expectedGuides.map((ref) => {
       const [d, id] = ref.split('/');
@@ -121,11 +124,13 @@ for (const mode of ['admin', 'employee']) {
       continue;
     }
     const matched = entry.expectedGuides.every((ref) => ids.includes(ref));
-    for (const module of new Set(entry.expectedGuides.map(ref=>ref.split('/')[0]!))) {
-      const bucket=byModule.get(module)??{cases:0,matches:0};
+    for (const module of new Set(
+      entry.expectedGuides.map((ref) => ref.split('/')[0]!),
+    )) {
+      const bucket = byModule.get(module) ?? { cases: 0, matches: 0 };
       bucket.cases++;
-      if(matched) bucket.matches++;
-      byModule.set(module,bucket);
+      if (matched) bucket.matches++;
+      byModule.set(module, bucket);
     }
     if (matched) matches++;
     else
@@ -148,7 +153,14 @@ for (const mode of ['admin', 'employee']) {
       byModule: Object.fromEntries(byModule),
     }),
   );
-  if (exposed || (mode === 'admin' && [...byModule.values()].some(group=> group.matches / group.cases < 0.95))) process.exitCode = 1;
+  if (
+    exposed ||
+    (mode === 'admin' &&
+      [...byModule.values()].some(
+        (group) => group.matches / group.cases < 0.95,
+      ))
+  )
+    process.exitCode = 1;
   if (process.argv.includes('--details'))
     for (const miss of missed) console.log(JSON.stringify(miss));
 }

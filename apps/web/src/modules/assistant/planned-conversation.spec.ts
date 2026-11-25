@@ -64,6 +64,14 @@ function serve(
         return Response.json({ data: { version: 1, selection: 'ALL' } });
       case '/v3/assistant/conversation':
         return Response.json(sales, { status: options.salesStatus ?? 200 });
+      case '/reports/nora/settled-vouchers':
+        return Response.json({
+          version: 1,
+          observedAt: cutoff,
+          total: 1,
+          unknownStayCount: 1,
+          rows: [{ contractNumber: 'S-1', hotelName: 'Hotel A' }],
+        });
       default:
         throw new Error('unexpected source');
     }
@@ -152,6 +160,48 @@ describe('composed v3 entry point', () => {
     expect(
       fetcher.mock.calls.some(([url]) =>
         String(url).includes('settled-vouchers'),
+      ),
+    ).toBe(false);
+  });
+  it('pairs the per-stay reconciliation with instructions for opening that exact report', async () => {
+    serve();
+    const { parts } = await (
+      await send(
+        'کدام قراردادهای تسویه‌شده هنوز واچر هتل ندارند و از کجا پیگیری کنم؟',
+      )
+    ).json();
+    expect(parts[0]).toMatchObject({
+      status: 'partial',
+      source: 'reports/nora/settled-vouchers',
+    });
+    expect(parts[1]).toMatchObject({
+      status: 'answer',
+      source: '/assistant-guides/reservations#settled-vouchers',
+    });
+    expect(parts[1].links[0].href).toEqual(parts[0].links[0].href);
+  });
+  it('resolves the previous contract list and keeps filters on a qualified follow-up', () => {
+    expect(planQuestion('همون قراردادها رو بده', message)[0]).toMatchObject({
+      kind: 'rolling-sales',
+      reuseSalesCutoff: true,
+    });
+    expect(planQuestion('همون قراردادها رو بده', '')).toEqual([]);
+    expect(
+      planQuestion('لیست قراردادهای همون دوره فقط شعبه شیراز', message)[0]
+        ?.question,
+    ).toContain('شیراز');
+  });
+  it('disables just the selected owner tools in a staged release', async () => {
+    const fetcher = serve();
+    vi.stubEnv('NORA_COMPOSITION_TOOLS', 'guide');
+    const { parts } = await (await send(message)).json();
+    expect(parts.map((p: { status: string }) => p.status)).toEqual([
+      'unavailable',
+      'answer',
+    ]);
+    expect(
+      fetcher.mock.calls.some(([url]) =>
+        String(url).includes('/v3/assistant/conversation'),
       ),
     ).toBe(false);
   });

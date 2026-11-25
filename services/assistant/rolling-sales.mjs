@@ -10,6 +10,10 @@ const words = new Set(
 export function rollingSalesRequest(request) {
   if (request.context?.selectedContractId) return null;
   const text = normalizeSalesText(request.message)
+    .replace(
+      /(?:^|\s)قرارداد(?:هاش|اش|اشون|هاشو|اشو)(?=\s|[؟?،؛.!]|$)/gu,
+      ' فهرست قراردادها ',
+    )
     .replace(/(?:همین|همون|همان) (?:بازه|دوره)/gu, (phrase) =>
       request.context?.salesPeriodAsOf ? 'دو هفته اخیر' : phrase,
     )

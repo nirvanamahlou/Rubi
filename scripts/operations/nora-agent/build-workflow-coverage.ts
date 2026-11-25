@@ -91,7 +91,10 @@ for (const [module, guide] of Object.entries(assistantGuideCatalogues)) {
       id: 'guide/' + ref,
       need: topic.title,
       panel: topic.href,
-      scope: ['canViewRoute', meta.permission].filter(Boolean).join(' + '),
+      scope:
+        ref === 'reservations/settled-vouchers'
+          ? 'finance.read + finance.financial_release.read + reservations.read + screens finance.delivery and reservations.home'
+          : ['canViewRoute', meta.permission].filter(Boolean).join(' + '),
       source: path + '#' + topic.id,
       connection: 'connected',
       acceptance: 'follow-steps-in-panel',
@@ -143,11 +146,16 @@ for (const item of data) {
       owner: item.owner,
       id: 'report/' + item.id,
       need: item.title,
-      panel: '/reports?report=' + item.id,
-      source: item.approvedView ?? item.id,
+      panel: '/reports?view=catalog&report=' + item.id,
+      source:
+        'POST /reports/' +
+        item.id +
+        '/query · ' +
+        (item.approvedView ?? item.id),
       scope: item.permission ?? 'native-report ACL',
       definition: item.description,
-      connection: 'needs-connection',
+      connection:
+        item.availability === 'READY' ? 'connected' : 'needs-connection',
       acceptance: 'compare-executed-report-with-panel',
     });
     if (item.availability === 'READY')
@@ -155,7 +163,7 @@ for (const item of data) {
         owner: item.owner,
         id: 'discover/' + item.id,
         need: item.title,
-        panel: '/reports?report=' + item.id,
+        panel: '/reports?view=catalog&report=' + item.id,
         source: 'services/assistant/report-catalog.mjs',
         scope: item.permission ?? 'native-report ACL',
         definition: item.approvedView,
@@ -257,7 +265,7 @@ for (const [id, need, panel, source, scope] of [
   [
     'settled-vouchers',
     'قراردادهای تسویه‌شده و اقامت‌های دارای کسری واچر',
-    '/reservations',
+    '/reservations?report=settled-vouchers',
     'apps/api/src/reporting/settled-vouchers.controller.ts',
     'intersection of native sales, finance and reservations scopes',
   ],
@@ -274,6 +282,70 @@ for (const [id, need, panel, source, scope] of [
     acceptance: 'compare-permitted-records-with-panel',
   });
 }
+const panelReader = 'apps/web/src/modules/assistant/planned-operational.ts';
+for (const [id, owner, panel, need, scope] of [
+  [
+    'b2c-cards',
+    'Customers',
+    '/customers',
+    'تعداد مشتری، مسافر و مشتری جدید سه ماه اخیر و نرخ بازگشت مشتری',
+    'customers.read + customers screen',
+  ],
+  [
+    'b2c-status',
+    'Customers',
+    '/customers',
+    'وضعیت پروندهٔ یک مشتری حقیقی با نام کامل یکتا',
+    'customers.read + customers screen',
+  ],
+  [
+    'b2b-cards',
+    'MasterData',
+    '/organizations',
+    'تعداد آژانس همکار و مشتری سازمانی در فهرست مجاز',
+    'organizations screen + owner list ACL',
+  ],
+  [
+    'b2b-status',
+    'MasterData',
+    '/organizations',
+    'وضعیت یک سازمان با کد دقیق و نقش مشتری سازمانی یا آژانس همکار',
+    'organizations screen + owner list ACL',
+  ],
+  [
+    'purchase-cards',
+    'Reservations',
+    '/ticket-purchases',
+    'تعداد کل خدمات خرید و تفکیک در انتظار ثبت، ثبت‌شده و وضعیت نامشخص',
+    'purchase and reservations screens + reservations.read',
+  ],
+  [
+    'call-center-cards',
+    'CustomerAffairs',
+    '/customer-affairs/call-center',
+    'تعداد تماس امروز، هفته، بدون نتیجه و نیازمند تماس مجدد',
+    'call center screen + customer_affairs.call_center.read + selected branch',
+  ],
+])
+  add({
+    id: 'panel-read/' + id,
+    owner,
+    panel,
+    need,
+    scope: scope + ' + authorized ALL company context',
+    source: panelReader,
+    connection: 'connected',
+    acceptance: 'compare-card-or-record-with-same-panel-and-scope',
+  });
+for (const source of [
+  panelReader,
+  'apps/web/src/modules/assistant/planned-operational-intent.ts',
+  'apps/web/src/modules/assistant/planned-native-report.ts',
+  'apps/web/src/modules/reports/model/report-dates.ts',
+  'apps/web/src/modules/assistant/guide-access.ts',
+  'apps/web/src/modules/assistant/historical-report-period.ts',
+])
+  sources.add(source);
 sources.add('packages/contracts/src/iam/user-access.ts');
 sources.add('packages/contracts/src/iam/user-access-controls.ts');
 sources.add('services/assistant/report-catalog.mjs');

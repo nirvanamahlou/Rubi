@@ -7,13 +7,18 @@ const folds = new Map(Object.entries(vocabulary.normalize));
 const stop = new Set(vocabulary.stopWords);
 
 export function normalizeGuideQuery(value: string) {
-  return normalizeQuestion(value).split(' ').map((term) => {
-    const alias = folds.get(term);
-    if (alias) return alias;
-    if (/^(?:فایل|پکیج|قرارداد|کار|اعلان)ای$/u.test(term)) return term.slice(0,-2) + ' های';
-    if (/^(?:پکیج|فایل|قرارداد|روز|گزارش|کشور|هتل|ویز|تقویم)و$/u.test(term)) return term.slice(0,-1);
-    return term;
-  }).join(' ');
+  return normalizeQuestion(value)
+    .split(' ')
+    .map((term) => {
+      const alias = folds.get(term);
+      if (alias) return alias;
+      if (/^(?:فایل|پکیج|قرارداد|کار|اعلان)ای$/u.test(term))
+        return term.slice(0, -2) + ' های';
+      if (/^(?:پکیج|فایل|قرارداد|روز|گزارش|کشور|هتل|ویز|تقویم)و$/u.test(term))
+        return term.slice(0, -1);
+      return term;
+    })
+    .join(' ');
 }
 
 function words(value: string) {

@@ -62,6 +62,28 @@ const countKeys = new Set([
   'employeeCount',
   'daysRemaining',
   'quantity',
+  'fileBytes',
+  'fileCount',
+  'roomTypes',
+  'allocated',
+  'held',
+  'remaining',
+  'dailyRows',
+  'responseBreaches',
+  'resolutionBreaches',
+  'incomplete',
+  'expired',
+  'overdueDays',
+]);
+const rowMoneyKeys = new Set([...moneyKeys, 'baseRate', 'registeredAmount']);
+const dateKeys = new Set([
+  'expiresAt',
+  'receivedAt',
+  'firstIssuedAt',
+  'createdAt',
+  'dueAt',
+  'checkIn',
+  'checkOut',
 ]);
 
 function isoDay(value: string) {
@@ -250,6 +272,21 @@ export async function runNativeReport(
       row.sourceValues === undefined ? row : record(row.sourceValues);
     const measures = result.columns.flatMap((c) => {
       const n = values[c.key];
+      if (
+        dateKeys.has(c.key) &&
+        typeof n === 'string' &&
+        (isoDay(n) || z.string().datetime().safeParse(n).success)
+      )
+        return [c.label + ' ' + n];
+      if (
+        rowMoneyKeys.has(c.key) &&
+        c.kind === 'MONEY' &&
+        typeof n === 'string' &&
+        decimal.test(n) &&
+        typeof values.currencyCode === 'string' &&
+        currency.test(values.currencyCode)
+      )
+        return [c.label + ' ' + n + ' ' + values.currencyCode];
       if (
         countKeys.has(c.key) &&
         c.kind === 'NUMBER' &&

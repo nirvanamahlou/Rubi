@@ -124,11 +124,15 @@ export function pilotGuideResponse(
     linked || mode === 'explicit'
       ? null
       : resolvePilotGuide(message, panel, previous);
-  const genericCreate = decision?.status === 'answer' && decision.ids.length === 1 && decision.ids[0] === 'sales/create';
+  const genericCreate =
+    decision?.status === 'answer' &&
+    decision.ids.length === 1 &&
+    decision.ids[0] === 'sales/create';
   const topics = linked
     ? [linked]
     : mode === 'explicit' ||
-        (mode === 'procedure' && (!decision || decision.status === 'clarify' || genericCreate))
+        (mode === 'procedure' &&
+          (!decision || decision.status === 'clarify' || genericCreate))
       ? findCatalogueTopics(
           message,
           panel,

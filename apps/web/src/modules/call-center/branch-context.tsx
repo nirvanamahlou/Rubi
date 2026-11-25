@@ -2,23 +2,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { readApi } from './read-client';
-
-export function resolvedCallCenterBranch(
-  allowed: readonly string[],
-  response: {
-    data: { id: string }[];
-    meta?: { defaultBranchId: string | null };
-  },
-) {
-  const ids = response.data
-    .map((branch) => branch.id)
-    .filter((id) => allowed.includes(id));
-  const preferred = response.meta?.defaultBranchId;
-  if (preferred && ids.includes(preferred)) return preferred;
-  // A legacy single-branch API is safe; ambiguous responses must not choose an
-  // arbitrary login branch or fall through to another company's records.
-  return ids.length === 1 && !preferred ? ids[0]! : null;
-}
+import { resolvedCallCenterBranch } from './resolve-branch';
+export { resolvedCallCenterBranch } from './resolve-branch';
 
 export function CallCenterBranchContext({
   actor,

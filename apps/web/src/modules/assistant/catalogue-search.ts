@@ -45,15 +45,27 @@ const workflowIntents: readonly [RegExp, readonly string[]][] = [
   [/اعلان.*خوانده نشده/, ['workbench/notifications']],
   [/میزکار.*تنظیمات حساب/, ['workbench/account']],
   [/میزکار.*سوابق تردد/, ['workbench/performance']],
-  [/(?=.*لغو)(?=.*صدور)(?=.*مجوز تحویل)(?!.*تایید).*/, ['finance-delivery/issue','finance-delivery/revoke']],
-  [/پیگیری.*پس از ثبت قرارداد|(?:بعد|پس از) ثبت قرارداد.*پیگیری/, ['sales/reservation']],
+  [
+    /(?=.*لغو)(?=.*صدور)(?=.*مجوز تحویل)(?!.*ت[اأ]یید).*/,
+    ['finance-delivery/issue', 'finance-delivery/revoke'],
+  ],
+  [
+    /پیگیری.*پس از ثبت قرارداد|(?:بعد|پس از) ثبت قرارداد.*پیگیری/,
+    ['sales/reservation'],
+  ],
   [/قرارداد (?:رو |را )?(?:چطور|چگونه|چجوری).*جستجو/, ['sales/list']],
-  [/درخواست.*کار های من|کار های من.*درخواست/, ['call-center/call-center-queue','workbench/requests']],
+  [
+    /درخواست.*کار های من|کار های من.*درخواست/,
+    ['call-center/call-center-queue', 'workbench/requests'],
+  ],
   [/مرخصی.*(?:نیازمند اصلاح|برگشت خورده)/, ['workbench/request-status']],
-  [/ترتیب.*(?:تایید|تأیید).*منابع انسانی/, ['workbench/leave-approval','human-resources/requests']],
+  [
+    /ترتیب.*(?:تایید|تأیید).*منابع انسانی/,
+    ['workbench/leave-approval', 'human-resources/requests'],
+  ],
   [/تغییر شرکت فعال|شرکت فعال.*تغییر/, ['nora-sources/company-scope']],
   [/نقش.*شعب.*کاربر/, ['system-management/permissions']],
-  [/مکاتبه داخلی.*بفرستم/, ['correspondence/internal-send']],
+  [/(?:مکاتبه|نامه) داخلی.*(?:بفرست|ارسال)/, ['correspondence/internal-send']],
   [/نامه صادره.*چاپ/, ['correspondence/outgoing-export']],
   [
     /گزارش رزرواسیون.*(?:اختلاف|کارت.*اکسل)|اختلاف.*گزارش رزرواسیون/,
@@ -219,13 +231,15 @@ export function resolveDocumentedWorkflow(message: string) {
 }
 
 export function prepareCatalogueSearch() {
-  return (search ??= buildGuidePhraseIndex(entries, ({ section }) => [
-    section.title,
-    ...(section.aliases ?? []),
-    ...(section.terms ?? []).filter((term) =>
-      normalizeQuestion(term).includes(' '),
-    ),
-  ]));
+  return (search ??= buildGuidePhraseIndex(entries, ({ section }) =>
+    [
+      section.title,
+      ...(section.aliases ?? []),
+      ...(section.terms ?? []).filter((term) =>
+        normalizeQuestion(term).includes(' '),
+      ),
+    ].map(normalizeGuideQuery),
+  ));
 }
 
 /** Ask the index only for an instruction. Leave composite, record and provenance questions to their readers. */
@@ -236,15 +250,26 @@ export function catalogueLookupMode(
   const text = normalizeGuideQuery(question);
   // Colloquial location questions can otherwise be classified as numerical queries by
   // a noun such as «گزارش» or «مبلغ». Record identifiers and provenance keep their readers.
-  const locateAction = /(?:از کجا|کجا.*(?:چک|بررسی)|کجاس|کجاست|کدوم (?:بخش|صفحه|کارتابل|دکمه)|چی چک|چی تایپ)/.test(text) &&
-    !/\d|چقدر|چند تا|دست کی|چرا|از کجا.*(?:آوردی|آمده|میاری)|درخواستم|کد پیگیری/.test(text);
+  const locateAction =
+    /(?:از کجا|کجا.*(?:چک|بررسی)|کجاس|کجاست|کدوم (?:بخش|صفحه|کارتابل|دکمه)|چی چک|چی تایپ)/.test(
+      text,
+    ) &&
+    !/\d|چقدر|چند تا|دست کی|چرا|از کجا.*(?:آوردی|آمده|میاری)|درخواستم|کد پیگیری/.test(
+      text,
+    );
   if (
     decision.guideTopicId ||
     decision.needsSalesPeriod ||
-    (!['guide', 'clarify'].includes(decision.kind) && !(locateAction && decision.kind === 'data'))
+    (!['guide', 'clarify'].includes(decision.kind) &&
+      !(locateAction && decision.kind === 'data'))
   )
     return;
-  if (/ت[اأ]یید مدیر/.test(text) && /مانده مرخصی/.test(text) && !/[0-9]|کد پیگیری|مرخصی من/.test(text)) return 'procedure';
+  if (
+    /ت[اأ]یید مدیر/.test(text) &&
+    /مانده مرخصی/.test(text) &&
+    !/[0-9]|کد پیگیری|مرخصی من/.test(text)
+  )
+    return 'procedure';
   if (
     /\d{3,}|چقدر|دست کی|از کجا آوردی|این (?:عدد|مبلغ|نتیجه|قرارداد|پرونده|درخواست|کمپین)|همین|پیگیری من|چرا|قبل (?:از )?ارسال/.test(
       text,
@@ -295,7 +320,13 @@ export function findCatalogueTopics(
     )
     .map(({ item, score }) => ({
       section: item.section,
-      score: score + (normalizeGuideQuery(text).includes(normalizeGuideQuery(item.section.title)) ? 0.25 : 0),
+      score:
+        score +
+        (normalizeGuideQuery(text).includes(
+          normalizeGuideQuery(item.section.title),
+        )
+          ? 0.25
+          : 0),
       current: item.section.href.split(/[?#]/)[0] === pathname,
     }))
     .sort((a, b) => b.score - a.score || Number(b.current) - Number(a.current));

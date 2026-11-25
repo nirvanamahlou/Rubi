@@ -1092,7 +1092,7 @@ export class SalesService {
         hasConfirmedReceiptFunds(row.payments, row.receiptAllocations ?? []),
       fullySettled:
         row.status !== 'CANCELLED' &&
-        fullySettledStatuses.some(status => status === row.settlementStatus),
+        fullySettledStatuses.some((status) => status === row.settlementStatus),
     };
   }
   async financeReceiptHistory(

@@ -1,18 +1,21 @@
 import { normalizeQuestion } from './question-text';
 import { asksWorkbenchRequestStatus } from './workbench-request-guide';
 import { resolveOperationalMetric } from './operational-metrics';
+import { panelIntent } from './planned-operational-intent';
 
 export type PlannedRead = {
   kind:
     | 'rolling-sales'
     | 'metric'
     | 'report'
+    | 'operational'
     | 'request'
     | 'settled-vouchers'
     | 'guide'
     | 'sales'
     | 'unknown';
   question: string;
+  reuseSalesCutoff?: boolean;
 };
 
 const procedure =
@@ -39,6 +42,7 @@ export function classify(question: string): PlannedRead {
     )
   )
     kind = 'report';
+  else if (panelIntent(question)) kind = 'operational';
   else if (/فروش|قرارداد|مسافر|وصول/.test(text) && figure.test(text))
     kind = 'sales';
   return { kind, question };
@@ -74,27 +78,38 @@ export function planQuestion(message: string, previous = ''): PlannedRead[] {
   )
     return [];
   const parts = clauses.map(classify);
+  const normalized = normalizeQuestion(message);
+  const sameList =
+    /^(?:(?:اطلاعات|فهرست|لیست|جزئیات) )?(?:همون|همان|همین) قرارداد(?:ها|ا| های)(?: (?:رو|را))?(?: (?:هم )?(?:بده|بگو|نشون بده|نمایش بده))?$/u.test(
+      normalized,
+    );
   if (
     parts.length === 1 &&
     fortnight.test(normalizeQuestion(previous)) &&
-    /^(?:(?:اطلاعات|فهرست|لیست|جزئیات) )?قرارداد(?:ها| های|هاش|اش).*?(?:همین|همون|همان) (?:دوره|بازه)/u.test(
-      normalizeQuestion(message),
-    )
+    (sameList ||
+      /^(?:(?:اطلاعات|فهرست|لیست|جزئیات) )?قرارداد(?:ها| های|هاش|اش).*?(?:همین|همون|همان) (?:دوره|بازه)/u.test(
+        normalized,
+      ))
   ) {
     return [
       {
         kind: 'rolling-sales',
-        question: message.replace(
-          /(?:همین|همون|همان) (?:دوره|بازه)/u,
-          'دو هفته اخیر',
-        ),
+        reuseSalesCutoff: true,
+        question: sameList
+          ? 'فهرست قراردادهای دو هفته اخیر رو بده'
+          : message.replace(
+              /(?:همین|همون|همان) (?:دوره|بازه)/u,
+              'دو هفته اخیر',
+            ),
       },
     ];
   }
   if (parts.length > 6) return [{ kind: 'unknown', question: message }];
   if (
     parts.length === 1 &&
-    !['rolling-sales', 'settled-vouchers', 'report'].includes(parts[0]!.kind)
+    !['rolling-sales', 'settled-vouchers', 'report', 'operational'].includes(
+      parts[0]!.kind,
+    )
   )
     return [];
   if (

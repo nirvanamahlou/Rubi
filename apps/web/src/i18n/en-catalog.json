@@ -1,4 +1,5 @@
 {
+  "فهرست قراردادهای دو هفته اخیر رو بده": "Show the list of contracts for the last two weeks",
   "· شماره فرعی": "· Auxiliary number",
   "اجزای قیمت قرارداد": "Contract price components",
   "ارتباط قابل مشاهده با قرارداد ثبت نشده است.": "No viewable contract link is recorded.",
@@ -18264,5 +18265,15 @@
   "مشاهدهٔ گزارش کامل": "View full report",
   "منبع دادهٔ قابل استناد برای این سؤال در دسترس نیست.": "No verifiable data source is available for this question.",
   "واچر هتل را چطور صادر کنم؟": "How do I issue a hotel voucher?",
-  "وضعیت واچر برای": "Voucher status for"
+  "وضعیت واچر برای": "Voucher status for",
+  "این بخش از پاسخ ترکیبی هنوز فعال نشده است.": "This part of the combined answer is not enabled yet.",
+  "بازهٔ تاریخ درخواست معتبر نیست.": "The request date range is invalid.",
+  "بازهٔ گزارش را با روز، ماه و سال مشخص کنید.": "Specify the report range with the day, month and year.",
+  "به وقت تهران،": "Tehran time,",
+  "تماس بدون نتیجه در محدودهٔ مجاز گزارش ثبت شده است.": "calls with no outcome were recorded within the authorized reporting scope.",
+  "در بازهٔ": "During the period",
+  "درخواست ثبت‌شده توسط شما در کارتابل قابل مشاهده است.": "requests submitted by you are visible in your workbench.",
+  "روز یا بازهٔ ثبت درخواست‌ها را با ماه و سال مشخص کنید.": "Specify the submission day or range including the month and year.",
+  "شعبه یا مجوز لازم برای خواندن گزارش کال‌سنتر در دسترس نیست.": "The branch or permission needed to read the call center report is unavailable.",
+  "فروردین اردیبهشت خرداد تیر مرداد شهریور مهر آبان آذر دی بهمن اسفند": "Farvardin Ordibehesht Khordad Tir Mordad Shahrivar Mehr Aban Azar Dey Bahman Esfand"
 }
