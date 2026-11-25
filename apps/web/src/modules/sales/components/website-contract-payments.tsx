@@ -9,7 +9,6 @@ const dateFormat = new Intl.DateTimeFormat('fa-IR', {
   timeZone: 'Asia/Tehran',
 });
 const numberFormat = new Intl.NumberFormat('fa-IR');
-const digits = '۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩';
 
 export function WebsiteContractPayments() {
   const [rows, setRows] = useState<WebsiteContractPayment[]>();
@@ -23,7 +22,7 @@ export function WebsiteContractPayments() {
     try {
       const normalized = number
         .trim()
-        .replace(/[۰-۹٠-٩]/g, (digit) => String(digits.indexOf(digit) % 10));
+        .replace(/[۰-۹٠-٩]/g, (digit) => String(digit.charCodeAt(0) & 0xf));
       setRows((await salesApi.websiteContractPayments(normalized)).data);
     } catch {
       setError('دریافت پرداخت‌های سایت ناموفق بود. دوباره تلاش کنید.');
