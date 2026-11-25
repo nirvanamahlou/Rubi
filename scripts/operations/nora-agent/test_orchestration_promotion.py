@@ -15,9 +15,30 @@ spec = importlib.util.spec_from_file_location(
 )
 promotion = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(promotion)
+spec = importlib.util.spec_from_file_location(
+    "builder", here / "build-orchestration-candidate.py"
+)
+builder = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(builder)
 
 
 class PromotionTests(TestCase):
+    def test_incremental_build_selects_all_changed_runtime_units(self):
+        units = {
+            unit: {"overlayFiles": {}} for unit in ("api", "read", "web", "assistant")
+        }
+        with self.assertRaisesRegex(ValueError, "No runtime updates"):
+            builder.affected_units("build-updates", units)
+        units["web"]["overlayFiles"]["apps/web/src/example.ts"] = "digest"
+        self.assertEqual(builder.affected_units("build-updates", units), ("web",))
+        units["api"]["overlayFiles"]["apps/api/src/example.ts"] = "digest"
+        self.assertEqual(builder.affected_units("build-updates", units), ("api", "web"))
+        self.assertEqual(
+            builder.affected_units("build", units), ("api", "read", "web", "assistant")
+        )
+        with self.assertRaisesRegex(ValueError, "Incomplete"):
+            builder.affected_units("build-updates", {"web": units["web"]})
+
     def test_web_patch_keeps_existing_runtime_options_during_promotion_and_rollback(
         self,
     ):

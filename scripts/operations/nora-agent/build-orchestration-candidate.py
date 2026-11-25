@@ -1,6 +1,6 @@
 """On the ERP host, verify the prepared manifest, then build offline candidates.
 
-python3 build-orchestration-candidate.py /opt/rubi/RELEASE check|build|build-web [previous-private-stage]
+python3 build-orchestration-candidate.py /opt/rubi/RELEASE check|build|build-updates [previous-private-stage]
 No live service is started, stopped, recreated, reloaded or reconfigured here.
 """
 
@@ -85,23 +85,32 @@ def reuse_verified_component(previous, stage, unit, state, tag, revision):
     return True
 
 
+def affected_units(mode, units):
+    order = ("api", "read", "web", "assistant")
+    if mode == "build":
+        return order
+    if mode != "build-updates":
+        raise ValueError("Expected check, build or build-updates")
+    if set(units) != set(order):
+        raise ValueError("Incomplete service inventory")
+    selected = tuple(unit for unit in order if units[unit]["overlayFiles"])
+    if not selected:
+        raise ValueError("No runtime updates in candidate")
+    return selected
+
+
 def build(stage, previous=None):
     manifest = json.loads((stage / "manifest.json").read_text())
     verify(stage, manifest)
     if sys.argv[2] == "check":
         print("CANDIDATE_BASELINES_MATCH")
         return
-    web_only = sys.argv[2] == "build-web"
-    if web_only and any(
-        unit != "web" and state["overlayFiles"]
-        for unit, state in manifest["units"].items()
-    ):
-        raise ValueError("Web-only release also changes another service")
-    if not web_only and sys.argv[2] != "build":
-        raise ValueError("Expected check, build or build-web")
+    selected = affected_units(sys.argv[2], manifest["units"])
     sha = manifest["head"]
     receipt = {"revision": sha, "images": {}}
-    for unit in ("web",) if web_only else ("api", "read", "web"):
+    for unit in ("api", "read", "web"):
+        if unit not in selected:
+            continue
         state = manifest["units"][unit]
         base = f'rubi-nora-prebuild:{sha[:12]}-{unit}-{state["image"][7:19]}'
         tag = f"rubi-nora-candidate:{sha[:12]}-{unit}"
@@ -117,7 +126,7 @@ def build(stage, previous=None):
         if unit == "web":
             check_web_guides(state, receipt["images"][unit]["id"])
         print("BUILT", unit, receipt["images"][unit]["id"][:19], flush=True)
-    if not web_only:
+    if "assistant" in selected:
         stage_source(stage, manifest, receipt)
     verify(stage, manifest)
     (stage / "built.json").write_text(json.dumps(receipt, indent=2) + "\n")
