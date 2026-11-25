@@ -110,7 +110,7 @@ export function WebsiteContractPayments() {
                   </td>
                   <td className="px-3 py-2">{row.customerName}</td>
                   <td className="px-3 py-2">
-                    {numberFormat.format(BigInt(row.amountRial) / 10n)} تومان
+                    {numberFormat.format(BigInt(row.amountRial))} ریال
                   </td>
                   <td className="px-3 py-2">
                     <bdi>{row.trackingNumber}</bdi>

@@ -45,7 +45,8 @@ function receiptDetails(input: PaymentDetails) {
     typeof input.contractNumber !== 'string' ||
     !/^[\p{L}0-9][\p{L}0-9./_-]{0,39}$/u.test(input.contractNumber) ||
     typeof input.amount !== 'string' ||
-    !/^[1-9][0-9]{0,13}0$/.test(input.amount)
+    !/^[1-9][0-9]{0,14}$/.test(input.amount) ||
+    BigInt(input.amount) > 999_999_999_999_990n
   )
     throw new BadRequestException();
   const { customerName, contractNumber, amount } = input;
