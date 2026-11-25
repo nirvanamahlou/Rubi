@@ -13624,3 +13624,5 @@ Reserve Nora's document retrieval and response composition, the focused question
 ## NORA-GUIDE-ACCEPTANCE — PC-C
 
 Reserve Nora's guide catalogue, document routing, response source display and focused tests for the thirty-question production matrix.
+
+PC-D · Ticket management · Hide site commissions in the outbound and return load details. Frontend display only.

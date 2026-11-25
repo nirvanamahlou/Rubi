@@ -10799,3 +10799,5 @@ Nora combines authorized catalog sections for independently recognizable procedu
 ## NORA-GUIDE-ACCEPTANCE — PC-C
 
 Align sales, finance, reservations and HR guidance with the UI and add documented organizational-report and answer-source workflows.
+
+Ticket management shows each site's price and currency in selected flight details. Commission percentages are omitted from this card. Both focused suites passed (8 tests).
