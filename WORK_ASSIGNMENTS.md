@@ -13615,6 +13615,8 @@ Reserve Nora guide arbitration, linked guide source documents and generated cata
 
 PC-D · Website order intake in Reservations · Jahan Bastan and Ghestiroo. Scope: Site Commerce order linking and native Reservations intake, focused tests. No schema or dependency change.
 
+PC-D · Site-scoped withdrawal for website publications and visa deletion confirmations.
+
 ## NORA-DOCUMENT-RETRIEVAL — PC-C
 
 Reserve Nora's document retrieval and response composition, the focused question matrix, and project status. Preserve authenticated live data dispatch and the existing provider pilot.

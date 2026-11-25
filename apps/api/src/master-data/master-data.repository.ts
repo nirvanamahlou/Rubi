@@ -1338,7 +1338,9 @@ export class MasterDataRepository {
         ? 'master_hotels'
         : resource === 'cities'
           ? 'master_cities'
-          : 'master_countries';
+          : resource === 'visa-services'
+            ? 'master_visa_services'
+            : 'master_countries';
     return this.database.client.$transaction(
       async (tx) => {
         const rows = await tx.$queryRaw<{ version: number }[]>(

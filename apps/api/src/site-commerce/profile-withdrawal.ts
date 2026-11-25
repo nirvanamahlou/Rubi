@@ -9,9 +9,14 @@ import {
 import { confirmDeletionSites } from './site-deletion';
 import { commerceBindingSites } from './site-commerce.policy';
 
-export function isWebsiteProfile(resource: string) {
+export function isWebsiteProfile(
+  resource: string,
+): resource is 'hotels' | 'cities' | 'countries' | 'visa-services' {
   return (
-    resource === 'hotels' || resource === 'cities' || resource === 'countries'
+    resource === 'hotels' ||
+    resource === 'cities' ||
+    resource === 'countries' ||
+    resource === 'visa-services'
   );
 }
 
@@ -76,6 +81,21 @@ async function checkSite(
       `سایت ${destinationNames[site]} وضعیت انتشار را تأیید نکرد.`,
     );
   return { siteCode: site, linked: receipt.linked, blocked: receipt.blocked };
+}
+
+export async function withdrawProfileFromSite(
+  site: CommerceSite,
+  record: MasterDataRecord,
+) {
+  const secret = process.env[commerceSites[site].signingKey];
+  if (!secret || secret.length < 32)
+    throw new ServiceUnavailableException('اتصال سایت پیکربندی نشده است.');
+  const result = await checkSite(site, secret, record, 'withdraw');
+  if (result.blocked)
+    throw new ConflictException(
+      `محتوای منتشرشده در سایت ${destinationNames[site]} به این رکورد وابسته است.`,
+    );
+  return result;
 }
 
 async function destinations(record: MasterDataRecord) {

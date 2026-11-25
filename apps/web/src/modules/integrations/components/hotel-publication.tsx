@@ -1,4 +1,5 @@
 'use client';
+import { SiteRemovalButton } from './site-removal-button';
 
 import { useEffect, useId, useRef, useState } from 'react';
 import {
@@ -150,7 +151,8 @@ function ProfileDestination({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [url, setUrl] = useState('');
-  async function publish() {
+  async function changePublication(action: 'publish' | 'withdraw') {
+    const withdraw = action === 'withdraw';
     setBusy(true);
     setMessage('');
     setUrl('');
@@ -160,12 +162,15 @@ function ProfileDestination({
           '/sales/site-commerce/v1/' +
           site +
           '/' +
-          (resource === 'hotels'
-            ? 'hotel-profiles/'
-            : resource === 'visa-services'
-              ? 'visa-profiles/'
-              : 'geography-profiles/' + resource + '/') +
-          encodeURIComponent(id),
+          (withdraw
+            ? 'profiles/' + resource + '/'
+            : resource === 'hotels'
+              ? 'hotel-profiles/'
+              : resource === 'visa-services'
+                ? 'visa-profiles/'
+                : 'geography-profiles/' + resource + '/') +
+          encodeURIComponent(id) +
+          (withdraw ? '/withdraw' : ''),
         {
           method: 'POST',
           credentials: 'include',
@@ -179,10 +184,12 @@ function ProfileDestination({
       const result = await response.json();
       if (!response.ok)
         throw new Error(
-          result.error?.message || result.message || labels.error,
+          result.error?.message ||
+            result.message ||
+            (withdraw ? 'ارتباط با سایت برقرار نشد.' : labels.error),
         );
-      setUrl(result.url);
-      setMessage('اطلاعات ثبت شد.');
+      setUrl(withdraw ? '' : result.url);
+      setMessage(withdraw ? 'منتشر نشده' : 'اطلاعات ثبت شد.');
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : 'ارتباط با سایت برقرار نشد.',
@@ -200,20 +207,30 @@ function ProfileDestination({
           </span>
           <strong>{labels.name}</strong>
         </div>
-        <button
-          type="button"
-          onClick={publish}
-          disabled={busy}
-          aria-label={labels.publish}
-          className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg bg-primary px-3 font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-        >
-          {busy ? (
-            <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
-          ) : (
-            <Check aria-hidden="true" className="size-4" />
-          )}
-          {busy ? 'در حال ثبت…' : 'ثبت'}
-        </button>
+        <div className="flex items-center gap-2">
+          <SiteRemovalButton
+            siteName={labels.name}
+            disabled={busy}
+            onRemove={() => void changePublication('withdraw')}
+          />
+          <button
+            type="button"
+            onClick={() => void changePublication('publish')}
+            disabled={busy}
+            aria-label={labels.publish}
+            className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg bg-primary px-3 font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+          >
+            {busy ? (
+              <LoaderCircle
+                aria-hidden="true"
+                className="size-4 animate-spin"
+              />
+            ) : (
+              <Check aria-hidden="true" className="size-4" />
+            )}
+            {busy ? 'در حال ثبت…' : 'ثبت'}
+          </button>
+        </div>
       </div>
       {message && (
         <span

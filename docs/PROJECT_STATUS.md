@@ -10790,6 +10790,8 @@ Nora now prioritizes documented workflow actions for the reproduced cross-panel 
 
 2026-11-25 · Site Commerce now links Jahan Bastan and Ghestiroo sales orders to their native reservation inbox before settlement. Formal Sales confirmation keeps the same intake ID.
 
+Site management supports withdrawing a publication from the selected destination. Visa master deletion checks linked sites through their signed profile receivers.
+
 ## NORA-DOCUMENT-RETRIEVAL — PC-C
 
 Nora combines authorized catalog sections for independently recognizable procedures and restores reservation handoff and report filter coverage. Sales data comparisons on the HR page continue to the conversation API. No dependency or migration changes.
