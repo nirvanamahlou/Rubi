@@ -36,6 +36,10 @@ Stacked on #1907. Reserve the five Stage 3 guide documents, their generated cata
 
 Reserve Nora petty cash guide, generation, read-only Composer dispatch and focused tests. Reuse native Procurement access and workflows.
 
+## WEBSITE-MANAGEMENT-OVERVIEW-1125 — PC-D — READY_FOR_CI
+
+Owner authorizes redesigning the Integrations Site Management workspace and merging to develop. Reserve its Web overview, scoped publication navigation, existing monitoring handoff, focused tests and additive Integrations translations. Reuse publication endpoints and module permissions. No API, permission, dependency, schema or live deployment changes.
+
 ## WEBSITE-DATED-TOUR-CONTRACTS-1124 — PC-D — ACTIVE
 
 Own the additive site-commerce dated-tour draft route, authoritative rate and hotel-itinerary validation, and coordinated Jahan Bastan and Ghestiroo checkout callers. Preserve payment verification, floating-tour policy, and other publishing changes. No migration or dependency changes.
@@ -13597,6 +13601,4 @@ Scope: add the existing departure withdrawal flow under each expanded tour, appl
 
 Branch `codex/pc-d-site-customer-services` from develop `ba9b26331`. Reserve the read-only Master Data sell-rate projection, the Site Commerce rate and test tour-insurance routes, and focused tests. Consumers are Jahan Bastan, Niyayesh Seir and Ghestiroo for rates, and Niyayesh Seir for test insurance. Existing pricing and document contracts keep their behavior. No schema, dependency, customer data, role or provider changes.
 
-## WEBSITE-MANAGEMENT-OVERVIEW-1125 — PC-D — READY_FOR_CI
-
-Owner authorizes redesigning the Integrations Site Management workspace and merging to develop. Reserve its Web overview, scoped publication navigation, existing monitoring handoff, focused tests and additive Integrations translations. Reuse publication endpoints and module permissions. No API, permission, dependency, schema or live deployment changes.
+HR-ORIGINAL-ACCESS-1125 (PC-B): Reserve the shared HR username allowlist and a scoped IAM permission regression test. Owner authorizes develop merge and targeted production publication on Avina.

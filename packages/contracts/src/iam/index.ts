@@ -15,6 +15,7 @@ import {
 } from './manual-access';
 
 export const HR_ADMIN_USERNAMES: readonly string[] = [
+  'demo',
   'nirvana',
   'nima',
   'danial',

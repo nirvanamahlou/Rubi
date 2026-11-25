@@ -2,6 +2,10 @@
 
 All 358 authored topics across 25 manuals are indexed under nine sidebar groups. Scoped lookup reuses the authored text and can follow a verified prerequisite, next step or status destination. Access is checked at both ends of a handoff. Local checks and Chromium evidence are in [the acceptance notes](tasks/NORA-GUIDE-SEARCH-1124.md).
 
+## Website Management overview
+
+Integrations now opens a website-focused management workspace for Niyayesh Seir, Jahan Bastan, and Ghestiroo. Operators can open the storefront, select its existing connection and native administration, and scope publishing to the selected destination. Scheduled and flexible tours, tickets, hotels, countries, cities, and visa services use their existing publication operations. Orders, rates, document delivery, customers, support, marketing leads, and agencies link to their authorized ERP workspaces. Legacy ticket and hotel publication links retain their cross-site controls.
+
 ## NORA-DATA-ATLAS-1124 — PC-C — REVIEW
 
 ERP schema inventory, scoped source discovery and replayable synthetic acceptance. See [data atlas](assistant/data-atlas/README.md) and [measurements](assistant/data-atlas/acceptance.md). Compact selection and native report discovery are opt-in. Production was inspected read-only.
@@ -10775,6 +10779,4 @@ Website-bound connectors can read the latest active and approved USD, EUR and TR
 
 2026-11-24 PC-C — NORA-HR-GUIDE-1124: Added Nora's 14 HR guide topics, permission-aware local dispatch and acceptance matrix. Reuse current native metrics and Workbench request readers. See docs/tasks/NORA-HR-GUIDE-1124.md.
 
-## Website Management overview
-
-Integrations now opens a website-focused management workspace for Niyayesh Seir, Jahan Bastan, and Ghestiroo. Operators can open the storefront, select its existing connection and native administration, and scope publishing to the selected destination. Scheduled and flexible tours, tickets, hotels, countries, cities, and visa services use their existing publication operations. Orders, rates, document delivery, customers, support, marketing leads, and agencies link to their authorized ERP workspaces. Legacy ticket and hotel publication links retain their cross-site controls.
+HR-ORIGINAL-ACCESS-1125 (PC-B): Add the verified active Original account (demo) to the existing full HR workspace allowlist. Scoped lint, contracts build and 11 IAM tests passed. Targeted Avina release authorized; no database changes.
