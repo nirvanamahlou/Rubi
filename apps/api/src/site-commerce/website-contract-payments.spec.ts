@@ -16,7 +16,7 @@ const secret = 'k'.repeat(64);
 const input = {
   contractNumber: 'LEGACY-847',
   customerName: 'مسافر آزمایشی',
-  amount: '150000',
+  amount: '15051',
 };
 const actor = {
   userId: 'nss-user',
@@ -117,7 +117,7 @@ describe('Niyayesh contract payment intake', () => {
       contractNumber: 'LEGACY-847',
       seller: 'سایت نیایش',
       trackingNumber: '456123',
-      amountRial: '150000',
+      amountRial: '15051',
     });
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
