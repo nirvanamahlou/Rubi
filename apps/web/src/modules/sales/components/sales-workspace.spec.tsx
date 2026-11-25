@@ -1,8 +1,11 @@
 import { renderToStaticMarkup } from 'react-dom/server';
+import type { ComponentProps } from 'react';
+import type NextLink from 'next/link';
 import { describe, expect, it, vi } from 'vitest';
 import type { salesApi } from '../api/client';
 import type { SalesContractSummary } from '@nora/contracts';
 import SalesPage from '@/app/(crm)/sales/page';
+import { AccessPermissionsProvider } from '@/modules/iam/access-context';
 import {
   contractRowClassName,
   formatMoney,
@@ -17,6 +20,17 @@ import {
   ContractListTravelDates,
   ContractListPassengers,
 } from './sales-workspace';
+
+vi.mock('next/link', async (loadOriginal) => {
+  const { default: ClientLink } = await loadOriginal<{
+    default: typeof NextLink;
+  }>();
+  return {
+    default: (props: ComponentProps<typeof NextLink>) => (
+      <ClientLink {...props} data-next-navigation="intercepted" />
+    ),
+  };
+});
 
 describe('sales dashboard loading', () => {
   it('follows durable report links across all four pages with the same cutoff and recovers the correct list after a remount', async () => {
@@ -45,6 +59,8 @@ describe('sales dashboard loading', () => {
       const footer = renderToStaticMarkup(
         <SalesContractPagination query={query} total={33} onPage={() => {}} />,
       );
+      expect(html).toContain('data-next-navigation');
+      expect(footer).not.toContain('data-next-navigation');
       const links = [...footer.matchAll(/href="([^"]+)"/g)].map(
         ([, href]) => new URL(href!.replaceAll('&amp;', '&'), url),
       );
@@ -56,6 +72,18 @@ describe('sales dashboard loading', () => {
       ).toEqual([page - 1, page + 1].filter((n) => n >= 1 && n <= 4));
       url = links.at(-1)!;
     }
+  });
+  it('hides period navigation when the actor cannot open Sales', () => {
+    const footer = renderToStaticMarkup(
+      <AccessPermissionsProvider value={[]}>
+        <SalesContractPagination
+          query={{ page: 2, salesPeriodAsOf: '2026-11-25T20:52:11.545Z' }}
+          total={32}
+          onPage={() => {}}
+        />
+      </AccessPermissionsProvider>,
+    );
+    expect(footer).not.toContain('href=');
   });
   it.each(['0', '-1', '3.5', '1e5', '99999999999'])(
     'ignores invalid report page %s',
