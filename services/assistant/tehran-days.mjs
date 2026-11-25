@@ -27,6 +27,18 @@ export function bindTehranDays(sql, context) {
   );
 }
 import { ServiceError } from './errors.mjs';
+
+export function isTehranContractCountComparison(message) {
+  const text = message
+    .normalize('NFKC')
+    .replace(/[،؟?!‌.]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return /^(?:لطفا )?(?:فروش امروز را با دیروز مقایسه کن فقط تعداد قراردادها و بازه گزارش را بگو|تعداد قراردادهای امروز و دیروز(?: را (?:بگو|مقایسه کن))?)$/.test(
+    text,
+  );
+}
+
 export function enforceRelativeDayQuery(sql, context, message) {
   const relative = /امروز|دیروز|\btoday\b|\byesterday\b/i.test(message);
   if (!relative) return bindTehranDays(sql, context);

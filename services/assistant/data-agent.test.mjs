@@ -232,6 +232,44 @@ function harness(
   return { agent, calls, payloads, audits, providerOptions, providerFlags };
 }
 
+test('explicit Tehran day contract comparison reads both authorized counts without a model', async () => {
+  const h = harness([], (url) => {
+    if (url.endsWith('/catalog'))
+      return Response.json({
+        ...catalog,
+        sources: [
+          ...catalog.sources,
+          {
+            id: 'contracts',
+            description: 'Contracts',
+            columns: ['id'],
+            grain: 'contract',
+          },
+        ],
+      });
+    return Response.json({
+      ...result,
+      sources: ['contracts'],
+      rows: [{ total: '2' }],
+    });
+  });
+  const answer = await h.agent(
+    {
+      ...message,
+      message:
+        'فروش امروز را با دیروز مقایسه کن، فقط تعداد قراردادها و بازه گزارش را بگو.',
+    },
+    { cookie: 'nora_access=synthetic', signal: signal() },
+  );
+  const [today, yesterday] = h.calls
+    .filter(({ url }) => url.endsWith('/query'))
+    .map(({ options }) => JSON.parse(options.body).sql);
+  assert.equal(h.payloads.length, 0);
+  assert.equal(answer.sources.length, 2);
+  assert.match(answer.text, /به وقت تهران/);
+  assert.equal(today.match(/'([^']+)'/)[1], yesterday.match(/'([^']+)'$/)[1]);
+});
+
 test('compact catalog sends relevant definitions, then resolves another authorized source on demand', async () => {
   const expanded = {
     ...catalog,

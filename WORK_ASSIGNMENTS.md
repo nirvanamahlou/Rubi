@@ -13632,3 +13632,7 @@ Reserve Nora's document retrieval and response composition, the focused question
 ## NORA-GUIDE-ACCEPTANCE — PC-C
 
 Reserve Nora's guide catalogue, document routing, response source display and focused tests for the thirty-question production matrix.
+
+## NORA-NATIVE-TEHRAN-COUNT — PC-C
+
+Reserve the narrowly recognized Tehran day contract-count route and its evidence checks. Reuse the authenticated read contract.
