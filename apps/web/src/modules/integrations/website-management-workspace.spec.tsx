@@ -31,7 +31,8 @@ it('opens each storefront separately and exposes permitted management actions', 
   expect(html).toMatch(/aria-pressed="true"[^>]*>.*ج(?:هان) باستان/);
   expect(html).toContain('تورهای تاریخ‌دار و شناور');
   expect(html).toContain('بلیط‌ها');
-  expect(html).toContain('href="/sales"');
+  expect(html).not.toContain('فروش، نرخ و تحویل');
+  expect(html).not.toContain('href="/sales"');
 });
 
 it('keeps storefront links available while hiding unauthorised publication and order shortcuts', () => {

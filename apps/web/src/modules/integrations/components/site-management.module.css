@@ -175,3 +175,203 @@
 .destination[data-editing='true'] {
   grid-column: 1 / -1;
 }
+
+.siteCard,
+.publicationHeading {
+  --site-accent: var(--primary);
+  border: 1px solid color-mix(in srgb, var(--site-accent) 30%, var(--border));
+  border-inline-start: 4px solid var(--site-accent);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--site-accent) 6%, var(--surface));
+}
+.siteCard[data-site='nss'],
+.publicationHeading[data-site='nss'] {
+  --site-accent: #0d827a;
+}
+.siteCard[data-site='jahan-bastan'],
+.publicationHeading[data-site='jahan-bastan'] {
+  --site-accent: #335fc2;
+}
+.siteCard[data-site='ghestiroo'],
+.publicationHeading[data-site='ghestiroo'] {
+  --site-accent: #8753a5;
+}
+.siteCard {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+  padding: 1rem;
+}
+.siteCard[data-selected='true'] {
+  border-color: var(--site-accent);
+  background: color-mix(in srgb, var(--site-accent) 13%, var(--surface));
+  box-shadow: inset 0 0 0 1px var(--site-accent);
+}
+.siteIcon,
+.selectedMark {
+  flex-shrink: 0;
+  background: var(--site-accent);
+  color: white;
+}
+.siteIcon {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.8rem;
+}
+.selectedMark {
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-inline-start: auto;
+  border-radius: 50%;
+  padding: 0.16rem;
+}
+.categoryCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  text-align: start;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: var(--surface);
+}
+.categoryCard:hover,
+.record:hover {
+  border-color: var(--primary);
+}
+.categoryCard:focus-visible,
+.record summary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.categoryIcon {
+  flex-shrink: 0;
+  padding: 0.55rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.65rem;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 9%, var(--surface));
+}
+.publicationHeading {
+  padding: 1rem 1.25rem;
+}
+.publicationHeading p {
+  margin: 0 0 0.35rem;
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+}
+.publicationHeading h1 {
+  margin: 0;
+  font-weight: 750;
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+}
+.publicationNav,
+.searchBar,
+.profileSearch,
+.tourFilters {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--surface);
+}
+.publicationNav {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.75rem), 1fr));
+}
+.publicationNav button {
+  height: auto;
+  min-height: 2.5rem;
+  white-space: normal;
+}
+.searchBar,
+.tourFilters {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  align-items: end;
+}
+.profileSearch,
+.tourFilters label {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.profileSearch input {
+  font-weight: normal;
+}
+.record {
+  min-width: 0;
+  border-radius: 0.85rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.record[open] {
+  padding-bottom: 0.85rem;
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+}
+.record > summary {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  color: var(--foreground);
+  font-weight: 650;
+  cursor: pointer;
+  list-style: none;
+}
+.record > summary::-webkit-details-marker {
+  display: none;
+}
+.record > summary > span {
+  overflow-wrap: anywhere;
+}
+.record > summary small {
+  padding: 0.12rem 0.55rem;
+  border-radius: 0.45rem;
+  color: var(--muted-foreground);
+  background: var(--background);
+}
+.record > summary::after {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-inline-start: auto;
+  transform: rotate(45deg);
+  border-right: 2px solid var(--primary);
+  border-bottom: 2px solid var(--primary);
+}
+.record[open] > summary::after {
+  transform: rotate(225deg);
+}
+.record > div {
+  margin-inline: 0.85rem;
+}
+.siteActions {
+  display: grid;
+  gap: 0.5rem;
+  align-items: start;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+}
+.destinations:has(> :only-child) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+}
+.pagination button {
+  padding: 0.45rem 1rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.pagination button:disabled {
+  opacity: 0.5;
+}

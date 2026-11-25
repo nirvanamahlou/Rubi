@@ -16,7 +16,7 @@ import {
   requiresPastTourConfirmation,
 } from '@/modules/site-commerce/past-tour-publication-confirmation';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
-import { PageHeader, Alert, Skeleton } from '@/components/ui/surfaces';
+import { Alert, Skeleton } from '@/components/ui/surfaces';
 import { localizedFetch } from '@/i18n/localized-fetch';
 import { useUiTranslation } from '@/i18n/locale-context';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -709,10 +709,18 @@ export function SiteManagement({
     }));
   return (
     <fieldset disabled={bulkBusy} className="grid min-w-0 gap-4" dir="rtl">
-      <PageHeader title={t('انتشار در سایت')} />
+      <header className={styles.publicationHeading} data-site={site}>
+        <div>
+          <p>
+            {t('انتشار در سایت')}
+            {selectedSite && <> · {t(selectedSite.name)}</>}
+          </p>
+          <h1>{t(publicationViews.find((view) => view.id === tab)!.label)}</h1>
+        </div>
+      </header>
       <nav
         aria-label={t('بخش‌های انتشار در سایت')}
-        className="flex flex-wrap gap-2"
+        className={styles.publicationNav}
       >
         {publicationViews
           .filter(({ id }) => canPublishWebsiteView(actor.permissions, id))
@@ -737,7 +745,7 @@ export function SiteManagement({
         />
       ) : (
         <>
-          <div className="flex flex-wrap gap-3">
+          <div className={styles.searchBar}>
             <NativeSearchSelect
               aria-label="شعبه مجاز"
               value={branchId}
@@ -865,7 +873,7 @@ export function SiteManagement({
                   </option>
                 ))}
               </NativeSearchSelect>
-              <div className="grid gap-3 sm:grid-cols-4">
+              <div className={styles.tourFilters}>
                 <label>
                   شهر مقصد
                   <NativeSearchSelect
@@ -934,10 +942,14 @@ export function SiteManagement({
                 ? visibleTours.map((group) => (
                     <details
                       key={branchId + ':' + group.id}
-                      className="rounded-2xl border border-border bg-surface p-4"
+                      className={styles.record}
                     >
-                      <summary className="cursor-pointer font-bold">
-                        {group.name} · {group.periods.length}
+                      <summary>
+                        <span>{group.name}</span>{' '}
+                        <small>
+                          {group.periods.length.toLocaleString('fa-IR')}{' '}
+                          {t('دوره')}
+                        </small>
                       </summary>
                       <div className="mt-4 grid gap-3">
                         {!group.periods.length ? (
@@ -963,7 +975,7 @@ export function SiteManagement({
                                   ].join(' · ')
                                 : period.startsOn + ' — ' + period.endsOn}
                             </p>
-                            <div className="grid grid-cols-2 items-start gap-2 sm:grid-cols-4">
+                            <div className={styles.siteActions}>
                               {destinations.map((site) => (
                                 <WebsiteDestination
                                   key={`${revision}:${site.code}`}
