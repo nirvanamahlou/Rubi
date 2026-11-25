@@ -10783,3 +10783,5 @@ HR-ORIGINAL-ACCESS-1125 (PC-B): Add the verified active Original account (demo) 
 
 PC-D · PUBLICATION-DESIGN-1125 · Site selection, publication navigation, search and record layouts updated for the six Integrations categories.
 Nora now prioritizes documented workflow actions for the reproduced cross-panel routing failures, with bounded access checks and no panel-name prompt on the updated fallback paths. Receipt, archive and manifest guidance were expanded.
+
+2026-11-25 · Site Commerce now links Jahan Bastan and Ghestiroo sales orders to their native reservation inbox before settlement. Formal Sales confirmation keeps the same intake ID.
