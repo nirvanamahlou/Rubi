@@ -13662,3 +13662,7 @@ The same acceptance follow-up reserves the Sales-owned reporting projection and 
 Reserve the isolated acceptance value checker, its focused regression tests, and sanitized production acceptance receipts on `codex/pc-c-nora-admin-acceptance-1125`. Reference deployment is develop `e8e21ecee`. This verification unit does not require a database migration.
 
 The production preflight exposed an incorrect full-API destination for two read-only Sales metrics. Reserve their web-to-owner routing, affected deployment probes, the guide source references identified by this acceptance pass and their coverage assertions for this unit. Coordinate deployment against the pinned develop revision and preserve the live changes of other ERP modules.
+
+## NORA-PRODUCTION-GUIDES-1126 — PC-C
+
+Reserve production acceptance for the 220 administrator questions and their panel comparisons after merging #1958, with targeted repairs for verified discrepancies, on `codex/pc-c-nora-production-guides-1126`. Test through the original administrator session in All Companies. No database or dependency change is planned.
