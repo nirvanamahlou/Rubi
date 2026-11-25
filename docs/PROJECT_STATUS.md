@@ -1,3 +1,6 @@
+## NSS-CONTRACT-PAYMENT-1125
+
+Verified Saman receipts from the Niyayesh site are displayed in Sales → Contracts → «پرداخت‌های آنلاین سایت نیایش». Each item has its own ERP receipt number alongside the customer-entered contract number, name, amount and bank tracking number. Intake is limited to the bound NSS service and its configured settlement destination. Only branch-authorized payment readers can list receipts. The customer reference is stored as entered after digit normalization.
 ## Charter package Excel prices
 
 For a dated charter departure without hotel purchase rates, Package Pricing can preview and publish the existing floating workbook format. It resolves active hotel rooms and projects per-traveler prices into the native dated package sale catalog, where Sales validates the current tour tickets and allocates seats through the existing Ticket Catalog. Imports are immutable, versioned, and scoped to the departure. The additive database migration creates a dedicated price-publication table.

@@ -83,13 +83,11 @@ export class VerifiedGatewayReceiptPublic {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
-  async resolve(
+  private binding(
     site: string,
-    externalId: string,
-    proof: VerifiedGatewayProof,
     actor: AuthenticatedActor,
     raw = process.env.SITE_GATEWAY_SETTLEMENTS ?? '{}',
-  ): Promise<GatewaySettlement> {
+  ) {
     let binding: Binding | undefined;
     try {
       const values: unknown = JSON.parse(raw);
@@ -112,6 +110,43 @@ export class VerifiedGatewayReceiptPublic {
       !binding.accountId
     )
       throw new ForbiddenException('اتصال تسویه درگاه تنظیم نشده است.');
+    return binding;
+  }
+
+  private async assertDestination(
+    binding: Pick<Binding, 'accountId' | 'branchId'>,
+  ) {
+    const account =
+      await this.database.client.financeSettlementAccount.findFirst({
+        where: {
+          id: binding.accountId,
+          branchId: binding.branchId,
+          currencyCode: 'IRR',
+          isActive: true,
+          deletedAt: null,
+          isExternal: false,
+          kind: 'BANK',
+        },
+        select: { id: true },
+      });
+    if (!account)
+      throw new ConflictException('حساب متصل به درگاه فعال یا معتبر نیست.');
+  }
+
+  async destination(site: string, actor: AuthenticatedActor) {
+    const binding = this.binding(site, actor);
+    await this.assertDestination(binding);
+    return { branchId: binding.branchId, terminalId: binding.terminalId };
+  }
+
+  async resolve(
+    site: string,
+    externalId: string,
+    proof: VerifiedGatewayProof,
+    actor: AuthenticatedActor,
+    raw = process.env.SITE_GATEWAY_SETTLEMENTS ?? '{}',
+  ): Promise<GatewaySettlement> {
+    const binding = this.binding(site, actor, raw);
     if (
       !proof ||
       proof.version !== 1 ||
@@ -139,21 +174,7 @@ export class VerifiedGatewayReceiptPublic {
       .digest();
     if (!timingSafeEqual(expected, Buffer.from(proof.signature, 'hex')))
       throw new ForbiddenException('امضای تأیید بانکی معتبر نیست.');
-    const account =
-      await this.database.client.financeSettlementAccount.findFirst({
-        where: {
-          id: binding.accountId,
-          branchId: binding.branchId,
-          currencyCode: 'IRR',
-          isActive: true,
-          deletedAt: null,
-          isExternal: false,
-          kind: 'BANK',
-        },
-        select: { id: true },
-      });
-    if (!account)
-      throw new ConflictException('حساب متصل به درگاه فعال یا معتبر نیست.');
+    await this.assertDestination(binding);
     return {
       version: 1,
       provider: 'SAMAN',
@@ -163,7 +184,7 @@ export class VerifiedGatewayReceiptPublic {
       amount: proof.amount,
       currencyCode: 'IRR',
       verifiedAt: proof.verifiedAt,
-      accountId: account.id,
+      accountId: binding.accountId,
       branchId: binding.branchId,
     };
   }
@@ -193,21 +214,7 @@ export class VerifiedGatewayReceiptPublic {
       );
     // Re-read account state immediately before the native transaction. Native confirmation
     // locks and validates the receipt, rejects void/correction and prevents duplicate posting.
-    const account =
-      await this.database.client.financeSettlementAccount.findFirst({
-        where: {
-          id: settlement.accountId,
-          branchId: settlement.branchId,
-          currencyCode: 'IRR',
-          isActive: true,
-          deletedAt: null,
-          isExternal: false,
-          kind: 'BANK',
-        },
-        select: { id: true },
-      });
-    if (!account)
-      throw new ConflictException('حساب متصل به درگاه فعال یا معتبر نیست.');
+    await this.assertDestination(settlement);
     const result = await apply({
       version: 1,
       eventId: randomUUID(),
