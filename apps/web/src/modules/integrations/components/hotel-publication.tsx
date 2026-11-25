@@ -261,8 +261,6 @@ export function ProfilePublicationManager({
   const [status, setStatus] = useState('');
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setStatus('');
     const timer = setTimeout(async () => {
       try {
         const result = await masterDataApi.list(resource, {
@@ -289,6 +287,11 @@ export function ProfilePublicationManager({
       clearTimeout(timer);
     };
   }, [resource, search, page]);
+  function changePage(next: number) {
+    setLoading(true);
+    setStatus('');
+    setPage(next);
+  }
   return (
     <section className="grid gap-3">
       {selected && (
@@ -308,6 +311,8 @@ export function ProfilePublicationManager({
           className="rounded-lg border border-border bg-surface p-2"
           value={search}
           onChange={(event) => {
+            setLoading(true);
+            setStatus('');
             setPage(1);
             setSearch(event.target.value);
           }}
@@ -345,9 +350,12 @@ export function ProfilePublicationManager({
             </div>
           </details>
         ))}
-      {!loading && !status && total > 20 && (
+      {!status && total > 20 && (
         <div className={styles.pagination}>
-          <button disabled={page === 1} onClick={() => setPage(page - 1)}>
+          <button
+            disabled={loading || page === 1}
+            onClick={() => changePage(page - 1)}
+          >
             قبلی
           </button>
           <span>
@@ -355,8 +363,8 @@ export function ProfilePublicationManager({
             {Math.ceil(total / 20).toLocaleString('fa-IR')}
           </span>
           <button
-            disabled={page * 20 >= total}
-            onClick={() => setPage(page + 1)}
+            disabled={loading || page * 20 >= total}
+            onClick={() => changePage(page + 1)}
           >
             بعدی
           </button>
