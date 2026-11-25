@@ -2248,6 +2248,14 @@ function AssistantComposerContent({
           return;
         }
         const requestedSources = assistantSourceRequest(message);
+        if (
+          result.status === 'ANSWER' &&
+          /امروز/.test(message) &&
+          /دیروز/.test(message)
+        ) {
+          requestedSources.date = true;
+          requestedSources.time = true;
+        }
         const sourceText = formatAssistantSources(
           result.sources,
           english,

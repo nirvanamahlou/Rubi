@@ -10799,3 +10799,7 @@ Site management supports withdrawing a publication from the selected destination
 ## NORA-DOCUMENT-RETRIEVAL — PC-C
 
 Nora combines authorized catalog sections for independently recognizable procedures and restores reservation handoff and report filter coverage. Sales data comparisons on the HR page continue to the conversation API. No dependency or migration changes.
+
+## NORA-GUIDE-ACCEPTANCE — PC-C
+
+Align sales, finance, reservations and HR guidance with the UI and add documented organizational-report and answer-source workflows.

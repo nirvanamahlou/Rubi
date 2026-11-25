@@ -18,7 +18,12 @@ export function validateGuideLinks(domain, id, related, section) {
 
 function sidebarGroup(href) {
   const path = href.split(/[?#]/)[0];
-  const canonical = path === '/hr' ? '/human-resources' : path;
+  const canonical =
+    path === '/hr'
+      ? '/human-resources'
+      : path === '/assistant'
+        ? '/workbench'
+        : path;
   return navigationGroups.find((group) =>
     group.hrefs.some(
       (route) => canonical === route || canonical.startsWith(route + '/'),

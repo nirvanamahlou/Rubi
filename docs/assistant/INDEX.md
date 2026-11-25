@@ -4,6 +4,11 @@
 
 ## فضای کار
 
+### [راهنمای منابع پاسخ نورا](guides/nora-sources.md)
+
+- [مشاهده منبع و بازه پاسخ نورا](guides/nora-sources.md#evidence)
+- [عیب یابی گزارش در نورا](guides/nora-sources.md#troubleshoot)
+
 ### [راهنمای میزکار من](guides/workbench.md)
 
 - [خانه](guides/workbench.md#home)
@@ -381,6 +386,13 @@
 - [بارگذاری‌های من](guides/documents.md#uploads)
 - [اخیراً دیده‌شده](guides/documents.md#recent)
 - [علاقه‌مندی‌ها](guides/documents.md#favorites)
+
+### [راهنمای گزارش‌های سازمانی](guides/reporting.md)
+
+- [مقایسه فروش شعب](guides/reporting.md#branch-sales)
+- [مقایسه گزارش فروش و رزرواسیون](guides/reporting.md#branch-reservations)
+- [مانده مطالبات طرف حساب](guides/reporting.md#receivables)
+- [گزارش آمادگی تحویل مدارک](guides/reporting.md#delivery)
 
 ## مکاتبات
 
