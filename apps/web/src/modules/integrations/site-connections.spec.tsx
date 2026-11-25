@@ -44,6 +44,29 @@ const registry = {
 } as IntegrationRegistryV1;
 
 describe('Selected-site Connections presentation', () => {
+  it('uses the requested storefront instead of the default when opened from Site Management', () => {
+    const html = renderToStaticMarkup(
+      <SiteConnectionsWorkspace
+        registry={registry}
+        userId="user"
+        preferredSite="nss"
+      />,
+    );
+    expect(html).toContain('aria-label="مدیریت خدمات niyayesh"');
+    expect(html).not.toContain('aria-label="مدیریت خدمات ghestiroo"');
+  });
+
+  it('does not show a different connector when the requested storefront is missing', () => {
+    const html = renderToStaticMarkup(
+      <SiteConnectionsWorkspace
+        registry={registry}
+        userId="user"
+        preferredSite="jahan-bastan"
+      />,
+    );
+    expect(html).toContain('این سایت در شعبه انتخاب‌شده ثبت نشده است');
+    expect(html).not.toContain('aria-label="مدیریت خدمات ghestiroo"');
+  });
   it('offers all four sites in one top selector and only one active panel', () => {
     const html = renderToStaticMarkup(
       <SiteConnectionsWorkspace registry={registry} userId="user" />,

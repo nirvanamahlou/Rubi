@@ -18,6 +18,7 @@ export function TicketBulkPublication({
   loading,
   onBusy,
   onComplete,
+  destinations = websiteDestinations,
 }: {
   branchId: string;
   filters: TicketPublicationFilters;
@@ -25,6 +26,7 @@ export function TicketBulkPublication({
   loading: boolean;
   onBusy: (busy: boolean) => void;
   onComplete: () => void;
+  destinations?: readonly (typeof websiteDestinations)[number][];
 }) {
   const [sites, setSites] = useState<string[]>([]);
   const [plan, setPlan] = useState<{
@@ -88,7 +90,7 @@ export function TicketBulkPublication({
     }
   }
   const names = Object.fromEntries(
-    websiteDestinations.map((site) => [site.code, site.name]),
+    destinations.map((site) => [site.code, site.name]),
   );
   const titles = Object.fromEntries(
     tickets.map((ticket) => [ticket.id, ticket.title]),
@@ -110,7 +112,7 @@ export function TicketBulkPublication({
         سایت‌ها را انتخاب کنید.
       </p>
       <div className="flex flex-wrap gap-3">
-        {websiteDestinations.map((site) => (
+        {destinations.map((site) => (
           <label
             key={site.code}
             className="flex cursor-pointer items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm"

@@ -14,60 +14,65 @@ vi.mock('react', async (original) => ({
     return [h.states[i], vi.fn()];
   },
 }));
-it('renders collapsible tours with city/date filters and separate site controls beside each period', () => {
-  h.states = [
-    'tours',
-    [{ id: 'b', name: 'Branch' }],
-    'b',
-    [],
-    '',
-    [],
-    [
-      {
-        id: 'float',
-        name: 'Floating Antalya',
-        branchId: 'b',
-        destinationId: 'city',
-        destinationIds: ['city'],
-        canPublish: true,
-        periods: ['2026-08-01', '2026-08-08'].map((date) => ({
-          key: `dated:${date}:7`,
-          startsOn: date,
-          endsOn: '2026-08-15',
-          nights: 7,
-          monthly: null,
-        })),
-      },
-    ],
-    [],
-    '',
-    false,
-    0,
-    '',
-    { city: 'Antalya' },
-    '',
-    '',
-    '',
-    '',
-    '',
-  ];
-  h.index = 0;
-  const html = renderToStaticMarkup(
-    <SiteManagement
-      actor={
+it.each([undefined, 'nss'] as const)(
+  'renders dated period controls for site scope %s',
+  (site) => {
+    h.states = [
+      'tours',
+      [{ id: 'b', name: 'Branch' }],
+      'b',
+      [],
+      '',
+      [],
+      [
         {
-          branchIds: ['b'],
-          permissions: ['ticket_catalog.manage'],
-        } as AuthenticatedActor
-      }
-    />,
-  );
-  expect(html).toContain('<summary');
-  expect(html).toContain('Floating Antalya');
-  expect(html).toContain('2026-08-01 — 2026-08-15');
-  expect(html).toContain('2026-08-08 — 2026-08-15');
-  expect(html).toContain('aria-label="شهر مقصد تور"');
-  expect(html).toContain('aria-label="تور از تاریخ"');
-  expect(html).toContain('aria-label="تور تا تاریخ"');
-  expect(html.match(/type="checkbox"/g)).toHaveLength(8);
-});
+          id: 'float',
+          name: 'Floating Antalya',
+          branchId: 'b',
+          destinationId: 'city',
+          destinationIds: ['city'],
+          canPublish: true,
+          periods: ['2026-08-01', '2026-08-08'].map((date) => ({
+            key: `dated:${date}:7`,
+            startsOn: date,
+            endsOn: '2026-08-15',
+            nights: 7,
+            monthly: null,
+          })),
+        },
+      ],
+      [],
+      '',
+      false,
+      0,
+      '',
+      { city: 'Antalya' },
+      '',
+      '',
+      '',
+      '',
+      '',
+    ];
+    h.index = 0;
+    const html = renderToStaticMarkup(
+      <SiteManagement
+        site={site}
+        actor={
+          {
+            branchIds: ['b'],
+            permissions: ['ticket_catalog.manage'],
+          } as AuthenticatedActor
+        }
+      />,
+    );
+    expect(html).toContain('<summary');
+    expect(html).toContain('Floating Antalya');
+    expect(html).toContain('2026-08-01 — 2026-08-15');
+    expect(html).toContain('2026-08-08 — 2026-08-15');
+    expect(html).toContain('aria-label="شهر مقصد تور"');
+    expect(html).toContain('aria-label="تور از تاریخ"');
+    expect(html).toContain('aria-label="تور تا تاریخ"');
+    expect(html.match(/type="checkbox"/g)).toHaveLength(site ? 2 : 8);
+    if (site) expect(html).not.toContain('جهان باستان');
+  },
+);

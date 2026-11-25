@@ -36,6 +36,10 @@ Stacked on #1907. Reserve the five Stage 3 guide documents, their generated cata
 
 Reserve Nora petty cash guide, generation, read-only Composer dispatch and focused tests. Reuse native Procurement access and workflows.
 
+## WEBSITE-MANAGEMENT-OVERVIEW-1125 — PC-D — READY_FOR_CI
+
+Owner authorizes redesigning the Integrations Site Management workspace and merging to develop. Reserve its Web overview, scoped publication navigation, existing monitoring handoff, focused tests and additive Integrations translations. Reuse publication endpoints and module permissions. No API, permission, dependency, schema or live deployment changes.
+
 ## WEBSITE-DATED-TOUR-CONTRACTS-1124 — PC-D — ACTIVE
 
 Own the additive site-commerce dated-tour draft route, authoritative rate and hotel-itinerary validation, and coordinated Jahan Bastan and Ghestiroo checkout callers. Preserve payment verification, floating-tour policy, and other publishing changes. No migration or dependency changes.
