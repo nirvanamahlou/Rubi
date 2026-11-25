@@ -1,3 +1,6 @@
+## NSS-CONTRACT-PAYMENT-1125
+
+Verified Saman receipts from the Niyayesh site are displayed in Sales → Contracts → «پرداخت‌های آنلاین سایت نیایش». Each item has its own ERP receipt number alongside the customer-entered contract number, name, amount and bank tracking number. Intake is limited to the bound NSS service and its configured settlement destination. Only branch-authorized payment readers can list receipts. The customer reference is stored as entered after digit normalization.
 ## Charter package Excel prices
 
 Ticket management shows each site's price and currency in selected flight details. Commission percentages are omitted from this card. Both focused suites passed (8 tests).

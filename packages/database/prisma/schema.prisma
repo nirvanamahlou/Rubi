@@ -367,6 +367,7 @@ model Branch {
   websiteCatalogDeliveries      WebsiteCatalogDelivery[]
   websitePublications           WebsitePublication[]
   websiteOrders                 WebsiteOrder[]
+  websiteContractPayments       WebsiteContractPayment[]
   standaloneInsuranceApplicants ReservationInsuranceApplicant[]
   pettyCashFunds                ProcurementPettyFund[]
 
@@ -9257,4 +9258,24 @@ model WebsiteCheckoutSession {
   @@unique([siteCode, branchId, externalId])
   @@index([branchId, customerExternalId, status])
   @@map("website_checkout_sessions")
+}
+
+model WebsiteContractPayment {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId       String   @db.Uuid
+  branch         Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  receiptNumber  BigInt   @unique @default(autoincrement())
+  attempt        String   @unique @db.Char(40)
+  customerName   String   @db.VarChar(150)
+  contractNumber String   @db.VarChar(40)
+  amountRial     Decimal  @db.Decimal(18, 0)
+  terminalId     String   @db.VarChar(24)
+  bankReference  String   @db.VarChar(100)
+  trackingNumber String   @db.VarChar(100)
+  verifiedAt     DateTime @db.Timestamptz(3)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([terminalId, bankReference], map: "website_contract_payment_bank_key")
+  @@index([branchId, verifiedAt], map: "website_contract_payment_branch_verified_idx")
+  @@map("website_contract_payments")
 }

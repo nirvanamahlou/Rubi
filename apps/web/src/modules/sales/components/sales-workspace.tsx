@@ -1,4 +1,5 @@
 'use client';
+import { WebsiteContractPayments } from './website-contract-payments';
 import { FloatingContractPurchaseDialog } from './floating-contract-purchase-dialog';
 import { canSelfServeSalesContract } from '@nora/contracts';
 import { useAccessActor } from '@/modules/iam/access-context';
@@ -471,6 +472,11 @@ export function SalesWorkspace({
           </p>
         ) : null}
       </section>
+      {actor?.permissions.includes('sales.payments.read') &&
+        (actor.permissions.includes('sales.contracts.read.all') ||
+          actor.permissions.includes('sales.contracts.read.branch')) && (
+          <WebsiteContractPayments />
+        )}
       {!loading && !error && contracts.length === 0 ? (
         <EmptyState
           title={

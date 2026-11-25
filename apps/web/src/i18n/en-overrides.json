@@ -1,4 +1,10 @@
 {
+  "پرداخت‌های آنلاین سایت نیایش": "Niyayesh website payments",
+  "پرداختی پیدا نشد.": "No payments found.",
+  "دریافت پرداخت‌های سایت ناموفق بود. دوباره تلاش کنید.": "Website payments could not be loaded. Try again.",
+  "زمان پرداخت": "Payment date",
+  "شماره پیگیری بانک": "Bank tracking number",
+  "شماره قرارداد مشتری": "Customer contract number",
   "ورود با اکسل": "Import from Excel",
   "اطلاعات تغییر کرده است؛ پیش‌نمایش را دوباره دریافت کنید.": "The data has changed. Generate a new preview.",
   "انتخاب هتل‌های اکسل معتبر نیست.": "The workbook hotel selections are invalid.",

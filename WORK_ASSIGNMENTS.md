@@ -1,3 +1,7 @@
+## NSS-CONTRACT-PAYMENT-1125 — PC-A — REVIEW
+
+Reserve Sales website-payment intake, contracts workspace receipt list, the Sales module registration and one additive Prisma migration. Base origin/develop 458e43d31. NSS submits only SEP-verified receipts through its bound integration identity. The operator list is branch-scoped. The supplied number is a reference for a standalone receipt.
+
 ## CHARTER-EXCEL-PRICING-1125 — PC-A — READY_FOR_CI
 
 PC-D · Ticket management · Hide site commissions in the outbound and return load details. Frontend display only.

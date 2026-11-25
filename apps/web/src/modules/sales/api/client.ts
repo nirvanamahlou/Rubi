@@ -117,7 +117,24 @@ function queryString(query: SalesContractListQuery): string {
   return parameters.toString();
 }
 
+export type WebsiteContractPayment = {
+  id: string;
+  receiptNumber: string;
+  contractNumber: string;
+  customerName: string;
+  trackingNumber: string;
+  amountRial: string;
+  verifiedAt: string;
+  seller: string;
+};
+
 export const salesApi = {
+  websiteContractPayments(contractNumber: string) {
+    const query = new URLSearchParams({ contractNumber });
+    return request<{ data: WebsiteContractPayment[] }>(
+      `/website-contract-payments?${query}`,
+    );
+  },
   purchaseContext: (id: string) =>
     waitForPurchaseContext(() =>
       request<{ data: ReservationIntakeV1 }>(
