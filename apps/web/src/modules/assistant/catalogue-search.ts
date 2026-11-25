@@ -45,6 +45,10 @@ const workflowIntents: readonly [RegExp, WorkflowTopics][] = [
     ['workbench/request-create'],
   ],
   [/مرخصی استعلاجی/, ['workbench/leave-medical']],
+  [
+    /کاردکس مرخصی|(?=.*مانده مرخصی)(?=.*(?:گزارش|کاردکس))(?!.*(?:ت[أا]یید مدیر|چرا))/,
+    ['human-resources/leave-balance'],
+  ],
   [/جانشین.*مرخصی|مرخصی.*جانشین/, ['workbench/substitute']],
   [
     /(?=.*مرخصی)(?=.*(?:مدارک درخواست|پیوست درخواست|(?:تایید|تأیید) من))(?=.*(?:چک|بررسی|کجا))/,

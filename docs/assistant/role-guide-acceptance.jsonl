@@ -165,7 +165,7 @@
 {"id":"role-165","role":"مدیر منابع انسانی","question":"شیفت رد شده از نصفه شب رو از کجا بررسی کنم؟","expectedGuides":["human-resources/time"]}
 {"id":"role-166","role":"مدیر منابع انسانی","question":"تایید مدیر شده چرا مانده مرخسی عوض نشده؟","expectedGuides":["human-resources/requests"]}
 {"id":"role-167","role":"مدیر منابع انسانی","question":"خروجی اکسل کارکنان از کجاس؟","expectedGuides":["human-resources/employees"]}
-{"id":"role-168","role":"مدیر منابع انسانی","question":"کاردکس مرخصی رو چجوری بخونم؟","expectedGuides":["human-resources/requests"]}
+{"id":"role-168","role":"مدیر منابع انسانی","question":"کاردکس مرخصی رو چجوری بخونم؟","expectedGuides":["human-resources/leave-balance"]}
 {"id":"role-169","role":"مدیر منابع انسانی","question":"برای اصلاح تردد کدوم کارتابلو باز کنم؟","expectedGuides":["workbench/attendance-correction"]}
 {"id":"role-170","role":"مدیر منابع انسانی","question":"جانشین مرخصی رو کجا چک کنم؟","expectedGuides":["workbench/substitute"]}
 {"id":"role-171","role":"مدیر منابع انسانی","question":"تو منابع انسانی پرونده کارمند کجاس؟","expectedGuides":["human-resources/employees"]}
@@ -174,7 +174,7 @@
 {"id":"role-174","role":"مدیر منابع انسانی","question":"گزارش و آدیت منابع انسانی کجاس؟","expectedGuides":["human-resources/reports"]}
 {"id":"role-175","role":"مدیر منابع انسانی","question":"مدارک درخواست مرخصی رو کجا چک کنم؟","expectedGuides":["human-resources/requests"]}
 {"id":"role-176","role":"مدیر منابع انسانی","question":"مرخصی نیازمند اصلاح رو کجا ببینم؟","expectedGuides":["workbench/request-status"]}
-{"id":"role-177","role":"مدیر منابع انسانی","question":"مانده مرخصی چه جوری تو گزارش پیدا میشه؟","expectedGuides":["human-resources/requests"]}
+{"id":"role-177","role":"مدیر منابع انسانی","question":"مانده مرخصی چه جوری تو گزارش پیدا میشه؟","expectedGuides":["human-resources/leave-balance"]}
 {"id":"role-178","role":"مدیر منابع انسانی","question":"تجهیزات تحویلی کارمند رو کجا ببینم؟","expectedGuides":["human-resources/assets"]}
 {"id":"role-179","role":"مدیر منابع انسانی","question":"کد پرسنلی رو تو لیست از کجا سرچ کنم؟","expectedGuides":["human-resources/employees"]}
 {"id":"role-180","role":"مدیر منابع انسانی","question":"نظرسنجی تو منابع انسانی کجای منوئه؟","expectedGuides":["human-resources/surveys"]}

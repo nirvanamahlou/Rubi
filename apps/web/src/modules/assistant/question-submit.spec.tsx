@@ -931,6 +931,8 @@ describe('synthetic full-access Composer replay', () => {
           .find((line) => line.startsWith('1. '));
         expect(firstStep).toContain('«استردادشده»');
         expect(firstStep).toContain('«باطل‌شده»');
+        expect(firstStep).toContain('بنویسید «باطل»');
+        expect(firstStep).toContain('به معنی صفر استرداد نیست');
       }
       if (caseId === 'role-143') {
         expect(answer).not.toContain('مرخصی');
