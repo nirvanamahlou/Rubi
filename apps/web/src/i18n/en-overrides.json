@@ -1,4 +1,7 @@
 {
+  "تعداد قراردادهای خودتان با احتساب همهٔ وضعیت‌ها": "Your contracts across all statuses",
+  "تعداد قراردادهای خودتان در فهرست غیرابطال‌شدهٔ فروش": "Your contracts in the non-cancelled Sales list",
+  "شمارش قراردادهای خودتان برای همهٔ وضعیت‌ها در محدودهٔ فعلی در دسترس است. تعداد بدون فیلتر اضافه را می‌خواهید؟": "Your contract count is available across all statuses within your current scope. Would you like the count without the additional filter?",
   "اقامت‌های بدون واچر در قراردادهای تسویه‌شده": "Hotel stays awaiting vouchers on settled contracts",
   "اقامت‌های فاقد سابقهٔ قابل‌تشخیص صدور واچر": "Stays with insufficient voucher issuance evidence",
   "تعداد اقامت‌های بدون واچر": "Stays awaiting vouchers",

@@ -25,6 +25,10 @@ import { normalizeQuestion } from './question-text';
 import { describeReportSources } from './report-source-discovery';
 import { runNativeReport } from './planned-native-report';
 import { runOperationalPanel } from './planned-operational';
+import {
+  analyticalSalesSources,
+  ownContractCountIntent,
+} from './planned-sales-intent';
 
 const inputSchema = z
   .object({
@@ -390,6 +394,49 @@ export async function runPlannedConversation(
                 'دسترسی به گزارش فروش برای این حساب تأیید نشد.',
               ),
             ];
+          const ownCount =
+            step.kind === 'sales' && ownContractCountIntent(question);
+          if (ownCount === 'qualified')
+            return [
+              issue(
+                step,
+                'clarify',
+                'شمارش قراردادهای خودتان برای همهٔ وضعیت‌ها در محدودهٔ فعلی در دسترس است. تعداد بدون فیلتر اضافه را می‌خواهید؟',
+              ),
+            ];
+          if (ownCount === 'all-time') {
+            const receipt = z
+              .object({
+                version: z.literal(1),
+                ownership: z.literal('mine'),
+                observedAt: z.string().datetime(),
+                total: z.number().int().nonnegative(),
+                panelNonCancelled: z.number().int().nonnegative(),
+              })
+              .refine((r) => r.panelNonCancelled <= r.total)
+              .parse(await read('/sales/assistant-agent/my-contract-count'));
+            const countLabel =
+              'تعداد قراردادهای خودتان با احتساب همهٔ وضعیت‌ها';
+            const panelLabel =
+              'تعداد قراردادهای خودتان در فهرست غیرابطال‌شدهٔ فروش';
+            return [
+              {
+                question,
+                status: receipt.total ? 'answer' : 'empty',
+                text:
+                  countLabel +
+                  '‌: ' +
+                  receipt.total.toLocaleString('fa-IR') +
+                  '\n' +
+                  panelLabel +
+                  '‌: ' +
+                  receipt.panelNonCancelled.toLocaleString('fa-IR'),
+                links: [],
+                source: 'sales/assistant-agent/my-contract-count',
+                observedAt: receipt.observedAt,
+              },
+            ];
+          }
           const usePrior = input.salesPeriodAsOf && step.reuseSalesCutoff;
           const result = await proxyPlannedSales(assistantRequest, {
             message: question,
@@ -399,9 +446,17 @@ export async function runPlannedConversation(
           });
           if (!result.ok) throw new ReadError(result.status);
           const answer = agentResponseSchema.parse(await result.json());
+          const cited = new Set(
+            answer.sources.flatMap((entry) => entry.sources),
+          );
           if (
             answer.status === 'REPLY' ||
-            (answer.status === 'ANSWER' && !answer.sources.length)
+            (answer.status === 'ANSWER' &&
+              (!answer.sources.length ||
+                (step.kind === 'sales' &&
+                  analyticalSalesSources(question).some(
+                    (source) => !cited.has(source),
+                  ))))
           )
             return [
               issue(
@@ -454,7 +509,8 @@ export async function runPlannedConversation(
               status:
                 answer.status === 'CLARIFY'
                   ? 'clarify'
-                  : answer.limitations.length
+                  : answer.limitations.length ||
+                      answer.sources.some((s) => s.truncated)
                     ? 'partial'
                     : 'answer',
               text: [answer.text, ...answer.limitations].join('\n'),

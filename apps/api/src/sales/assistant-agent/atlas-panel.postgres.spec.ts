@@ -172,6 +172,20 @@ it.skipIf(process.env.NORA_RUN_AGENT_POSTGRES_TESTS !== '1')(
         payments: false,
       };
       const count = await readContractCountBreakdown(db, scope);
+      const administrator = { ...scope, mode: 'all' as const, branchIds: [] };
+      const all = await readContractCountBreakdown(db, administrator);
+      const personal = await readContractCountBreakdown(
+        db,
+        administrator,
+        'mine',
+      );
+      expect(all.rows[0]?.total).toBe(4);
+      expect(personal.rows[0]).toMatchObject({
+        total: 3,
+        panel_non_cancelled: 2,
+        sales_cancelled: 1,
+      });
+      expect(personal.rows).toEqual(count.rows);
       expect(data.activeContracts).toBe(1);
       expect(count.rows[0]?.active_panel).toBe(data.activeContracts);
       await fixture.query('BEGIN READ ONLY');

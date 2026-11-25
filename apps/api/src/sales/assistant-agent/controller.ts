@@ -243,6 +243,32 @@ export class SalesAgentController {
     return { ...result, contextId: context.contextId };
   }
 
+  @Get('my-contract-count')
+  @Header('Cache-Control', 'private, no-store')
+  async myContractCount(@Req() request: AuthenticatedRequest) {
+    const context = await this.context(request, false);
+    let result;
+    try {
+      result = await readContractCountBreakdown(
+        this.database.client,
+        context.scope,
+        'mine',
+      );
+    } catch {
+      throw new ServiceUnavailableException('AGENT_SOURCE_UNAVAILABLE');
+    }
+    if ((await this.context(request, false)).contextId !== context.contextId)
+      throw new ForbiddenException('AGENT_CONTEXT_CHANGED');
+    const row = result.rows[0]!;
+    return {
+      version: 1,
+      ownership: 'mine',
+      observedAt: result.observedAt,
+      total: row.total,
+      panelNonCancelled: row.panel_non_cancelled,
+    };
+  }
+
   @Post('count-breakdown')
   @Header('Cache-Control', 'private, no-store')
   async countBreakdown(

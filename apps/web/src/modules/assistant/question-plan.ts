@@ -2,6 +2,11 @@ import { normalizeQuestion } from './question-text';
 import { asksWorkbenchRequestStatus } from './workbench-request-guide';
 import { resolveOperationalMetric } from './operational-metrics';
 import { panelIntent } from './planned-operational-intent';
+import {
+  analyticalSalesSources,
+  joinsSalesMeasures,
+  ownContractCountIntent,
+} from './planned-sales-intent';
 
 export type PlannedRead = {
   kind:
@@ -35,6 +40,8 @@ export function classify(question: string): PlannedRead {
   else if (voucherRequest.test(text)) kind = 'settled-vouchers';
   else if (/^(?:لطفا )?(?:اجرای گزارش |گزارش .+ اجرا کن$)/u.test(text))
     kind = 'report';
+  else if (ownContractCountIntent(text) || analyticalSalesSources(text).length)
+    kind = 'sales';
   else if (fortnight.test(text) && /فروش|قرارداد/.test(text))
     kind = 'rolling-sales';
   else if (resolveOperationalMetric(question)) kind = 'metric';
@@ -88,11 +95,20 @@ export function planQuestion(message: string, previous = ''): PlannedRead[] {
     )
       ? preamble
       : '';
-  const clauses = original
-    .slice(filterPrefix.length)
-    .split(
-      /(?:\s+(?:و|بعدش|بعد)\s+(?=(?:(?:بهم |هم )?(?:بگو |بگین )?)?(?:چطور|چجور|چگونه|راهنما|مراحل|از کجا|کجا باید|درخواستم|تعداد|مجموع|مبلغ|چند|چقدر))|[؟?؛;]\s*(?=\S)|[،,]\s*(?=(?:(?:و |بهم |بگو )*)(?:چطور|چجور|راهنما|از کجا|تعداد|مجموع)))/u,
-    )
+  const body = original.slice(filterPrefix.length);
+  const splits =
+    /(?:\s+(?:و|بعدش|بعد)\s+(?=(?:(?:بهم |هم )?(?:بگو |بگین )?)?(?:چطور|چجور|چگونه|راهنما|مراحل|از کجا|کجا باید|درخواستم|تعداد|مجموع|مبلغ|چند|چقدر))|[؟?؛;]\s*(?=\S)|[،,]\s*(?=(?:(?:و |بهم |بگو )*)(?:چطور|چجور|راهنما|از کجا|تعداد|مجموع)))/gu;
+  let start = 0;
+  const grouped: string[] = [];
+  for (const separator of body.matchAll(splits)) {
+    const before = body.slice(start, separator.index);
+    const after = separator.index + separator[0].length;
+    if (joinsSalesMeasures(before, separator[0], body.slice(after))) continue;
+    grouped.push(before);
+    start = after;
+  }
+  grouped.push(body.slice(start));
+  const clauses = grouped
     .map((part) => part.replace(/^(?:(?:و|هم|بهم|بگو)\s+)+/u, '').trim())
     .filter(Boolean);
   if (filterPrefix && clauses.length) clauses[0] = filterPrefix + clauses[0];
@@ -135,6 +151,13 @@ export function planQuestion(message: string, previous = ''): PlannedRead[] {
     ];
   }
   if (parts.length > 6) return [{ kind: 'unknown', question: message }];
+  if (
+    parts.length === 1 &&
+    parts[0]?.kind === 'sales' &&
+    (ownContractCountIntent(normalized) ||
+      analyticalSalesSources(normalized).length)
+  )
+    return parts;
   if (
     parts.length === 1 &&
     parts[0]?.kind === 'request' &&

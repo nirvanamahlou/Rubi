@@ -74,3 +74,7 @@ runtime replacement or deployment is part of this task. Release requires the
 read-boundary API, Nora service and Web together. Rollback is the prior images
 and service source; there is no data rollback. Live Groq tool selection and
 authenticated browser acceptance of this new endpoint remain separate gates.
+
+## Authenticated personal count
+
+The normal Web composer reads `GET /api/v1/sales/assistant-agent/my-contract-count` for an unfiltered personal count. The Sales owner binds the owner ID to the authenticated actor and intersects the predicate with the selected company, authorized branch scope and visible contracts. The response includes `observedAt`, the all-status total and the count in the Sales panel after effective Sales and Reservations cancellations. The endpoint has no actor, date or scope inputs. Additional requested filters stay explicit in the conversation. The standard ERP Sales permissions and a release-time scope recheck apply, including for users who have organization-wide read access.

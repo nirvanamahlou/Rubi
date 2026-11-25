@@ -112,4 +112,21 @@ describe('native authorized contract count reconciliation', () => {
       'COUNT_SOURCE_LIMIT',
     );
   });
+  it.each(['all', 'branch', 'own'] as const)(
+    'always intersects a personal count with the %s actor and selected tenant',
+    async (mode) => {
+      const h = setup();
+      await readContractCountBreakdown(
+        h.db,
+        { ...scope, mode, branchIds: mode === 'all' ? [] : ['branch-a'] },
+        'mine',
+      );
+      expect(h.tx.salesContract.findMany.mock.calls[0]![0].where).toEqual({
+        hiddenAt: null,
+        legalEntityId: 'company-a',
+        ownerUserId: 'synthetic-user',
+        ...(mode === 'all' ? {} : { branchId: { in: ['branch-a'] } }),
+      });
+    },
+  );
 });
