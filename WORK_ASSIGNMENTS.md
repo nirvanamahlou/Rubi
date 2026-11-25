@@ -13620,3 +13620,7 @@ PC-D · Site-scoped withdrawal for website publications and visa deletion confir
 ## NORA-DOCUMENT-RETRIEVAL — PC-C
 
 Reserve Nora's document retrieval and response composition, the focused question matrix, and project status. Preserve authenticated live data dispatch and the existing provider pilot.
+
+## NORA-GUIDE-ACCEPTANCE — PC-C
+
+Reserve Nora's guide catalogue, document routing, response source display and focused tests for the thirty-question production matrix.

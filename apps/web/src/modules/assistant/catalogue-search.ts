@@ -28,6 +28,30 @@ const searchPanelNames = buildGuidePhraseIndex(panels, (panel) => [panel.name]);
 let search: ReturnType<typeof buildGuidePhraseIndex<Entry>> | undefined;
 
 const workflowIntents: readonly [RegExp, readonly string[]][] = [
+  [
+    /نورا.*(?:نتوانست|دسترسی نداشت|عیب یابی)|عیب یابی.*نورا/,
+    ['nora-sources/troubleshoot'],
+  ],
+  [
+    /(?:نورا|پاسخ).*(?:شواهد|منبع داده|منبع داخلی)|(?:منبع داده|منبع داخلی|شواهد).*نورا/,
+    ['nora-sources/evidence'],
+  ],
+  [/مطالبات.*تحویل مدارک/, ['reporting/receivables', 'reporting/delivery']],
+  [/مانده مطالبات|مطالبات مشتریان/, ['reporting/receivables']],
+  [
+    /(?=.*فروش)(?=.*رزرواسیون)(?=.*(?:شعب|داشبورد)).*/,
+    ['reporting/branch-sales', 'reporting/branch-reservations'],
+  ],
+  [
+    /گزارش عملکرد فروش|عملکرد.*شعب|مقایسه فروش.*شعب/,
+    ['reporting/branch-sales'],
+  ],
+  [/پرونده ویزا|درخواست ویزا/, ['sales/visa']],
+  [/تخفیف.*پیش ?فاکتور|پیش ?فاکتور.*تخفیف/, ['sales/price']],
+  [
+    /وضعیت مجوز تحویل مدارک.*مسدود/,
+    ['finance-delivery/search', 'finance-delivery/status'],
+  ],
   [/مانیفست|مانيفست|\bmanifest\b/i, ['reservations/manifest']],
   [
     /بلی[تط].*(?:استرداد|ابطال)|(?:استرداد|ابطال).*بلی[تط]/,
@@ -63,7 +87,12 @@ const workflowIntents: readonly [RegExp, readonly string[]][] = [
   ],
   [
     /(?:صدور|صادر).*لغو.*مجوز تحویل|مجوز تحویل.*(?:صدور|صادر).*لغو/,
-    ['finance-delivery/issue', 'finance-delivery/revoke'],
+    [
+      'finance-delivery/issue',
+      'finance-delivery/receipt',
+      'finance-delivery/settlement',
+      'finance-delivery/revoke',
+    ],
   ],
   [
     /مرخصی.*(?:تایید|تأیید|منتظر)|(?:تایید|تأیید|منتظر).*مرخصی/,
@@ -82,7 +111,7 @@ const workflowIntents: readonly [RegExp, readonly string[]][] = [
 export function resolveDocumentedWorkflow(message: string) {
   const question = normalizeQuestion(message);
   const instruction =
-    /چطور|چگونه|چجور|کجا|نحوه|مراحل|راهنما|چه چیز|چه (?:مدارک|تأیید|تایید)/.test(
+    /چطور|چگونه|چجور|کجا|نحوه|مراحل|راهنما|چه چیز|چه (?:مدارک|تأیید|تایید)|از کدام (?:پنل|گزارش)|برای عیب یابی/.test(
       question,
     );
   const explicitManifest =

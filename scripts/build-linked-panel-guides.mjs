@@ -4,6 +4,8 @@ import { isDeepStrictEqual } from 'node:util';
 
 const outputs = {
   'human-resources': ['', '/hr', 'registry'],
+  reporting: ['', '/reports', 'registry'],
+  'nora-sources': ['', '/assistant', 'registry'],
   marketing: ['', '/marketing', 'registry'],
   'package-management': ['', '/sales/pricing', 'registry'],
   'floating-packages': ['', '/sales/pricing/floating', 'registry'],
