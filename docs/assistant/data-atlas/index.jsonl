@@ -1548,6 +1548,7 @@
 {"kind":"api-route","id":"apps/api/src/sales/assistant-agent/controller.ts#rollingSales","method":"POST","route":"/sales/assistant-agent/rolling-sales","directCalls":[],"module":"sales","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/sales/assistant-agent/controller.ts#hotelRanking","method":"POST","route":"/sales/assistant-agent/hotel-ranking","directCalls":[],"module":"sales","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/sales/assistant-agent/controller.ts#myContractCount","method":"GET","route":"/sales/assistant-agent/my-contract-count","directCalls":[],"module":"sales","access":"inventory-only"}
+{"kind":"api-route","id":"apps/api/src/sales/assistant-agent/controller.ts#standardSalesSummary","method":"GET","route":"/sales/assistant-agent/standard-sales-summary","directCalls":[],"module":"sales","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/sales/assistant-agent/controller.ts#countBreakdown","method":"POST","route":"/sales/assistant-agent/count-breakdown","directCalls":[],"module":"sales","access":"inventory-only"}
 {"kind":"producer-file","id":"apps/api/src/sales/contract-company-scope.public.ts","module":"sales","tableNameReferences":["legal_entities","sales_contract_audit_events","sales_contracts"],"access":"internal-only"}
 {"kind":"api-route","id":"apps/api/src/sales/corrections/contract-notice.controller.ts#read","method":"GET","route":"/sales/contracts/:id/notice","directCalls":["service.read"],"module":"sales","access":"inventory-only"}

@@ -17,6 +17,12 @@ const rows = [
     401,
   ],
   [
+    'full-api-standard-sales',
+    'GET',
+    erp + '/sales/assistant-agent/standard-sales-summary',
+    401,
+  ],
+  [
     'full-api-settled-vouchers',
     'GET',
     erp + '/reports/nora/settled-vouchers?page=1&pageSize=1',

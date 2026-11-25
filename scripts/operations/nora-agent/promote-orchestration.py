@@ -134,6 +134,10 @@ def health(unit, candidate):
                 "http://127.0.0.1:4000/api/v1/sales/assistant-agent/my-contract-count",
                 401,
             )
+            probe(
+                "http://127.0.0.1:4000/api/v1/sales/assistant-agent/standard-sales-summary",
+                401,
+            )
     elif unit == "read":
         probe("http://127.0.0.1:4301/api/v1/iam/auth/access", 401)
         if candidate:
@@ -144,6 +148,10 @@ def health(unit, candidate):
             )
             probe(
                 "http://127.0.0.1:4301/api/v1/sales/assistant-agent/my-contract-count",
+                401,
+            )
+            probe(
+                "http://127.0.0.1:4301/api/v1/sales/assistant-agent/standard-sales-summary",
                 401,
             )
     elif unit == "assistant":
