@@ -24,7 +24,7 @@ type OperationalMetricRequest = {
 
 const questionPrefix = /^(?:لطفا )?/u;
 const questionSuffix =
-  /(?: (امروز|این هفته|هفته جاری|این ماه|ماه جاری))?(?: (?:چقدر بود|چقدر است|چقدره|چند تاست|چند بود|رو بگو|را بگو|بگو))?$/u;
+  /(?: (امروز|این هفته|هفته جاری|این ماه|ماه جاری))?(?: (?:چقدر بود|چقدر است|چقدره|چند تاست|چند بود|رو بگو|را بگو|رو بده|را بده|بگو|داریم))?$/u;
 
 export function resolveOperationalMetric(
   question: string,
