@@ -338,6 +338,7 @@
 - [چرخه همکاری و قرارداد کاری](guides/human-resources.md#contracts)
 - [کارکرد، شیفت و اصلاح تردد](guides/human-resources.md#time)
 - [مرخصی و مرکز درخواست‌ها](guides/human-resources.md#requests)
+- [گزارش مانده و کاردکس مرخصی](guides/human-resources.md#leave-balance)
 - [توسعه کارکنان](guides/human-resources.md#development)
 - [مأموریت و هزینه‌ها](guides/human-resources.md#expenses) ← [موجودی، حساب و شارژ](guides/petty-cash.md#fund)
 - [تجهیزات تحویلی](guides/human-resources.md#assets)
