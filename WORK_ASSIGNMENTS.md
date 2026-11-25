@@ -13654,3 +13654,5 @@ Reserve the v3 conversation planner and Web composer, scoped Sales period and li
 ## NORA-SALES-REPORT-PAGINATION — PC-C
 
 Reserve the Sales panel pagination of the fixed Tehran period linked by Nora, regression coverage and release verification. Branch `codex/pc-c-nora-sales-report-pagination`. No schema or dependency changes.
+
+The same acceptance follow-up reserves the Sales-owned reporting projection and its Reporting source regression. The production pipeline report included contracts hidden from Sales. Enforce the Sales visibility predicate in the shared preview/export scan for every page and status.
