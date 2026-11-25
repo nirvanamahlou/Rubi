@@ -1,6 +1,6 @@
 """On the ERP host, verify the prepared manifest, then build offline candidates.
 
-python3 build-orchestration-candidate.py /opt/rubi/RELEASE check|build [previous-private-stage]
+python3 build-orchestration-candidate.py /opt/rubi/RELEASE check|build|build-web [previous-private-stage]
 No live service is started, stopped, recreated, reloaded or reconfigured here.
 """
 
@@ -91,11 +91,17 @@ def build(stage, previous=None):
     if sys.argv[2] == "check":
         print("CANDIDATE_BASELINES_MATCH")
         return
-    if sys.argv[2] != "build":
-        raise ValueError("Expected check or build")
+    web_only = sys.argv[2] == "build-web"
+    if web_only and any(
+        unit != "web" and state["overlayFiles"]
+        for unit, state in manifest["units"].items()
+    ):
+        raise ValueError("Web-only release also changes another service")
+    if not web_only and sys.argv[2] != "build":
+        raise ValueError("Expected check, build or build-web")
     sha = manifest["head"]
     receipt = {"revision": sha, "images": {}}
-    for unit in ("api", "read", "web"):
+    for unit in (("web",) if web_only else ("api", "read", "web")):
         state = manifest["units"][unit]
         base = f'rubi-nora-prebuild:{sha[:12]}-{unit}-{state["image"][7:19]}'
         tag = f"rubi-nora-candidate:{sha[:12]}-{unit}"
@@ -111,7 +117,8 @@ def build(stage, previous=None):
         if unit == "web":
             check_web_guides(state, receipt["images"][unit]["id"])
         print("BUILT", unit, receipt["images"][unit]["id"][:19], flush=True)
-    stage_source(stage, manifest, receipt)
+    if not web_only:
+        stage_source(stage, manifest, receipt)
     verify(stage, manifest)
     (stage / "built.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print("CANDIDATES_READY", sha, flush=True)

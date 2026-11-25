@@ -171,7 +171,7 @@ def service_block(content, unit):
     return match[0]
 
 
-def modify_compose(content, unit, current, tag, forward):
+def modify_compose(content, unit, current, tag, forward, retain_web_options=False):
     old = service_block(content, unit)
     image, n = re.subn(
         rb"(?m)^    image: " + re.escape(current.encode()) + rb"[ \t]*$",
@@ -186,7 +186,13 @@ def modify_compose(content, unit, current, tag, forward):
             for k, v in WEB_OPTIONS.items()
         )
         marker = b"    environment:\n"
-        if forward:
+        if retain_web_options:
+            if image.count(marker + added) != 1 or any(
+                len(re.findall(rb"(?m)^      " + k.encode() + rb":", image)) != 1
+                for k in WEB_OPTIONS
+            ):
+                raise RuntimeError("Existing Web options changed since release")
+        elif forward:
             if image.count(marker) != 1 or any(
                 re.search(rb"(?m)^      " + k.encode() + rb":", image)
                 for k in WEB_OPTIONS
@@ -259,16 +265,21 @@ def core(stage, manifest, built, unit, action):
         pin = f'rubi-nora-rollback:{manifest["head"][:12]}-{unit}-{base["image"][7:19]}'
         if image_id(pin) not in ("", base["image"]):
             raise RuntimeError("Rollback tag belongs to a different image")
-        after = modify_compose(before, unit, current, target["tag"], True)
+        retain = unit == "web" and all(
+            f"{key}={value}" in info["Config"].get("Env", [])
+            for key, value in WEB_OPTIONS.items()
+        )
+        after = modify_compose(before, unit, current, target["tag"], True, retain)
         if action == "check":
             return
         run("docker", "tag", base["image"], pin)
-        receipt.update(original=current, pin=pin)
+        receipt.update(original=current, pin=pin, retainWebOptions=retain)
         previous_ref(receipt, base)
         save_receipt(path, receipt)
     else:
         after = modify_compose(
-            before, unit, target["tag"], previous_ref(receipt, base), False
+            before, unit, target["tag"], previous_ref(receipt, base), False,
+            receipt.get("retainWebOptions", False),
         )
 
     atomic(COMPOSE, after)
@@ -285,7 +296,8 @@ def core(stage, manifest, built, unit, action):
             )
         recovery = (
             modify_compose(
-                after, unit, target["tag"], previous_ref(receipt, base), False
+                after, unit, target["tag"], previous_ref(receipt, base), False,
+                receipt.get("retainWebOptions", False),
             )
             if forward
             else before

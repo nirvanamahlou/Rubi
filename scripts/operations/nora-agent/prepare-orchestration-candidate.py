@@ -112,7 +112,7 @@ def candidate_dockerfile(unit):
             "WORKDIR /workspace/apps/web",
             "ENV NEXT_PUBLIC_ASSISTANT_AGENT_ENABLED=true NEXT_PUBLIC_NORA_MODEL_PLANNER_ENABLED=true NEXT_PUBLIC_API_BASE_URL=https://avinaofficial.ir/api/v1",
             # Keep old hashed chunks for tabs already open; verify the fresh client first.
-            "RUN cp -a .next/static /tmp/nora-previous-static && node node_modules/next/dist/bin/next build --webpack && node /workspace/scripts/operations/nora-agent/verify-web-build.mjs .next/static && cp -an /tmp/nora-previous-static/. .next/static/",
+            'RUN previous=$(mktemp -d /tmp/nora-static.XXXXXX) && cp -a .next/static/. "$previous/" && node node_modules/next/dist/bin/next build --webpack && node /workspace/scripts/operations/nora-agent/verify-web-build.mjs .next/static && cp -an "$previous/." .next/static/ && rm -rf "$previous"',
         ]
     return "\n".join(common) + "\n"
 
