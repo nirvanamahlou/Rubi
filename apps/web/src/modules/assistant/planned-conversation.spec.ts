@@ -45,7 +45,16 @@ const send = (message: string, context = {}) =>
     }),
   );
 function serve(
-  options: { salesStatus?: number; revoked?: boolean; limited?: boolean } = {},
+  options: {
+    salesStatus?: number;
+    revoked?: boolean;
+    limited?: boolean;
+    ownRequests?: unknown;
+    voucherPage?: {
+      total: number;
+      rows: { contractNumber: string; hotelName: string }[];
+    };
+  } = {},
 ) {
   let reads = 0;
   const mock = vi.fn(async (url: RequestInfo | URL, opts?: RequestInit) => {
@@ -57,11 +66,21 @@ function serve(
         reads++;
         return Response.json({
           ...actor,
-          permissions: options.limited ? [] : actor.permissions,
+          permissions: options.limited
+            ? []
+            : options.ownRequests
+              ? [
+                  ...actor.permissions,
+                  'ui.profile',
+                  'ui.screen.workbench.tab.requests',
+                ]
+              : actor.permissions,
           sessionId: options.revoked && reads > 1 ? 'changed' : 'session',
         });
       case '/legal-entities/context':
         return Response.json({ data: { version: 1, selection: 'ALL' } });
+      case '/customer-affairs/workbench/requests/mine':
+        return Response.json(options.ownRequests);
       case '/v3/assistant/conversation':
         return Response.json(sales, { status: options.salesStatus ?? 200 });
       case '/reports/nora/settled-vouchers':
@@ -71,6 +90,10 @@ function serve(
           total: 1,
           unknownStayCount: 1,
           rows: [{ contractNumber: 'S-1', hotelName: 'Hotel A' }],
+          ...(options.voucherPage && {
+            unknownStayCount: 0,
+            ...options.voucherPage,
+          }),
         });
       default:
         throw new Error('unexpected source');
@@ -89,6 +112,75 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe('composed v3 entry point', () => {
+  it('marks voucher detail as partial when more than ten verified stays match', async () => {
+    const rows = Array.from({ length: 10 }, (_, i) => ({
+      contractNumber: 'C' + i,
+      hotelName: 'Hotel A',
+    }));
+    serve({ voucherPage: { total: 11, rows } });
+    const question = 'کدام قراردادهای تسویه شده بدون واچر هستند؟';
+    expect((await (await send(question)).json()).parts[0]).toMatchObject({
+      status: 'partial',
+      text: expect.stringContaining('۱۰ ردیف اول'),
+    });
+    serve({ voucherPage: { total: 11, rows: [] } });
+    expect((await (await send(question)).json()).parts[0].status).toBe(
+      'unavailable',
+    );
+  });
+  it('shows the actual own request holder and approval stage for a real-format tracking code', async () => {
+    const code = 'CA-T-2026-ABCDFFFF';
+    const read = serve({
+      ownRequests: {
+        data: [
+          {
+            id,
+            trackingNumber: code,
+            direction: 'outgoing',
+            subject: 'درخواست آزمایشی',
+            status: 'NEW',
+            leave: {},
+            recipientName: 'مسئول نمونه',
+            destinationUnit: 'منابع انسانی',
+            progress: { managerApproved: true, hrApproved: false },
+          },
+        ],
+        meta: { ownership: 'mine', hasMore: false },
+      },
+    });
+    const { parts } = await (
+      await send('درخواستم با کد پیگیری ca-t-۲۰۲۶-abcdffff الان دست کیه؟')
+    ).json();
+    expect(parts[0]).toMatchObject({
+      status: 'answer',
+      text: expect.stringContaining('مسئول نمونه'),
+    });
+    expect(parts[0].text).toContain('تأیید مدیر واحد: انجام‌شده');
+    expect(
+      read.mock.calls.some(([url]) =>
+        String(url).endsWith('/mine?trackingNumber=' + code),
+      ),
+    ).toBe(true);
+  });
+  it('requires an unqualified unique own request and refuses an unscoped or truncated list', async () => {
+    const read = serve({
+      ownRequests: { data: [], meta: { ownership: 'mine', hasMore: true } },
+    });
+    expect(
+      (await (await send('درخواستم در شعبه شیراز دیروز دست کیه؟')).json())
+        .parts[0].status,
+    ).toBe('clarify');
+    expect(
+      read.mock.calls.some(([url]) => String(url).includes('/requests/mine')),
+    ).toBe(false);
+    expect(
+      (await (await send('درخواستم الان دست کیه؟')).json()).parts[0].status,
+    ).toBe('clarify');
+    serve({ ownRequests: { data: [] } });
+    expect(
+      (await (await send('درخواستم دست کیه؟')).json()).parts[0].status,
+    ).toBe('unavailable');
+  });
   it('serves all three requests from report and documented form in original order', async () => {
     const fetcher = serve();
     const res = await send(message);

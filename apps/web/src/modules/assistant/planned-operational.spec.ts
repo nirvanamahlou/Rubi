@@ -1,4 +1,5 @@
 import { expect, it, vi } from 'vitest';
+import { IAM_PERMISSION_CODES } from '@nora/contracts';
 import { runOperationalPanel } from './planned-operational';
 import { isOperationalPanelQuestion } from './planned-operational-intent';
 import { panelIntent } from './planned-operational-intent';
@@ -169,6 +170,16 @@ it('resolves call-center branch like the panel and verifies the owner returned t
 
 it('cannot answer unsupported filters, inaccessible panels, or single-company questions with aggregate data', async () => {
   const read = vi.fn();
+  expect(
+    (
+      await runOperationalPanel(
+        'تعداد تماس های امروز کال سنتر',
+        { permissions: IAM_PERMISSION_CODES, branchIds: [] },
+        all,
+        read,
+      )
+    ).status,
+  ).toBe('denied');
   expect((await native('تعداد مشتریان B2C امروز', read)).status).toBe(
     'clarify',
   );

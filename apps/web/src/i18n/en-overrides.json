@@ -7238,5 +7238,7 @@
   "نام یا کد دقیق گزارش را از فهرست گزارش‌های در دسترس خود وارد کنید.": "Enter the exact name or code of a report in your report catalog.",
   "نتایج جست‌وجوی این کد بیشتر از یک صفحه است. کد دقیق‌تری وارد کنید.": "The results for this code span multiple pages. Enter a more specific code.",
   "نرخ بازگشت مشتری در کارت پنل فعلاً محاسبه نشده است.": "The panel has not calculated the customer return rate.",
-  "خوانده": "Read"
+  "خوانده": "Read",
+  "کد پیگیری یک درخواست را بفرستید.": "Send the tracking code for one request.",
+  "۱۰ ردیف اول نمایش داده شد. سایر اقامت‌ها در گزارش کامل در دسترس‌اند.": "The first 10 stays are shown. Open the full report for the remaining stays."
 }

@@ -65,4 +65,25 @@ describe('Workbench queries and personal removal', () => {
       }),
     );
   });
+  it('applies author, branch and exact tracking number before paging personal status lookups', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const repo = new CustomerAffairsRepository({
+      client: { customerAffairsTicket: { findMany } },
+    } as never);
+    await repo.workbenchRequests('reviewer', ['local'], {
+      trackingNumber: 'CA-T-2026-BFFFFFFA',
+    });
+    expect(findMany.mock.calls[0]?.[0]).toMatchObject({
+      take: 101,
+      where: {
+        createdByUserId: 'reviewer',
+        trackingNumber: 'CA-T-2026-BFFFFFFA',
+        branchId: { in: ['local'] },
+        category: { startsWith: 'WORKBENCH_' },
+        timeline: {
+          none: { type: 'WORKBENCH_REMOVED', actorUserId: 'reviewer' },
+        },
+      },
+    });
+  });
 });

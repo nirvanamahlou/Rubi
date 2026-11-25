@@ -6,6 +6,7 @@ Run at repository root. WORKTREE is a planning preview and cannot be released.
 
 import base64
 import hashlib
+import inspect
 import json
 import os
 from pathlib import Path
@@ -13,6 +14,7 @@ import re
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
+import orchestration_source
 
 
 def command(*args, stdin=None, required=True):
@@ -93,7 +95,13 @@ def candidate_dockerfile(unit):
         common.append(
             "RUN node packages/contracts/node_modules/typescript/bin/tsc -p packages/contracts/tsconfig.build.json"
         )
-    if unit in ("api", "read"):
+    if unit == "read":
+        common += [
+            # Isolated 4301 uses an older full API base. Compile its actual entrypoint
+            # and all transitive dependencies without rebuilding unshipped mail integrations.
+            """RUN echo '{"extends":"./tsconfig.build.json","include":[],"files":["src/assistant-read/main.ts"]}' > apps/api/tsconfig.nora-read.json && NODE_OPTIONS=--max-old-space-size=4608 node apps/api/node_modules/typescript/bin/tsc -p apps/api/tsconfig.nora-read.json""",
+        ]
+    elif unit == "api":
         common.append(
             "RUN NODE_OPTIONS=--max-old-space-size=4608 node apps/api/node_modules/typescript/bin/tsc -p apps/api/tsconfig.build.json"
         )
@@ -109,7 +117,15 @@ def candidate_dockerfile(unit):
 
 UNITS = {
     "api": ("rubi-production-api-1", ("apps/api/src/", "packages/contracts/src/")),
-    "web": ("rubi-production-web-1", ("apps/web/src/", "packages/contracts/src/")),
+    "web": (
+        "rubi-production-web-1",
+        (
+            "apps/web/src/",
+            "packages/contracts/src/",
+            "services/assistant/call-center-guides.json",
+            "services/assistant/workbench-guides.json",
+        ),
+    ),
     # 4301 has its own older image and a narrow module. The authenticated rolling-sales
     # route needs only these readers. Panels, voucher owner and contracts export use 4000.
     "read": (
@@ -121,7 +137,7 @@ UNITS = {
 
 REMOTE_READ = r"""
 import json, subprocess, hashlib, pathlib
-unit, files, is_assistant = PARAMETERS
+unit, files, is_assistant, allowed = PARAMETERS
 def inspect(): return json.loads(subprocess.check_output(["docker","inspect",unit]))[0]
 before = inspect()
 script = '''const fs=require("node:fs");
@@ -143,11 +159,8 @@ if is_assistant:
   path=pathlib.Path(mount["Source"])
   if dst=="/nora-runtime.mjs": mounts["runtimeSha"]=hashlib.sha256(path.read_bytes()).hexdigest()
   else:
-   tree=hashlib.sha256()
-   for f in sorted(path.rglob("*")):
-    if f.is_file() and f.suffix in (".mjs",".json"):
-     tree.update(f.relative_to(path).as_posix().encode()+b"\x00"+hashlib.sha256(f.read_bytes()).digest())
-   mounts["sourceSha"]=tree.hexdigest()
+   mounts["sourceSha"]=source_tree(path, allowed)
+   mounts["allowedSource"]=allowed
 print(json.dumps({"containerId":before["Id"],"imageId":before["Image"],"files":json.loads(data),"mounts":mounts}))
 """
 
@@ -198,6 +211,20 @@ def prepare(base, head, dest):
             or path == "services/assistant/README.md"
         ):
             raise ValueError(f"Review uncovered release input: {path}")
+    allowed = {
+        p.removeprefix("services/assistant/")
+        for ref in (base, "HEAD" if head == "WORKTREE" else head)
+        for p in paths(
+            "ls-tree", "-r", "--name-only", "-z", ref, "--", "services/assistant"
+        )
+        if re.fullmatch(r"services/assistant/(?:[\w.-]+\.(?:mjs|json)|README\.md)", p)
+    }
+    if head == "WORKTREE":
+        allowed.update(
+            p.removeprefix("services/assistant/")
+            for p in selected
+            if re.fullmatch(r"services/assistant/[\w.-]+\.(?:mjs|json)", p)
+        )
     manifest = {"base": base, "head": head, "units": {}}
     for label, (unit, prefixes) in UNITS.items():
         files = sorted(
@@ -212,8 +239,20 @@ def prepare(base, head, dest):
             for p in files
         ):
             raise ValueError("Unexpected source path")
-        program = REMOTE_READ.replace(
-            "PARAMETERS", repr([unit, files, label == "assistant"])
+        program = (
+            inspect.getsource(orchestration_source)
+            + "\n"
+            + REMOTE_READ.replace(
+                "PARAMETERS",
+                repr(
+                    [
+                        unit,
+                        files,
+                        label == "assistant",
+                        sorted(allowed) if label == "assistant" else [],
+                    ]
+                ),
+            )
         )
         reply = json.loads(
             command(
@@ -241,7 +280,25 @@ def prepare(base, head, dest):
                 if head == "WORKTREE"
                 else read_git(head, path)
             )
-            merged = merge_source(path, read_git(base, path), live, target)
+            git_base = read_git(base, path)
+            if (
+                label == "web"
+                and path.startswith("services/assistant/")
+                and live is not None
+            ):
+                # Some Web images carry an older generated catalogue. A blob reachable
+                # from the recorded base at this exact path is safe to fast-forward.
+                oid = (
+                    hashlib.sha1(b"blob " + str(len(live)).encode() + b"\x00" + live)
+                    .hexdigest()
+                    .encode()
+                )
+                history = command(
+                    "git", "rev-list", "--objects", base, "--", path
+                ).stdout.splitlines()
+                if oid + b" " + path.encode() in history:
+                    git_base = live
+            merged = merge_source(path, git_base, live, target)
             effective[path] = (
                 hashlib.sha256(live).hexdigest() if live is not None else None
             )

@@ -1,5 +1,6 @@
 import { requestDisplayLanguage } from '../common/i18n/language';
 import {
+  BadRequestException,
   Body,
   Delete,
   Controller,
@@ -532,6 +533,24 @@ export class CustomerAffairsController {
   @Header('Cache-Control', 'private, no-store')
   workbenchRequests(@Req() req: AuthenticatedRequest) {
     return this.service.workbenchRequests(req.actor);
+  }
+  @Get('workbench/requests/mine')
+  @Header('Cache-Control', 'private, no-store')
+  ownWorkbenchRequests(
+    @Req() req: AuthenticatedRequest,
+    @Query('trackingNumber') trackingNumber?: string,
+  ) {
+    if (
+      trackingNumber !== undefined &&
+      (typeof trackingNumber !== 'string' ||
+        trackingNumber.length > 32 ||
+        !/^[a-z]+(?:-[a-z0-9]+)+$/i.test(trackingNumber))
+    )
+      throw new BadRequestException('INVALID_TRACKING_NUMBER');
+    return this.service.workbenchRequests(
+      req.actor,
+      trackingNumber ? { trackingNumber: trackingNumber.toUpperCase() } : {},
+    );
   }
   @Get('workbench/requests/own-count')
   @Header('Cache-Control', 'private, no-store')

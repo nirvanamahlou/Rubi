@@ -4,19 +4,21 @@ On the ERP host: python3 promote-orchestration.py STAGE check|up|down api|read|a
 Each operation holds the shared release lock and refuses unexpected service or image identities.
 """
 
-import fcntl
-import hashlib
 import http.client
+import hashlib
 import json
 import os
 from pathlib import Path
 import re
-import shutil
 import socket
 import subprocess
 import sys
 import time
-from urllib import request, error, parse
+import ssl
+from tempfile import NamedTemporaryFile
+from uuid import uuid4
+from urllib import parse
+from orchestration_source import check_artifact_drift, verify_assistant_source
 
 
 COMPOSE = Path("/opt/rubi/compose.yaml")
@@ -42,34 +44,119 @@ def inspect(ref):
 
 
 def atomic(path, data):
-    tmp = path.with_name(path.name + ".nora-new")
-    with tmp.open("xb") as out:
-        out.write(data)
-        out.flush()
-        os.fsync(out.fileno())
-    shutil.copystat(path, tmp)
-    existing = path.stat()
-    os.chown(tmp, existing.st_uid, existing.st_gid)
-    tmp.replace(path)
+    original = path.stat() if path.exists() else None
+    with NamedTemporaryFile(dir=path.parent, prefix=".nora-", delete=False) as stream:
+        tmp = Path(stream.name)
+        try:
+            stream.write(data)
+            stream.flush()
+            if original:
+                if hasattr(os, "fchown"):
+                    os.fchown(stream.fileno(), original.st_uid, original.st_gid)
+                os.chmod(tmp, original.st_mode & 0o7777)
+            os.fsync(stream.fileno())
+        except Exception:
+            stream.close()
+            tmp.unlink(missing_ok=True)
+            raise
+    try:
+        os.replace(tmp, path)
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+def save_receipt(path, value):
+    atomic(path, (json.dumps(value) + "\n").encode())
 
 
 def compose(*args):
     return run("docker", "compose", "-p", "rubi-production", "-f", str(COMPOSE), *args)
 
 
-def public_status(url, wanted):
-    for _ in range(45):
+def probe(url, wanted, method="GET", response_type="application/json", origin=None):
+    # Never follow redirects. Public TLS probes use the local ingress with its real SNI.
+    target = parse.urlsplit(url)
+    for _ in range(30):
+        conn = None
         try:
-            with request.urlopen(url, timeout=3) as r:
-                if r.status == wanted:
-                    return
-        except error.HTTPError as e:
-            if e.code == wanted:
+            headers = {"Host": target.netloc}
+            if origin:
+                headers["Origin"] = origin
+            body = b"{}" if method == "POST" else None
+            if body:
+                headers["Content-Type"] = "application/json"
+            if target.scheme == "https":
+                conn = http.client.HTTPSConnection(
+                    target.hostname, target.port or 443, timeout=3
+                )
+                local = socket.create_connection(("127.0.0.1", target.port or 443), 3)
+                try:
+                    conn.sock = ssl.create_default_context().wrap_socket(
+                        local, server_hostname=target.hostname
+                    )
+                except Exception:
+                    local.close()
+                    raise
+            else:
+                conn = http.client.HTTPConnection(
+                    target.hostname, target.port, timeout=3
+                )
+            path = target.path + ("?" + target.query if target.query else "")
+            conn.request(method, path, body=body, headers=headers)
+            reply = conn.getresponse()
+            actual_type = (
+                (reply.getheader("Content-Type") or "").split(";")[0].strip().lower()
+            )
+            if reply.status == wanted and (
+                not response_type or actual_type == response_type
+            ):
                 return
-        except OSError:
+        except (OSError, http.client.HTTPException):
             pass
-        time.sleep(2)
-    raise RuntimeError(f"Health check failed for {parse.urlsplit(url).path}")
+        finally:
+            if conn:
+                conn.close()
+        time.sleep(1)
+    raise RuntimeError(f"Health check failed: {method} {target.path} expected {wanted}")
+
+
+def health(unit, candidate):
+    if unit == "api":
+        probe("http://127.0.0.1:4000/api/v1/health", 200)
+        probe("http://127.0.0.1:4000/api/v1/iam/auth/access", 401)
+        if candidate:
+            probe(
+                "http://127.0.0.1:4000/api/v1/reports/nora/settled-vouchers?pageSize=1",
+                401,
+            )
+    elif unit == "read":
+        probe("http://127.0.0.1:4301/api/v1/iam/auth/access", 401)
+        if candidate:
+            probe(
+                "http://127.0.0.1:4301/api/v1/sales/assistant-agent/rolling-sales",
+                401,
+                "POST",
+            )
+    elif unit == "assistant":
+        probe("http://127.0.0.1:4300/health", 200)
+        probe("http://127.0.0.1:4300/v3/assistant/conversation", 401, "POST")
+        if candidate:
+            probe("http://127.0.0.1:4300/v3/assistant/plan", 401, "POST")
+    elif unit == "ingress":
+        public = "https://avinaofficial.ir"
+        for path in ["/v3/assistant/conversation"] + (
+            ["/v3/assistant/plan"] if candidate else []
+        ):
+            probe(public + path, 401, "POST")
+            probe(public + path, 403, "POST", response_type=None, origin=public)
+    else:
+        probe("http://127.0.0.1:3000/login", 200, response_type="text/html")
+        # The existing nginx validates public Origin and translates it to the Next origin.
+        public = "https://avinaofficial.ir"
+        probe(
+            public + "/api/assistant/v3/conversation", 403, "POST", response_type=None
+        )
+        probe(public + "/api/assistant/v3/conversation", 401, "POST", origin=public)
 
 
 def service_block(content, unit):
@@ -87,7 +174,7 @@ def service_block(content, unit):
 def modify_compose(content, unit, current, tag, forward):
     old = service_block(content, unit)
     image, n = re.subn(
-        rb"(?m)^    image: " + re.escape(current.encode()) + rb"\s*$",
+        rb"(?m)^    image: " + re.escape(current.encode()) + rb"[ \t]*$",
         lambda m: b"    image: " + tag.encode(),
         old,
     )
@@ -113,61 +200,102 @@ def modify_compose(content, unit, current, tag, forward):
     return content.replace(old, image, 1)
 
 
+def image_id(tag):
+    return run(
+        "docker", "image", "ls", "--quiet", "--no-trunc", "--filter", "reference=" + tag
+    ).strip()
+
+
+def previous_ref(receipt, base):
+    if image_id(receipt["pin"]) != base["image"]:
+        raise RuntimeError("Pinned rollback image changed")
+    return (
+        receipt["original"]
+        if image_id(receipt["original"]) == base["image"]
+        else receipt["pin"]
+    )
+
+
+def configure_core(unit, image, name, candidate):
+    compose("config", "--quiet")
+    compose("up", "-d", "--no-deps", "--no-build", "--pull", "never", unit)
+    info = inspect(name)
+    if info["Image"] != image:
+        raise RuntimeError("Unexpected image after Compose activation")
+    health(unit, candidate)
+    return info["Id"]
+
+
 def core(stage, manifest, built, unit, action):
     base = manifest["units"][unit]
     target = built["images"][unit]
-    info = inspect(base["name"])
-    state = stage / (unit + ".promotion.json")
-    if action in ("check", "up"):
-        if info["Id"] != base["container"] or info["Image"] != base["image"]:
-            raise RuntimeError("Changed live " + unit)
-        if inspect(target["tag"])["Id"] != target["id"]:
-            raise RuntimeError("Mismatched candidate image")
-        orig = info["Config"]["Image"]
-        forward = True
-    else:
-        orig = json.loads(state.read_text())["tag"]
-        if info["Image"] != target["id"] or inspect(orig)["Id"] != base["image"]:
-            raise RuntimeError("Concurrent image change")
-        forward = False
-    before = COMPOSE.read_bytes()
-    after = modify_compose(
-        before,
-        unit,
-        orig if forward else target["tag"],
-        target["tag"] if forward else orig,
-        forward,
+    name = base["name"]
+    info = inspect(name)
+    path = stage / (unit + ".promotion.json")
+    receipt = json.loads(path.read_text()) if path.exists() else {}
+    forward = action != "down"
+    active = (
+        receipt.get("activeId")
+        and receipt["activeId"] == info["Id"]
+        and info["Image"] == target["id"]
     )
-    if action == "check":
+    restored = (
+        info["Id"] == receipt.get("restoredId", base["container"])
+        and info["Image"] == base["image"]
+    )
+    if not (active or restored):
+        raise RuntimeError("Concurrent container change: " + unit)
+    if inspect(target["tag"])["Id"] != target["id"]:
+        raise RuntimeError("Changed candidate image: " + unit)
+    before = COMPOSE.read_bytes()
+    if (active and forward) or (restored and not forward):
+        if not receipt:
+            raise RuntimeError("No active release or rollback receipt")
+        health(unit, bool(active))
         return
     if forward:
-        if state.exists():
-            raise RuntimeError("Unit already has a promotion receipt")
-        state.write_text(json.dumps({"tag": orig}) + "\n")
+        check_artifact_drift(info)
+        current = info["Config"]["Image"]
+        pin = f'rubi-nora-rollback:{manifest["head"][:12]}-{unit}-{base["image"][7:19]}'
+        if image_id(pin) not in ("", base["image"]):
+            raise RuntimeError("Rollback tag belongs to a different image")
+        after = modify_compose(before, unit, current, target["tag"], True)
+        if action == "check":
+            return
+        run("docker", "tag", base["image"], pin)
+        receipt.update(original=current, pin=pin)
+        previous_ref(receipt, base)
+        save_receipt(path, receipt)
+    else:
+        after = modify_compose(
+            before, unit, target["tag"], previous_ref(receipt, base), False
+        )
+
     atomic(COMPOSE, after)
     try:
-        compose("config", "--quiet")
-        compose("up", "-d", "--no-deps", "--no-build", unit)
-        public_status(
-            "http://127.0.0.1:"
-            + ("4000/api/v1/health" if unit == "api" else "3000/login"),
-            200,
+        new_id = configure_core(
+            unit, target["id"] if forward else base["image"], name, forward
         )
-        if inspect(base["name"])["Image"] != (
-            target["id"] if forward else base["image"]
-        ):
-            raise RuntimeError("Wrong image running")
+        receipt["activeId" if forward else "restoredId"] = new_id
+        save_receipt(path, receipt)
     except Exception:
         if COMPOSE.read_bytes() != after:
-            raise RuntimeError("Concurrent config change; manual recovery required")
-        atomic(COMPOSE, before)
-        compose("config", "--quiet")
-        compose("up", "-d", "--no-deps", "--no-build", unit)
-        public_status(
-            "http://127.0.0.1:"
-            + ("4000/api/v1/health" if unit == "api" else "3000/login"),
-            200,
+            raise RuntimeError(
+                "Concurrent configuration change; refusing to overwrite it"
+            )
+        recovery = (
+            modify_compose(
+                after, unit, target["tag"], previous_ref(receipt, base), False
+            )
+            if forward
+            else before
         )
+        atomic(COMPOSE, recovery)
+        prior_id = configure_core(
+            unit, base["image"] if forward else target["id"], name, not forward
+        )
+        receipt["restoredId" if forward else "activeId"] = prior_id
+        save_receipt(path, receipt)
         raise
 
 
@@ -196,62 +324,95 @@ def create_container(name, payload):
         c.close()
 
 
+def swap_sidecar(name, outgoing, incoming, parked, unit, forward):
+    if inspect(name)["Id"] != outgoing:
+        raise RuntimeError("Active sidecar identity changed")
+    previous_name = inspect(incoming)["Name"].lstrip("/")
+    try:
+        run("docker", "stop", outgoing)
+        run("docker", "rename", outgoing, parked)
+        run("docker", "rename", incoming, name)
+        run("docker", "start", incoming)
+        if inspect(name)["Id"] != incoming:
+            raise RuntimeError("Active sidecar changed")
+        health(unit, forward)
+    except Exception:
+        candidate = inspect(incoming)
+        if candidate["Name"] == "/" + name:
+            if candidate["State"]["Running"]:
+                run("docker", "stop", incoming)
+            run("docker", "rename", incoming, previous_name)
+        prior = inspect(outgoing)
+        if prior["Name"] != "/" + name:
+            run("docker", "rename", outgoing, name)
+        if not prior["State"]["Running"]:
+            run("docker", "start", outgoing)
+        if inspect(name)["Id"] != outgoing:
+            raise RuntimeError("Sidecar recovery requires operator attention")
+        health(unit, not forward)
+        raise
+
+
 def sidecar(stage, manifest, built, unit, action):
     base = manifest["units"][unit]
     name = base["name"]
     old = inspect(base["container"])
     current = inspect(name)
-    parked = name + "-before-" + manifest["head"][:12]
-    disabled = name + "-disabled-" + manifest["head"][:12]
-    receipt = stage / (unit + ".promotion.json")
+    path = stage / (unit + ".promotion.json")
+    receipt = json.loads(path.read_text()) if path.exists() else {}
+    if current["Id"] not in (base["container"], receipt.get("id")):
+        raise RuntimeError("Concurrent sidecar update")
+    if old["Image"] != base["image"]:
+        raise RuntimeError("Changed baseline image")
     if action == "down":
-        if (
-            current["Id"] != json.loads(receipt.read_text())["id"]
-            or inspect(parked)["Id"] != base["container"]
-        ):
-            raise RuntimeError("Concurrent sidecar update")
-        run("docker", "stop", current["Id"])
-        run("docker", "rename", current["Id"], disabled)
-        run("docker", "rename", old["Id"], name)
-        run("docker", "start", old["Id"])
+        if not receipt:
+            raise RuntimeError("Missing sidecar promotion receipt")
+        if current["Id"] == base["container"]:
+            health(unit, False)
+            return
+        if unit == "assistant":
+            verify_assistant_source(old,base)
+        else:
+            check_artifact_drift(old)
+        swap_sidecar(
+            name, current["Id"], base["container"], receipt["standby"], unit, False
+        )
+        return
+    if unit == "assistant":
+        verify_assistant_source(
+            old, base, stage / "assistant" / "source", built["assistantSourceSha"]
+        )
     else:
-        if current["Id"] != base["container"] or current["Image"] != base["image"]:
-            raise RuntimeError("Changed live " + unit)
+        check_artifact_drift(old)
+        if (
+            inspect(built["images"]["read"]["tag"])["Id"]
+            != built["images"]["read"]["id"]
+        ):
+            raise RuntimeError("Mismatched read candidate")
+    if current["Id"] == receipt.get("id"):
+        health(unit, True)
+        return
+    if not receipt:
         config = old["Config"].copy()
         host = old["HostConfig"].copy()
         if unit == "read":
-            candidate = built["images"]["read"]
-            if inspect(candidate["tag"])["Id"] != candidate["id"]:
-                raise RuntimeError("Unexpected read image")
-            config["Image"] = candidate["id"]
+            config["Image"] = built["images"]["read"]["id"]
         else:
             mounts = {m["Destination"]: m["Source"] for m in old["Mounts"]}
-            if (
-                hashlib.sha256(
-                    Path(mounts["/nora-runtime.mjs"]).read_bytes()
-                ).hexdigest()
-                != base["runtimeSha"]
-            ):
-                raise RuntimeError("Assistant launcher changed")
-            new_path = stage / "assistant" / "source"
-            if not new_path.is_dir():
-                raise RuntimeError("Candidate source missing")
-            # Bind strings originate in Docker; only replace the exact app-source mount.
-            replaces = [
+            prefix = mounts["/nora-source"] + ":/nora-source:"
+            bindings = [
                 b
                 for b in host["Binds"]
-                if b.startswith(mounts["/nora-source"] + ":/nora-source:")
+                if b.startswith(prefix) and "ro" in b.split(":")[-1].split(",")
             ]
-            if len(replaces) != 1:
-                raise RuntimeError("Unexpected source mount")
-            host["Binds"] = [
-                (
-                    b.replace(mounts["/nora-source"] + ":", str(new_path) + ":", 1)
-                    if b == replaces[0]
-                    else b
-                )
-                for b in host["Binds"]
-            ]
+            if len(bindings) != 1:
+                raise RuntimeError("Expected one read-only Nora source mount")
+            new_bind = (
+                str(stage / "assistant" / "source")
+                + ":/nora-source:"
+                + bindings[0][len(prefix) :]
+            )
+            host["Binds"] = [new_bind if b == bindings[0] else b for b in host["Binds"]]
             config["Env"] = [
                 v
                 for v in config["Env"]
@@ -272,33 +433,19 @@ def sidecar(stage, manifest, built, unit, action):
             }
         if action == "check":
             return
-        if receipt.exists():
-            raise RuntimeError("Existing candidate receipt")
-        candidate_id = None
-        run("docker", "stop", old["Id"])
-        try:
-            run("docker", "rename", old["Id"], parked)
-            candidate_id = create_container(name, config)
-            run("docker", "start", candidate_id)
-            public_status(
-                "http://127.0.0.1:"
-                + ("4301/api/v1/iam/auth/access" if unit == "read" else "4300/health"),
-                401 if unit == "read" else 200,
-            )
-            receipt.write_text(json.dumps({"id": candidate_id}) + "\n")
-        except Exception:
-            if candidate_id:
-                run("docker", "stop", candidate_id)
-                run("docker", "rename", candidate_id, disabled)
-            if inspect(old["Id"])["Name"] != "/" + name:
-                run("docker", "rename", old["Id"], name)
-            run("docker", "start", old["Id"])
-            raise
-    public_status(
-        "http://127.0.0.1:"
-        + ("4301/api/v1/iam/auth/access" if unit == "read" else "4300/health"),
-        401 if unit == "read" else 200,
-    )
+        standby = name + "-candidate-" + manifest["head"][:12] + "-" + uuid4().hex[:8]
+        candidate = create_container(standby, config)
+        receipt = {"id": candidate, "standby": standby}
+        save_receipt(path, receipt)
+    if action != "check":
+        swap_sidecar(
+            name,
+            base["container"],
+            receipt["id"],
+            name + "-before-" + manifest["head"][:12],
+            unit,
+            True,
+        )
 
 
 def ingress(stage, action):
@@ -317,7 +464,32 @@ def ingress(stage, action):
     if level:
         raise RuntimeError("Invalid v3 ingress block")
     existing = before[a : i + 1]
+    # Clone only the known same-origin server-to-server forwarding contract.
+    if not re.search(
+        rb"(?m)^\s*proxy_pass\s+http://127\.0\.0\.1:4300;\s*$", existing
+    ) or not re.search(
+        rb'if\s*\(\s*\$http_origin\s*!=\s*""\s*\)\s*\{\s*return 403;\s*\}', existing
+    ):
+        raise RuntimeError(
+            "Review the effective assistant ingress upstream and Origin policy"
+        )
     block = b"\n" + existing.replace(named, plan, 1) + b"\n"
+    receipt = stage / "ingress.promotion.json"
+    digest = hashlib.sha256(block).hexdigest()
+    released = (
+        receipt.exists() and json.loads(receipt.read_text()).get("blockSha") == digest
+    )
+    if released and (
+        (action != "down" and before.count(block) == 1)
+        or (action == "down" and plan not in before)
+    ):
+        health("ingress", action != "down")
+        return
+    if action == "down" and plan not in before and not receipt.exists():
+        health("ingress", False)
+        return
+    if action == "down" and not released:
+        raise RuntimeError("Missing ingress release ownership")
     if action in ("check", "up") and plan in before:
         raise RuntimeError("Plan ingress exists; compare peer change")
     if action == "down" and before.count(block) != 1:
@@ -329,19 +501,29 @@ def ingress(stage, action):
         if action == "up"
         else before.replace(block, b"", 1)
     )
+    if action == "up":
+        save_receipt(receipt, {"blockSha": digest})
     atomic(NGINX, after)
     try:
         run("nginx", "-t")
         run("systemctl", "reload", "nginx")
+        health("ingress", action == "up")
+        if action == "down":
+            receipt.unlink()
     except Exception:
         if NGINX.read_bytes() == after:
             atomic(NGINX, before)
             run("nginx", "-t")
             run("systemctl", "reload", "nginx")
+            health("ingress", action == "down")
+            if action == "up":
+                receipt.unlink(missing_ok=True)
         raise
 
 
 if __name__ == "__main__":
+    import fcntl
+
     os.umask(0o077)
     if (
         len(sys.argv) != 4

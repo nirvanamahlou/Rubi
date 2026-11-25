@@ -43,6 +43,47 @@
 
 4. کاندید را در شبکهٔ مجزا با بانک آزمون و فقط یک ورودی خصوصی آزمایش کنید. مالک سرویس باید شروع کارهای زمان‌بندی‌شده، ارسال اعلان یا اتصال به پرداخت واقعی را در کاندید مهار کند. از mount خصوصی یا کلید واقعی در فرایند ساخت استفاده نکنید. چهار واحد باید یک قرارداد API و نسخهٔ سازگار داشته باشند. راه‌انداز فعلی نورا دارای اتصال ترکیبی در آلمان است و باید ماژول‌های جدید را از مسیر نسخه‌دار بخواند.
 
+### کاندید سازگار با تغییرات عملیاتی
+
+روی PC-C، `$stage` پوشهٔ خصوصی جدید است و هر دو شناسهٔ Git کامل‌اند. اسکریپت فقط فایل‌های کد تغییریافته را از واحدهای جاری می‌خواند. هر تعارض حل‌نشده پیش از صدور manifest کار را متوقف می‌کند. حالت `WORKTREE` برای پیش‌نمایش است.
+
+```powershell
+python scripts/operations/nora-agent/prepare-orchestration-candidate.py $baselineSha $releaseSha $stage
+Copy-Item scripts/operations/nora-agent/build-orchestration-candidate.py $stage
+Copy-Item scripts/operations/nora-agent/promote-orchestration.py $stage
+Copy-Item scripts/operations/nora-agent/orchestration_source.py $stage
+```
+
+فقط همین پوشه را در یک مسیر جدید با دسترسی ۰۷۰۰ زیر `/opt/rubi` بارگذاری و checksum انتقال را کنترل کنید. روی سرور، `stage` به همین پوشهٔ نسخه اشاره می‌کند. ساخت به ترتیب API، خوانش و Web انجام می‌شود و هیچ‌کدام را وارد ترافیک نمی‌کند. در ۴۳۰۰، سورس کاندید جداگانه ساخته می‌شود و ورود ماژول با کاربر ۱۰۰۰ و بدون شبکه امتحان می‌شود. شناسه‌های حاصل در `built.json` ثبت می‌شوند.
+
+```sh
+python3 "$stage/build-orchestration-candidate.py" "$stage" check
+python3 "$stage/build-orchestration-candidate.py" "$stage" build
+for unit in api read assistant ingress web; do
+  python3 "$stage/promote-orchestration.py" "$stage" check "$unit" || exit 1
+done
+```
+
+پس از CI سبز همان SHA و تأیید انتشار، فرمان‌های زیر را مرحله‌به‌مرحله اجرا کنید. API اصلی کنار نمونهٔ دیگری از AppModule روی بانک عملیاتی اجرا نمی‌شود، چون AppModule پردازش‌های پس‌زمینهٔ مالی، تلفنی و رزرواسیون را راه می‌اندازد. هر فرمان فقط یک واحد را زیر قفل مشترک تغییر می‌دهد. پس از مرحلهٔ API، سلامت، مسیر قدیمی فروش و پاسخ ۴۰۱ برای درخواست بدون نشست گزارش جدید واچر بررسی شود. پس از خوانش، POST بدون نشست به مسیر جدید فروش باید از ۴۰۵ به ۴۰۱ برسد. اگر هر آزمون رد شد، همان مرحلهٔ موفق قبلی را برگردانید و ادامهٔ فعال‌سازی متوقف شود.
+
+```sh
+python3 "$stage/promote-orchestration.py" "$stage" up api
+python3 "$stage/promote-orchestration.py" "$stage" up read
+python3 "$stage/promote-orchestration.py" "$stage" up assistant
+python3 "$stage/promote-orchestration.py" "$stage" up ingress
+python3 "$stage/promote-orchestration.py" "$stage" up web
+```
+
+برای بازگشت، فقط واحدهای واقعاً فعال‌شده را از آخر به اول برگردانید. Compose همان تصویری را اجرا می‌کند که پیش از تغییر ثبت شده بود. برای دو سرویس مستقل، کانتینر قبلی با شناسه و mountهای قبلی دوباره شروع می‌شود. هر فرمان در صورت مشاهدهٔ نسخه یا پیکربندی پیش‌بینی‌نشده متوقف می‌شود.
+
+```sh
+python3 "$stage/promote-orchestration.py" "$stage" down web
+python3 "$stage/promote-orchestration.py" "$stage" down ingress
+python3 "$stage/promote-orchestration.py" "$stage" down assistant
+python3 "$stage/promote-orchestration.py" "$stage" down read
+python3 "$stage/promote-orchestration.py" "$stage" down api
+```
+
 ## ترتیب فعال‌سازی
 
 1. پیش از تغییر، زیر قفل انتشار، فعالیت هم‌زمان و شناسهٔ هر چهار تصویر، mountهای نسخه‌دار، تنظیمات Web، نگاشت nginx و سلامت قدیم را دوباره کنترل کنید. مراجع بازیابی پیش از تغییر را در فضای خصوصی انتشار نگه دارید.

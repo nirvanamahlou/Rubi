@@ -1,5 +1,5 @@
 import { canOpenAssistantGuide } from './guide-access';
-import { type WorkbenchRequestItemV1 } from '@nora/contracts';
+import { canViewScreen, type WorkbenchRequestItemV1 } from '@nora/contracts';
 import { z } from 'zod';
 import { agentResponseSchema } from './agent-response';
 import { pilotGuideResponse } from './guide-pilot';
@@ -16,7 +16,10 @@ import {
   resolveOperationalMetric,
   formatOperationalMetric,
 } from './operational-metrics';
-import { describeWorkbenchRequest, ownRequestLookup } from './workbench-request-guide';
+import {
+  describeWorkbenchRequest,
+  ownRequestLookup,
+} from './workbench-request-guide';
 import { proxyPlannedSales, proxyQuestionPlan } from './proxy';
 import { normalizeQuestion } from './question-text';
 import { describeReportSources } from './report-source-discovery';
@@ -301,26 +304,45 @@ export async function runPlannedConversation(
           ];
         }
         if (step.kind === 'request') {
-          if (!canOpen('/workbench?tab=requests'))
-            return [issue(step, 'denied', 'خواندن این بخش برای حساب فعلی مجاز نیست.')];
+          if (!canViewScreen(first.actor.permissions, 'workbench.tab.requests'))
+            return [
+              issue(step, 'denied', 'خواندن این بخش برای حساب فعلی مجاز نیست.'),
+            ];
           const lookup = ownRequestLookup(question);
-          const askCode = () => issue(step, 'clarify', 'کد پیگیری یک درخواست را بفرستید.');
+          const askCode = () =>
+            issue(step, 'clarify', 'کد پیگیری یک درخواست را بفرستید.');
           if (!lookup) return [askCode()];
           const tracking = lookup.trackingNumber;
-          const result = await read('/customer-affairs/workbench/requests/mine' +
-            (tracking ? '?trackingNumber=' + encodeURIComponent(tracking) : ''));
-          if (!Array.isArray(result?.data) || result?.meta?.ownership !== 'mine' ||
-              typeof result.meta.hasMore !== 'boolean') throw new Error('INVALID_ROWS');
+          const result = await read(
+            '/customer-affairs/workbench/requests/mine' +
+              (tracking
+                ? '?trackingNumber=' + encodeURIComponent(tracking)
+                : ''),
+          );
+          if (
+            !Array.isArray(result?.data) ||
+            result?.meta?.ownership !== 'mine' ||
+            typeof result.meta.hasMore !== 'boolean'
+          )
+            throw new Error('INVALID_ROWS');
           if (result.meta.hasMore) return [askCode()];
           const ownRows = result.data as WorkbenchRequestItemV1[];
-          if (ownRows.some(row => !['self','outgoing'].includes(row.direction) ||
-            typeof row.trackingNumber !== 'string' || (tracking && row.trackingNumber !== tracking)))
+          if (
+            ownRows.some(
+              (row) =>
+                !['self', 'outgoing'].includes(row.direction) ||
+                typeof row.trackingNumber !== 'string' ||
+                (tracking && row.trackingNumber !== tracking),
+            )
+          )
             throw new Error('INVALID_OWN_REQUEST');
           const reply = describeWorkbenchRequest(
             question,
-            ownRows.filter(row =>
-              (!/مرخصی/.test(question) || row.leave) &&
-              (!/م[اأ]موریت/.test(question) || row.mission)),
+            ownRows.filter(
+              (row) =>
+                (!/مرخصی/.test(question) || row.leave) &&
+                (!/م[اأ]موریت/.test(question) || row.mission),
+            ),
           );
           const status = reply.text.startsWith('چند درخواست')
             ? 'clarify'
@@ -333,7 +355,7 @@ export async function runPlannedConversation(
               status,
               text: reply.text,
               links: [{ href: reply.href, label: 'کارتابل درخواست‌ها' }],
-              source: 'workbench/requests',
+              source: 'customer-affairs/workbench/requests/mine',
               observedAt: new Date().toISOString(),
             },
           ];
@@ -504,10 +526,16 @@ async function settledVouchers(
   const report = schema.parse(
     await read('/reports/nora/settled-vouchers?page=1&pageSize=10'),
   );
+  if (report.rows.length !== Math.min(report.total, 10))
+    throw new Error('INVALID_VOUCHER_PAGE');
+  const truncated = report.rows.length < report.total;
   const text = [
     'اقامت‌های بدون واچر در قراردادهای تسویه‌شده: ' +
       report.total.toLocaleString('fa-IR'),
     ...report.rows.map((r) => r.contractNumber + ' — ' + (r.hotelName ?? '—')),
+    ...(truncated
+      ? ['۱۰ ردیف اول نمایش داده شد. سایر اقامت‌ها در گزارش کامل در دسترس‌اند.']
+      : []),
     ...(report.unknownStayCount
       ? [
           'وضعیت واچر برای ' +
@@ -518,11 +546,12 @@ async function settledVouchers(
   ].join('\n');
   return {
     question: step.question,
-    status: report.unknownStayCount
-      ? 'partial'
-      : report.total
-        ? 'answer'
-        : 'empty',
+    status:
+      report.unknownStayCount || truncated
+        ? 'partial'
+        : report.total
+          ? 'answer'
+          : 'empty',
     text,
     links: [
       {

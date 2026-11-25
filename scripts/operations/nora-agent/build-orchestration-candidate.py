@@ -1,6 +1,6 @@
 """On the ERP host, verify the prepared manifest, then build offline candidates.
 
-python3 build-orchestration-candidate.py /opt/rubi/RELEASE check|build
+python3 build-orchestration-candidate.py /opt/rubi/RELEASE check|build [previous-private-stage]
 No live service is started, stopped, recreated, reloaded or reconfigured here.
 """
 
@@ -12,22 +12,15 @@ import re
 import shutil
 import subprocess
 import sys
+from orchestration_source import (
+    check_artifact_drift,
+    source_tree,
+    verify_assistant_source,
+)
 
 
 def docker(*args):
     return subprocess.check_output(["docker", *args], text=True).strip()
-
-
-def tree_digest(source):
-    digest = hashlib.sha256()
-    for f in sorted(source.rglob("*")):
-        if f.is_file() and f.suffix in (".mjs", ".json"):
-            digest.update(
-                f.relative_to(source).as_posix().encode()
-                + b"\0"
-                + hashlib.sha256(f.read_bytes()).digest()
-            )
-    return digest.hexdigest()
 
 
 def verify(stage, manifest):
@@ -37,14 +30,9 @@ def verify(stage, manifest):
         info = json.loads(docker("inspect", state["name"]))[0]
         if (info["Id"], info["Image"]) != (state["container"], state["image"]):
             raise RuntimeError(f"Concurrent service change: {unit}")
+        check_artifact_drift(info)
         if unit == "assistant":
-            mounts = {m["Destination"]: Path(m["Source"]) for m in info["Mounts"]}
-            if (
-                tree_digest(mounts["/nora-source"]) != state["sourceSha"]
-                or hashlib.sha256(mounts["/nora-runtime.mjs"].read_bytes()).hexdigest()
-                != state["runtimeSha"]
-            ):
-                raise RuntimeError("Concurrent assistant source or launcher change")
+            verify_assistant_source(info, state)
         for path, sha in state["overlayFiles"].items():
             relative = (
                 path.removeprefix("services/assistant/")
@@ -60,7 +48,44 @@ def verify(stage, manifest):
                 raise RuntimeError("Invalid overlay for " + path)
 
 
-def build(stage):
+def reuse_verified_component(previous, stage, unit, state, tag, revision):
+    """A new Git SHA may change only Web. Reuse a previously certified component's bytes."""
+    if previous is None:
+        return False
+    receipt = previous / "built.json"
+    if not receipt.is_file():
+        return False
+    old_manifest = json.loads((previous / "manifest.json").read_text())
+    old = old_manifest["units"][unit]
+    built = json.loads(receipt.read_text())
+    if (
+        built["revision"] != old_manifest["head"]
+        or old["image"] != state["image"]
+        or old["overlayFiles"] != state["overlayFiles"]
+        or (previous / unit / "Dockerfile").read_bytes()
+        != (stage / unit / "Dockerfile").read_bytes()
+    ):
+        return False
+    image = built["images"][unit]
+    if docker("image", "inspect", "--format", "{{.Id}}", image["id"]) != image["id"]:
+        raise RuntimeError("Prior immutable component unavailable")
+    pinned = "rubi-nora-certified:" + image["id"][7:]
+    docker("tag", image["id"], pinned)
+    recipe = f"FROM {pinned}\nLABEL com.rubi.nora.patch={revision}\n"
+    with (stage / f"{unit}.log").open("w") as log:
+        subprocess.run(
+            ["docker", "build", "--network", "none", "-t", tag, "-"],
+            input=recipe,
+            text=True,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            check=True,
+        )
+    print("REUSED_VERIFIED_CONTENT", unit, built["revision"], flush=True)
+    return True
+
+
+def build(stage, previous=None):
     manifest = json.loads((stage / "manifest.json").read_text())
     verify(stage, manifest)
     if sys.argv[2] == "check":
@@ -76,33 +101,72 @@ def build(stage):
         tag = f"rubi-nora-candidate:{sha[:12]}-{unit}"
         docker("tag", state["image"], base)
         print("BUILDING", unit, flush=True)
-        with (stage / f"{unit}.log").open("w") as log:
-            p = subprocess.run(
-                [
-                    "docker",
-                    "build",
-                    "--network",
-                    "none",
-                    "--build-arg",
-                    "BASE_IMAGE=" + base,
-                    "--build-arg",
-                    "RELEASE_SHA=" + sha,
-                    "-t",
-                    tag,
-                    str(stage / unit),
-                ],
-                stdout=log,
-                stderr=subprocess.STDOUT,
-            )
-        if p.returncode:
-            raise RuntimeError(
-                f"{unit} candidate build failed; inspect its private build log"
-            )
+        reused = reuse_verified_component(previous, stage, unit, state, tag, sha)
+        if not reused:
+            build_component(stage, unit, sha, base, tag)
         receipt["images"][unit] = {
             "tag": tag,
             "id": docker("image", "inspect", "--format", "{{.Id}}", tag),
         }
+        if unit == "web":
+            check_web_guides(state, receipt["images"][unit]["id"])
         print("BUILT", unit, receipt["images"][unit]["id"][:19], flush=True)
+    stage_source(stage, manifest, receipt)
+    verify(stage, manifest)
+    (stage / "built.json").write_text(json.dumps(receipt, indent=2) + "\n")
+    print("CANDIDATES_READY", sha, flush=True)
+
+
+def build_component(stage, unit, sha, base, tag):
+    with (stage / f"{unit}.log").open("w") as log:
+        p = subprocess.run(
+            [
+                "docker",
+                "build",
+                "--network",
+                "none",
+                "--build-arg",
+                "BASE_IMAGE=" + base,
+                "--build-arg",
+                "RELEASE_SHA=" + sha,
+                "-t",
+                tag,
+                str(stage / unit),
+            ],
+            stdout=log,
+            stderr=subprocess.STDOUT,
+        )
+    if p.returncode:
+        raise RuntimeError(
+            f"{unit} candidate build failed; inspect its private build log"
+        )
+
+
+def check_web_guides(state, image_id):
+    for path in (
+        "services/assistant/call-center-guides.json",
+        "services/assistant/workbench-guides.json",
+    ):
+        expected = state["overlayFiles"].get(path)
+        if (
+            expected
+            and docker(
+                "run",
+                "--rm",
+                "--read-only",
+                "--network",
+                "none",
+                "--entrypoint",
+                "sha256sum",
+                image_id,
+                "/workspace/" + path,
+            ).split()[0]
+            != expected
+        ):
+            raise RuntimeError("Web candidate uses stale guide data")
+
+
+def stage_source(stage, manifest, receipt):
     state = manifest["units"]["assistant"]
     mounts = {
         m["Destination"]: Path(m["Source"])
@@ -111,13 +175,15 @@ def build(stage):
     source = stage / "assistant" / "source"
     if source.exists():
         raise RuntimeError("Candidate source already exists; use a fresh stage")
-    shutil.copytree(mounts["/nora-source"], source)
-    shutil.copytree(stage / "assistant" / "overlay", source, dirs_exist_ok=True)
-    # Match source permissions of the current unprivileged service inside the mount.
-    for f in source.rglob("*"):
-        if f.is_symlink():
-            raise ValueError("Review assistant symlink before staging")
-        f.chmod(0o755 if f.is_dir() else 0o644)
+    allowed = set(state["allowedSource"])
+    if source_tree(mounts["/nora-source"], allowed, source) != state["sourceSha"]:
+        raise RuntimeError("Assistant tree changed during copy")
+    overlay = stage / "assistant" / "overlay"
+    source_tree(overlay, allowed)
+    for f in overlay.iterdir():
+        shutil.copyfile(f, source / f.name, follow_symlinks=False)
+    for f in source.iterdir():
+        f.chmod(0o644)
     source.chmod(0o755)
     docker(
         "run",
@@ -136,14 +202,14 @@ def build(stage):
         "-e",
         "await import('/nora-source/server.mjs')",
     )
-    receipt["assistantSourceSha"] = tree_digest(source)
-    verify(stage, manifest)
-    (stage / "built.json").write_text(json.dumps(receipt, indent=2) + "\n")
-    print("CANDIDATES_READY", sha, flush=True)
+    receipt["assistantSourceSha"] = source_tree(source, allowed)
 
 
 if __name__ == "__main__":
     os.umask(0o077)
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         sys.exit(__doc__)
-    build(Path(sys.argv[1]).resolve())
+    build(
+        Path(sys.argv[1]).resolve(),
+        Path(sys.argv[3]).resolve() if len(sys.argv) == 4 else None,
+    )
