@@ -18,7 +18,7 @@ export async function receiveWebsiteOrder(
     SELECT status, version FROM sales_contracts
     WHERE id = ${contract.id}::uuid AND branch_id = ${contract.branchId}::uuid FOR UPDATE
   `;
-  if (!locked) throw new ConflictException('قرارداد سایت پیدا نشد.');
+  if (!locked) throw new ConflictException('قرارداد یافت نشد.');
   if (!['DRAFT', 'PENDING_CONFIRMATION'].includes(locked.status)) return;
   if (
     await tx.reservationIntake.findFirst({
