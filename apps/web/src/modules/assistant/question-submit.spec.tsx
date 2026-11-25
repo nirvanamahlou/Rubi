@@ -7,6 +7,7 @@ import { runPlannedConversation } from './planned-conversation';
 import {
   assistantGuideCatalogues,
   type AssistantGuideModule,
+  type GuideSection,
 } from './assistant-guide-registry';
 import { catalogueQuestions } from '../../../tests/fixtures/catalogue-questions';
 import { assistantCopy } from '@/i18n/assistant-copy';
@@ -881,28 +882,63 @@ describe('synthetic full-access Composer replay', () => {
       return new Response(null, { status: 503 });
     });
   });
-  it.each(replayCases)('$id', async ({ question, expectedGuides }) => {
-    await send(question);
-    const reply = render().find(
-      (node) => node.props['data-role'] === 'assistant',
-    );
-    expect(reply, question).toBeDefined();
-    const links = nodes(reply)
-      .map((node) => node.props.href)
-      .filter(
-        (v): v is string =>
-          typeof v === 'string' && v.includes('/assistant-guides/'),
+  it.each(replayCases)(
+    '$id',
+    async ({ id: caseId, question, expectedGuides }) => {
+      await send(question);
+      const reply = render().find(
+        (node) => node.props['data-role'] === 'assistant',
       );
-    for (const ref of expectedGuides) {
-      const [module, id] = ref.split('/');
-      const expected = assistantGuideCatalogues[
-        module as AssistantGuideModule
-      ].topics.find((t) => t.id === id)!;
-      expect(links, question).toContain(expected.guideHref);
-      for (const step of expected.steps)
-        expect(chat()[0], question).toContain(step);
-    }
-  });
+      expect(reply, question).toBeDefined();
+      const links = nodes(reply)
+        .map((node) => node.props.href)
+        .filter(
+          (v): v is string =>
+            typeof v === 'string' && v.includes('/assistant-guides/'),
+        );
+      const answer = chat()[0]!;
+      for (const [index, ref] of expectedGuides.entries()) {
+        const [module, id] = ref.split('/');
+        const expected: GuideSection = assistantGuideCatalogues[
+          module as AssistantGuideModule
+        ].topics.find((t) => t.id === id)!;
+        if (index === 0) {
+          expect(links[0], question).toBe(expected.guideHref);
+          const breadcrumb = (expected.route ?? expected.path)?.join(' ← ');
+          expect([expected.title, breadcrumb], question).toContain(
+            answer.split('\n')[0],
+          );
+        }
+        expect(links, question).toContain(expected.guideHref);
+        for (const step of expected.steps)
+          expect(answer, question).toContain(step);
+      }
+      if (
+        [
+          'role-045',
+          'role-075',
+          'role-143',
+          'role-148',
+          'role-162',
+          'role-175',
+        ].includes(caseId)
+      ) {
+        expect(links, question).toHaveLength(1);
+      }
+      if (['role-045', 'role-075'].includes(caseId)) {
+        const firstStep = answer
+          .split('\n')
+          .find((line) => line.startsWith('1. '));
+        expect(firstStep).toContain('«استردادشده»');
+        expect(firstStep).toContain('«باطل‌شده»');
+        expect(firstStep).toContain('بنویسید «باطل»');
+        expect(firstStep).toContain('به معنی صفر استرداد نیست');
+      }
+      if (caseId === 'role-143') {
+        expect(answer).not.toContain('مرخصی');
+      }
+    },
+  );
   it('retains one adjacent answer per guide request across a continuous conversation even when provider reads are unavailable', async () => {
     h.fetcher.mockResolvedValue(new Response(null, { status: 503 }));
     const ids = [

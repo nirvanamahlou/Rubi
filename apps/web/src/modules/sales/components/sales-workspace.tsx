@@ -2,7 +2,7 @@
 import { WebsiteContractPayments } from './website-contract-payments';
 import { FloatingContractPurchaseDialog } from './floating-contract-purchase-dialog';
 import { canSelfServeSalesContract } from '@nora/contracts';
-import { useAccessActor } from '@/modules/iam/access-context';
+import { useAccessActor, useRouteAccess } from '@/modules/iam/access-context';
 import { currencySymbol } from '@/lib/currency-symbol';
 
 import {
@@ -270,6 +270,7 @@ export function SalesContractPagination({
   total: number;
   onPage: (page: number) => void;
 }) {
+  const canOpenRoute = useRouteAccess();
   const page = query.page ?? 1;
   const pages = Math.ceil(total / DEFAULT_CONTRACT_PAGE_SIZE);
   function control(target: number, label: string) {
@@ -284,15 +285,16 @@ export function SalesContractPagination({
         salesPeriodAsOf: query.salesPeriodAsOf,
         page: String(target),
       });
+      if (!canOpenRoute(`/sales?${params}`)) return null;
+      // Each report page is initialized from the document's pinned URL. An
+      // intercepted same-path transition can restore the preceding page.
       return (
-        <Link
-          href={`/sales?${params}`}
+        <a
+          href={`?${params}`}
           className={buttonVariants({ variant: 'outline' })}
-          scroll={false}
-          prefetch={false}
         >
           {label}
-        </Link>
+        </a>
       );
     }
     return (

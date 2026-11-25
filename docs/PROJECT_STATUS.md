@@ -1,3 +1,7 @@
+## NORA-PRODUCTION-GUIDES-1126 — PC-C
+
+PR #1958 shipped to the primary ERP from develop `6b58d1a20`. All 12 release probes passed. In the original administrator session with All Companies, all 220 replies contained the expected sections, steps and panel links. Comparison with 40 native destinations identified incorrect priority for reservations and HR reports, missing workflow details and a Sales pagination issue. The verified two-week sales export had 32 contracts in the period anchored at 20:52:11 UTC on 25 November. [Production acceptance](assistant/production-acceptance-2026-11-25.md)
+
 ## NSS-CONTRACT-PAYMENT-1125
 
 Verified Saman receipts from the Niyayesh site are displayed in Sales → Contracts → «پرداخت‌های آنلاین سایت نیایش». Each item has its own ERP receipt number alongside the customer-entered contract number, name, amount and bank tracking number. Intake is limited to the bound NSS service and its configured settlement destination. Only branch-authorized payment readers can list receipts. The customer reference is stored as entered after digit normalization.

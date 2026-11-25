@@ -94,6 +94,11 @@ export function resolveReservationReportQuestion(
   if (!procedure && /چند|تعداد|چقدر|جمع/.test(text)) {
     if (!metric) return { kind: 'clarify' as const, text: copy.unit };
     if (
+      metric === '/cancelled' &&
+      /به تفکیک|تفکیکی|جدا|هر ?کدام|هر ?کدوم/.test(text)
+    )
+      return { kind: 'clarify' as const, text: copy.combinedOnly };
+    if (
       (!hasRange &&
         /امروز|دیروز|این هفته|ماه|امسال|سال گذشته|روز گذشته|اخیر/.test(text)) ||
       /(?:از|به) شهر|مسیر (?!ها|های|در)|ایرلاین|هتل|نام مسافر/.test(
@@ -256,6 +261,7 @@ export async function readReservationReportAnswer(
   if (!bounds && snapshot?.state === 'loading') return copy.loading;
   if (!bounds && snapshot?.state === 'error') return copy.error;
   const base = snapshot?.query ?? initialIssuedTicketQuery;
+  if (base.status === 'refunded') return copy.combinedOnly;
   const query: IssuedTicketQuery = {
     ...base,
     page: 1,
