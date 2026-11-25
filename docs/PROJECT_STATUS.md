@@ -10799,3 +10799,5 @@ Nora combines authorized catalog sections for independently recognizable procedu
 ## NORA-GUIDE-ACCEPTANCE — PC-C
 
 Align sales, finance, reservations and HR guidance with the UI and add documented organizational-report and answer-source workflows.
+
+The explicit Tehran today/yesterday contract comparison reads both server-bounded counts without model-generated queries.
