@@ -2,7 +2,11 @@ import { findSources, sourceCards } from './source-discovery.mjs';
 import { createReportCatalog } from './report-catalog.mjs';
 import { compactCatalogPrompt } from './compact-catalog-prompt.mjs';
 import { internalSourceFallback } from './source-policy.mjs';
-import { tehranDayContext, enforceRelativeDayQuery } from './tehran-days.mjs';
+import {
+  tehranDayContext,
+  enforceRelativeDayQuery,
+  isTehranContractCountComparison,
+} from './tehran-days.mjs';
 import { randomUUID } from 'node:crypto';
 import { ServiceError } from './errors.mjs';
 import { validateMessage } from './orchestrator.mjs';
@@ -237,6 +241,63 @@ export function createDataAgent({
       await call('catalog');
       return renderHotelRanking(result, hotelPeriod, requestId, showMethod);
     }
+    const dayContext = tehranDayContext(reference);
+    if (isTehranContractCountComparison(request.message)) {
+      if (!sources.some(({ id }) => id === 'contracts'))
+        throw new ServiceError(403, 'FORBIDDEN');
+      const evidence = [];
+      const lines = [];
+      const date = new Intl.DateTimeFormat('fa-IR', {
+        timeZone: dayContext.timeZone,
+        dateStyle: 'short',
+        timeStyle: 'short',
+      });
+      for (const [key, label] of [
+        ['TODAY', 'امروز'],
+        ['YESTERDAY', 'دیروز'],
+      ]) {
+        const sql = enforceRelativeDayQuery(
+          `SELECT count(*) AS total FROM contracts WHERE created_at >= 'NORA_${key}_START' AND created_at < 'NORA_${key}_END'`,
+          dayContext,
+          request.message,
+        );
+        const result = await call('query', { contextId, sql });
+        const count = result.rows?.[0]?.total;
+        if (
+          result.rows?.length !== 1 ||
+          result.truncated !== false ||
+          result.sources?.length !== 1 ||
+          result.sources[0] !== 'contracts' ||
+          !/^[a-f0-9-]{36}$/.test(result.resultId ?? '') ||
+          !Number.isFinite(Date.parse(result.observedAt)) ||
+          !/^(?:0|[1-9][0-9]*)$/.test(String(count))
+        )
+          fail('INVALID_AGENT_SOURCE');
+        evidence.push({
+          resultId: result.resultId,
+          sources: result.sources,
+          observedAt: result.observedAt,
+          truncated: false,
+        });
+        const period = dayContext[key.toLowerCase()];
+        const end = key === 'TODAY' ? dayContext.observedAt : period.end;
+        lines.push(
+          `${label}، از ${date.format(new Date(period.start))} تا پیش از ${date.format(new Date(end))}: ${BigInt(count).toLocaleString('fa-IR')} قرارداد`,
+        );
+      }
+      await call('catalog');
+      return {
+        version: 3,
+        status: 'ANSWER',
+        plan: [],
+        sources: evidence,
+        requestId,
+        limitations: [
+          'شمارش مربوط به قراردادهای ثبت‌شده در محدودهٔ دسترسی فعلی است و به فروش تأییدشده محدود نیست.',
+        ],
+        text: ['تعداد قراردادهای ثبت‌شده به وقت تهران', ...lines].join('\n'),
+      };
+    }
     const periods = financialRequest
       ? null
       : relativeSalesRequest(request, reference);
@@ -297,7 +358,6 @@ export function createDataAgent({
     }
     const finalProtocol =
       'For final output call the advertised json function or return ONLY a JSON object with status,text,resultIds,limitations and optional calculationExplanation; no wrapper or other keys. status: ANSWER for data findings (including no match), CLARIFY for ambiguity, REPLY only to signal unsupported questions; never supply general knowledge or invent ERP workflow or company policy. ANSWER requires current evidence references. A single-contract request by customer name requires an authorized candidate lookup first; if multiple match, CLARIFY with fresh resultIds, candidate numbers and an explicit selection question. Listing candidates alone is not an ANSWER to inspecting one contract; explicit list requests may be answered. text: nonempty string, combined displayed text <=6000 characters. resultIds and limitations: arrays of strings. Copy exact current evidence references; never invent facts, IDs or columns. calculationExplanation: string <=4000 characters, mandatory if cited calculation.required=true, otherwise omitted/null. Explain source, metric, scope/filters/period and exact computation using current evidence, in the chosen prose/table layout. Use only offered tools, never commentary/final/analysis. Tool arguments must be valid JSON: SQL single quotes inside a JSON string need no backslash escaping. ';
-    const dayContext = tehranDayContext(reference);
     const messages = [
       {
         role: 'system',

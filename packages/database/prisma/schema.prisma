@@ -107,8 +107,9 @@ enum AuditOutcome {
 }
 
 model User {
-  taxCatalogImports  TaxReferenceRelease[]
-  taxReportApprovals SeasonalReportSnapshot[]
+  charterExcelPriceVersions PackagePricingCharterExcelVersion[]
+  taxCatalogImports         TaxReferenceRelease[]
+  taxReportApprovals        SeasonalReportSnapshot[]
 
   websiteCheckoutSessions WebsiteCheckoutSession[]
 
@@ -4499,33 +4500,49 @@ model TourPackage {
 }
 
 model TourDeparture {
-  isDeleted          Boolean                          @default(false)
+  excelPriceVersions PackagePricingCharterExcelVersion[]
+  isDeleted          Boolean                             @default(false)
   lifecycleRevisions TourDepartureLifecycleRevision[]
-  isActive           Boolean                          @default(true)
-  salesVersion       Int                              @default(1)
+  isActive           Boolean                             @default(true)
+  salesVersion       Int                                 @default(1)
   hotelRatePacks     ReservationHotelRatePack[]
   hotelRateBatches   ReservationHotelRateBatch[]
   pricingDrafts      PackagePricingTourDraft[]
-  id                 String                           @id @default(uuid()) @db.Uuid
-  version            Int                              @default(1)
-  branchId           String                           @db.Uuid
-  packageId          String                           @db.Uuid
+  id                 String                              @id @default(uuid()) @db.Uuid
+  version            Int                                 @default(1)
+  branchId           String                              @db.Uuid
+  packageId          String                              @db.Uuid
   packageVersion     Int
-  startsOn           DateTime                         @db.Date
-  endsOn             DateTime                         @db.Date
-  outboundOfferId    String                           @db.Uuid
-  returnOfferId      String?                          @db.Uuid
-  createdByUserId    String                           @db.Uuid
-  createKey          String                           @db.VarChar(160)
-  fingerprint        String                           @db.VarChar(64)
-  createdAt          DateTime                         @default(now()) @db.Timestamptz(3)
-  package            TourPackage                      @relation(fields: [packageId], references: [id], onDelete: Restrict)
-  outboundOffer      TicketPublishedOffer             @relation("TourOutbound", fields: [outboundOfferId], references: [id], onDelete: Restrict)
-  returnOffer        TicketPublishedOffer?            @relation("TourReturn", fields: [returnOfferId], references: [id], onDelete: Restrict)
+  startsOn           DateTime                            @db.Date
+  endsOn             DateTime                            @db.Date
+  outboundOfferId    String                              @db.Uuid
+  returnOfferId      String?                             @db.Uuid
+  createdByUserId    String                              @db.Uuid
+  createKey          String                              @db.VarChar(160)
+  fingerprint        String                              @db.VarChar(64)
+  createdAt          DateTime                            @default(now()) @db.Timestamptz(3)
+  package            TourPackage                         @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  outboundOffer      TicketPublishedOffer                @relation("TourOutbound", fields: [outboundOfferId], references: [id], onDelete: Restrict)
+  returnOffer        TicketPublishedOffer?               @relation("TourReturn", fields: [returnOfferId], references: [id], onDelete: Restrict)
 
   @@unique([createdByUserId, createKey])
   @@index([branchId, startsOn])
   @@index([packageId])
+}
+
+model PackagePricingCharterExcelVersion {
+  id                String        @id @default(uuid()) @db.Uuid
+  tourDepartureId   String        @db.Uuid
+  tourVersion       Int
+  version           Int
+  digest            String        @db.VarChar(64)
+  rows              Json
+  publishedByUserId String        @db.Uuid
+  publishedAt       DateTime      @default(now()) @db.Timestamptz(3)
+  tour              TourDeparture @relation(fields: [tourDepartureId], references: [id], onDelete: Restrict)
+  publisher         User          @relation(fields: [publishedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([tourDepartureId, version])
 }
 
 model TourDepartureLifecycleRevision {
