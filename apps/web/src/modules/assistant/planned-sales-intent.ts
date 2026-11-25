@@ -66,6 +66,18 @@ export function analyticalSalesSources(question: string): SalesSource[] {
     (contract.test(text) || sources.length)
   )
     sources.push('amounts');
+  // A contract count comparing Tehran civil days already has its own validated
+  // v3 response/evidence path. It requests two periods, not a grouping column.
+  // Keep explicit dimensions and child measures on the analytical route.
+  if (
+    !sources.length &&
+    contract.test(text) &&
+    /امروز|دیروز/u.test(text) &&
+    !/تفکیک|به ازای|برای هر|بر حسب|بر اساس|براساس|گروه بندی|دسته بندی/u.test(
+      text,
+    )
+  )
+    return [];
   if (grouping.test(text))
     return sources.length ? sources : contract.test(text) ? ['contracts'] : [];
   return sources.length > 1 && contract.test(text) ? sources : [];

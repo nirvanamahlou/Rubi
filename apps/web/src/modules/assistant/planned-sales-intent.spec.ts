@@ -112,6 +112,20 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe('authorized multi-measure and grouped Sales requests', () => {
+  it('leaves standalone Tehran day counts on their native evidence path and retains a separate guidance request', () => {
+    const days =
+      'فروش امروز را با دیروز مقایسه کن، فقط تعداد قراردادها و بازه گزارش را بگو.';
+    expect(planQuestion(days)).toEqual([]);
+    const guidance = 'چطور قرارداد جدید بزنم؟';
+    expect(planQuestion(days + ' و ' + guidance)).toEqual([
+      { kind: 'sales', question: days },
+      { kind: 'guide', question: guidance },
+    ]);
+    const grouped = 'تعداد قراردادهای امروز و دیروز به تفکیک وضعیت چقدر است؟';
+    expect(planQuestion(grouped)).toEqual([
+      { kind: 'sales', question: grouped },
+    ]);
+  });
   it('uses the same effective cancellation producer for standard counts and per-currency discounted amounts', async () => {
     const count = await converse(
       'تعداد قراردادهای فروش استاندارد در همه زمان‌ها بدون پیش‌نویس‌ها و لغوشده‌ها چقدر است؟',
