@@ -27,7 +27,15 @@ async function converse(
   const cookie = 'nora_access=test';
   vi.stubGlobal('fetch', async (url: RequestInfo | URL, init?: RequestInit) => {
     expect(new Headers(init?.headers).get('cookie')).toBe(cookie);
-    switch (new URL(String(url)).pathname) {
+    const target = new URL(String(url));
+    if (target.pathname.startsWith('/sales/assistant-agent/')) {
+      expect(target.origin).toBe('http://127.0.0.1:4301');
+      expect(init?.method).toBe('GET');
+      expect(init?.redirect).toBe('error');
+    } else if (!target.pathname.startsWith('/v3/assistant/')) {
+      expect(target.origin).toBe('http://localhost:4000');
+    }
+    switch (target.pathname) {
       case '/sales/assistant-agent/standard-sales-summary':
         calls.push('/standard-sales-summary');
         return Response.json({
@@ -103,6 +111,7 @@ async function converse(
 }
 beforeEach(() => {
   vi.stubEnv('NORA_ERP_API_BASE_URL', 'http://localhost:4000');
+  vi.stubEnv('NORA_SALES_READ_API_BASE_URL', 'http://127.0.0.1:4301');
   vi.stubEnv('ASSISTANT_SERVICE_URL', 'http://localhost:4300');
   vi.stubEnv('ASSISTANT_AGENT_ENABLED', 'true');
   vi.stubEnv('NORA_MODEL_PLANNER_ENABLED', 'false');
@@ -112,6 +121,12 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe('authorized multi-measure and grouped Sales requests', () => {
+  it('reports an unavailable personal count when the read service is missing instead of sending the session to the full API', async () => {
+    vi.stubEnv('NORA_SALES_READ_API_BASE_URL', '');
+    const result = await converse('تعداد قراردادهای خودم چقدر است؟', []);
+    expect(result.calls).toEqual([]);
+    expect(result.parts[0].status).toBe('unavailable');
+  });
   it('leaves standalone Tehran day counts on their native evidence path and retains a separate guidance request', () => {
     const days =
       'فروش امروز را با دیروز مقایسه کن، فقط تعداد قراردادها و بازه گزارش را بگو.';

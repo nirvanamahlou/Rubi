@@ -77,12 +77,10 @@ export function resolveFinanceDeliveryQuestion(
 }
 
 export function renderFinanceDeliveryGuide(topic: Topic, followUp: boolean) {
-  const [title, steps, recovery] = catalog.topics[topic];
-  return [
-    catalog.path,
-    title,
-    ...(followUp ? [recovery] : [steps, recovery]),
-  ].join('\n\n');
+  const [title, ...steps] = catalog.topics[topic];
+  return [catalog.path, title, ...(followUp ? steps.slice(-1) : steps)].join(
+    '\n\n',
+  );
 }
 
 export async function readFinanceDeliveryStatus(

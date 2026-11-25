@@ -58,7 +58,152 @@ const numericValues = (value: string) =>
     (match) => canonicalDecimal(match[0]),
   );
 
+// Compare an explicit daily count to its own date. Generic digits in dates,
+// rankings, neighbouring rows and deltas do not establish a day's count.
+function tableContractCount(
+  lines: string[],
+  rowIndex: number,
+  dateMarker: string,
+) {
+  let headerIndex = rowIndex;
+  while (headerIndex > 0 && lines[headerIndex - 1]!.includes('|'))
+    headerIndex--;
+  if (headerIndex === rowIndex) return;
+  const cells = (row: string) =>
+    row
+      .trim()
+      .replace(/^\||\|$/g, '')
+      .split('|')
+      .map((cell) => cell.trim());
+  const headings = cells(lines[headerIndex]!);
+  const row = cells(lines[rowIndex]!);
+  const atDate = headings.findIndex((heading) =>
+    /^(?:تاریخ|روز)(?:\s|$)/.test(heading),
+  );
+  const count = headings.findIndex((heading) =>
+    /^تعداد قرارداد(?:ها)?$/.test(heading),
+  );
+  if (atDate < 0 || count < 0 || row[atDate] !== dateMarker) return;
+  const value = row[count];
+  if (value !== undefined && /^\d+$/.test(value)) return value;
+}
+
+function datedContractCounts(text: string, dates: readonly string[]) {
+  const answer = normalizeText(text)
+    .replace(/[*_]/g, '')
+    .replace(/[ي]/g, 'ی')
+    .replace(/[ك]/g, 'ک');
+  const markers = dates.map((iso) => {
+    const date = new Date(iso + 'T12:00:00Z');
+    const dayMonth = new Intl.DateTimeFormat('fa-IR-u-ca-gregory-nu-latn', {
+      day: 'numeric',
+      month: 'long',
+      timeZone: 'Asia/Tehran',
+    }).format(date);
+    const marker = new RegExp(
+      '(?<![\\p{L}\\p{N}])(?:' +
+        iso.replaceAll('-', '[-/]') +
+        '|' +
+        dayMonth +
+        '(?:\\s+' +
+        date.getUTCFullYear() +
+        '|(?!\\s+\\d{4})))' +
+        '(?![\\p{L}\\p{N}])',
+      'u',
+    ).exec(answer);
+    return marker
+      ? { iso, start: marker.index, end: marker.index + marker[0].length }
+      : null;
+  });
+  if (markers.some((m) => !m)) return {};
+  const ordered = markers
+    .filter((m) => m !== null)
+    .sort((a, b) => a.start - b.start);
+  const counts: Record<string, string> = {};
+  const cardinals = [
+    'صفر',
+    'یک',
+    'دو',
+    'سه',
+    'چهار',
+    'پنج',
+    'شش',
+    'هفت',
+    'هشت',
+    'نه',
+    'ده',
+  ];
+  const unit = new RegExp(
+    '(?<![\\p{L}\\p{N}./٫−-])(\\d+|' +
+      cardinals.join('|') +
+      ')\\s+(?:(?:فقره|عدد)\\s+)?قرارداد(?![\\p{L}\\p{N}])',
+    'u',
+  );
+  const lines = answer.split('\n');
+  for (const [index, marker] of ordered.entries()) {
+    const rowIndex = answer.slice(0, marker.start).split('\n').length - 1;
+    if (lines[rowIndex]!.includes('|')) {
+      const count = tableContractCount(
+        lines,
+        rowIndex,
+        answer.slice(marker.start, marker.end),
+      );
+      if (count !== undefined) counts[marker.iso] = count;
+      continue;
+    }
+    const segment = answer.slice(marker.end, ordered[index + 1]?.start);
+    const exact = unit.exec(segment);
+    if (exact) {
+      const before = segment.slice(0, exact.index).trimEnd();
+      const after = segment.slice(exact.index + exact[0].length).trimStart();
+      if (
+        /(?:^|\s)(?:منفی|و|تقریباً|تقریبا|حدود|دست کم|حداقل|حداکثر|بیش از|کمتر از|بیشتر از)$/.test(
+          before,
+        ) ||
+        /^(?:کمتر|بیشتر|تفاوت|اختلاف|نبود|نیست)/.test(after)
+      )
+        continue;
+      const n = cardinals.indexOf(exact[1]!);
+      counts[marker.iso] = n < 0 ? exact[1]! : String(n);
+    }
+  }
+  return counts;
+}
+
 describe('acceptance value comparison safeguards', () => {
+  it('matches exact Persian word counts to each Tehran report date, in either row order', () => {
+    const dates = ['2026-11-13', '2026-11-14'];
+    expect(
+      datedContractCounts(
+        'در **۱۳ نوامبر ۲۰۲۶** یک قرارداد و در **۱۴ نوامبر ۲۰۲۶** دو قرارداد ایجاد شد. در روز دوم ۱ قرارداد بیشتر ایجاد شد.',
+        dates,
+      ),
+    ).toEqual({ '2026-11-13': '1', '2026-11-14': '2' });
+    expect(
+      datedContractCounts(
+        '| تاریخ | تعداد مسافر | تعداد قراردادها |\n| --- | --- | --- |\n| ۲۰۲۶-۱۱-۱۴ | ۵ | ۲ |\n| ۲۰۲۶-۱۱-۱۳ | ۸ | ۱ |',
+        dates,
+      ),
+    ).toEqual({ '2026-11-13': '1', '2026-11-14': '2' });
+    expect(
+      datedContractCounts('۱۳ نوامبر دو قرارداد و ۱۴ نوامبر یک قرارداد', dates),
+    ).toEqual({ '2026-11-13': '2', '2026-11-14': '1' });
+  });
+  it('does not credit the date, approximate or negative numbers, a difference, or a count for another unit', () => {
+    const date = ['2026-11-02'];
+    for (const answer of [
+      '۲ نوامبر ۲۰۲۶ یک راهنما و دو مسافر',
+      '۲ نوامبر ۲۰۲۶ حدود دو قرارداد',
+      '۲ نوامبر ۲۰۲۶ دو قرارداد بیشتر',
+      '۲ نوامبر ۲۰۲۶ منفی دو قرارداد',
+      '۲ نوامبر ۲۰۲۶ بیست و دو قرارداد',
+      '۲ نوامبر ۲۰۲۵ دو قرارداد',
+      'موضوع گزارش تعداد قراردادها است\n| تاریخ | مبلغ |\n| ۲۰۲۶-۱۱-۰۲ | ۲ |',
+    ]) {
+      expect(datedContractCounts(answer, date)).toEqual({});
+    }
+  });
+
   it('does not accept a number merely because it is a substring of a wrong amount', () => {
     expect(numericValues('1000.50 USD on2026-11-14')).not.toContain('100');
     expect(numericValues('100.50 USD')).not.toContain('100');
@@ -376,6 +521,19 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
         [visible.rows.map((row) => row.id)],
       );
       const independentOracle = {
+        ...(id === 'compare'
+          ? {
+              dailyCounts: (
+                await fixture.query<{ day: string; count: string }>(
+                  `SELECT to_char(d.day, 'YYYY-MM-DD') AS day, count(c.id)::text AS count
+             FROM generate_series(date '2026-11-13', date '2026-11-14', interval '1 day') d(day)
+             LEFT JOIN sales_contracts c ON c.id = ANY($1::uuid[]) AND (c.created_at AT TIME ZONE 'Asia/Tehran')::date = d.day::date
+             GROUP BY d.day ORDER BY d.day`,
+                  [visible.rows.map((row) => row.id)],
+                )
+              ).rows,
+            }
+          : {}),
         visibleContractCount: visible.rowCount,
         moneyByCurrency: referenceMoney.rows,
         perContractMoney: (
@@ -598,7 +756,18 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
         if (oracle) {
           expect(response?.status).toBe('ANSWER');
           const normalized = normalizeText(response.text);
-          if (['hidden', 'missing', 'denied'].includes(id)) {
+          if (id === 'compare') {
+            const daily = independentOracle.dailyCounts!;
+            expect(daily.map(({ count }) => count)).toEqual(oracle);
+            expect(
+              datedContractCounts(
+                response.text,
+                daily.map(({ day }) => day),
+              ),
+            ).toEqual(
+              Object.fromEntries(daily.map(({ day, count }) => [day, count])),
+            );
+          } else if (['hidden', 'missing', 'denied'].includes(id)) {
             expect(normalized).toMatch(
               /0|نیافت|پیدا نشد|یافت نشد|وجود ندارد|موجود نیست|هیچ ردیفی|مشاهده نیست|دسترسی/,
             );

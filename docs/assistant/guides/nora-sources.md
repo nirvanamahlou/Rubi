@@ -25,6 +25,12 @@
 2. برای پاسخ عددی، منبع و زمان مشاهده را در خود پرسش بخواهید. مثلاً بپرسید «تعداد قراردادهای امروز به وقت تهران را همراه با نام منبع و زمان مشاهده بگو».
 3. بازهٔ گزارش دورهٔ شمارش را مشخص می‌کند. زمان مشاهده نشان می‌دهد داده چه موقع خوانده شده است. این دو زمان را جدا تطبیق دهید.
 
+### مرجع
+
+[executive-workspace.tsx](../../../apps/web/src/modules/assistant/executive-workspace.tsx)
+
+[planned-conversation.ts](../../../apps/web/src/modules/assistant/planned-conversation.ts)
+
 <a id="troubleshoot"></a>
 
 ## عیب یابی گزارش در نورا
@@ -36,3 +42,11 @@
 1. شرکت فعال و شعبهٔ قابل مشاهده را بررسی کنید. گزارش را با همان حساب در ERP باز کنید تا مجوز گزارش، فیلترها و بازهٔ تاریخ را ببینید.
 2. بازه، شاخص و موضوع گزارش را در سؤال مشخص کنید. نتیجهٔ خالی، منع دسترسی و خطای دریافت داده سه وضعیت متفاوت‌اند. هیچ‌یک را خودکار به معنی عدد صفر در نظر نگیرید.
 3. اگر گزارش در ERP باز می‌شود ولی نورا منبعی نشان نمی‌دهد، متن سؤال و زمان آزمون را برای پیگیری نگه دارید.
+
+### مرجع
+
+[legal-entity-context.tsx](../../../apps/web/src/modules/legal-entities/components/legal-entity-context.tsx)
+
+[planned-conversation.ts](../../../apps/web/src/modules/assistant/planned-conversation.ts)
+
+[reporting-workspace.tsx](../../../apps/web/src/modules/reports/components/reporting-workspace.tsx)

@@ -107,7 +107,7 @@ export function buildLinkedPanelGuides(directory, check) {
         (domain === 'system-management' && href === '/system/users') ||
         (domain === 'finance-delivery' &&
           id === 'customer-receipt' &&
-          href === '/finance') ||
+          href === '/finance/requests') ||
         (domain === 'reservations' &&
           id === 'settled-vouchers' &&
           href === '/reservations?report=settled-vouchers') ||

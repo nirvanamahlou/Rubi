@@ -92,7 +92,28 @@ export async function runPlannedConversation(
   // All destinations below are fixed owner routes. Client input never selects an HTTP destination.
   async function read(path: string, body?: unknown, branchId?: string) {
     if (branchId && !firstBranches?.has(branchId)) throw new ReadError(403);
-    const result = await fetch(base + path, {
+    let owner = base;
+    if (
+      path === '/sales/assistant-agent/my-contract-count' ||
+      path === '/sales/assistant-agent/standard-sales-summary'
+    ) {
+      // SalesAgentController is mounted in the read-only ERP process, not the full API.
+      const configured = process.env.NORA_SALES_READ_API_BASE_URL;
+      if (body !== undefined || branchId || !configured)
+        throw new ReadError(503);
+      const url = new URL(configured);
+      const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+      if (
+        (url.protocol !== 'https:' && !(local && url.protocol === 'http:')) ||
+        url.username ||
+        url.password ||
+        url.search ||
+        url.hash
+      )
+        throw new ReadError(503);
+      owner = url.href.replace(/\/$/, '');
+    }
+    const result = await fetch(owner + path, {
       method: body === undefined ? 'GET' : 'POST',
       headers: {
         cookie,

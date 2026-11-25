@@ -17,6 +17,8 @@ import { SalesService } from '../sales.service';
 import { ContractCompanyScope } from '../contract-company-scope.public';
 import { readContractCountBreakdown } from './count-breakdown';
 import { readStandardSalesSummary } from './rolling-sales';
+import { CONTRACT_AMOUNT_RANKING_EXAMPLE } from './catalog';
+import { validateAgentSql } from './sql-policy';
 
 it.skipIf(process.env.NORA_RUN_AGENT_POSTGRES_TESTS !== '1')(
   'reconciles the Sales dashboard and scoped Nora reads on one disposable database',
@@ -212,6 +214,15 @@ it.skipIf(process.env.NORA_RUN_AGENT_POSTGRES_TESTS !== '1')(
       }>(
         "SELECT a.currency_code, trim_scale(sum(a.amount))::text AS total FROM nora_agent.amounts a JOIN nora_agent.contracts c ON a.contract_id=c.id WHERE c.status IN ('CONFIRMED','COMPLETED') GROUP BY a.currency_code",
       );
+      const ranking = validateAgentSql(CONTRACT_AMOUNT_RANKING_EXAMPLE, [
+        'amounts',
+        'contracts',
+      ]);
+      const tied = await fixture.query(ranking.sql);
+      expect(tied.rows).toEqual([
+        { contract_number: 'ATLAS-0', amount: '10.1250', currency_code: 'USD' },
+        { contract_number: 'ATLAS-1', amount: '10.1250', currency_code: 'USD' },
+      ]);
       await fixture.query('COMMIT');
       const amounts = Object.fromEntries(
         money.rows.map((row) => [row.currency_code, row.total]),
