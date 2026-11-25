@@ -1,3 +1,4 @@
+import { reservationSnapshot } from './reservation-snapshot.public';
 import type { PackagePublishedSaleV1 } from '@nora/contracts';
 import { ContractCompanyScope } from '../sales/contract-company-scope.public';
 import { salesSupplyWhere } from './sales-supply-filter';
@@ -2057,44 +2058,12 @@ export class SalesService {
         unavailableOfferIds: ticketCheck.unavailableOfferIds,
       });
     const requestId = randomUUID();
-    const snapshot: SalesReservationRequestV1 = {
-      passengerAssignments: presented.passengersDetail.map((passenger) => ({
-        customerId: passenger.customerId,
-        displayNameSnapshot: passenger.displayNameSnapshot,
-        ageCategory: passenger.ageCategory,
-        ...(passenger.childAgeBand
-          ? { childAgeBand: passenger.childAgeBand }
-          : {}),
-        serviceClientKeys: passenger.serviceClientKeys,
-      })),
-      ticketSelections: presented.ticketSelections,
-      version: 1,
+    const snapshot = reservationSnapshot(
+      presented,
       requestId,
-      contractId: row.id,
-      contractNumber: row.contractNumber,
-      contractVersion: version + 1,
-      customerId: row.customerId,
-      passengerIds: row.passengers.map(({ customerId }) => customerId),
-      serviceSelections: presented.servicesDetail.map((service) =>
-        service.kind === 'BUS' || service.kind === 'TRAIN'
-          ? {
-              ...service,
-              metadata: {
-                ...service.metadata,
-                originId: service.metadata?.originId || presented.originId,
-                destinationId:
-                  service.metadata?.destinationId || presented.destinationId,
-                date: service.metadata?.date || presented.departureDate,
-              },
-            }
-          : service,
-      ),
-      selectedTicketOfferIds: row.ticketSelections.map(
-        ({ offerId }) => offerId,
-      ),
-      hotelSelection: presented.hotelSelection,
-      createdAt: new Date().toISOString(),
-    };
+      version + 1,
+      new Date().toISOString(),
+    );
     let changed = false;
     try {
       changed = await this.repository.transition(

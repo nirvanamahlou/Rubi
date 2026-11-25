@@ -1,3 +1,7 @@
+import {
+  hasEarlyWebsiteIntake,
+  receiveWebsiteOrder,
+} from '../reservations/website-order-intake.public';
 import { MasterDataLogoService } from '../master-data/master-data-logo.service';
 import { ConfigService } from '@nestjs/config';
 import { geographyPublicationImages } from './geography-images';
@@ -35,6 +39,7 @@ import { Prisma } from '@nora/database';
 import type {
   AuthenticatedActor,
   SalesContractCreateRequest,
+  SalesContractDetail,
   SalesPaymentCreateRequest,
 } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
@@ -1563,11 +1568,7 @@ export class SiteCommerceService {
       checkout?.frozenPackageSales,
     );
     // Native Sales create is durable/idempotent; a timeout before this link is safe to retry.
-    await this.db.client.websiteOrder.upsert({
-      where: { siteCode_branchId_externalId: key },
-      create: { ...key, fingerprint, contractId: created.data.id },
-      update: {},
-    });
+    await this.linkWebsiteOrder(key, fingerprint, created.data);
     return this.status(site, externalId, actor);
   }
 
@@ -1669,7 +1670,7 @@ export class SiteCommerceService {
     }
     const createKey = `site:${site}:${externalId}`;
     const recovered = await this.sales.createdByKey(createKey, scoped);
-    let contractId: string;
+    let contract: SalesContractDetail;
     if (recovered) {
       if (
         !recovered.data.servicesDetail?.some(
@@ -1678,7 +1679,7 @@ export class SiteCommerceService {
         )
       )
         throw clash();
-      contractId = recovered.data.id;
+      contract = recovered.data;
     } else {
       assertWebsiteBookable('floating-tour');
       const hold = await this.db.client.websiteCheckoutSession.findUnique({
@@ -1719,15 +1720,30 @@ export class SiteCommerceService {
         key.branchId,
         createKey,
       );
-      contractId = created.data.id;
+      contract = created.data;
     }
-    const saved = await this.db.client.websiteOrder.upsert({
-      where,
-      create: { ...key, fingerprint, contractId },
-      update: {},
-    });
-    if (saved.fingerprint !== fingerprint) throw clash();
+    await this.linkWebsiteOrder(key, fingerprint, contract);
     return this.status(site, externalId, actor);
+  }
+
+  private async linkWebsiteOrder(
+    key: { siteCode: string; branchId: string; externalId: string },
+    fingerprint: string,
+    contract: SalesContractDetail,
+  ) {
+    await this.db.client.$transaction(async (tx) => {
+      const saved = await tx.websiteOrder.upsert({
+        where: { siteCode_branchId_externalId: key },
+        create: { ...key, fingerprint, contractId: contract.id },
+        update: {},
+      });
+      if (saved.fingerprint !== fingerprint || saved.contractId !== contract.id)
+        throw new ConflictException(
+          'شناسه سفارش با اطلاعات متفاوت استفاده شده است.',
+        );
+      if (hasEarlyWebsiteIntake(key.siteCode))
+        await receiveWebsiteOrder(tx, contract);
+    });
   }
 
   private async order(

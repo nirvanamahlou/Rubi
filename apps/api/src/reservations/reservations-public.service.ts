@@ -389,6 +389,24 @@ export class ReservationsPublicService {
       .digest('hex');
     let row;
     try {
+      // Adopt the early website intake in place so operations, purchases and
+      // the reservation detail URL remain attached to the same record.
+      if (snapshot.requestId !== snapshot.contractId) {
+        await this.database.client.reservationIntake.updateMany({
+          where: {
+            requestId: snapshot.contractId,
+            contractId: snapshot.contractId,
+            branchId,
+            contractVersion: { lte: snapshot.contractVersion },
+          },
+          data: {
+            requestId: snapshot.requestId,
+            contractVersion: snapshot.contractVersion,
+            fingerprint,
+            snapshot: snapshot as unknown as Prisma.InputJsonValue,
+          },
+        });
+      }
       row = await this.database.client.reservationIntake.upsert({
         where: { requestId: snapshot.requestId },
         update: {},

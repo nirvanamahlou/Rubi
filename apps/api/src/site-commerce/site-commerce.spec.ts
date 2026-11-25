@@ -105,6 +105,9 @@ function fixture() {
   const contract = {
     id: 'contract-1',
     version: 1,
+    ownerUserId: ids.user,
+    passengersDetail: draft().passengers,
+    createdAt: '2026-11-25T00:00:00Z',
     branchId: ids.branch,
     contractNumber: 'ERP-1',
     status: 'DRAFT',
@@ -148,11 +151,16 @@ function fixture() {
         findUnique: vi.fn().mockResolvedValue({ enabled: true }),
         findMany: vi.fn().mockResolvedValue([]),
       },
+      reservationIntake: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn(),
+      },
       websiteOrder: {
         findUnique: vi
           .fn()
           .mockImplementation(async () => (saved ? link : null)),
-        upsert: vi.fn().mockImplementation(async () => {
+        upsert: vi.fn().mockImplementation(async ({ create }) => {
+          if (!saved) Object.assign(link, create);
           saved = true;
           return link;
         }),
@@ -481,6 +489,36 @@ describe('website ticket quotes', () => {
 });
 
 describe('durable website orders', () => {
+  it.each(['jahan-bastan', 'ghestiroo'])(
+    'links an unpaid %s order into the reservation inbox exactly once',
+    async (site) => {
+      const f = fixture();
+      vi.stubEnv(
+        'SITE_COMMERCE_BINDINGS',
+        JSON.stringify({ [site]: { userId: ids.user, branchId: ids.branch } }),
+      );
+      f.db.client.$queryRaw.mockResolvedValue([
+        { id: ids.offer, status: 'DRAFT', version: 1 },
+      ] as never);
+      const result = await f.service.draft(site, 'order-1', draft(), actor);
+      await f.service.draft(site, 'order-1', draft(), actor);
+      expect(f.db.client.reservationIntake.create).toHaveBeenCalledTimes(1);
+      expect(f.db.client.reservationIntake.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          contractId: f.contract.id,
+          branchId: ids.branch,
+          salesOwnerUserId: ids.user,
+          snapshot: expect.objectContaining({
+            passengerIds: [ids.person],
+            contractNumber: 'ERP-1',
+          }),
+        }),
+      });
+      expect(result.data.paymentStatus).toBe('unpaid');
+      expect(f.sales.addPayment).not.toHaveBeenCalled();
+      expect(f.sales.confirm).not.toHaveBeenCalled();
+    },
+  );
   it('creates through native Sales, stamps provenance and replays without creating a second contract', async () => {
     const f = fixture();
     await f.service.draft('nss', 'order-1', draft(), actor);
