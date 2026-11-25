@@ -13656,3 +13656,9 @@ Reserve the v3 conversation planner and Web composer, scoped Sales period and li
 Reserve the Sales panel pagination of the fixed Tehran period linked by Nora, regression coverage and release verification. Branch `codex/pc-c-nora-sales-report-pagination`. No schema or dependency changes.
 
 The same acceptance follow-up reserves the Sales-owned reporting projection and its Reporting source regression. The production pipeline report included contracts hidden from Sales. Enforce the Sales visibility predicate in the shared preview/export scan for every page and status.
+
+## NORA-ADMIN-ACCEPTANCE-1125 — PC-C
+
+Reserve the isolated acceptance value checker, its focused regression tests, and sanitized production acceptance receipts on `codex/pc-c-nora-admin-acceptance-1125`. Reference deployment is develop `e8e21ecee`. This verification unit does not require a database migration.
+
+The production preflight exposed an incorrect full-API destination for two read-only Sales metrics. Reserve their web-to-owner routing, affected deployment probes, the guide source references identified by this acceptance pass and their coverage assertions for this unit. Coordinate deployment against the pinned develop revision and preserve the live changes of other ERP modules.
