@@ -17,6 +17,7 @@ import {
   rememberHeaderSession,
 } from '@/lib/header-session';
 import { faMessages } from '@/messages/fa';
+import { useAccessActor } from '@/modules/iam/access-context';
 import { logoutAuthenticatedSession } from '@/modules/profile/api/client';
 import {
   PROFILE_PHOTO_CHANGED_EVENT,
@@ -41,6 +42,11 @@ type UserIdentityState =
   | { status: 'error'; displayName: typeof PROFILE_USER_FALLBACK };
 
 export function UserMenu() {
+  const userId = useAccessActor()?.userId;
+  return <SessionUserMenu key={userId ?? ''} userId={userId} />;
+}
+
+function SessionUserMenu({ userId }: { userId: string | undefined }) {
   const router = useRouter();
   const [identity, setIdentity] = useState<UserIdentityState>({
     status: 'loading',
@@ -49,10 +55,11 @@ export function UserMenu() {
   const [photoUrl, setPhotoUrl] = useState('');
 
   useEffect(() => {
+    if (!userId) return;
     let active = true;
     const applySession = (response: LoginResponse) => {
-      if (!active) return;
-      const cached = readHeaderSession();
+      if (!active || response.user.id !== userId) return;
+      const cached = readHeaderSession(undefined, userId);
       const remembered = rememberHeaderSession(
         response.user,
         cached?.loggedInAt,
@@ -68,10 +75,22 @@ export function UserMenu() {
     window.addEventListener(AUTH_SESSION_RECOVERED_EVENT, recovered);
     void Promise.resolve()
       .then(async () => {
+        if (!active) return;
+        // Login and genuine session recovery persist the authenticated display
+        // summary. Reopening an ERP page must not rotate a healthy session.
+        const saved = readHeaderSession(undefined, userId);
+        if (saved) {
+          setIdentity({
+            status: 'ready',
+            displayName: saved.displayName,
+            loggedInAt: saved.loggedInAt,
+          });
+          return;
+        }
         const api = getPublicApiBaseUrl();
         const response = api ? await refreshAuthenticatedSession(api) : null;
         if (!active) return;
-        if (!response) {
+        if (!response || response.user.id !== userId) {
           setIdentity({ status: 'error', displayName: PROFILE_USER_FALLBACK });
           return;
         }
@@ -79,7 +98,7 @@ export function UserMenu() {
       })
       .catch(() => {
         if (!active) return;
-        const cached = readHeaderSession();
+        const cached = readHeaderSession(undefined, userId);
         setIdentity(
           cached
             ? {
@@ -94,9 +113,10 @@ export function UserMenu() {
       active = false;
       window.removeEventListener(AUTH_SESSION_RECOVERED_EVENT, recovered);
     };
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
+    if (!userId) return;
     let active = true;
     let objectUrl = '';
     let photoRequest = 0;
@@ -127,7 +147,7 @@ export function UserMenu() {
       window.removeEventListener(AUTH_SESSION_RECOVERED_EVENT, loadPhoto);
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, []);
+  }, [userId]);
 
   async function signOut() {
     await logoutAuthenticatedSession().catch(() => undefined);
