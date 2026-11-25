@@ -13650,3 +13650,7 @@ Reserve the narrowly recognized Tehran day contract-count route and its evidence
 ## NORA-ERP-ORCHESTRATION — PC-C
 
 Reserve the v3 conversation planner and Web composer, scoped Sales period and list tools, authorized settlement-to-voucher reconciliation, and the role/capability acceptance inventory. Reuse producer-owned read boundaries. No migration or dependency lock.
+
+## NORA-SALES-REPORT-PAGINATION — PC-C
+
+Reserve the Sales panel pagination of the fixed Tehran period linked by Nora, regression coverage and release verification. Branch `codex/pc-c-nora-sales-report-pagination`. No schema or dependency changes.

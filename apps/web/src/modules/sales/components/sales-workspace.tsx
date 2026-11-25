@@ -261,14 +261,70 @@ export function paymentReferenceSearchQuery(
   return { search: reference.trim(), page: 1 };
 }
 
+export function SalesContractPagination({
+  query,
+  total,
+  onPage,
+}: {
+  query: SalesContractListQuery;
+  total: number;
+  onPage: (page: number) => void;
+}) {
+  const page = query.page ?? 1;
+  const pages = Math.ceil(total / DEFAULT_CONTRACT_PAGE_SIZE);
+  function control(target: number, label: string) {
+    if (target < 1 || target > pages || target === page)
+      return (
+        <Button variant="outline" type="button" disabled>
+          {label}
+        </Button>
+      );
+    if (query.salesPeriodAsOf) {
+      const params = new URLSearchParams({
+        salesPeriodAsOf: query.salesPeriodAsOf,
+        page: String(target),
+      });
+      return (
+        <Link
+          href={`/sales?${params}`}
+          className={buttonVariants({ variant: 'outline' })}
+          scroll={false}
+          prefetch={false}
+        >
+          {label}
+        </Link>
+      );
+    }
+    return (
+      <Button variant="outline" type="button" onClick={() => onPage(target)}>
+        {label}
+      </Button>
+    );
+  }
+  return (
+    <nav
+      aria-label="صفحه‌بندی قراردادها"
+      className="flex items-center justify-between"
+    >
+      {control(Math.min(page - 1, pages), 'صفحه قبل')}
+      <span className="text-sm text-muted-foreground">
+        صفحه {page.toLocaleString('fa-IR')} از {pages.toLocaleString('fa-IR')}
+      </span>
+      {control(page + 1, 'صفحه بعد')}
+    </nav>
+  );
+}
+
 export function SalesWorkspace({
   initialContract = '',
   initialRecord = '',
   initialSalesPeriodAsOf = '',
+  initialReportPage = 1,
 }: {
   initialContract?: string;
   initialRecord?: string;
   initialSalesPeriodAsOf?: string;
+  initialReportPage?: number;
 } = {}) {
   const contractsSearchPanel = useRef<HTMLElement>(null);
   const actor = useAccessActor();
@@ -289,6 +345,7 @@ export function SalesWorkspace({
     initialSalesPeriodAsOf
       ? {
           salesPeriodAsOf: initialSalesPeriodAsOf,
+          page: initialReportPage,
           sortBy: 'createdAt',
           sortDirection: 'desc',
         }
@@ -737,42 +794,13 @@ export function SalesWorkspace({
       {!loading &&
       !error &&
       !dateFilterApplied &&
-      total > DEFAULT_CONTRACT_PAGE_SIZE ? (
-        <nav
-          aria-label="صفحه‌بندی قراردادها"
-          className="flex items-center justify-between"
-        >
-          <Button
-            variant="outline"
-            disabled={(query.page ?? 1) <= 1}
-            onClick={() =>
-              setQuery((current) => ({
-                ...current,
-                page: (current.page ?? 1) - 1,
-              }))
-            }
-          >
-            صفحه قبل
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            صفحه {(query.page ?? 1).toLocaleString('fa-IR')} از{' '}
-            {Math.ceil(total / DEFAULT_CONTRACT_PAGE_SIZE).toLocaleString(
-              'fa-IR',
-            )}
-          </span>
-          <Button
-            variant="outline"
-            disabled={(query.page ?? 1) * DEFAULT_CONTRACT_PAGE_SIZE >= total}
-            onClick={() =>
-              setQuery((current) => ({
-                ...current,
-                page: (current.page ?? 1) + 1,
-              }))
-            }
-          >
-            صفحه بعد
-          </Button>
-        </nav>
+      (total > DEFAULT_CONTRACT_PAGE_SIZE ||
+        (total > 0 && (query.page ?? 1) > 1)) ? (
+        <SalesContractPagination
+          query={query}
+          total={total}
+          onPage={(page) => setQuery((current) => ({ ...current, page }))}
+        />
       ) : null}
       {purchaseContractId ? (
         <FloatingContractPurchaseDialog

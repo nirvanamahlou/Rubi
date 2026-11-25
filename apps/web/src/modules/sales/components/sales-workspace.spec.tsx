@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { salesApi } from '../api/client';
 import type { SalesContractSummary } from '@nora/contracts';
+import SalesPage from '@/app/(crm)/sales/page';
 import {
   contractRowClassName,
   formatMoney,
@@ -9,6 +10,7 @@ import {
   loadSalesWorkspace,
   paymentReferenceSearchQuery,
   SalesWorkspace,
+  SalesContractPagination,
   ContractListContactRouteDate,
   ContractListAmounts,
   ContractListNumber,
@@ -17,6 +19,57 @@ import {
 } from './sales-workspace';
 
 describe('sales dashboard loading', () => {
+  it('follows durable report links across all four pages with the same cutoff and recovers the correct list after a remount', async () => {
+    const cutoff = '2026-11-25T15:50:51.328Z';
+    const api = {
+      dashboard: vi.fn().mockResolvedValue({ data: {} }),
+      list: vi.fn().mockResolvedValue({ data: [], meta: { total: 33 } }),
+    } satisfies Pick<typeof salesApi, 'dashboard' | 'list'>;
+    let url = new URL('/sales', 'https://erp.example');
+    url.searchParams.set('salesPeriodAsOf', cutoff);
+    for (const page of [1, 2, 3, 4]) {
+      const workspace = await SalesPage({
+        searchParams: Promise.resolve(Object.fromEntries(url.searchParams)),
+      });
+      const html = renderToStaticMarkup(workspace);
+      const filters = /data-nora-sales-filters="([^"]*)"/.exec(html)?.[1];
+      const query = JSON.parse(filters!.replaceAll('&quot;', '"'));
+      expect(query).toEqual({
+        page,
+        salesPeriodAsOf: cutoff,
+        sortBy: 'createdAt',
+        sortDirection: 'desc',
+      });
+      await loadSalesWorkspace(api, query);
+      expect(api.list).toHaveBeenLastCalledWith({ ...query, pageSize: 10 });
+      const footer = renderToStaticMarkup(
+        <SalesContractPagination query={query} total={33} onPage={() => {}} />,
+      );
+      const links = [...footer.matchAll(/href="([^"]+)"/g)].map(
+        ([, href]) => new URL(href!.replaceAll('&amp;', '&'), url),
+      );
+      expect(
+        links.map((link) => link.searchParams.get('salesPeriodAsOf')),
+      ).toEqual(links.map(() => cutoff));
+      expect(
+        links.map((link) => Number(link.searchParams.get('page'))),
+      ).toEqual([page - 1, page + 1].filter((n) => n >= 1 && n <= 4));
+      url = links.at(-1)!;
+    }
+  });
+  it.each(['0', '-1', '3.5', '1e5', '99999999999'])(
+    'ignores invalid report page %s',
+    async (page) => {
+      const result = await SalesPage({
+        searchParams: Promise.resolve({
+          salesPeriodAsOf: '2026-11-25T15:50:51.328Z',
+          page,
+        }),
+      });
+      expect(result.props.initialReportPage).toBe(1);
+    },
+  );
+
   it('shows booked travel dates in Gregorian regardless of their recorded calendars', () => {
     const contract = {
       travelDates: {
