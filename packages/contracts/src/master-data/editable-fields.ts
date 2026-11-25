@@ -403,6 +403,8 @@ export const MASTER_DATA_EDITABLE_FIELDS = {
     'name',
     'englishName',
     'countryId',
+    'sourceMainImage',
+    'sourceGalleryImages',
     'visaType',
     'referenceValidityDays',
     'referenceValidityMode',
