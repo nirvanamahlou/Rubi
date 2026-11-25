@@ -53,6 +53,7 @@ import { canViewRoute, canViewScreen } from '@nora/contracts';
 import {
   catalogueLookupMode,
   findCatalogueTopics,
+  retrieveDocumentSections,
   resolveDocumentedWorkflow,
   prepareCatalogueSearch,
   workflowDestination,
@@ -675,7 +676,10 @@ function AssistantComposerContent({
       );
     const priorIndexed = indexedTopic.current;
     indexedTopic.current = undefined;
-    const showSection = (section: GuideSection) => {
+    const showSection = (
+      section: GuideSection,
+      displayed = new Set<string>(),
+    ) => {
       indexedTopic.current = section;
       systemGuideTopic.current = section.guideHref.startsWith(
         '/assistant-guides/system-management#',
@@ -697,8 +701,18 @@ function AssistantComposerContent({
           ...((section.route ?? section.path)?.length
             ? [(section.route ?? section.path)!.join(' ← ')]
             : []),
-          ...(section.conditions ?? []),
-          ...section.steps.map((step, i) => i + 1 + '. ' + step),
+          ...(section.conditions ?? []).filter((condition) => {
+            if (displayed.has(condition)) return false;
+            displayed.add(condition);
+            return true;
+          }),
+          ...section.steps
+            .filter((step) => {
+              if (displayed.has(step)) return false;
+              displayed.add(step);
+              return true;
+            })
+            .map((step, i) => i + 1 + '. ' + step),
         ].join('\n'),
         undefined,
         undefined,
@@ -741,10 +755,23 @@ function AssistantComposerContent({
       return;
     }
     // An explicit manual lookup can start on any page.
+    const documentSections =
+      (decision.kind === 'guide' || decision.kind === 'clarify') &&
+      !decision.guideTopicId &&
+      !decision.needsSalesPeriod &&
+      !pathname?.startsWith('/sales/contracts/new')
+        ? retrieveDocumentSections(message, pathname, mayReadGuide)
+        : [];
+    if (documentSections.length) {
+      const displayed = new Set<string>();
+      for (const section of documentSections) showSection(section, displayed);
+      return;
+    }
     const workflow = resolveDocumentedWorkflow(message);
     if (workflow.length) {
       const permitted = workflow.filter(mayReadGuide);
-      for (const section of permitted) showSection(section);
+      const displayed = new Set<string>();
+      for (const section of permitted) showSection(section, displayed);
       if (permitted.length !== workflow.length)
         replyLocally(t(c.pilotGuideInsufficient));
       return;
@@ -1073,7 +1100,10 @@ function AssistantComposerContent({
       }
       return;
     }
-    const hrGuidance = resolveHrGuide(message, pathname, previousHrGuide);
+    const hrGuidance =
+      decision.kind === 'data' && decision.domain === 'sales'
+        ? undefined
+        : resolveHrGuide(message, pathname, previousHrGuide);
     if (hrGuidance) {
       pending.current?.abort();
       pendingSalesPeriod.current = false;

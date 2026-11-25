@@ -31,11 +31,19 @@ const workflowIntents: readonly [RegExp, readonly string[]][] = [
   [/مانیفست|مانيفست|\bmanifest\b/i, ['reservations/manifest']],
   [
     /بلی[تط].*(?:استرداد|ابطال)|(?:استرداد|ابطال).*بلی[تط]/,
-    ['reservations/cancellation'],
+    ['reservations/flight', 'reservations/cancellation'],
   ],
   [
     /(?:استرداد|ابطال|مسترد).*(?:گزارش رزرواسیون)|گزارش رزرواسیون.*(?:استرداد|ابطال|مسترد)/,
-    ['reservation-report/dates', 'reservation-report/allocation-and-status'],
+    [
+      'reservation-report/dates',
+      'reservation-report/filters',
+      'reservation-report/allocation-and-status',
+    ],
+  ],
+  [
+    /صف رزرواسیون.*قرارداد.*(?:پرواز|هتل)|قرارداد.*از فروش.*(?:پرواز|هتل)/,
+    ['reservations/handoff', 'reservations/flight', 'reservations/hotel'],
   ],
   [
     /(?:ثبت|ایجاد).*قرارداد.*(?:جدید|ارسال.*رزرواسیون)|قرارداد.*جدید.*(?:ثبت|ایجاد)/,
@@ -166,6 +174,39 @@ export function findCatalogueTopics(
   return candidates
     .filter((c) => c.score === first.score && c.current === first.current)
     .map((c) => c.section);
+}
+
+/** Retrieve one attributable section per explicit task; leave single-topic ranking intact. */
+export function retrieveDocumentSections(
+  message: string,
+  pathname: string | null,
+  allowed: (section: GuideSection) => boolean,
+) {
+  const clauses = message
+    .split(/[؟?]\s*(?=\S)/)
+    .flatMap((sentence) =>
+      normalizeQuestion(sentence).split(
+        /\s+و\s+(?=(?:چطور|چگونه|از کجا|کجا|نحوه|مراحل)\s)/,
+      ),
+    );
+  if (clauses.length < 2 || clauses.length > 4) return [];
+  const sections = new Map<string, GuideSection>();
+  for (const clause of clauses) {
+    if (
+      catalogueLookupMode(clause, { kind: 'guide', dataMessage: clause }) ===
+      undefined
+    )
+      return [];
+    const workflow = resolveDocumentedWorkflow(clause);
+    const matches = workflow.length
+      ? workflow
+      : findCatalogueTopics(clause, pathname, () => true, 2);
+    if (!matches.length || (!workflow.length && matches.length !== 1))
+      return [];
+    if (matches.some((section) => !allowed(section))) return [];
+    for (const section of matches) sections.set(section.guideHref, section);
+  }
+  return sections.size <= 6 ? [...sections.values()] : [];
 }
 
 export function workflowDestination(

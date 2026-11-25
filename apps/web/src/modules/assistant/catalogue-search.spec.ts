@@ -6,6 +6,7 @@ import {
   catalogueLookupMode,
   findCatalogueTopics,
   resolveDocumentedWorkflow,
+  retrieveDocumentSections,
   workflowDestination,
 } from './catalogue-search';
 
@@ -30,11 +31,11 @@ describe('cross-panel workflow arbitration', () => {
     ['مجوز تحویل مدارک با استثنای مدیر چطور صادر می‌شود؟', ['exception']],
     [
       'در رزرواسیون چطور بلیت صادرشده را پیدا کنم و استردادش را پیگیری کنم؟',
-      ['cancellation'],
+      ['flight', 'cancellation'],
     ],
     [
       'در گزارش رزرواسیون چگونه خدمات مسترد یا ابطال‌شده را پیدا کنم؟',
-      ['dates', 'allocation-and-status'],
+      ['dates', 'filters', 'allocation-and-status'],
     ],
     ['مانیفست پرواز را از کجا بگیرم؟', ['manifest']],
     ['منظورم MANIFEST است.', ['manifest']],
@@ -60,6 +61,25 @@ describe('cross-panel workflow arbitration', () => {
 });
 
 describe('catalogue discovery', () => {
+  it('combines documented procedures across panels without leaking restricted sections', () => {
+    const q =
+      'مانیفست پرواز را از کجا بگیرم؟ در اسناد چطور مدرک جدید بارگذاری کنم و آرشیو آن را پیدا کنم؟';
+    expect(retrieveDocumentSections(q, '/hr', open).map((s) => s.id)).toEqual([
+      'manifest',
+      'upload',
+      'archive',
+    ]);
+    expect(
+      retrieveDocumentSections(q, '/hr', (s) => s.id !== 'archive'),
+    ).toEqual([]);
+    expect(
+      retrieveDocumentSections(
+        'مانیفست پرواز را از کجا بگیرم؟ فروش امروز چقدر بود؟',
+        '/hr',
+        open,
+      ),
+    ).toEqual([]);
+  });
   for (const [domain, catalogue] of Object.entries(assistantGuideCatalogues)) {
     it(
       'locates every documented title in ' + domain + ' from outside its panel',
