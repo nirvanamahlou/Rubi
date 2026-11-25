@@ -37,6 +37,7 @@ import { TourDetailsForm } from './tour-details-form';
 import { defaultTourAirport, tourAirports } from './tour-airports';
 import { createTourBranches } from './tour-branches';
 import { TourOverview } from './tour-overview';
+import { tourDepartureOptions } from '../model/tour-departure-options';
 import { useAccessPermissions } from '@/modules/iam/access-context';
 import {
   loadTourDepartureTickets,
@@ -902,7 +903,7 @@ export function TourWorkspace({
               <Choice
                 label="تور"
                 value={selected}
-                options={packages}
+                options={tourDepartureOptions(packages, departures)}
                 onChange={(id) => {
                   setSelected(id);
                   resetTickets();
