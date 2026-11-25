@@ -11,6 +11,12 @@ const rows = [
   ['full-api-identity', 'GET', erp + '/iam/auth/access', 401],
   ['full-api-company', 'GET', erp + '/legal-entities/context', 401],
   [
+    'full-api-personal-sales',
+    'GET',
+    erp + '/sales/assistant-agent/my-contract-count',
+    401,
+  ],
+  [
     'full-api-settled-vouchers',
     'GET',
     erp + '/reports/nora/settled-vouchers?page=1&pageSize=1',

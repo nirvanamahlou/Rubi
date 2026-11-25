@@ -130,6 +130,10 @@ def health(unit, candidate):
                 "http://127.0.0.1:4000/api/v1/reports/nora/settled-vouchers?pageSize=1",
                 401,
             )
+            probe(
+                "http://127.0.0.1:4000/api/v1/sales/assistant-agent/my-contract-count",
+                401,
+            )
     elif unit == "read":
         probe("http://127.0.0.1:4301/api/v1/iam/auth/access", 401)
         if candidate:
@@ -137,6 +141,10 @@ def health(unit, candidate):
                 "http://127.0.0.1:4301/api/v1/sales/assistant-agent/rolling-sales",
                 401,
                 "POST",
+            )
+            probe(
+                "http://127.0.0.1:4301/api/v1/sales/assistant-agent/my-contract-count",
+                401,
             )
     elif unit == "assistant":
         probe("http://127.0.0.1:4300/health", 200)
@@ -251,9 +259,13 @@ def configure_core(unit, image, name, candidate):
     info = inspect(name)
     if info["Image"] != image:
         raise RuntimeError("Unexpected image after Compose activation")
-    if unit == "web" and candidate and any(
-        f"{key}={value}" not in info["Config"].get("Env", [])
-        for key, value in WEB_OPTIONS.items()
+    if (
+        unit == "web"
+        and candidate
+        and any(
+            f"{key}={value}" not in info["Config"].get("Env", [])
+            for key, value in WEB_OPTIONS.items()
+        )
     ):
         raise RuntimeError("Web container did not receive the expected runtime options")
     health(unit, candidate)
