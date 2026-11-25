@@ -1,16 +1,17 @@
-'use client';
-import { useState } from 'react';
+"use client";
+import { useState } from "react";
 import {
   changePackageSale,
   packageRoomTitle,
   packageRoomIdentity,
   type PackageRoomSaleOverrideV1,
-} from '@nora/contracts';
-import type { PackageSaleRow } from './package-room-sales';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/form-controls';
-import { NativeSearchSelect } from '@/components/ui/native-search-select';
-import { currencySymbol } from '@/lib/currency-symbol';
+} from "@nora/contracts";
+import type { PackageSaleRow } from "./package-room-sales";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/form-controls";
+import { formatSalesMoney, MoneyInput } from "@/components/ui/money-input";
+import { NativeSearchSelect } from "@/components/ui/native-search-select";
+import { currencySymbol } from "@/lib/currency-symbol";
 
 export const compositionSelectionKey = (
   hotelRateId: string,
@@ -31,12 +32,12 @@ export function PackageCompositionSales({
   onSelect: (keys: string[]) => void;
   disabled?: boolean;
 }) {
-  const [kind, setKind] = useState<'PERCENT' | 'AMOUNT' | 'SET'>('PERCENT');
-  const [direction, setDirection] = useState<'increase' | 'decrease'>(
-    'increase',
+  const [kind, setKind] = useState<"PERCENT" | "AMOUNT" | "SET">("PERCENT");
+  const [direction, setDirection] = useState<"increase" | "decrease">(
+    "increase",
   );
-  const [value, setValue] = useState('');
-  const [error, setError] = useState('');
+  const [value, setValue] = useState("");
+  const [error, setError] = useState("");
   const cells = rows.flatMap((row) =>
     row.prices.flatMap((price) =>
       price.currencyAmounts.map((part) => ({
@@ -94,7 +95,7 @@ export function PackageCompositionSales({
           <option value="AMOUNT">مبلغ ثابت</option>
           <option value="SET">تعیین قیمت فروش</option>
         </NativeSearchSelect>
-        {kind !== 'SET' && (
+        {kind !== "SET" && (
           <NativeSearchSelect
             aria-label="افزایش یا کاهش"
             value={direction}
@@ -133,10 +134,10 @@ export function PackageCompositionSales({
                   ),
                 }));
               update(changed);
-              setError('');
+              setError("");
             } catch (e) {
               setError(
-                e instanceof Error ? e.message : 'قیمت فروش معتبر نیست.',
+                e instanceof Error ? e.message : "قیمت فروش معتبر نیست.",
               );
             }
           }}
@@ -168,7 +169,7 @@ export function PackageCompositionSales({
             className="overflow-x-auto rounded-xl border"
           >
             <h3 className="bg-muted p-3 font-bold">
-              {row.hotelName} · {row.brokerName} · {row.prices[0]?.roomTypeName}{' '}
+              {row.hotelName} · {row.brokerName} · {row.prices[0]?.roomTypeName}{" "}
               · {row.prices[0]?.board}
             </h3>
             <table className="w-full text-sm">
@@ -202,7 +203,11 @@ export function PackageCompositionSales({
                       </td>
                       <td>{packageRoomTitle(price.roomCode)}</td>
                       <td>
-                        {price.hotelPurchase}{' '}
+                        <bdi>
+                          {price.currencyCode === "IRR"
+                            ? formatSalesMoney(price.hotelPurchase)
+                            : price.hotelPurchase}
+                        </bdi>{" "}
                         {currencySymbol(price.currencyCode)}
                       </td>
                       <td className="p-2">
@@ -215,16 +220,30 @@ export function PackageCompositionSales({
                           };
                           return (
                             <label className="flex gap-2" key={p.currencyCode}>
-                              <Input
-                                className="w-32"
-                                dir="ltr"
-                                aria-label={`قیمت فروش ${row.hotelName} ${price.roomTypeName} ${packageRoomTitle(price.roomCode)} ${p.currencyCode}`}
-                                disabled={disabled}
-                                value={current(cell)}
-                                onChange={(e) =>
-                                  update([{ ...cell, amount: e.target.value }])
-                                }
-                              />
+                              {p.currencyCode === "IRR" ? (
+                                <MoneyInput
+                                  className="w-32"
+                                  aria-label={`قیمت فروش ${row.hotelName} ${price.roomTypeName} ${packageRoomTitle(price.roomCode)} ${p.currencyCode}`}
+                                  disabled={disabled}
+                                  value={current(cell)}
+                                  onValueChange={(amount) =>
+                                    update([{ ...cell, amount }])
+                                  }
+                                />
+                              ) : (
+                                <Input
+                                  className="w-32"
+                                  dir="ltr"
+                                  aria-label={`قیمت فروش ${row.hotelName} ${price.roomTypeName} ${packageRoomTitle(price.roomCode)} ${p.currencyCode}`}
+                                  disabled={disabled}
+                                  value={current(cell)}
+                                  onChange={(e) =>
+                                    update([
+                                      { ...cell, amount: e.target.value },
+                                    ])
+                                  }
+                                />
+                              )}
                               {currencySymbol(p.currencyCode)}
                             </label>
                           );
