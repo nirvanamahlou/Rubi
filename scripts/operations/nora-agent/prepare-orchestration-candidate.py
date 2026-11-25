@@ -99,7 +99,9 @@ def candidate_dockerfile(unit):
         common += [
             # Isolated 4301 uses an older full API base. Compile its actual entrypoint
             # and all transitive dependencies without rebuilding unshipped mail integrations.
+            "USER 0:0",
             """RUN echo '{"extends":"./tsconfig.build.json","include":[],"files":["src/assistant-read/main.ts"]}' > apps/api/tsconfig.nora-read.json && NODE_OPTIONS=--max-old-space-size=4608 node apps/api/node_modules/typescript/bin/tsc -p apps/api/tsconfig.nora-read.json""",
+            "USER 1000:1000",
         ]
     elif unit == "api":
         common.append(
