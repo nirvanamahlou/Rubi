@@ -10789,3 +10789,7 @@ PC-D · PUBLICATION-DESIGN-1125 · Site selection, publication navigation, searc
 Nora now prioritizes documented workflow actions for the reproduced cross-panel routing failures, with bounded access checks and no panel-name prompt on the updated fallback paths. Receipt, archive and manifest guidance were expanded.
 
 2026-11-25 · Site Commerce now links Jahan Bastan and Ghestiroo sales orders to their native reservation inbox before settlement. Formal Sales confirmation keeps the same intake ID.
+
+## NORA-DOCUMENT-RETRIEVAL — PC-C
+
+Nora combines authorized catalog sections for independently recognizable procedures and restores reservation handoff and report filter coverage. Sales data comparisons on the HR page continue to the conversation API. No dependency or migration changes.

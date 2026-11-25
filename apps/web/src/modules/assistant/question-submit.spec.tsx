@@ -176,6 +176,16 @@ afterEach(() => {
 });
 
 describe('actual Composer submit routing and transport', () => {
+  it('dispatches an explicit live sales comparison from the HR page', async () => {
+    h.path = '/hr';
+    const question =
+      'فروش امروز را با دیروز مقایسه کن، فقط تعداد قراردادها و بازه گزارش را بگو.';
+    await send(question);
+    expect(h.fetcher).toHaveBeenCalledTimes(1);
+    expect(h.fetcher.mock.calls[0]![0]).toBe('/api/assistant/v3/conversation');
+    expect(chat().at(-1)).toContain('تعداد بر اساس شواهد تازه');
+  });
+
   it.each(['/workbench', '/sales', '/finance/delivery'])(
     'clarifies the sales period and reads the same ERP report from %s',
     async (path) => {

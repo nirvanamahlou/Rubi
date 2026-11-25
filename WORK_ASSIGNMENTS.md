@@ -13614,3 +13614,7 @@ PC-D · PUBLICATION-DESIGN-1125 · Integrations storefront cards and the six pub
 Reserve Nora guide arbitration, linked guide source documents and generated catalogues, response copy, and focused regressions. No API or schema changes.
 
 PC-D · Website order intake in Reservations · Jahan Bastan and Ghestiroo. Scope: Site Commerce order linking and native Reservations intake, focused tests. No schema or dependency change.
+
+## NORA-DOCUMENT-RETRIEVAL — PC-C
+
+Reserve Nora's document retrieval and response composition, the focused question matrix, and project status. Preserve authenticated live data dispatch and the existing provider pilot.
