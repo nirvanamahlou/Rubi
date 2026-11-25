@@ -159,7 +159,8 @@ function fixture() {
         findUnique: vi
           .fn()
           .mockImplementation(async () => (saved ? link : null)),
-        upsert: vi.fn().mockImplementation(async () => {
+        upsert: vi.fn().mockImplementation(async ({ create }) => {
+          if (!saved) Object.assign(link, create);
           saved = true;
           return link;
         }),
