@@ -26,6 +26,10 @@ import { describeReportSources } from './report-source-discovery';
 import { runNativeReport } from './planned-native-report';
 import { runOperationalPanel } from './planned-operational';
 import {
+  standardSalesIntent,
+  standardSalesAnswer,
+} from './standard-sales-summary';
+import {
   analyticalSalesSources,
   ownContractCountIntent,
 } from './planned-sales-intent';
@@ -394,6 +398,24 @@ export async function runPlannedConversation(
                 'دسترسی به گزارش فروش برای این حساب تأیید نشد.',
               ),
             ];
+          const standard =
+            step.kind === 'sales' && standardSalesIntent(question);
+          if (standard) {
+            if (
+              /(?:همه شرکت ها|کل شرکت های مجاز)/u.test(
+                normalizeQuestion(question),
+              ) &&
+              first.company?.selection !== 'ALL'
+            )
+              return [
+                issue(
+                  step,
+                  'clarify',
+                  'برای شمارش در همهٔ شرکت‌های مجاز، ابتدا نمای «همه شرکت‌ها» را انتخاب کنید.',
+                ),
+              ];
+            return [await standardSalesAnswer(question, standard, read)];
+          }
           const ownCount =
             step.kind === 'sales' && ownContractCountIntent(question);
           if (ownCount === 'qualified')

@@ -28,6 +28,19 @@ async function converse(
   vi.stubGlobal('fetch', async (url: RequestInfo | URL, init?: RequestInit) => {
     expect(new Headers(init?.headers).get('cookie')).toBe(cookie);
     switch (new URL(String(url)).pathname) {
+      case '/sales/assistant-agent/standard-sales-summary':
+        calls.push('/standard-sales-summary');
+        return Response.json({
+          version: 1,
+          metric: 'standard-sales',
+          observedAt,
+          total: 3,
+          missingAmounts: 0,
+          totals: [
+            { currencyCode: 'USD', amount: '14.005' },
+            { currencyCode: 'EUR', amount: '1.23' },
+          ],
+        });
       case '/sales/assistant-agent/my-contract-count':
         expect(new URL(String(url)).search).toBe('');
         expect(init?.body).toBeUndefined();
@@ -99,6 +112,33 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe('authorized multi-measure and grouped Sales requests', () => {
+  it('uses the same effective cancellation producer for standard counts and per-currency discounted amounts', async () => {
+    const count = await converse(
+      'تعداد قراردادهای فروش استاندارد در همه زمان‌ها بدون پیش‌نویس‌ها و لغوشده‌ها چقدر است؟',
+      [],
+    );
+    const money = await converse(
+      'جمع مبلغ فروش استاندارد USD در همه زمان‌ها با حذف لغوشده‌ها و پیش‌نویس‌ها چقدر است؟',
+      [],
+    );
+    expect(count.calls).toEqual(['/standard-sales-summary']);
+    expect(money.calls).toEqual(count.calls);
+    expect(count.parts[0]).toMatchObject({
+      status: 'answer',
+      text: expect.stringContaining('۳'),
+    });
+    expect(money.parts[0]).toMatchObject({
+      status: 'answer',
+      text: expect.stringContaining('14.005 USD'),
+    });
+    expect(money.parts[0].text).not.toContain('EUR');
+    const filtered = await converse(
+      'تعداد قراردادهای فروش استاندارد فقط برای شعبه تهران چند تاست؟',
+      [],
+    );
+    expect(filtered.parts[0].status).toBe('clarify');
+    expect(filtered.calls).toEqual([]);
+  });
   it('counts authenticated ownership, including cancellations, without sending an actor ID, and preserves unsupported filters', async () => {
     const report = await converse('تعداد قراردادهای خودم چقدر است؟', []);
     expect(report.calls).toEqual(['/my-contract-count']);

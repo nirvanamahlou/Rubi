@@ -2,6 +2,7 @@ import { normalizeQuestion } from './question-text';
 import { asksWorkbenchRequestStatus } from './workbench-request-guide';
 import { resolveOperationalMetric } from './operational-metrics';
 import { panelIntent } from './planned-operational-intent';
+import { standardSalesIntent } from './standard-sales-summary';
 import {
   analyticalSalesSources,
   joinsSalesMeasures,
@@ -40,7 +41,11 @@ export function classify(question: string): PlannedRead {
   else if (voucherRequest.test(text)) kind = 'settled-vouchers';
   else if (/^(?:لطفا )?(?:اجرای گزارش |گزارش .+ اجرا کن$)/u.test(text))
     kind = 'report';
-  else if (ownContractCountIntent(text) || analyticalSalesSources(text).length)
+  else if (
+    standardSalesIntent(text) ||
+    ownContractCountIntent(text) ||
+    analyticalSalesSources(text).length
+  )
     kind = 'sales';
   else if (fortnight.test(text) && /فروش|قرارداد/.test(text))
     kind = 'rolling-sales';
@@ -154,7 +159,8 @@ export function planQuestion(message: string, previous = ''): PlannedRead[] {
   if (
     parts.length === 1 &&
     parts[0]?.kind === 'sales' &&
-    (ownContractCountIntent(normalized) ||
+    (standardSalesIntent(normalized) ||
+      ownContractCountIntent(normalized) ||
       analyticalSalesSources(normalized).length)
   )
     return parts;

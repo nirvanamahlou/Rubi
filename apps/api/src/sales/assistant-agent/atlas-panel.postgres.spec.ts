@@ -16,6 +16,7 @@ import { SalesRepository } from '../sales.repository';
 import { SalesService } from '../sales.service';
 import { ContractCompanyScope } from '../contract-company-scope.public';
 import { readContractCountBreakdown } from './count-breakdown';
+import { readStandardSalesSummary } from './rolling-sales';
 
 it.skipIf(process.env.NORA_RUN_AGENT_POSTGRES_TESTS !== '1')(
   'reconciles the Sales dashboard and scoped Nora reads on one disposable database',
@@ -113,6 +114,7 @@ it.skipIf(process.env.NORA_RUN_AGENT_POSTGRES_TESTS !== '1')(
             departureDate: new Date('2026-11-24'),
             status,
             hiddenAt: idx === 4 ? new Date() : null,
+            confirmedAt: idx === 3 ? null : new Date(Date.now() - 60_000),
             createIdempotencyKey: randomUUID(),
             createRequestFingerprint: '0'.repeat(64),
             priceComponents: {
@@ -186,6 +188,17 @@ it.skipIf(process.env.NORA_RUN_AGENT_POSTGRES_TESTS !== '1')(
         sales_cancelled: 1,
       });
       expect(personal.rows).toEqual(count.rows);
+      const standard = await readStandardSalesSummary(db, administrator);
+      expect(standard.total).toBe(2);
+      expect(
+        standard.totals.map(({ currencyCode, amount }) => [
+          currencyCode,
+          Number(amount),
+        ]),
+      ).toEqual([
+        ['IRR', 200],
+        ['USD', 20.25],
+      ]);
       expect(data.activeContracts).toBe(1);
       expect(count.rows[0]?.active_panel).toBe(data.activeContracts);
       await fixture.query('BEGIN READ ONLY');

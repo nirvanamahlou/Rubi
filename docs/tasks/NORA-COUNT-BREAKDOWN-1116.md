@@ -78,3 +78,12 @@ authenticated browser acceptance of this new endpoint remain separate gates.
 ## Authenticated personal count
 
 The normal Web composer reads `GET /api/v1/sales/assistant-agent/my-contract-count` for an unfiltered personal count. The Sales owner binds the owner ID to the authenticated actor and intersects the predicate with the selected company, authorized branch scope and visible contracts. The response includes `observedAt`, the all-status total and the count in the Sales panel after effective Sales and Reservations cancellations. The endpoint has no actor, date or scope inputs. Additional requested filters stay explicit in the conversation. The standard ERP Sales permissions and a release-time scope recheck apply, including for users who have organization-wide read access.
+
+The authenticated `GET /api/v1/sales/assistant-agent/standard-sales-summary`
+shares its calculation with the fortnight Sales producer. Its all-time scope
+includes visible contracts in the four standard confirmed Sales statuses with
+creation before the cutoff and confirmation by the cutoff. The latest Reservations
+cancellations are excluded. It returns the contract count, missing-price count
+and discounted Decimal totals by currency, alongside the cutoff and observation
+timestamp. The private report reads at most 5,000 candidate contracts and fails
+closed on overflow. Contract identities are excluded from the summary.
