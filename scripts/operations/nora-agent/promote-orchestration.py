@@ -278,7 +278,11 @@ def core(stage, manifest, built, unit, action):
         save_receipt(path, receipt)
     else:
         after = modify_compose(
-            before, unit, target["tag"], previous_ref(receipt, base), False,
+            before,
+            unit,
+            target["tag"],
+            previous_ref(receipt, base),
+            False,
             receipt.get("retainWebOptions", False),
         )
 
@@ -296,7 +300,11 @@ def core(stage, manifest, built, unit, action):
             )
         recovery = (
             modify_compose(
-                after, unit, target["tag"], previous_ref(receipt, base), False,
+                after,
+                unit,
+                target["tag"],
+                previous_ref(receipt, base),
+                False,
                 receipt.get("retainWebOptions", False),
             )
             if forward
@@ -383,7 +391,7 @@ def sidecar(stage, manifest, built, unit, action):
             health(unit, False)
             return
         if unit == "assistant":
-            verify_assistant_source(old,base)
+            verify_assistant_source(old, base)
         else:
             check_artifact_drift(old)
         swap_sidecar(

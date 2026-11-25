@@ -101,7 +101,7 @@ def build(stage, previous=None):
         raise ValueError("Expected check, build or build-web")
     sha = manifest["head"]
     receipt = {"revision": sha, "images": {}}
-    for unit in (("web",) if web_only else ("api", "read", "web")):
+    for unit in ("web",) if web_only else ("api", "read", "web"):
         state = manifest["units"][unit]
         base = f'rubi-nora-prebuild:{sha[:12]}-{unit}-{state["image"][7:19]}'
         tag = f"rubi-nora-candidate:{sha[:12]}-{unit}"
