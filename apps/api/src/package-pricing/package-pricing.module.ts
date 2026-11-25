@@ -1,5 +1,6 @@
 import { FloatingTourPricingController } from './floating-tour-pricing.controller';
 import { FloatingTourPricingService } from './floating-tour-pricing.service';
+import { CharterExcelPricingService } from './charter-excel-pricing.service';
 import { Module } from '@nestjs/common';
 
 import { AuthGuard } from '../iam/auth.guard';
@@ -39,6 +40,7 @@ import {
     PermissionGuard,
     PackagePricingService,
     PackageTourPricingService,
+    CharterExcelPricingService,
     FloatingTourPricingService,
     FailClosedPackagePricingSourceAdapter,
     VersionedPackagePricingSourceAdapter,

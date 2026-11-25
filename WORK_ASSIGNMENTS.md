@@ -1,3 +1,11 @@
+## CHARTER-EXCEL-PRICING-1125 — PC-A — READY_FOR_CI
+
+Owner authorizes `develop` merge after checks. Reserve Package Pricing charter Excel preview/publication, dated sales catalog, bounded pricing workspace/client, localized labels, and focused tests. Reserve one additive Package Pricing migration and the related Prisma relations. The native catalog remains the Sales consumer. Ticket Catalog and hotel rate providers are read through their public services.
+
+The import is scoped to the selected departure, uses its existing charter offers and seat accounting, and preserves previously published rate-based quotes. Excel DBL is per traveler, and the existing Sales quote uses room totals. Local focused API and Web suites and a clean PostgreSQL migration pass. No production deployment is in scope.
+
+CI follow-up reserves only the new API errors in the English overrides and the generated data-atlas index entries for the added charter pricing routes. The atlas builder and Nora read policy are unchanged.
+
 ## Visa media edit permissions
 
 PC-C added visa image fields to the IAM catalog and tested independent grants.
