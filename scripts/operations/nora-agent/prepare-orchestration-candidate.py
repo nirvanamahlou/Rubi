@@ -150,7 +150,9 @@ for(const [key,path] of Object.entries(input)){
 }
 process.stdout.write(JSON.stringify(result));'''
 sources = {f: ("/nora-source/"+f.removeprefix("services/assistant/") if is_assistant else "/workspace/"+f) for f in files}
-data = subprocess.check_output(["docker","exec","-i",unit,"node","-e",script],input=json.dumps(sources).encode())
+# Prior read-service images compile root-owned source overlays and run only dist as node.
+# Read the named Git source files for the three-way comparison without changing their modes.
+data = subprocess.check_output(["docker","exec","-i","--user","0:0",unit,"node","-e",script],input=json.dumps(sources).encode())
 after = inspect()
 assert before["Id"] == after["Id"] and before["Image"] == after["Image"]
 mounts = {}
