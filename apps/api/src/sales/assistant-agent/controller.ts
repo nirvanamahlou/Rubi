@@ -25,7 +25,7 @@ import {
 } from './catalog';
 import { SalesAgentQueryService, type AgentScope } from './query.service';
 import { DatabaseService } from '../../database/database.service';
-import { readRollingSales } from './rolling-sales';
+import { readRollingSales, readStandardSalesSummary } from './rolling-sales';
 import { readHotelRanking } from './hotel-ranking';
 import { readContractCountBreakdown } from './count-breakdown';
 import { hasNoraGlobalBusinessRead } from '../../iam/nora-business-read';
@@ -241,6 +241,50 @@ export class SalesAgentController {
     if ((await this.context(request)).contextId !== context.contextId)
       throw new ForbiddenException('AGENT_CONTEXT_CHANGED');
     return { ...result, contextId: context.contextId };
+  }
+
+  @Get('my-contract-count')
+  @Header('Cache-Control', 'private, no-store')
+  async myContractCount(@Req() request: AuthenticatedRequest) {
+    const context = await this.context(request, false);
+    let result;
+    try {
+      result = await readContractCountBreakdown(
+        this.database.client,
+        context.scope,
+        'mine',
+      );
+    } catch {
+      throw new ServiceUnavailableException('AGENT_SOURCE_UNAVAILABLE');
+    }
+    if ((await this.context(request, false)).contextId !== context.contextId)
+      throw new ForbiddenException('AGENT_CONTEXT_CHANGED');
+    const row = result.rows[0]!;
+    return {
+      version: 1,
+      ownership: 'mine',
+      observedAt: result.observedAt,
+      total: row.total,
+      panelNonCancelled: row.panel_non_cancelled,
+    };
+  }
+
+  @Get('standard-sales-summary')
+  @Header('Cache-Control', 'private, no-store')
+  async standardSalesSummary(@Req() request: AuthenticatedRequest) {
+    const context = await this.context(request, false);
+    let summary;
+    try {
+      summary = await readStandardSalesSummary(
+        this.database.client,
+        context.scope,
+      );
+    } catch {
+      throw new ServiceUnavailableException('AGENT_SOURCE_UNAVAILABLE');
+    }
+    if ((await this.context(request, false)).contextId !== context.contextId)
+      throw new ForbiddenException('AGENT_CONTEXT_CHANGED');
+    return summary;
   }
 
   @Post('count-breakdown')

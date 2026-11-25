@@ -91,6 +91,26 @@ function fixture() {
   return { client, findMany };
 }
 describe('native Sales report source and shared preview/export path', () => {
+  it.each([false, true])(
+    'excludes contracts hidden by Sales even for an all-company administrator (pipeline=%s)',
+    async (pipeline) => {
+      const { client, findMany } = fixture();
+      const [visible] = await findMany();
+      const hidden = { ...visible, id: 'hidden', hiddenAt: new Date() };
+      findMany.mockImplementation(async ({ where }) =>
+        [visible, hidden].filter(
+          (row) => where.hiddenAt !== null || row.hiddenAt == null,
+        ),
+      );
+      const rows = await readSalesReportingProjection(
+        client,
+        { ...actor, permissions: ['sales.contracts.read.all'] },
+        { filters: {} },
+        pipeline,
+      );
+      expect(new Set(rows.map((row) => row.id))).toEqual(new Set(['one']));
+    },
+  );
   it('reports organizational customer sales without inventing agency credit or profit', async () => {
     const { client, findMany } = fixture();
     const [one] = await findMany();

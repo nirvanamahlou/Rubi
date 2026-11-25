@@ -46,13 +46,52 @@ export async function readRollingSales(
   asOf: string,
 ) {
   const filter = rollingSalesFilter(asOf);
+  const receipt = await readStandardSales(
+    database,
+    scope,
+    asOf,
+    filter.createdAt,
+  );
+  return { ...receipt, start: filter.createdAt.gte.toISOString(), end: asOf };
+}
+
+export async function readStandardSalesSummary(
+  database: DatabaseClient,
+  scope: AgentScope,
+) {
+  const cutoff = new Date();
+  const { observedAt, total, totals, missingAmounts } = await readStandardSales(
+    database,
+    scope,
+    cutoff.toISOString(),
+    { lt: cutoff },
+  );
+  return {
+    version: 1,
+    metric: 'standard-sales',
+    asOf: cutoff.toISOString(),
+    observedAt,
+    total,
+    totals,
+    missingAmounts,
+  };
+}
+
+async function readStandardSales(
+  database: DatabaseClient,
+  scope: AgentScope,
+  asOf: string,
+  createdAt: { lt: Date; gte?: Date },
+) {
   return database.$transaction(
     async (tx) => {
       await tx.$executeRaw`SET TRANSACTION READ ONLY`;
       await tx.$executeRaw`SET LOCAL statement_timeout = '5000ms'`;
       const records = await tx.salesContract.findMany({
         where: {
-          ...filter,
+          createdAt,
+          status: { in: [...SALES_ASSISTANT_STATUSES] },
+          confirmedAt: { lte: new Date(asOf) },
           hiddenAt: null,
           ...(scope.companyId ? { legalEntityId: scope.companyId } : {}),
           ...(scope.mode !== 'all'
@@ -108,8 +147,6 @@ export async function readRollingSales(
         version: 1,
         resultId: randomUUID(),
         observedAt: new Date().toISOString(),
-        start: filter.createdAt.gte.toISOString(),
-        end: asOf,
         total: rows.length,
         missingAmounts: rows.filter((row) => !row.amounts.length).length,
         totals: Array.from(amounts, ([currencyCode, values]) => ({

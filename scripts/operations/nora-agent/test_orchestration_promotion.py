@@ -15,9 +15,61 @@ spec = importlib.util.spec_from_file_location(
 )
 promotion = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(promotion)
+spec = importlib.util.spec_from_file_location(
+    "builder", here / "build-orchestration-candidate.py"
+)
+builder = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(builder)
 
 
 class PromotionTests(TestCase):
+    def test_incremental_build_selects_all_changed_runtime_units(self):
+        units = {
+            unit: {"overlayFiles": {}} for unit in ("api", "read", "web", "assistant")
+        }
+        with self.assertRaisesRegex(ValueError, "No runtime updates"):
+            builder.affected_units("build-updates", units)
+        units["web"]["overlayFiles"]["apps/web/src/example.ts"] = "digest"
+        self.assertEqual(builder.affected_units("build-updates", units), ("web",))
+        units["api"]["overlayFiles"]["apps/api/src/example.ts"] = "digest"
+        self.assertEqual(builder.affected_units("build-updates", units), ("api", "web"))
+        self.assertEqual(
+            builder.affected_units("build", units), ("api", "read", "web", "assistant")
+        )
+        with self.assertRaisesRegex(ValueError, "Incomplete"):
+            builder.affected_units("build-updates", {"web": units["web"]})
+
+    def test_web_patch_keeps_existing_runtime_options_during_promotion_and_rollback(
+        self,
+    ):
+        initial = b"services:\n  web:\n    image: web:v0\n    environment:\n      EXISTING: enabled\n"
+        previous = promotion.modify_compose(initial, "web", "web:v0", "web:v1", True)
+        enabled = b"      NORA_COMPOSITION_TELEMETRY: 'true'\n"
+        for original_line in (enabled, enabled.replace(b"true", b"false"), b""):
+            before = previous.replace(enabled, original_line)
+            saved = promotion.web_option_lines(promotion.service_block(before, "web"))
+            patched = promotion.modify_compose(
+                before, "web", "web:v1", "web:v2", True, saved
+            )
+            self.assertIn(enabled, patched)
+            self.assertEqual(
+                promotion.modify_compose(
+                    patched, "web", "web:v2", "web:v1", False, saved
+                ),
+                before,
+            )
+            with self.assertRaisesRegex(RuntimeError, "changed since release"):
+                promotion.modify_compose(
+                    patched.replace(enabled, b""),
+                    "web",
+                    "web:v2",
+                    "web:v1",
+                    False,
+                    saved,
+                )
+        with self.assertRaisesRegex(RuntimeError, "Review concurrent Web option"):
+            promotion.web_option_lines(previous.replace(enabled, enabled + enabled))
+
     def test_compose_failure_restores_immutable_image_and_allows_retry(self):
         with TemporaryDirectory() as d, ExitStack() as ctx:
             stage = Path(d)

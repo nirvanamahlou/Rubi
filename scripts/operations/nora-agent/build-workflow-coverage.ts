@@ -254,9 +254,10 @@ for (const [guide, file, symbol] of readers) {
     acceptance: 'compare-permitted-records-with-panel',
   });
 }
-for (const [id, need, panel, source, scope] of [
+for (const [id, owner, need, panel, source, scope] of [
   [
     'rolling-sales',
+    'Sales',
     'مبلغ فروش دو هفته اخیر و فهرست قراردادهای مشمول',
     '/sales',
     'apps/api/src/sales/assistant-agent/rolling-sales.ts',
@@ -264,16 +265,33 @@ for (const [id, need, panel, source, scope] of [
   ],
   [
     'settled-vouchers',
+    'Sales/Finance/Reservations',
     'قراردادهای تسویه‌شده و اقامت‌های دارای کسری واچر',
     '/reservations?report=settled-vouchers',
     'apps/api/src/reporting/settled-vouchers.controller.ts',
     'intersection of native sales, finance and reservations scopes',
   ],
+  [
+    'own-contract-count',
+    'Sales',
+    'تعداد قراردادهای خودم و تعداد قابل نمایش در فهرست فروش پس از حذف ابطال‌ها',
+    '/sales',
+    'apps/api/src/sales/assistant-agent/count-breakdown.ts',
+    'authenticated owner within the selected company and permitted Sales scope',
+  ],
+  [
+    'standard-sales',
+    'Sales',
+    'تعداد و مبلغ فروش قطعی در همهٔ زمان‌ها، به تفکیک ارز و با حذف ابطال‌های مؤثر',
+    '/reports?report=sales_contract_pipeline',
+    'apps/api/src/sales/assistant-agent/rolling-sales.ts',
+    'native sales scope, confirmation by cutoff and latest effective reservation cancellation',
+  ],
 ]) {
   sources.add(source);
   add({
     id: 'workflow/' + id,
-    owner: id === 'rolling-sales' ? 'Sales' : 'Sales/Finance/Reservations',
+    owner,
     need,
     panel,
     source,

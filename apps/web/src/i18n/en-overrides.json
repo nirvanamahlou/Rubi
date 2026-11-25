@@ -1,4 +1,12 @@
 {
+  "تعداد قراردادهای فروش استاندارد": "Standard sales contract count",
+  "مبلغ قراردادی پس از تخفیف": "Contract amount after discounts",
+  "تعداد قراردادهای فاقد مبلغ ثبت‌شده": "Contracts without a recorded amount",
+  "این گزارش تعداد و مبلغ فروش استاندارد را در کل دوره و به تفکیک ارز نشان می‌دهد. کدام شاخص را در همین محدوده می‌خواهید؟": "This report provides the all-time standard sales count and amount by currency. Which figure do you need for this scope?",
+  "برای شمارش در همهٔ شرکت‌های مجاز، ابتدا نمای «همه شرکت‌ها» را انتخاب کنید.": "Select All companies first to count across your authorized companies.",
+  "تعداد قراردادهای خودتان با احتساب همهٔ وضعیت‌ها": "Your contracts across all statuses",
+  "تعداد قراردادهای خودتان در فهرست غیرابطال‌شدهٔ فروش": "Your contracts in the non-cancelled Sales list",
+  "شمارش قراردادهای خودتان برای همهٔ وضعیت‌ها در محدودهٔ فعلی در دسترس است. تعداد بدون فیلتر اضافه را می‌خواهید؟": "Your contract count is available across all statuses within your current scope. Would you like the count without the additional filter?",
   "اقامت‌های بدون واچر در قراردادهای تسویه‌شده": "Hotel stays awaiting vouchers on settled contracts",
   "اقامت‌های فاقد سابقهٔ قابل‌تشخیص صدور واچر": "Stays with insufficient voucher issuance evidence",
   "تعداد اقامت‌های بدون واچر": "Stays awaiting vouchers",

@@ -112,6 +112,15 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe('composed v3 entry point', () => {
+  it('attaches a company qualifier to the first data task without hiding a second instruction', () => {
+    const scoped = 'با انتخاب همه شرکت‌ها، تعداد قراردادها را بگو';
+    expect(planQuestion(scoped)).toEqual([]);
+    const question = scoped + ' و چطور قرارداد جدید بزنم؟';
+    expect(planQuestion(question)).toEqual([
+      { kind: 'sales', question: scoped },
+      { kind: 'guide', question: 'چطور قرارداد جدید بزنم؟' },
+    ]);
+  });
   it('marks voucher detail as partial when more than ten verified stays match', async () => {
     const rows = Array.from({ length: 10 }, (_, i) => ({
       contractNumber: 'C' + i,

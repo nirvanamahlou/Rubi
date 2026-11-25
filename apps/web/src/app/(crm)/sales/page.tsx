@@ -14,12 +14,26 @@ export default async function Page({
     contract?: string;
     record?: string;
     salesPeriodAsOf?: string;
+    page?: string;
   }>;
 }) {
-  const { contract, record, salesPeriodAsOf } = await searchParams;
+  const { contract, record, salesPeriodAsOf, page } = await searchParams;
+  const reportPage =
+    salesPeriodAsOf &&
+    typeof page === 'string' &&
+    /^[1-9]\d*$/.test(page) &&
+    Number.isSafeInteger(Number(page)) &&
+    Number(page) <= 214748364
+      ? Number(page)
+      : 1;
   return (
     <SalesWorkspace
-      key={salesPeriodAsOf ?? record ?? contract ?? ''}
+      key={
+        salesPeriodAsOf
+          ? `${salesPeriodAsOf}:${reportPage}`
+          : (record ?? contract ?? '')
+      }
+      initialReportPage={reportPage}
       initialSalesPeriodAsOf={
         typeof salesPeriodAsOf === 'string' ? salesPeriodAsOf : ''
       }

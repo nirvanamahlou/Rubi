@@ -25,6 +25,14 @@ import { normalizeQuestion } from './question-text';
 import { describeReportSources } from './report-source-discovery';
 import { runNativeReport } from './planned-native-report';
 import { runOperationalPanel } from './planned-operational';
+import {
+  standardSalesIntent,
+  standardSalesAnswer,
+} from './standard-sales-summary';
+import {
+  analyticalSalesSources,
+  ownContractCountIntent,
+} from './planned-sales-intent';
 
 const inputSchema = z
   .object({
@@ -70,8 +78,11 @@ export async function runPlannedConversation(
   if (process.env.NORA_COMPOSITION_ENABLED === 'false') return response(204);
   const useModel =
     (!plan.length || plan.some((step) => step.kind === 'unknown')) &&
-    mightNeedModelPlan(input.message) &&
-    process.env.NORA_MODEL_PLANNER_ENABLED === 'true';
+    process.env.NORA_MODEL_PLANNER_ENABLED === 'true' &&
+    mightNeedModelPlan(
+      input.message,
+      resolveDocumentedWorkflow(input.message).length > 0,
+    );
   if (!plan.length && !useModel) return response(204);
   const base = (
     process.env.NORA_ERP_API_BASE_URL || process.env.ERP_API_BASE_URL
@@ -387,6 +398,81 @@ export async function runPlannedConversation(
                 'دسترسی به گزارش فروش برای این حساب تأیید نشد.',
               ),
             ];
+          const standard =
+            step.kind === 'sales' && standardSalesIntent(question);
+          if (standard) {
+            if (
+              /(?:همه شرکت ها|کل شرکت های مجاز)/u.test(
+                normalizeQuestion(question),
+              ) &&
+              first.company?.selection !== 'ALL'
+            )
+              return [
+                issue(
+                  step,
+                  'clarify',
+                  'برای شمارش در همهٔ شرکت‌های مجاز، ابتدا نمای «همه شرکت‌ها» را انتخاب کنید.',
+                ),
+              ];
+            return [await standardSalesAnswer(question, standard, read)];
+          }
+          const ownCount =
+            step.kind === 'sales' && ownContractCountIntent(question);
+          if (ownCount === 'qualified')
+            return [
+              issue(
+                step,
+                'clarify',
+                'شمارش قراردادهای خودتان برای همهٔ وضعیت‌ها در محدودهٔ فعلی در دسترس است. تعداد بدون فیلتر اضافه را می‌خواهید؟',
+              ),
+            ];
+          if (ownCount === 'all-time') {
+            if (
+              /(?:همه شرکت ها|کل شرکت های مجاز)/u.test(
+                normalizeQuestion(question),
+              ) &&
+              first.company?.selection !== 'ALL'
+            ) {
+              return [
+                issue(
+                  step,
+                  'clarify',
+                  'برای شمارش در همهٔ شرکت‌های مجاز، ابتدا نمای «همه شرکت‌ها» را انتخاب کنید.',
+                ),
+              ];
+            }
+            const receipt = z
+              .object({
+                version: z.literal(1),
+                ownership: z.literal('mine'),
+                observedAt: z.string().datetime(),
+                total: z.number().int().nonnegative(),
+                panelNonCancelled: z.number().int().nonnegative(),
+              })
+              .refine((r) => r.panelNonCancelled <= r.total)
+              .parse(await read('/sales/assistant-agent/my-contract-count'));
+            const countLabel =
+              'تعداد قراردادهای خودتان با احتساب همهٔ وضعیت‌ها';
+            const panelLabel =
+              'تعداد قراردادهای خودتان در فهرست غیرابطال‌شدهٔ فروش';
+            return [
+              {
+                question,
+                status: receipt.total ? 'answer' : 'empty',
+                text:
+                  countLabel +
+                  ': ' +
+                  receipt.total.toLocaleString('fa-IR') +
+                  '\n' +
+                  panelLabel +
+                  ': ' +
+                  receipt.panelNonCancelled.toLocaleString('fa-IR'),
+                links: [],
+                source: 'sales/assistant-agent/my-contract-count',
+                observedAt: receipt.observedAt,
+              },
+            ];
+          }
           const usePrior = input.salesPeriodAsOf && step.reuseSalesCutoff;
           const result = await proxyPlannedSales(assistantRequest, {
             message: question,
@@ -396,9 +482,17 @@ export async function runPlannedConversation(
           });
           if (!result.ok) throw new ReadError(result.status);
           const answer = agentResponseSchema.parse(await result.json());
+          const cited = new Set(
+            answer.sources.flatMap((entry) => entry.sources),
+          );
           if (
             answer.status === 'REPLY' ||
-            (answer.status === 'ANSWER' && !answer.sources.length)
+            (answer.status === 'ANSWER' &&
+              (!answer.sources.length ||
+                (step.kind === 'sales' &&
+                  analyticalSalesSources(question).some(
+                    (source) => !cited.has(source),
+                  ))))
           )
             return [
               issue(
@@ -451,7 +545,8 @@ export async function runPlannedConversation(
               status:
                 answer.status === 'CLARIFY'
                   ? 'clarify'
-                  : answer.limitations.length
+                  : answer.limitations.length ||
+                      answer.sources.some((s) => s.truncated)
                     ? 'partial'
                     : 'answer',
               text: [answer.text, ...answer.limitations].join('\n'),

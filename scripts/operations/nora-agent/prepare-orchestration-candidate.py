@@ -112,7 +112,7 @@ def candidate_dockerfile(unit):
             "WORKDIR /workspace/apps/web",
             "ENV NEXT_PUBLIC_ASSISTANT_AGENT_ENABLED=true NEXT_PUBLIC_NORA_MODEL_PLANNER_ENABLED=true NEXT_PUBLIC_API_BASE_URL=https://avinaofficial.ir/api/v1",
             # Keep old hashed chunks for tabs already open; verify the fresh client first.
-            "RUN cp -a .next/static /tmp/nora-previous-static && node node_modules/next/dist/bin/next build --webpack && node /workspace/scripts/operations/nora-agent/verify-web-build.mjs .next/static && cp -an /tmp/nora-previous-static/. .next/static/",
+            'RUN previous=$(mktemp -d /tmp/nora-static.XXXXXX) && cp -a .next/static/. "$previous/" && node node_modules/next/dist/bin/next build --webpack && node /workspace/scripts/operations/nora-agent/verify-web-build.mjs .next/static && cp -an "$previous/." .next/static/ && rm -rf "$previous"',
         ]
     return "\n".join(common) + "\n"
 
@@ -146,11 +146,21 @@ script = '''const fs=require("node:fs");
 const input=JSON.parse(fs.readFileSync(0,"utf8"));
 const result={};
 for(const [key,path] of Object.entries(input)){
-  try{result[key]=fs.readFileSync(path).toString("base64")}catch(e){if(e.code!=="ENOENT")throw e;result[key]=null}
+  try{
+    if(fs.realpathSync(path)!==path) throw new Error("Unexpected source symlink");
+    const fd=fs.openSync(path,fs.constants.O_RDONLY|fs.constants.O_NOFOLLOW);
+    try{
+      const stat=fs.fstatSync(fd);
+      if(!stat.isFile()||stat.size>8*1024*1024) throw new Error("Unexpected source type or size");
+      result[key]=fs.readFileSync(fd).toString("base64");
+    }finally{fs.closeSync(fd)}
+  }catch(e){if(e.code!=="ENOENT")throw e;result[key]=null}
 }
 process.stdout.write(JSON.stringify(result));'''
 sources = {f: ("/nora-source/"+f.removeprefix("services/assistant/") if is_assistant else "/workspace/"+f) for f in files}
-data = subprocess.check_output(["docker","exec","-i",unit,"node","-e",script],input=json.dumps(sources).encode())
+# Prior read-service images compile root-owned source overlays and run only dist as node.
+# Read the named Git source files for the three-way comparison without changing their modes.
+data = subprocess.check_output(["docker","exec","-i","--user","0:0",unit,"node","-e",script],input=json.dumps(sources).encode())
 after = inspect()
 assert before["Id"] == after["Id"] and before["Image"] == after["Image"]
 mounts = {}

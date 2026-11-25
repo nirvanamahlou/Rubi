@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { DatabaseClient } from '@nora/database';
-import { readRollingSales, rollingSalesFilter } from './rolling-sales';
+import {
+  readRollingSales,
+  rollingSalesFilter,
+  readStandardSalesSummary,
+} from './rolling-sales';
 
 describe('rolling contractual sales', () => {
   it('keeps one shared Tehran cutoff and changes the start at local midnight', () => {
@@ -92,5 +96,30 @@ describe('rolling contractual sales', () => {
       ['USD', 111.1],
     ]);
     expect(result.truncated).toBe(true);
+    const summary = await readStandardSalesSummary(
+      db as unknown as DatabaseClient,
+      {
+        mode: 'all',
+        companyId: null,
+        userId: 'user',
+        branchIds: [],
+        payments: false,
+      },
+    );
+    expect(findMany.mock.calls[1]![0].where).toMatchObject({
+      hiddenAt: null,
+      status: {
+        in: ['CONFIRMED', 'SENT_TO_RESERVATIONS', 'IN_PROGRESS', 'COMPLETED'],
+      },
+      confirmedAt: { lte: new Date(summary.asOf) },
+      createdAt: { lt: new Date(summary.asOf) },
+    });
+    expect(findMany.mock.calls[1]![0].where.createdAt).not.toHaveProperty(
+      'gte',
+    );
+    expect(summary.total).toBe(result.total);
+    expect(summary.totals).toEqual(result.totals);
+    expect(summary.missingAmounts).toBe(result.missingAmounts);
+    expect(summary).not.toHaveProperty('rows');
   });
 });

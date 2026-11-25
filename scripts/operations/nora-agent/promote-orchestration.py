@@ -27,6 +27,7 @@ WEB_OPTIONS = {
     "NORA_ERP_API_BASE_URL": "http://api:4000/api/v1",
     "NORA_COMPOSITION_ENABLED": "true",
     "NORA_MODEL_PLANNER_ENABLED": "true",
+    "NORA_COMPOSITION_TELEMETRY": "true",
 }
 
 
@@ -129,6 +130,14 @@ def health(unit, candidate):
                 "http://127.0.0.1:4000/api/v1/reports/nora/settled-vouchers?pageSize=1",
                 401,
             )
+            probe(
+                "http://127.0.0.1:4000/api/v1/sales/assistant-agent/my-contract-count",
+                401,
+            )
+            probe(
+                "http://127.0.0.1:4000/api/v1/sales/assistant-agent/standard-sales-summary",
+                401,
+            )
     elif unit == "read":
         probe("http://127.0.0.1:4301/api/v1/iam/auth/access", 401)
         if candidate:
@@ -136,6 +145,14 @@ def health(unit, candidate):
                 "http://127.0.0.1:4301/api/v1/sales/assistant-agent/rolling-sales",
                 401,
                 "POST",
+            )
+            probe(
+                "http://127.0.0.1:4301/api/v1/sales/assistant-agent/my-contract-count",
+                401,
+            )
+            probe(
+                "http://127.0.0.1:4301/api/v1/sales/assistant-agent/standard-sales-summary",
+                401,
             )
     elif unit == "assistant":
         probe("http://127.0.0.1:4300/health", 200)
@@ -171,7 +188,26 @@ def service_block(content, unit):
     return match[0]
 
 
-def modify_compose(content, unit, current, tag, forward):
+def web_option_lines(block):
+    lines = {}
+    for key, value in WEB_OPTIONS.items():
+        prefix = "      " + key + ":"
+        found = re.findall(rb"(?m)^" + prefix.encode() + rb"[^\r\n]*\n", block)
+        permitted = {value}
+        if key == "NORA_COMPOSITION_TELEMETRY":
+            permitted.add("false")
+        allowed = {
+            f"{prefix} {quote}{v}{quote}\n"
+            for quote in ("", "'", '"')
+            for v in permitted
+        }
+        if len(found) > 1 or (found and found[0].decode() not in allowed):
+            raise RuntimeError("Review concurrent Web option: " + key)
+        lines[key] = found[0].decode() if found else None
+    return lines
+
+
+def modify_compose(content, unit, current, tag, forward, original_options=None):
     old = service_block(content, unit)
     image, n = re.subn(
         rb"(?m)^    image: " + re.escape(current.encode()) + rb"[ \t]*$",
@@ -181,22 +217,31 @@ def modify_compose(content, unit, current, tag, forward):
     if n != 1:
         raise RuntimeError("Concurrent Compose image change")
     if unit == "web":
-        added = b"".join(
-            b"      " + k.encode() + b": '" + v.encode() + b"'\n"
-            for k, v in WEB_OPTIONS.items()
-        )
         marker = b"    environment:\n"
-        if forward:
-            if image.count(marker) != 1 or any(
-                re.search(rb"(?m)^      " + k.encode() + rb":", image)
-                for k in WEB_OPTIONS
-            ):
-                raise RuntimeError("Review concurrent Web runtime options")
-            image = image.replace(marker, marker + added, 1)
-        else:
-            if image.count(marker + added) != 1:
-                raise RuntimeError("Web flags changed since release")
-            image = image.replace(marker + added, marker, 1)
+        observed = web_option_lines(image)
+        baseline = (
+            original_options
+            if original_options is not None
+            else {k: None for k in WEB_OPTIONS}
+        )
+        if set(baseline) != set(WEB_OPTIONS) or image.count(marker) != 1:
+            raise RuntimeError("Missing Web option baseline")
+        for key, value in WEB_OPTIONS.items():
+            original = baseline[key]
+            desired = f"      {key}: '{value}'\n"
+            if original and original.split(": ", 1)[1].strip().strip("\"'") == value:
+                desired = original
+            expected, target = (original, desired) if forward else (desired, original)
+            if observed[key] != expected:
+                raise RuntimeError("Web option changed since release: " + key)
+            if expected == target:
+                continue
+            if expected:
+                image = image.replace(
+                    expected.encode(), target.encode() if target else b"", 1
+                )
+            else:
+                image = image.replace(marker, marker + target.encode(), 1)
     return content.replace(old, image, 1)
 
 
@@ -222,6 +267,15 @@ def configure_core(unit, image, name, candidate):
     info = inspect(name)
     if info["Image"] != image:
         raise RuntimeError("Unexpected image after Compose activation")
+    if (
+        unit == "web"
+        and candidate
+        and any(
+            f"{key}={value}" not in info["Config"].get("Env", [])
+            for key, value in WEB_OPTIONS.items()
+        )
+    ):
+        raise RuntimeError("Web container did not receive the expected runtime options")
     health(unit, candidate)
     return info["Id"]
 
@@ -259,16 +313,24 @@ def core(stage, manifest, built, unit, action):
         pin = f'rubi-nora-rollback:{manifest["head"][:12]}-{unit}-{base["image"][7:19]}'
         if image_id(pin) not in ("", base["image"]):
             raise RuntimeError("Rollback tag belongs to a different image")
-        after = modify_compose(before, unit, current, target["tag"], True)
+        original = (
+            web_option_lines(service_block(before, unit)) if unit == "web" else None
+        )
+        after = modify_compose(before, unit, current, target["tag"], True, original)
         if action == "check":
             return
         run("docker", "tag", base["image"], pin)
-        receipt.update(original=current, pin=pin)
+        receipt.update(original=current, pin=pin, originalWebOptions=original)
         previous_ref(receipt, base)
         save_receipt(path, receipt)
     else:
         after = modify_compose(
-            before, unit, target["tag"], previous_ref(receipt, base), False
+            before,
+            unit,
+            target["tag"],
+            previous_ref(receipt, base),
+            False,
+            receipt.get("originalWebOptions"),
         )
 
     atomic(COMPOSE, after)
@@ -285,7 +347,12 @@ def core(stage, manifest, built, unit, action):
             )
         recovery = (
             modify_compose(
-                after, unit, target["tag"], previous_ref(receipt, base), False
+                after,
+                unit,
+                target["tag"],
+                previous_ref(receipt, base),
+                False,
+                receipt.get("originalWebOptions"),
             )
             if forward
             else before
@@ -371,7 +438,7 @@ def sidecar(stage, manifest, built, unit, action):
             health(unit, False)
             return
         if unit == "assistant":
-            verify_assistant_source(old,base)
+            verify_assistant_source(old, base)
         else:
             check_artifact_drift(old)
         swap_sidecar(
