@@ -1,6 +1,6 @@
 import { ConflictException } from '@nestjs/common';
 import type { SalesContractDetail } from '@nora/contracts';
-import { Prisma } from '@nora/database';
+import type { Prisma } from '@nora/database';
 import { createHash } from 'node:crypto';
 import { reservationSnapshot } from '../sales/reservation-snapshot.public';
 
