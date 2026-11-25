@@ -3,6 +3,7 @@ import { createHmac } from 'node:crypto';
 import type { MasterDataRecord } from '@nora/contracts';
 import {
   profileDeletionSites,
+  withdrawProfileFromSite,
   withdrawWebsiteProfile,
 } from './profile-withdrawal';
 
@@ -48,6 +49,18 @@ afterEach(() => {
 });
 
 describe('master data site withdrawal', () => {
+  it('withdraws only from the chosen site, independently of the others', async () => {
+    const fetch = destinations();
+    await withdrawProfileFromSite('nss', record);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const [url, request] = fetch.mock.calls[0]!;
+    expect(new URL(url).hostname).toBe('niyayeshseir.ir');
+    expect(JSON.parse(String(request.body))).toMatchObject({
+      action: 'withdraw',
+      id: record.id,
+    });
+  });
+
   it('requires all sites and only contacts linked sites for withdrawal', async () => {
     const fetch = destinations();
     const sites = await profileDeletionSites(record);

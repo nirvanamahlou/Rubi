@@ -1,4 +1,5 @@
 'use client';
+import { SiteRemovalButton } from './site-removal-button';
 import { useEffect, useRef, useState } from 'react';
 import { Pencil } from 'lucide-react';
 import type {
@@ -361,6 +362,11 @@ export function WebsiteDestination({
             )}
         </span>
         <div className="flex shrink-0 items-center gap-1">
+          <SiteRemovalButton
+            siteName={site.name}
+            disabled={!stored?.enabled || busy}
+            onRemove={() => void save(false, true)}
+          />
           <Button
             type="button"
             variant="ghost"

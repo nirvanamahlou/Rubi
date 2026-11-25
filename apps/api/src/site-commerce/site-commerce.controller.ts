@@ -119,6 +119,16 @@ export class SiteCommerceController {
     siteBinding(site, req.actor);
     return { data: await this.currencyRates.websiteSellRates() };
   }
+  @Post('profiles/:resource/:id/withdraw')
+  withdrawProfile(
+    @Param('site') site: string,
+    @Param('resource') resource: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.withdrawProfile(site, resource, id, req.actor);
+  }
+
   @Post('hotel-profiles/:id')
   @Header('Cache-Control', 'private, no-store')
   publishHotel(
