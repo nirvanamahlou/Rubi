@@ -79,7 +79,11 @@ export function MasterDataDeleteButton({
           setTarget({ ...record });
           setError(null);
           setSelected([]);
-          if (['countries', 'cities', 'hotels'].includes(record.resource)) {
+          if (
+            ['countries', 'cities', 'hotels', 'visa-services'].includes(
+              record.resource,
+            )
+          ) {
             setSites(null);
             void masterDataApi.deletionSites(record.resource, record.id).then(
               ({ data }) => {
@@ -129,6 +133,7 @@ export function MasterDataDeleteButton({
         {sites ? (
           <SiteDeletionOptions
             sites={sites}
+            showAllDestinations={target.resource === 'visa-services'}
             selected={selected}
             onChange={setSelected}
             disabled={pending}

@@ -1,4 +1,8 @@
 import {
+  isWebsiteProfile,
+  withdrawProfileFromSite,
+} from './profile-withdrawal';
+import {
   hasEarlyWebsiteIntake,
   receiveWebsiteOrder,
 } from '../reservations/website-order-intake.public';
@@ -54,7 +58,11 @@ import { TravelWorkflowService } from '../reservations/travel-workflow.service';
 import { InsuranceAutomation } from '../reservations/insurance/insurance-automation';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import { ReservationTicketDocumentsService } from '../reservations/reservation-ticket-documents';
-import { salesContractFlights, isFloatingSalesContract } from '@nora/contracts';
+import {
+  canUseMasterDataResource,
+  salesContractFlights,
+  isFloatingSalesContract,
+} from '@nora/contracts';
 import {
   passengerAgeCategory,
   validateSalesContract,
@@ -154,6 +162,31 @@ export class SiteCommerceService {
   private scoped(site: string, actor: AuthenticatedActor) {
     const binding = siteBinding(site, actor);
     return { ...actor, branchIds: [binding.branchId] };
+  }
+
+  async withdrawProfile(
+    site: string,
+    resource: string,
+    id: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (!isDeliverySite(site) || !isWebsiteProfile(resource))
+      throw new BadRequestException();
+    this.publicationBranch(
+      site,
+      actor,
+      undefined,
+      resource === 'hotels' ? 'ticket_catalog.manage' : 'master_data.update',
+    );
+    if (
+      !actor.permissions.includes('master_data.read') ||
+      !canUseMasterDataResource(actor.permissions, resource)
+    )
+      throw new ForbiddenException();
+    const { data } = await this.references.detail(resource, id);
+    return this.references.withProfilePublication(data, () =>
+      withdrawProfileFromSite(site, data),
+    );
   }
 
   async publishHotelProfile(
@@ -345,32 +378,35 @@ export class SiteCommerceService {
     );
     const publicImage = (path: string) =>
       new URL(path, 'https://avinaofficial.ir').href;
-    return this.sendProfile(site, secret, '/visa-profile', {
-      site,
-      kind: 'visa-profile',
-      id: data.id,
-      code: data.code,
-      name: data.name,
-      englishName: fields.englishName || null,
-      countryName: country.name,
-      countryCode:
-        ghestirooCountryCode(country.attributes.iso2Code, country.name) ?? null,
-      visaType: fields.visaType,
-      referenceValidityDays: fields.referenceValidityDays ?? null,
-      referenceValidityMode: fields.referenceValidityMode ?? 'DAYS',
-      description: fields.description || null,
-      requiredDocuments: JSON.parse(
-        String(fields.requiredDocumentNames ?? '[]'),
-      ),
-      displayOrder: fields.displayOrder ?? 0,
-      active: data.status === 'active',
-      sourceMainImage: fields.sourceMainImage
-        ? publicImage(String(fields.sourceMainImage))
-        : null,
-      sourceGalleryImages: fields.sourceGalleryImages
-        ? String(fields.sourceGalleryImages).split('|').map(publicImage)
-        : [],
-    });
+    return this.references.withProfilePublication(data, () =>
+      this.sendProfile(site, secret, '/visa-profile', {
+        site,
+        kind: 'visa-profile',
+        id: data.id,
+        code: data.code,
+        name: data.name,
+        englishName: fields.englishName || null,
+        countryName: country.name,
+        countryCode:
+          ghestirooCountryCode(country.attributes.iso2Code, country.name) ??
+          null,
+        visaType: fields.visaType,
+        referenceValidityDays: fields.referenceValidityDays ?? null,
+        referenceValidityMode: fields.referenceValidityMode ?? 'DAYS',
+        description: fields.description || null,
+        requiredDocuments: JSON.parse(
+          String(fields.requiredDocumentNames ?? '[]'),
+        ),
+        displayOrder: fields.displayOrder ?? 0,
+        active: data.status === 'active',
+        sourceMainImage: fields.sourceMainImage
+          ? publicImage(String(fields.sourceMainImage))
+          : null,
+        sourceGalleryImages: fields.sourceGalleryImages
+          ? String(fields.sourceGalleryImages).split('|').map(publicImage)
+          : [],
+      }),
+    );
   }
 
   private async sendProfile(
