@@ -13604,6 +13604,7 @@ Branch `codex/pc-d-site-customer-services` from develop `ba9b26331`. Reserve the
 HR-ORIGINAL-ACCESS-1125 (PC-B): Reserve the shared HR username allowlist and a scoped IAM permission regression test. Owner authorizes develop merge and targeted production publication on Avina.
 
 PC-D · PUBLICATION-DESIGN-1125 · Integrations storefront cards and the six publication views. Frontend presentation and focused tests.
+
 ## NORA-INTENT-ROUTING — PC-C
 
 Reserve Nora guide arbitration, linked guide source documents and generated catalogues, response copy, and focused regressions. No API or schema changes.
