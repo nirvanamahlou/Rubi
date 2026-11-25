@@ -146,7 +146,15 @@ script = '''const fs=require("node:fs");
 const input=JSON.parse(fs.readFileSync(0,"utf8"));
 const result={};
 for(const [key,path] of Object.entries(input)){
-  try{result[key]=fs.readFileSync(path).toString("base64")}catch(e){if(e.code!=="ENOENT")throw e;result[key]=null}
+  try{
+    if(fs.realpathSync(path)!==path) throw new Error("Unexpected source symlink");
+    const fd=fs.openSync(path,fs.constants.O_RDONLY|fs.constants.O_NOFOLLOW);
+    try{
+      const stat=fs.fstatSync(fd);
+      if(!stat.isFile()||stat.size>8*1024*1024) throw new Error("Unexpected source type or size");
+      result[key]=fs.readFileSync(fd).toString("base64");
+    }finally{fs.closeSync(fd)}
+  }catch(e){if(e.code!=="ENOENT")throw e;result[key]=null}
 }
 process.stdout.write(JSON.stringify(result));'''
 sources = {f: ("/nora-source/"+f.removeprefix("services/assistant/") if is_assistant else "/workspace/"+f) for f in files}
