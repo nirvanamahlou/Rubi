@@ -30,20 +30,25 @@ let search: ReturnType<typeof buildGuidePhraseIndex<Entry>> | undefined;
 
 let wordSearch: ReturnType<typeof buildGuideWordSearch> | undefined;
 
-const workflowIntents: readonly [RegExp, readonly string[]][] = [
+type WorkflowTopics = readonly string[] | ((question: string) => string[]);
+const workflowIntents: readonly [RegExp, WorkflowTopics][] = [
+  [
+    /(?=.*ویزا)(?=.*(?:کارتابل|درخواست))(?=.*(?:ثبت|ایجاد|بفرست|ارسال))(?=.*(?:بعدش? |سپس |و (?:چطور |چگونه |از کجا |کجا )?)پیگیری)/,
+    ['workbench/request-create', 'workbench/request-status'],
+  ],
   [
     /(?=.*ویزا)(?=.*(?:کارتابل|درخواست))(?=.*(?:پیگیری|نقص|وضعیت|مدارک))(?!.*(?:ثبت|ایجاد|بفرست))/,
     ['workbench/request-status'],
   ],
   [
     /ویزا.*(?:کارتابل|درخواست داخلی)|(?:کارتابل|درخواست داخلی).*ویزا|درخواست ویزا.*پیگیری/,
-    ['workbench/request-create', 'workbench/request-status'],
+    ['workbench/request-create'],
   ],
   [/مرخصی استعلاجی/, ['workbench/leave-medical']],
   [/جانشین.*مرخصی|مرخصی.*جانشین/, ['workbench/substitute']],
   [
     /(?=.*مرخصی)(?=.*(?:مدارک درخواست|پیوست درخواست|(?:تایید|تأیید) من))(?=.*(?:چک|بررسی|کجا))/,
-    ['human-resources/requests', 'workbench/leave-approval'],
+    ['human-resources/requests'],
   ],
   [/اصلاح تردد.*ثبت|ثبت.*اصلاح تردد/, ['workbench/attendance-correction']],
   [/مساعده.*درخواست|درخواست.*مساعده/, ['workbench/advance']],
@@ -63,8 +68,14 @@ const workflowIntents: readonly [RegExp, readonly string[]][] = [
   ],
   [/قرارداد (?:رو |را )?(?:چطور|چگونه|چجوری).*جستجو/, ['sales/list']],
   [
-    /درخواست.*کار های من|کار های من.*درخواست/,
-    ['call-center/call-center-queue', 'workbench/requests'],
+    /درخواست.*کار ?های من|کار ?های من.*درخواست/,
+    (question) => {
+      if (!/میزکار|کارتابل درخواست/.test(question))
+        return ['call-center/call-center-queue'];
+      return /کال سنتر|صف رسیدگی/.test(question)
+        ? ['call-center/call-center-queue', 'workbench/requests']
+        : ['workbench/requests'];
+    },
   ],
   [/مرخصی.*(?:نیازمند اصلاح|برگشت خورده)/, ['workbench/request-status']],
   [
@@ -78,6 +89,16 @@ const workflowIntents: readonly [RegExp, readonly string[]][] = [
   [
     /گزارش رزرواسیون.*(?:اختلاف|کارت.*اکسل)|اختلاف.*گزارش رزرواسیون/,
     ['reservation-report/count-difference'],
+  ],
+  [
+    /(?=.*گزارش رزرواسیون)(?=.*(?:استرداد|ابطال|مسترد|باطل))/,
+    (question) => {
+      const topics = ['reservation-report/allocation-and-status'];
+      if (/تاریخ|بازه/.test(question)) topics.push('reservation-report/dates');
+      if (/pnr|فیلتر های|شماره (?:بلیت|بلیط|قرارداد)/i.test(question))
+        topics.push('reservation-report/filters');
+      return topics;
+    },
   ],
   [/گزارش رزرواسیون.*(?:تاریخ حرکت|تاریخ صدور)/, ['reservation-report/dates']],
   [
@@ -157,14 +178,6 @@ const workflowIntents: readonly [RegExp, readonly string[]][] = [
     ['reservations/flight', 'reservations/cancellation'],
   ],
   [
-    /(?:استرداد|ابطال|مسترد).*(?:گزارش رزرواسیون)|گزارش رزرواسیون.*(?:استرداد|ابطال|مسترد)/,
-    [
-      'reservation-report/dates',
-      'reservation-report/filters',
-      'reservation-report/allocation-and-status',
-    ],
-  ],
-  [
     /صف رزرواسیون.*قرارداد.*(?:پرواز|هتل)|قرارداد.*از فروش.*(?:پرواز|هتل)/,
     ['reservations/handoff', 'reservations/flight', 'reservations/hotel'],
   ],
@@ -198,7 +211,7 @@ const workflowIntents: readonly [RegExp, readonly string[]][] = [
     ['workbench/leave-approval', 'human-resources/requests'],
   ],
   [
-    /(?=.*(?:ممیزی|آدیت))(?=.*منابع انسانی)|(?=.*گزارش)(?=.*(?:کارکرد|تردد))(?=.*(?:بازه|تنظیم|فیلتر))/,
+    /(?=.*(?:ممیزی|آدیت))(?=.*منابع انسانی)|(?=.*گزارش)(?=.*(?:کارکرد|تردد))(?=.*(?:بازه|تنظیم|فیلتر|واحد))/,
     ['human-resources/reports'],
   ],
   [
@@ -236,8 +249,11 @@ export function resolveDocumentedWorkflow(message: string) {
     /^(?:منظورم )?(?:مانیفست|مانيفست|manifest)(?: است)?$/.test(question);
   if (!instruction && !explicitManifest) return [];
   if (/(?:کد پیگیری|شماره درخواست)\s+(?:[a-z]+-)?\d/i.test(question)) return [];
-  const match = workflowIntents.find(([pattern]) => pattern.test(question));
-  return (match?.[1] ?? []).flatMap((ref) => {
+  const topics = workflowIntents.find(([pattern]) =>
+    pattern.test(question),
+  )?.[1];
+  const refs = typeof topics === 'function' ? topics(question) : (topics ?? []);
+  return refs.flatMap((ref) => {
     const [domain, id] = ref.split('/');
     const section = byHref.get(
       '/assistant-guides/' + domain + '#' + id,

@@ -159,7 +159,7 @@
 {"id":"role-159","role":"کارشناس ارشد ویزا","question":"پیام داخلی رو چطور فوروارد کنم؟","expectedGuides":["workbench/messages"]}
 {"id":"role-160","role":"کارشناس ارشد ویزا","question":"تو فایلای من چطور فایل پیدا کنم؟","expectedGuides":["workbench/files"]}
 {"id":"role-161","role":"مدیر منابع انسانی","question":"مرخصی منتظر تایید من تو کارتابل کجاس؟","expectedGuides":["human-resources/requests"]}
-{"id":"role-162","role":"مدیر منابع انسانی","question":"گزارش تردود واحد رو چجوری بگیرم؟","expectedGuides":["human-resources/time"]}
+{"id":"role-162","role":"مدیر منابع انسانی","question":"گزارش تردود واحد رو چجوری بگیرم؟","expectedGuides":["human-resources/reports"]}
 {"id":"role-163","role":"مدیر منابع انسانی","question":"ترتیب تایید مدیر و منابع انسانی چیه؟","expectedGuides":["workbench/leave-approval"]}
 {"id":"role-164","role":"مدیر منابع انسانی","question":"کارمند سابق رو کجای منابع انسانی پیدا کنم؟","expectedGuides":["human-resources/employees"]}
 {"id":"role-165","role":"مدیر منابع انسانی","question":"شیفت رد شده از نصفه شب رو از کجا بررسی کنم؟","expectedGuides":["human-resources/time"]}
