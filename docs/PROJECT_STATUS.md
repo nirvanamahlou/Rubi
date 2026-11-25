@@ -10782,3 +10782,4 @@ Website-bound connectors can read the latest active and approved USD, EUR and TR
 HR-ORIGINAL-ACCESS-1125 (PC-B): Add the verified active Original account (demo) to the existing full HR workspace allowlist. Scoped lint, contracts build and 11 IAM tests passed. Targeted Avina release authorized; no database changes.
 
 PC-D · PUBLICATION-DESIGN-1125 · Site selection, publication navigation, search and record layouts updated for the six Integrations categories.
+Nora now prioritizes documented workflow actions for the reproduced cross-panel routing failures, with bounded access checks and no panel-name prompt on the updated fallback paths. Receipt, archive and manifest guidance were expanded.

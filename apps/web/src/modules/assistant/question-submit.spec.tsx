@@ -351,7 +351,7 @@ describe('actual Composer submit routing and transport', () => {
   it('keeps unsupported workflow questions local', async () => {
     await send('چطور فرایند ناشناخته را انجام بدهم؟');
     expect(h.fetcher).not.toHaveBeenCalled();
-    expect(chat().at(-1)).toContain('کدام فرایند، پرونده یا گزارش روبی');
+    expect(chat().at(-1)).toContain('راهنمای قابل استناد در دسترس نیست');
   });
   it('does not reuse data context after an authorization denial', async () => {
     await send('تعداد قراردادها را بگو');
@@ -469,6 +469,7 @@ describe('flight capacity guide in the Composer', () => {
 describe('Reservations catalogue in the Composer', () => {
   it('answers locally and continues after navigation without calling the model', async () => {
     h.path = '/reservations';
+    h.permissions.push('reservations.read');
     await send('چطور خروجی مانیفست بگیرم؟');
     expect(chat().at(-1)).toContain('رزرواسیون ← MANIFEST');
 
@@ -480,6 +481,7 @@ describe('Reservations catalogue in the Composer', () => {
 
   it('drops the previous topic when the selected company changes', async () => {
     h.path = '/reservations';
+    h.permissions.push('reservations.read');
     await send('چطور خروجی مانیفست بگیرم؟');
     expect(chat().at(-1)).toContain('MANIFEST');
 
@@ -512,6 +514,7 @@ describe('flight capacity guide in the Composer', () => {
 describe('Reservations catalogue in the Composer', () => {
   it('answers locally and continues after navigation without calling the model', async () => {
     h.path = '/reservations';
+    h.permissions.push('reservations.read');
     await send('چطور خروجی مانیفست بگیرم؟');
     expect(chat().at(-1)).toContain('رزرواسیون ← MANIFEST');
 
@@ -523,6 +526,7 @@ describe('Reservations catalogue in the Composer', () => {
 
   it('drops the previous topic when the selected company changes', async () => {
     h.path = '/reservations';
+    h.permissions.push('reservations.read');
     await send('چطور خروجی مانیفست بگیرم؟');
     expect(chat().at(-1)).toContain('MANIFEST');
 

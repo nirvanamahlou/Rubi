@@ -53,6 +53,7 @@ import { canViewRoute, canViewScreen } from '@nora/contracts';
 import {
   catalogueLookupMode,
   findCatalogueTopics,
+  resolveDocumentedWorkflow,
   prepareCatalogueSearch,
   workflowDestination,
 } from './catalogue-search';
@@ -740,6 +741,14 @@ function AssistantComposerContent({
       return;
     }
     // An explicit manual lookup can start on any page.
+    const workflow = resolveDocumentedWorkflow(message);
+    if (workflow.length) {
+      const permitted = workflow.filter(mayReadGuide);
+      for (const section of permitted) showSection(section);
+      if (permitted.length !== workflow.length)
+        replyLocally(t(c.pilotGuideInsufficient));
+      return;
+    }
     const newGuide = retrieveSalesPanelGuide(
       message,
       pathname,
@@ -783,11 +792,7 @@ function AssistantComposerContent({
         return;
       }
       if (newGuide === 'clarify') {
-        replyLocally(
-          english
-            ? 'Which workflow do you need: marketing, standard packages, or floating packages?'
-            : 'راهنمای کدام گردش را می‌خواهید؟ بازاریابی، بستن پکیج یا پکیج‌های شناور؟',
-        );
+        replyLocally(t(c.pilotGuideInsufficient));
         return;
       }
       if (!actor || !canViewRoute(actor.permissions, newGuide.href)) {
@@ -822,7 +827,7 @@ function AssistantComposerContent({
       guideTopic.current = undefined;
       workbenchTopic.current = undefined;
       if ('clarification' in systemGuidance) {
-        replyLocally(systemGuidance.clarification);
+        replyLocally(t(c.pilotGuideInsufficient));
         return;
       }
       const { topic, followUp, inspect } = systemGuidance;
@@ -1076,7 +1081,7 @@ function AssistantComposerContent({
       guideTopic.current = undefined;
       workbenchTopic.current = undefined;
       if ('clarification' in hrGuidance) {
-        replyLocally(hrGuidance.clarification);
+        replyLocally(t(c.pilotGuideInsufficient));
       } else {
         const { topic, followUp } = hrGuidance;
         if (!actor || !canViewRoute(actor.permissions, topic.href)) {
@@ -1113,7 +1118,7 @@ function AssistantComposerContent({
       guideTopic.current = undefined;
       workbenchTopic.current = undefined;
       if ('clarification' in reservationGuide) {
-        replyLocally(reservationGuide.clarification);
+        replyLocally(t(c.pilotGuideInsufficient));
       } else {
         const { topic, followUp, inspection, packId } = reservationGuide;
         reservationGuideTopic.current = topic.id;
@@ -1834,7 +1839,7 @@ function AssistantComposerContent({
         normalizeQuestion(message),
       )
     ) {
-      replyLocally('درخواست مربوط به «میزکار من» است یا «کال‌سنتر»؟');
+      replyLocally(t(c.pilotTrackingNumberRequired));
       return;
     }
     if (callCenterStatus || workbenchStatus) {
@@ -1922,7 +1927,7 @@ function AssistantComposerContent({
       );
     if (workbenchHelp) {
       if ('clarification' in workbenchHelp) {
-        replyLocally(workbenchHelp.clarification);
+        replyLocally(t(c.pilotGuideInsufficient));
         return;
       }
       pending.current?.abort();
@@ -1984,9 +1989,7 @@ function AssistantComposerContent({
       return;
     }
     if (guidanceAllowed && decision.domain === 'workbench') {
-      replyLocally(
-        'راهنمای کدام بخش میزکار من را می‌خواهید: درخواست‌ها و مرخصی، پیام‌ها، فایل‌ها، یادداشت‌ها، تقویم، عملکرد یا حساب و تنظیمات؟',
-      );
+      replyLocally(t(c.pilotGuideInsufficient));
       return;
     }
     const formHelp = guidanceAllowed && readContractFormHelp(guideQuestion);
@@ -2151,20 +2154,7 @@ function AssistantComposerContent({
         showSection(matches[0]);
         return;
       }
-      if (matches.length > 1) {
-        const options = matches.slice(0, 3).map((s) => s.title);
-        replyLocally(
-          (english
-            ? 'Which topic do you mean? '
-            : 'راهنمای کدام بخش را می‌خواهید؟ ') + options.join(' / '),
-        );
-        return;
-      }
-      replyLocally(
-        english
-          ? 'Which ERP workflow, record, or report would you like me to check?'
-          : 'کدام فرایند، پرونده یا گزارش روبی را می‌خواهید بررسی کنم؟ نام بخش، شماره پرونده یا عنوان گزارش را بگویید.',
-      );
+      replyLocally(t(c.pilotGuideInsufficient));
       return;
     }
     pending.current?.abort();
