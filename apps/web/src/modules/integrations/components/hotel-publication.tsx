@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import type { MasterDataRecord } from '@nora/contracts';
 import { masterDataApi } from '../../master-data/api/client';
+import styles from './site-management.module.css';
 import Link from '@/i18n/link';
 import { localizedFetch } from '@/i18n/localized-fetch';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -256,9 +257,12 @@ export function ProfilePublicationManager({
   const [page, setPage] = useState(1);
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState('');
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setStatus('');
     const timer = setTimeout(async () => {
       try {
         const result = await masterDataApi.list(resource, {
@@ -276,6 +280,8 @@ export function ProfilePublicationManager({
         }
       } catch {
         if (active) setStatus('دریافت فهرست انجام نشد.');
+      } finally {
+        if (active) setLoading(false);
       }
     }, 200);
     return () => {
@@ -294,45 +300,68 @@ export function ProfilePublicationManager({
           manage
         />
       )}
-      <input
-        aria-label={t(searchLabels[resource])}
-        placeholder={t(searchLabels[resource])}
-        className="rounded-lg border border-border bg-surface p-2"
-        value={search}
-        onChange={(event) => {
-          setPage(1);
-          setSearch(event.target.value);
-        }}
-      />
+      <label className={styles.profileSearch}>
+        {t(searchLabels[resource])}
+        <input
+          aria-label={t(searchLabels[resource])}
+          placeholder={t(searchLabels[resource])}
+          className="rounded-lg border border-border bg-surface p-2"
+          value={search}
+          onChange={(event) => {
+            setPage(1);
+            setSearch(event.target.value);
+          }}
+        />
+      </label>
+      {loading && <p role="status">{t('در حال بارگذاری…')}</p>}
+      {!loading && !status && records.length === 0 && (
+        <p role="status">{t('موردی یافت نشد.')}</p>
+      )}
       {status && <p role="status">{t(status)}</p>}
-      {records.map((record) => (
-        <details
-          key={record.id}
-          className="rounded-lg border border-border bg-surface p-3"
-        >
-          <summary className="cursor-pointer py-1 font-medium text-foreground">
-            {record.name}
-            {resource === 'hotels' &&
-              ` · ${record.attributes.identificationCode || t('فاقد کد شناسایی')}`}
-          </summary>
-          <div className="mt-3">
-            <HotelPublication
-              id={record.id}
-              resource={resource}
-              site={site}
-              manage
-            />
-          </div>
-        </details>
-      ))}
-      <div className="flex gap-4">
-        <button disabled={page === 1} onClick={() => setPage(page - 1)}>
-          قبلی
-        </button>
-        <button disabled={page * 20 >= total} onClick={() => setPage(page + 1)}>
-          بعدی
-        </button>
-      </div>
+      {!loading &&
+        !status &&
+        records.map((record) => (
+          <details key={record.id} className={styles.record}>
+            <summary>
+              <span dir="auto">{record.name}</span>
+              {resource === 'hotels' && (
+                <small>
+                  <bdi>
+                    {String(
+                      record.attributes.identificationCode ||
+                        t('فاقد کد شناسایی'),
+                    )}
+                  </bdi>
+                </small>
+              )}
+            </summary>
+            <div className="mt-3">
+              <HotelPublication
+                id={record.id}
+                resource={resource}
+                site={site}
+                manage
+              />
+            </div>
+          </details>
+        ))}
+      {!loading && !status && total > 20 && (
+        <div className={styles.pagination}>
+          <button disabled={page === 1} onClick={() => setPage(page - 1)}>
+            قبلی
+          </button>
+          <span>
+            {page.toLocaleString('fa-IR')} /{' '}
+            {Math.ceil(total / 20).toLocaleString('fa-IR')}
+          </span>
+          <button
+            disabled={page * 20 >= total}
+            onClick={() => setPage(page + 1)}
+          >
+            بعدی
+          </button>
+        </div>
+      )}
     </section>
   );
 }

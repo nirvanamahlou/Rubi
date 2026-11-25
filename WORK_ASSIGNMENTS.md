@@ -13602,3 +13602,5 @@ Scope: add the existing departure withdrawal flow under each expanded tour, appl
 Branch `codex/pc-d-site-customer-services` from develop `ba9b26331`. Reserve the read-only Master Data sell-rate projection, the Site Commerce rate and test tour-insurance routes, and focused tests. Consumers are Jahan Bastan, Niyayesh Seir and Ghestiroo for rates, and Niyayesh Seir for test insurance. Existing pricing and document contracts keep their behavior. No schema, dependency, customer data, role or provider changes.
 
 HR-ORIGINAL-ACCESS-1125 (PC-B): Reserve the shared HR username allowlist and a scoped IAM permission regression test. Owner authorizes develop merge and targeted production publication on Avina.
+
+PC-D · PUBLICATION-DESIGN-1125 · Integrations storefront cards and the six publication views. Frontend presentation and focused tests.

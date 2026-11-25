@@ -15,7 +15,7 @@ import {
   Hotel,
   MapPin,
   Plane,
-  ShieldCheck,
+  Check,
   Tags,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -30,6 +30,7 @@ import {
   type CommerceWebsiteCode,
   type PublicationView,
 } from '../site-publication-model';
+import styles from './site-management.module.css';
 import { SiteManagement } from './site-management';
 
 const publicationDetails = {
@@ -48,24 +49,6 @@ const publicationDetails = {
 } satisfies Record<PublicationView, { icon: typeof Globe2; detail: string }>;
 
 const managementGroups = [
-  {
-    title: 'فروش، نرخ و تحویل',
-    icon: Tags,
-    links: [
-      { title: 'سفارش‌ها، پیش‌فاکتورها و قراردادها', href: '/sales' },
-      { title: 'استعلام بلیت، قیمت و ظرفیت', href: '/ticket-management' },
-      { title: 'تسویه و تحویل مدارک سفر', href: '/finance/delivery' },
-      {
-        title: 'نرخ ارز قابل انتشار',
-        href: '/master-data/finance?resource=exchange-rates',
-      },
-      {
-        title: 'شرکت‌های هواپیمایی و نشان‌ها',
-        href: '/master-data/transportation?resource=airlines',
-      },
-      { title: 'بیمه تور', href: '/reservations/insurance' },
-    ],
-  },
   {
     title: 'مشتری و پشتیبانی',
     icon: Building2,
@@ -149,11 +132,9 @@ export function WebsiteManagementWorkspace({
         {commerceWebsites.map((item) => (
           <article
             key={item.code}
-            className={
-              item.code === site
-                ? 'grid gap-3 rounded-2xl border border-primary bg-primary/5 p-4'
-                : 'grid gap-3 rounded-2xl border border-border bg-surface p-4'
-            }
+            data-site={item.code}
+            data-selected={item.code === site}
+            className={styles.siteCard}
           >
             <button
               type="button"
@@ -161,7 +142,7 @@ export function WebsiteManagementWorkspace({
               onClick={() => setSite(item.code)}
               className="flex min-w-0 items-center gap-3 rounded-lg text-start focus-visible:outline-2 focus-visible:outline-primary"
             >
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+              <span className={styles.siteIcon}>
                 <Globe2 aria-hidden="true" className="size-5" />
               </span>
               <span className="grid min-w-0 gap-1">
@@ -170,6 +151,9 @@ export function WebsiteManagementWorkspace({
                   {new URL(item.url).hostname}
                 </bdi>
               </span>
+              {item.code === site && (
+                <Check aria-hidden="true" className={styles.selectedMark} />
+              )}
             </button>
             <a
               href={item.url}
@@ -213,12 +197,9 @@ export function WebsiteManagementWorkspace({
                     key={id}
                     type="button"
                     onClick={() => setPublication(id)}
-                    className="flex min-w-0 items-start gap-3 rounded-xl border border-border bg-background p-3 text-start transition hover:border-primary focus-visible:outline-2 focus-visible:outline-primary"
+                    className={styles.categoryCard}
                   >
-                    <Icon
-                      aria-hidden="true"
-                      className="mt-0.5 size-5 shrink-0 text-primary"
-                    />
+                    <Icon aria-hidden="true" className={styles.categoryIcon} />
                     <span className="grid min-w-0 flex-1 gap-1">
                       <strong className="text-sm">{t(label)}</strong>
                       <small className="text-xs leading-relaxed text-muted-foreground">
@@ -236,7 +217,7 @@ export function WebsiteManagementWorkspace({
           </div>
         )}
       </section>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4">
         {managementGroups.map(({ title, icon: Icon, links }) => {
           const visible = links.filter(({ href }) =>
             canViewRoute(actor.permissions, href),
@@ -251,19 +232,13 @@ export function WebsiteManagementWorkspace({
                 <Icon aria-hidden="true" className="size-5 text-primary" />
                 {t(title)}
               </h2>
-              <ul className="divide-y divide-border">
+              <ul className="grid gap-x-6 sm:grid-cols-2">
                 {visible.map(({ title: linkTitle, href }) => (
                   <li key={href}>
                     <Link
                       href={href}
                       className="flex min-h-11 items-center justify-between gap-2 rounded-md text-sm text-foreground hover:text-primary focus-visible:outline-2 focus-visible:outline-primary"
                     >
-                      {href === '/reservations/insurance' && (
-                        <ShieldCheck
-                          aria-hidden="true"
-                          className="size-4 shrink-0 text-primary"
-                        />
-                      )}
                       <span className="flex-1">{t(linkTitle)}</span>
                       <ArrowLeft
                         aria-hidden="true"

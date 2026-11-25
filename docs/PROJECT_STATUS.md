@@ -10780,3 +10780,5 @@ Website-bound connectors can read the latest active and approved USD, EUR and TR
 2026-11-24 PC-C — NORA-HR-GUIDE-1124: Added Nora's 14 HR guide topics, permission-aware local dispatch and acceptance matrix. Reuse current native metrics and Workbench request readers. See docs/tasks/NORA-HR-GUIDE-1124.md.
 
 HR-ORIGINAL-ACCESS-1125 (PC-B): Add the verified active Original account (demo) to the existing full HR workspace allowlist. Scoped lint, contracts build and 11 IAM tests passed. Targeted Avina release authorized; no database changes.
+
+PC-D · PUBLICATION-DESIGN-1125 · Site selection, publication navigation, search and record layouts updated for the six Integrations categories.
