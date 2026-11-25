@@ -17,6 +17,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import type {
@@ -49,6 +50,7 @@ import {
 import { DatabaseService } from '../database/database.service';
 import { passengerRate, type PassengerRate } from './passenger-rates';
 import { PackagePricingService } from './package-pricing.service';
+import { CharterExcelPricingService } from './charter-excel-pricing.service';
 
 const roomCodes = [
   'double',
@@ -80,6 +82,9 @@ export class PackageTourPricingService {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(PackagePricingService)
     private readonly pricing: PackagePricingService,
+    @Optional()
+    @Inject(CharterExcelPricingService)
+    private readonly charterExcel?: CharterExcelPricingService,
   ) {}
 
   async buyRates() {
@@ -540,7 +545,13 @@ export class PackageTourPricingService {
         if (rate) passengerRates.push(rate);
       }
     }
-    return includePassengerRates ? { data, passengerRates } : { data };
+    const catalog =
+      data.length || !this.charterExcel
+        ? data
+        : await this.charterExcel.catalog(grid.tour);
+    return includePassengerRates
+      ? { data: catalog, passengerRates }
+      : { data: catalog };
   }
 
   async get(

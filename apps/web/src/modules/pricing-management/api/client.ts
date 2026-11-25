@@ -2,6 +2,7 @@
 import type {
   FloatingTourImportOptions,
   FloatingTourImportPreview,
+  FloatingTourSaleRow,
   FloatingTourSaleSet,
   FloatingTourPeriodChangeV1,
   TourPackageV1,
@@ -122,6 +123,31 @@ function queryString(query: PackageListQueryV1) {
 }
 
 export const packagePricingApi = {
+  charterExcelPrices: (id: string, active: LoginResponse) =>
+    request<{ version: number; rows: FloatingTourSaleRow[] }>(
+      `/tour-drafts/${encodeURIComponent(id)}/charter-excel`,
+      active,
+    ),
+  charterExcelImport: (
+    id: string,
+    file: File,
+    selections: Record<string, string>,
+    active: LoginResponse,
+    digest?: string,
+  ) => {
+    const body = new FormData();
+    body.append('file', file);
+    body.append('selections', JSON.stringify(selections));
+    if (digest) body.append('digest', digest);
+    return request<
+      | FloatingTourImportPreview
+      | { version: number; rows: FloatingTourSaleRow[] }
+    >(
+      `/tour-drafts/${encodeURIComponent(id)}/charter-excel/${digest ? 'publish' : 'preview'}`,
+      active,
+      { method: 'POST', body },
+    );
+  },
   floatingTours: (active: LoginResponse) =>
     request<{ data: (TourPackageV1 & { routeNames?: string[] })[] }>(
       '/floating-tours',

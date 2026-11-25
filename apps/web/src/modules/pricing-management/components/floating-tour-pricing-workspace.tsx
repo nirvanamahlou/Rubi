@@ -4,17 +4,15 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import type {
   FloatingTourImportOptions,
   FloatingTourImportPreview,
-  FloatingTourSaleRow,
   FloatingTourSaleSet,
   LoginResponse,
   TourPackageV1,
 } from '@nora/contracts';
-import { moneyUnits } from '@nora/contracts';
 import { Button, Card, Input } from '@/components/ui';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { useAccessPermissions } from '@/modules/iam/access-context';
 import { packagePricingApi } from '../api/client';
-import { floatingFlightClock } from '@/modules/sales/model/floating-flight-times';
+import { FloatingPriceRows } from './floating-price-rows';
 import { FloatingRegisteredPeriods } from './floating-registered-periods';
 import {
   FloatingPackageFlights,
@@ -51,105 +49,9 @@ const monthNames = {
     'December',
   ],
 };
-const groups = [
-  ['double', 'دو تخته'],
-  ['single', 'یک تخته'],
-  ['extra', 'تخت اضافه'],
-  ['childBed', 'کودک با تخت'],
-  ['childNoBed', 'کودک بدون تخت'],
-  ['infant', 'نوزاد'],
-] as const;
 const excelMessage = (message: string) =>
   message.replace(/^Row (?=\d)/gm, 'ردیف ');
 
-function Rows({
-  rows,
-  showSource = false,
-}: {
-  rows: FloatingTourSaleRow[];
-  showSource?: boolean;
-}) {
-  const amount = (items: { currency: string; amount: string }[] | undefined) =>
-    items
-      ?.map((m) => {
-        const unit = m.currency === 'IRR' ? 100000n : 10000n;
-        const rounded = (moneyUnits(m.amount) + unit - 1n) / unit;
-        return `${rounded.toLocaleString('en-US')} ${m.currency === 'IRR' ? 'IRT' : m.currency}`;
-      })
-      .join(' + ') || '—';
-  return (
-    <div className="overflow-auto">
-      <table className="w-full min-w-[1000px] text-sm">
-        <thead>
-          <tr>
-            {[
-              ...(showSource ? ['ردیف اکسل'] : []),
-              'تاریخ حرکت',
-              'تاریخ برگشت',
-              'تعداد شب',
-              'هتل و اتاق',
-              ...groups.map((g) => g[1]),
-              'کمیسیون',
-            ].map((h) => (
-              <th className="p-3" key={h}>
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, i) => (
-            <tr className="border-t" key={i}>
-              {showSource && (
-                <td className="p-3">{row.sourceRows.join('، ')}</td>
-              )}
-              <td className="p-3" dir="ltr">
-                {row.startsOn ?? '—'}
-              </td>
-              <td className="p-3" dir="ltr">
-                {row.endsOn ?? '—'}
-              </td>
-              <td>{row.nights}</td>
-              <td>
-                {row.stays.map((s) => (
-                  <div key={s.hotelId}>
-                    {s.hotelName} · {s.room} · {s.service} · {s.nights}
-                  </div>
-                ))}
-                {row.flightSchedule && (
-                  <div className="mt-2 space-y-1 text-xs">
-                    {(
-                      [
-                        ['پرواز رفت', row.flightSchedule.outbound],
-                        ['پرواز برگشت', row.flightSchedule.inbound],
-                      ] as const
-                    ).map(([label, leg]) => (
-                      <div key={label}>
-                        {label} · {leg.carrierName} · {leg.serviceNumber} ·{' '}
-                        <bdi>
-                          {leg.originAirport.code} →{' '}
-                          {leg.destinationAirport.code}{' '}
-                          {floatingFlightClock(leg.departureAt)}–
-                          {floatingFlightClock(leg.arrivalAt)}
-                        </bdi>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </td>
-              {groups.map(([g]) => (
-                <td className="p-3" dir="ltr" key={g}>
-                  {amount(row.prices[g])}
-                </td>
-              ))}
-              <td dir="ltr">{amount(row.commission)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 export function FloatingTourPricingWorkspace() {
   const permissions = useAccessPermissions();
   const canManage =
@@ -602,7 +504,7 @@ export function FloatingTourPricingWorkspace() {
               </ul>
             </section>
           )}
-          <Rows rows={preview.rows} showSource />
+          <FloatingPriceRows rows={preview.rows} showSource />
           <Button disabled={busy || !canManage} onClick={() => void run(true)}>
             ثبت نهایی قیمت فروش
           </Button>

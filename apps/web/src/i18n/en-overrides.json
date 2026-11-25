@@ -1,4 +1,10 @@
 {
+  "ورود با اکسل": "Import from Excel",
+  "قالب قیمت فروش تور شناور را برای تاریخ همین نوبت تکمیل کنید. فروش با بلیت و ظرفیت همین نوبت چارتر انجام می‌شود.": "Complete the floating tour workbook for this departure. Sales use the tickets and capacity of this charter departure.",
+  "فایل قیمت فروش": "Sale price workbook",
+  "ثبت نهایی قیمت فروش چارتر": "Publish charter sale prices",
+  "قیمت فروش چارتر ثبت شد · نسخه": "Charter prices published · version",
+  "در رزرواسیون نرخ هتل را ثبت کنید یا، برای نوبت چارتر، قیمت فروش پکیج را با اکسل وارد کنید.": "Register hotel rates in Reservations, or import package sale prices from Excel for a charter departure.",
   "راهنمای کدام بخش را می‌خواهید؟": "Which topic do you mean?",
   "اسناد و گزارش‌ها ← گزارش‌ها": "Documents and Reports → Reports",
   "حساب شما مجوز مشاهدهٔ فهرست گزارش‌ها را ندارد.": "Your account does not have permission to view the report catalog.",

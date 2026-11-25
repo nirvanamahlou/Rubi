@@ -1,5 +1,6 @@
 'use client';
 import { CombinedHotelPackages } from './combined-hotel-packages';
+import { CharterExcelPricing } from './charter-excel-pricing';
 import {
   quoteCombinedHotels,
   type CombinedHotelPackageV1,
@@ -887,6 +888,20 @@ export function TourPricingWorkspace() {
         ) : null}
       </Card>
 
+      {session &&
+        grid?.tour.id === tourId &&
+        !grid.purchaseBatches.some((batch) => batch.rows.length > 0) &&
+        !grid.tour.package.details?.isFloating &&
+        grid.tour.outbound.supplyType === 'COMPANY' &&
+        (!grid.tour.returnOfferId ||
+          grid.tour.returning?.supplyType === 'COMPANY') && (
+          <CharterExcelPricing
+            key={tourId}
+            tour={grid.tour}
+            session={session}
+          />
+        )}
+
       {grid?.tour.id === tourId && grid && (
         <>
           <WebsiteTourPreviewPrices
@@ -926,7 +941,7 @@ export function TourPricingWorkspace() {
         {grid && grid.purchaseBatches.length === 0 ? (
           <EmptyState
             title="برای مقصد و تاریخ این سفر نرخ هتل پیدا نشد"
-            description="در رزرواسیون، نرخ هتل‌های شهر مقصد را برای بازهٔ اقامت ثبت کنید؛ قیمت پکیج بدون منبع خرید ساخته یا منتشر نمی‌شود."
+            description="در رزرواسیون نرخ هتل را ثبت کنید یا، برای نوبت چارتر، قیمت فروش پکیج را با اکسل وارد کنید."
             icon={Hotel}
           />
         ) : null}
