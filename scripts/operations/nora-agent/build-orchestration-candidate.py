@@ -5,13 +5,18 @@ No live service is started, stopped, recreated, reloaded or reconfigured here.
 """
 
 from pathlib import Path
+import base64
 import hashlib
+import http.client
 import json
 import os
 import re
+import secrets
 import shutil
+import socket
 import subprocess
 import sys
+import time
 from orchestration_source import (
     check_artifact_drift,
     source_tree,
@@ -21,6 +26,93 @@ from orchestration_source import (
 
 def docker(*args):
     return subprocess.check_output(["docker", *args], text=True).strip()
+
+
+def probe_read_route(port, method, route, status):
+    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
+    try:
+        connection.request(method, "/api/v1/" + route)
+        response = connection.getresponse()
+        content_type = response.getheader("Content-Type", "")
+        if response.status != status or not content_type.startswith("application/json"):
+            raise RuntimeError(
+                f"Unexpected private read canary response: {method} {route} {response.status}"
+            )
+        return json.loads(response.read(8192))
+    finally:
+        connection.close()
+
+
+def check_read_canary(active, image_id):
+    """Boot only the owner read process on private loopback, as its real non-root UID."""
+    info = json.loads(docker("inspect", active))[0]
+    if (
+        info["Config"]["User"] != "1000:1000"
+        or info["HostConfig"]["NetworkMode"] != "host"
+        or info["Config"]["Entrypoint"] != ["node"]
+        or info["Config"]["Cmd"] != ["apps/api/dist/assistant-read/main.js"]
+    ):
+        raise RuntimeError("Review changed assistant-read launcher")
+    source_env = dict(item.split("=", 1) for item in info["Config"]["Env"])
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    # Forward the two private database settings only between host and daemon.
+    # Auth and contact keys are disposable and cannot accept a real ERP session.
+    settings = {
+        key: source_env[key]
+        for key in ("DATABASE_URL", "ASSISTANT_AGENT_DATABASE_URL")
+    }
+    settings.update(
+        ASSISTANT_AGENT_ENABLED="true",
+        ERP_ASSISTANT_READ_PORT=str(port),
+        IAM_ACCESS_TOKEN_SECRET=secrets.token_hex(48),
+        MASTER_DATA_IMPORT_TOKEN_KEY_BASE64=base64.b64encode(os.urandom(32)).decode(),
+    )
+    name = "nora-private-read-" + secrets.token_hex(8)
+    flags = [token for key in settings for token in ("--env", key)]
+    container = subprocess.check_output(
+        [
+            "docker", "create", "--name", name, "--read-only", "--network", "host",
+            "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
+            "--memory", "512m", "--pids-limit", "100", "--user", "1000:1000",
+            "--workdir", "/workspace", "--entrypoint", "node",
+            *flags, image_id, *info["Config"]["Cmd"],
+        ],
+        env={**os.environ, **settings},
+        text=True,
+    ).strip()
+    if not re.fullmatch(r"[0-9a-f]{64}", container):
+        raise RuntimeError("Private read canary identity missing")
+    try:
+        docker("start", container)
+        deadline = time.monotonic() + 60
+        while True:
+            try:
+                health = probe_read_route(port, "GET", "health", 200)
+                if (
+                    health.get("service") != "erp-assistant-read"
+                    or health.get("readOnly") is not True
+                ):
+                    raise RuntimeError("Private read canary health identity mismatch")
+                break
+            except OSError:
+                running = docker("inspect", "--format", "{{.State.Running}}", container)
+                if time.monotonic() >= deadline or running != "true":
+                    raise RuntimeError(
+                        "Private read canary could not start as its runtime user"
+                    ) from None
+                time.sleep(0.5)
+        for method, route, expected in (
+            ("GET", "my-contract-count", 401),
+            ("GET", "standard-sales-summary", 401),
+            ("POST", "my-contract-count", 405),
+            ("GET", "unregistered-canary-route", 404),
+        ):
+            probe_read_route(port, method, "sales/assistant-agent/" + route, expected)
+            print("PRIVATE_READ_CANARY", method, route, expected, flush=True)
+    finally:
+        docker("rm", "--force", container)
 
 
 def verify(stage, manifest):
@@ -123,7 +215,9 @@ def build(stage, previous=None):
             "tag": tag,
             "id": docker("image", "inspect", "--format", "{{.Id}}", tag),
         }
-        if unit == "web":
+        if unit == "read":
+            check_read_canary(state["name"], receipt["images"][unit]["id"])
+        elif unit == "web":
             check_web_guides(state, receipt["images"][unit]["id"])
         print("BUILT", unit, receipt["images"][unit]["id"][:19], flush=True)
     if "assistant" in selected:

@@ -2,6 +2,7 @@
 
 from contextlib import ExitStack
 import importlib.util
+import json
 from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
@@ -23,6 +24,34 @@ spec.loader.exec_module(builder)
 
 
 class PromotionTests(TestCase):
+    def test_private_read_canary_checks_real_uid_and_removes_its_container_on_failure(self):
+        active = {"Config": {"User": "1000:1000", "Entrypoint": ["node"],
+                  "Cmd": ["apps/api/dist/assistant-read/main.js"],
+                  "Env": ["DATABASE_URL=fixture-db", "ASSISTANT_AGENT_DATABASE_URL=fixture-read",
+                          "UNRELATED_APP_KEY=do-not-forward"]}, "HostConfig": {"NetworkMode": "host"}}
+        for reject in (False, True):
+            with self.subTest(reject=reject), ExitStack() as ctx:
+                daemon = ctx.enter_context(patch.object(builder, "docker", return_value=json.dumps([active])))
+                create = ctx.enter_context(patch.object(builder.subprocess, "check_output", return_value="a" * 64))
+                probe = ctx.enter_context(patch.object(builder, "probe_read_route"))
+                def response(_port, _method, route, _status):
+                    if reject and route.endswith("standard-sales-summary"):
+                        raise RuntimeError("bad route")
+                    return {"service": "erp-assistant-read", "readOnly": True}
+                probe.side_effect = response
+                if reject:
+                    with self.assertRaisesRegex(RuntimeError, "bad route"):
+                        builder.check_read_canary("owner", "fixture-image")
+                else:
+                    builder.check_read_canary("owner", "fixture-image")
+                    self.assertEqual([c.args[-1] for c in probe.call_args_list], [200, 401, 401, 405, 404])
+                command = create.call_args.args[0]
+                self.assertEqual(command[command.index("--user") + 1], "1000:1000")
+                self.assertNotIn("UNRELATED_APP_KEY", command)
+                self.assertNotIn("fixture-db", command)
+                self.assertIn("--read-only", command)
+                self.assertEqual(daemon.call_args.args, ("rm", "--force", "a" * 64))
+
     def test_incremental_build_selects_all_changed_runtime_units(self):
         units = {
             unit: {"overlayFiles": {}} for unit in ("api", "read", "web", "assistant")

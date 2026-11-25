@@ -85,11 +85,17 @@ def paths(*args):
 def candidate_dockerfile(unit):
     common = [
         "ARG BASE_IMAGE",
+        # The host's private stage has mode 0700. Normalise only reviewed source
+        # in a separate layer before copying it over an existing runtime tree.
+        "FROM ${BASE_IMAGE} AS reviewed_overlay",
+        "USER 0:0",
+        "COPY overlay/ /nora-reviewed-overlay/",
+        "RUN find /nora-reviewed-overlay -type d -exec chmod 0755 {} + && find /nora-reviewed-overlay -type f -exec chmod 0644 {} +",
         "FROM ${BASE_IMAGE}",
         "ARG RELEASE_SHA",
         "LABEL com.rubi.nora.patch=${RELEASE_SHA}",
         "WORKDIR /workspace",
-        "COPY overlay/ /workspace/",
+        "COPY --from=reviewed_overlay /nora-reviewed-overlay/ /workspace/",
     ]
     if unit in ("api", "web"):
         common.append(
