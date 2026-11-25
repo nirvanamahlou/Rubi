@@ -405,6 +405,20 @@ export async function runPlannedConversation(
               ),
             ];
           if (ownCount === 'all-time') {
+            if (
+              /(?:همه شرکت ها|کل شرکت های مجاز)/u.test(
+                normalizeQuestion(question),
+              ) &&
+              first.company?.selection !== 'ALL'
+            ) {
+              return [
+                issue(
+                  step,
+                  'clarify',
+                  'برای شمارش در همهٔ شرکت‌های مجاز، ابتدا نمای «همه شرکت‌ها» را انتخاب کنید.',
+                ),
+              ];
+            }
             const receipt = z
               .object({
                 version: z.literal(1),
@@ -425,11 +439,11 @@ export async function runPlannedConversation(
                 status: receipt.total ? 'answer' : 'empty',
                 text:
                   countLabel +
-                  '‌: ' +
+                  ': ' +
                   receipt.total.toLocaleString('fa-IR') +
                   '\n' +
                   panelLabel +
-                  '‌: ' +
+                  ': ' +
                   receipt.panelNonCancelled.toLocaleString('fa-IR'),
                 links: [],
                 source: 'sales/assistant-agent/my-contract-count',

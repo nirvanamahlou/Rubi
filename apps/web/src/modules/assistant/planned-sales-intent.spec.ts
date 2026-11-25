@@ -21,7 +21,7 @@ const questions = [
 async function converse(
   question: string,
   sources: readonly string[],
-  options: { denied?: boolean; truncated?: boolean } = {},
+  options: { denied?: boolean; truncated?: boolean; selection?: string } = {},
 ) {
   const calls: string[] = [];
   const cookie = 'nora_access=test';
@@ -47,7 +47,9 @@ async function converse(
           permissions: options.denied ? [] : IAM_PERMISSION_CODES,
         });
       case '/legal-entities/context':
-        return Response.json({ data: { selection: 'ALL', version: 1 } });
+        return Response.json({
+          data: { selection: options.selection ?? 'ALL', version: 1 },
+        });
       case '/v3/assistant/conversation': {
         calls.push(JSON.parse(String(init?.body)).message);
         return Response.json({
@@ -118,6 +120,14 @@ describe('authorized multi-measure and grouped Sales requests', () => {
     );
     expect(dated.parts[0].status).toBe('clarify');
     expect(dated.calls).toEqual([]);
+    const allRequested =
+      'با انتخاب همه شرکت‌ها، تعداد قراردادهای خودم چقدر است؟';
+    expect((await converse(allRequested, [])).calls).toEqual([
+      '/my-contract-count',
+    ]);
+    const single = await converse(allRequested, [], { selection: 'SINGLE' });
+    expect(single.parts[0].status).toBe('clarify');
+    expect(single.calls).toEqual([]);
   });
   it.each(questions)(
     'preserves the full grain and filters in %s',
