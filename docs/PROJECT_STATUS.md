@@ -1,5 +1,7 @@
 ## Charter package Excel prices
 
+Ticket management shows each site's price and currency in selected flight details. Commission percentages are omitted from this card. Both focused suites passed (8 tests).
+
 For a dated charter departure without hotel purchase rates, Package Pricing can preview and publish the existing floating workbook format. It resolves active hotel rooms and projects per-traveler prices into the native dated package sale catalog, where Sales validates the current tour tickets and allocates seats through the existing Ticket Catalog. Imports are immutable, versioned, and scoped to the departure. The additive database migration creates a dedicated price-publication table.
 
 ## Visa media edit permissions

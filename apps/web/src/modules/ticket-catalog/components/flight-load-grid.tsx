@@ -449,19 +449,6 @@ export function FlightLoadGrid({
             <p key={price.salePriceTarget.id}>
               {price.salePriceTarget.name}: {price.amount}{' '}
               {currencySymbol(price.currencyCode ?? '')}
-              {offer.saleCommissions?.find(
-                (c) =>
-                  c.salePriceTargetId === price.salePriceTarget.id &&
-                  !c.returnOfferId,
-              )?.percent
-                ? ' · کمیسیون ' +
-                  offer.saleCommissions.find(
-                    (c) =>
-                      c.salePriceTargetId === price.salePriceTarget.id &&
-                      !c.returnOfferId,
-                  )!.percent +
-                  '%'
-                : ''}
             </p>
           ))}
           {!back && returning && (

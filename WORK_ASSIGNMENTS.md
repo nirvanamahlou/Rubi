@@ -1,5 +1,7 @@
 ## CHARTER-EXCEL-PRICING-1125 — PC-A — READY_FOR_CI
 
+PC-D · Ticket management · Hide site commissions in the outbound and return load details. Frontend display only.
+
 Owner authorizes `develop` merge after checks. Reserve Package Pricing charter Excel preview/publication, dated sales catalog, bounded pricing workspace/client, localized labels, and focused tests. Reserve one additive Package Pricing migration and the related Prisma relations. The native catalog remains the Sales consumer. Ticket Catalog and hotel rate providers are read through their public services.
 
 The import is scoped to the selected departure, uses its existing charter offers and seat accounting, and preserves previously published rate-based quotes. Excel DBL is per traveler, and the existing Sales quote uses room totals. Local focused API and Web suites and a clean PostgreSQL migration pass. No production deployment is in scope.
