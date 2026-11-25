@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { Alert, Card, EmptyState, Skeleton } from '@/components/ui/surfaces';
 import { catalogueSystems } from '../model';
+import type { CommerceWebsiteCode } from '../site-publication-model';
 import { isGhestirooSystem, isJahanBastanSystem } from '../system-connector';
 import { JahanBastanConnection } from './jahan-bastan-connection';
 import {
@@ -31,20 +32,31 @@ type SelectedProps = {
 export function SiteConnectionsWorkspace({
   registry,
   userId,
+  preferredSite,
 }: {
   registry: IntegrationRegistryV1;
   userId: string;
+  preferredSite?: CommerceWebsiteCode | undefined;
 }) {
   const systems = useMemo(
     () => catalogueSystems(registry, undefined, true),
     [registry],
   );
   const [selected, setSelected] = useState('');
-  const site =
-    systems.find((system) => system.id === selected) ??
-    systems.find((system) => isGhestirooSystem(system, registry)) ??
-    systems[0];
-  if (!site)
+  const initial = preferredSite
+    ? systems.find((system) => {
+        if (preferredSite === 'jahan-bastan')
+          return isJahanBastanSystem(system, registry);
+        if (preferredSite === 'ghestiroo')
+          return isGhestirooSystem(system, registry);
+        return registry.brands.some(
+          (brand) => brand.id === system.brandId && brand.code === 'niyayesh',
+        );
+      })
+    : (systems.find((system) => isGhestirooSystem(system, registry)) ??
+      systems[0]);
+  const site = systems.find((system) => system.id === selected) ?? initial;
+  if (!systems.length)
     return (
       <EmptyState
         title="سامانه‌ای ثبت نشده است"
@@ -58,9 +70,10 @@ export function SiteConnectionsWorkspace({
           سایت انتخاب‌شده
           <NativeSearchSelect
             aria-label="انتخاب سایت در اتصال‌ها"
-            value={site.id}
+            value={site?.id ?? ''}
             onChange={(event) => setSelected(event.target.value)}
           >
+            {!site && <option value="">انتخاب سایت</option>}
             {systems.map((system) => (
               <option key={system.id} value={system.id}>
                 {system.name}
@@ -69,12 +82,19 @@ export function SiteConnectionsWorkspace({
           </NativeSearchSelect>
         </label>
       </Card>
-      <SelectedSiteConnection
-        key={`${registry.branchId}:${site.id}`}
-        registry={registry}
-        system={site}
-        userId={userId}
-      />
+      {site ? (
+        <SelectedSiteConnection
+          key={`${registry.branchId}:${site.id}`}
+          registry={registry}
+          system={site}
+          userId={userId}
+        />
+      ) : (
+        <EmptyState
+          title="این سایت در شعبه انتخاب‌شده ثبت نشده است"
+          description="برای بررسی اتصال، شعبه مرتبط با این سایت را انتخاب کنید."
+        />
+      )}
     </section>
   );
 }

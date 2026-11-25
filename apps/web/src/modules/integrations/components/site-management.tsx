@@ -18,6 +18,7 @@ import {
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { PageHeader, Alert, Skeleton } from '@/components/ui/surfaces';
 import { localizedFetch } from '@/i18n/localized-fetch';
+import { useUiTranslation } from '@/i18n/locale-context';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { listReferences } from '@/modules/ticket-catalog/api/references';
 import { SalesDatePicker } from '@/modules/sales/components/sales-date-picker';
@@ -29,10 +30,15 @@ import { SiteTicketFacts } from './site-ticket-facts';
 import { TicketBulkPublication } from './ticket-bulk-publication';
 import { matchingPublicationTicketRows } from '../ticket-bulk-publication';
 import styles from './site-management.module.css';
-import { HotelPublicationManager } from './hotel-publication';
+import { ProfilePublicationManager } from './hotel-publication';
 import {
+  canPublishWebsiteView,
+  commerceWebsites,
+  publicationViews,
   publishableTickets,
   websiteDestinations,
+  type CommerceWebsiteCode,
+  type PublicationView,
 } from '../site-publication-model';
 import {
   websiteTourGroups,
@@ -501,16 +507,26 @@ export function WebsiteDestination({
 export function SiteManagement({
   actor,
   ticketLink,
+  initialView,
+  site,
 }: {
   actor: AuthenticatedActor;
   ticketLink?: URLSearchParams | undefined;
+  initialView?: PublicationView | undefined;
+  site?: CommerceWebsiteCode | undefined;
 }) {
-  const [tab, setTab] = useState<'tours' | 'tickets' | 'hotels'>(
-    ticketLink?.get('view') === 'hotels'
-      ? 'hotels'
-      : ticketLink
-        ? 'tickets'
-        : 'tours',
+  const t = useUiTranslation();
+  const selectedSite = commerceWebsites.find(
+    (website) => website.code === site,
+  );
+  const destinations = selectedSite ? [selectedSite] : websiteDestinations;
+  const [tab, setTab] = useState<PublicationView>(
+    initialView ??
+      (ticketLink?.get('view') === 'hotels'
+        ? 'hotels'
+        : ticketLink
+          ? 'tickets'
+          : 'tours'),
   );
   const [branches, setBranches] = useState<BranchReference[]>([]);
   const [branchId, setBranchId] = useState(ticketLink?.get('branchId') ?? '');
@@ -536,11 +552,12 @@ export function SiteManagement({
   const [to, setTo] = useState('');
   const [bulkBusy, setBulkBusy] = useState(false);
   const canManage = actor.permissions.includes('ticket_catalog.manage');
+  const travelView = tab === 'tours' || tab === 'tickets';
   const branchScope = JSON.stringify([...actor.branchIds].sort());
   useEffect(() => {
     let active = true;
     const allowedBranchIds = JSON.parse(branchScope) as string[];
-    if (!canManage) return;
+    if (!canManage || !travelView) return;
     void Promise.resolve().then(() => {
       if (active) {
         setLoading(true);
@@ -624,7 +641,7 @@ export function SiteManagement({
     return () => {
       active = false;
     };
-  }, [branchScope, canManage, revision]);
+  }, [branchScope, canManage, revision, travelView]);
   useEffect(() => {
     if (!loading && tab === 'tickets' && ticketLink?.get('offerId')) {
       document
@@ -632,11 +649,11 @@ export function SiteManagement({
         ?.scrollIntoView?.({ block: 'center' });
     }
   }, [loading, tab, ticketLink]);
-  if (!canManage)
+  if (!canPublishWebsiteView(actor.permissions, tab))
     return (
       <Alert
         title="دسترسی مجاز نیست"
-        description="مجوز مدیریت بلیط و تور برای انتشار سایت لازم است."
+        description="برای انتشار این بخش مجوز لازم است."
       />
     );
   const flightLabel = (offer: TicketOfferV1) =>
@@ -692,28 +709,32 @@ export function SiteManagement({
     }));
   return (
     <fieldset disabled={bulkBusy} className="grid min-w-0 gap-4" dir="rtl">
-      <PageHeader title="مدیریت سایت" />
-      <nav aria-label="مدیریت سایت" className="flex flex-wrap gap-2">
-        {(
-          [
-            ['tours', 'تور‌ها'],
-            ['tickets', 'بلیط‌ها'],
-            ['hotels', 'هتل‌ها'],
-          ] as const
-        ).map(([id, label]) => (
-          <Button
-            key={id}
-            type="button"
-            variant={tab === id ? 'primary' : 'outline'}
-            aria-pressed={tab === id}
-            onClick={() => setTab(id)}
-          >
-            {label}
-          </Button>
-        ))}
+      <PageHeader title={t('انتشار در سایت')} />
+      <nav
+        aria-label={t('بخش‌های انتشار در سایت')}
+        className="flex flex-wrap gap-2"
+      >
+        {publicationViews
+          .filter(({ id }) => canPublishWebsiteView(actor.permissions, id))
+          .map(({ id, label }) => (
+            <Button
+              key={id}
+              type="button"
+              variant={tab === id ? 'primary' : 'outline'}
+              aria-pressed={tab === id}
+              onClick={() => setTab(id)}
+            >
+              {t(label)}
+            </Button>
+          ))}
       </nav>
-      {tab === 'hotels' ? (
-        <HotelPublicationManager selected={ticketLink?.get('hotelId')} />
+      {tab !== 'tours' && tab !== 'tickets' ? (
+        <ProfilePublicationManager
+          key={tab}
+          resource={tab}
+          site={site}
+          selected={tab === 'hotels' ? ticketLink?.get('hotelId') : undefined}
+        />
       ) : (
         <>
           <div className="flex flex-wrap gap-3">
@@ -818,6 +839,7 @@ export function SiteManagement({
           ) : null}
           {tab === 'tickets' ? (
             <TicketBulkPublication
+              destinations={destinations}
               branchId={branchId}
               filters={ticketFilters}
               tickets={resources.map((row) => ({
@@ -942,7 +964,7 @@ export function SiteManagement({
                                 : period.startsOn + ' — ' + period.endsOn}
                             </p>
                             <div className="grid grid-cols-2 items-start gap-2 sm:grid-cols-4">
-                              {websiteDestinations.map((site) => (
+                              {destinations.map((site) => (
                                 <WebsiteDestination
                                   key={`${revision}:${site.code}`}
                                   site={site}
@@ -999,7 +1021,7 @@ export function SiteManagement({
                                 : 'grid gap-2 sm:grid-cols-2 xl:grid-cols-4'
                             }
                           >
-                            {websiteDestinations.map((site) => (
+                            {destinations.map((site) => (
                               <WebsiteDestination
                                 key={site.code}
                                 site={site}

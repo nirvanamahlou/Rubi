@@ -14,8 +14,12 @@ import { masterDataApi } from '../../master-data/api/client';
 import Link from '@/i18n/link';
 import { localizedFetch } from '@/i18n/localized-fetch';
 import { getPublicApiBaseUrl } from '@/lib/environment';
+import { useUiTranslation } from '@/i18n/locale-context';
+import type {
+  CommerceWebsiteCode,
+  ProfilePublicationResource,
+} from '../site-publication-model';
 
-type PublicationResource = 'hotels' | 'countries' | 'cities' | 'visa-services';
 const siteLabels = {
   'jahan-bastan': {
     name: 'جهان باستان',
@@ -36,7 +40,8 @@ const siteLabels = {
     error: 'ثبت در نیایش سیر انجام نشد.',
   },
 } as const;
-type ProfileSite = keyof typeof siteLabels;
+type ProfileSite = CommerceWebsiteCode;
+const profileSites = ['jahan-bastan', 'ghestiroo', 'nss'] as const;
 
 export function HotelPublicationAction({
   id,
@@ -45,7 +50,7 @@ export function HotelPublicationAction({
 }: {
   id: string;
   name: string;
-  resource?: PublicationResource;
+  resource?: ProfilePublicationResource;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -101,16 +106,23 @@ export function HotelPublication({
   id,
   manage = false,
   resource = 'hotels',
+  site,
 }: {
   id: string;
   manage?: boolean;
-  resource?: PublicationResource;
+  resource?: ProfilePublicationResource;
+  site?: ProfileSite | undefined;
 }) {
   return (
     <div className="grid gap-3 text-start text-sm">
-      <ProfileDestination id={id} resource={resource} site="jahan-bastan" />
-      <ProfileDestination id={id} resource={resource} site="ghestiroo" />
-      <ProfileDestination id={id} resource={resource} site="nss" />
+      {(site ? [site] : profileSites).map((destination) => (
+        <ProfileDestination
+          key={destination}
+          id={id}
+          resource={resource}
+          site={destination}
+        />
+      ))}
       {!manage && resource === 'hotels' && (
         <Link
           className="flex items-center gap-2 border-t border-border pt-3 font-medium text-primary hover:underline"
@@ -130,7 +142,7 @@ function ProfileDestination({
   site,
 }: {
   id: string;
-  resource: PublicationResource;
+  resource: ProfilePublicationResource;
   site: ProfileSite;
 }) {
   const labels = siteLabels[site];
@@ -223,11 +235,23 @@ function ProfileDestination({
   );
 }
 
-export function HotelPublicationManager({
+const searchLabels: Record<ProfilePublicationResource, string> = {
+  hotels: 'جست‌وجوی هتل',
+  countries: 'جست‌وجوی کشور',
+  cities: 'جست‌وجوی شهر',
+  'visa-services': 'جست‌وجوی خدمت ویزا',
+};
+
+export function ProfilePublicationManager({
+  resource,
   selected,
+  site,
 }: {
+  resource: ProfilePublicationResource;
   selected?: string | null | undefined;
+  site?: ProfileSite | undefined;
 }) {
+  const t = useUiTranslation();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
@@ -237,7 +261,7 @@ export function HotelPublicationManager({
     let active = true;
     const timer = setTimeout(async () => {
       try {
-        const result = await masterDataApi.list('hotels', {
+        const result = await masterDataApi.list(resource, {
           search,
           page,
           pageSize: 20,
@@ -251,35 +275,54 @@ export function HotelPublicationManager({
           setStatus('');
         }
       } catch {
-        if (active) setStatus('دریافت فهرست هتل‌ها انجام نشد.');
+        if (active) setStatus('دریافت فهرست انجام نشد.');
       }
     }, 200);
     return () => {
       active = false;
       clearTimeout(timer);
     };
-  }, [search, page]);
+  }, [resource, search, page]);
   return (
     <section className="grid gap-3">
-      {selected && <HotelPublication key={selected} id={selected} manage />}
+      {selected && (
+        <HotelPublication
+          key={selected}
+          id={selected}
+          resource={resource}
+          site={site}
+          manage
+        />
+      )}
       <input
-        aria-label="جست‌وجوی هتل"
-        placeholder="جست‌وجوی هتل"
-        className="rounded-lg border p-2"
+        aria-label={t(searchLabels[resource])}
+        placeholder={t(searchLabels[resource])}
+        className="rounded-lg border border-border bg-surface p-2"
         value={search}
         onChange={(event) => {
           setPage(1);
           setSearch(event.target.value);
         }}
       />
-      {status && <p role="status">{status}</p>}
-      {records.map((hotel) => (
-        <details key={hotel.id} className="rounded-lg border p-3">
-          <summary>
-            {hotel.name} ·{' '}
-            {hotel.attributes.identificationCode || 'فاقد کد شناسایی'}
+      {status && <p role="status">{t(status)}</p>}
+      {records.map((record) => (
+        <details
+          key={record.id}
+          className="rounded-lg border border-border bg-surface p-3"
+        >
+          <summary className="cursor-pointer py-1 font-medium text-foreground">
+            {record.name}
+            {resource === 'hotels' &&
+              ` · ${record.attributes.identificationCode || t('فاقد کد شناسایی')}`}
           </summary>
-          <HotelPublication id={hotel.id} manage />
+          <div className="mt-3">
+            <HotelPublication
+              id={record.id}
+              resource={resource}
+              site={site}
+              manage
+            />
+          </div>
         </details>
       ))}
       <div className="flex gap-4">

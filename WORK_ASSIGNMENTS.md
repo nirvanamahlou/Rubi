@@ -13596,3 +13596,7 @@ Scope: add the existing departure withdrawal flow under each expanded tour, appl
 ## WEBSITE-EXCHANGE-RATES-TOUR-INSURANCE-1124 — PC-D
 
 Branch `codex/pc-d-site-customer-services` from develop `ba9b26331`. Reserve the read-only Master Data sell-rate projection, the Site Commerce rate and test tour-insurance routes, and focused tests. Consumers are Jahan Bastan, Niyayesh Seir and Ghestiroo for rates, and Niyayesh Seir for test insurance. Existing pricing and document contracts keep their behavior. No schema, dependency, customer data, role or provider changes.
+
+## WEBSITE-MANAGEMENT-OVERVIEW-1125 — PC-D — READY_FOR_CI
+
+Owner authorizes redesigning the Integrations Site Management workspace and merging to develop. Reserve its Web overview, scoped publication navigation, existing monitoring handoff, focused tests and additive Integrations translations. Reuse publication endpoints and module permissions. No API, permission, dependency, schema or live deployment changes.

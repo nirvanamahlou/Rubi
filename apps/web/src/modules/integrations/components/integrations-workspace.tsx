@@ -49,7 +49,8 @@ import {
   SelectedSiteConnection,
 } from './site-connections-workspace';
 import { isGhestirooSystem } from '../system-connector';
-import { SiteManagement } from './site-management';
+import { WebsiteManagementWorkspace } from './website-management-workspace';
+import type { CommerceWebsiteCode } from '../site-publication-model';
 import { SiteRegistrationDialog } from './site-registration-dialog';
 import {
   authenticationLabels,
@@ -95,6 +96,7 @@ export function IntegrationsWorkspace() {
 function IntegrationEntry({ actor }: { actor: AuthenticatedActor }) {
   const ticketRoute = useTicketPublicationLink();
   const [selectedView, setView] = useState<'sites' | 'monitoring' | null>();
+  const [connectionSite, setConnectionSite] = useState<CommerceWebsiteCode>();
   const view =
     selectedView === undefined ? (ticketRoute ? 'sites' : null) : selectedView;
   const ticketLink = selectedView === undefined ? ticketRoute : undefined;
@@ -105,14 +107,29 @@ function IntegrationEntry({ actor }: { actor: AuthenticatedActor }) {
           type="button"
           variant="outline"
           className="justify-self-start"
-          onClick={() => setView(null)}
+          onClick={() =>
+            setView(view === 'monitoring' && connectionSite ? 'sites' : null)
+          }
         >
-          بازگشت به یکپارچه‌سازی‌ها
+          {view === 'monitoring' && connectionSite
+            ? 'بازگشت به مدیریت سایت'
+            : 'بازگشت به یکپارچه‌سازی‌ها'}
         </Button>
         {view === 'sites' ? (
-          <SiteManagement actor={actor} ticketLink={ticketLink} />
+          <WebsiteManagementWorkspace
+            actor={actor}
+            ticketLink={ticketLink}
+            initialSite={connectionSite}
+            onOpenConnection={(site) => {
+              setConnectionSite(site);
+              setView('monitoring');
+            }}
+          />
         ) : (
-          <IntegrationWorkspaceBody actor={actor} />
+          <IntegrationWorkspaceBody
+            actor={actor}
+            preferredSite={connectionSite}
+          />
         )}
       </div>
     );
@@ -122,7 +139,7 @@ function IntegrationEntry({ actor }: { actor: AuthenticatedActor }) {
       <div className="grid gap-4 md:grid-cols-2">
         {(
           [
-            ['sites', 'مدیریت سایت', 'تور‌ها، بلیط‌ها و هتل‌ها'],
+            ['sites', 'مدیریت سایت', 'انتشار، فروش، مشتریان و ورود به سایت‌ها'],
             [
               'monitoring',
               'مانیتورینگ',
@@ -133,7 +150,10 @@ function IntegrationEntry({ actor }: { actor: AuthenticatedActor }) {
           <button
             key={id}
             type="button"
-            onClick={() => setView(id)}
+            onClick={() => {
+              setConnectionSite(undefined);
+              setView(id);
+            }}
             className="rounded-2xl border border-border bg-surface p-6 text-start shadow-sm hover:border-primary"
           >
             <h2 className="text-xl font-bold text-primary">{title}</h2>
@@ -148,16 +168,20 @@ function IntegrationEntry({ actor }: { actor: AuthenticatedActor }) {
 
 export function IntegrationWorkspaceBody({
   actor,
+  preferredSite,
 }: {
   actor: AuthenticatedActor;
+  preferredSite?: CommerceWebsiteCode | undefined;
 }) {
   const [branches, setBranches] = useState<BranchReference[]>([]);
   const [branchesLoaded, setBranchesLoaded] = useState(false);
   const [branchId, setBranchId] = useState('');
   const [data, setData] = useState<IntegrationRegistryV1 | null>(null);
   const allowedSections = visibleIntegrationSections(actor.permissions);
-  const [section, setSection] = useState<IntegrationSection>(
-    () => allowedSections[0] ?? 'brands',
+  const [section, setSection] = useState<IntegrationSection>(() =>
+    preferredSite && allowedSections.includes('connections')
+      ? 'connections'
+      : (allowedSections[0] ?? 'brands'),
   );
   const [managingCatalogue, setManagingCatalogue] = useState(false);
   const [error, setError] = useState('');
@@ -611,6 +635,7 @@ export function IntegrationWorkspaceBody({
                   key={branchId}
                   registry={data}
                   userId={actor.userId}
+                  preferredSite={preferredSite}
                 />
               ) : null}
               {section === 'events' ? (

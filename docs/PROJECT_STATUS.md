@@ -10774,3 +10774,7 @@ Website-bound connectors can read the latest active and approved USD, EUR and TR
 2026-11-24 PC-C — NORA-CORRESPONDENCE-GUIDE-1124: Added Nora correspondence guide, scoped read-only inbox status and test matrix. See docs/tasks/NORA-CORRESPONDENCE-GUIDE-1124.md.
 
 2026-11-24 PC-C — NORA-HR-GUIDE-1124: Added Nora's 14 HR guide topics, permission-aware local dispatch and acceptance matrix. Reuse current native metrics and Workbench request readers. See docs/tasks/NORA-HR-GUIDE-1124.md.
+
+## Website Management overview
+
+Integrations now opens a website-focused management workspace for Niyayesh Seir, Jahan Bastan, and Ghestiroo. Operators can open the storefront, select its existing connection and native administration, and scope publishing to the selected destination. Scheduled and flexible tours, tickets, hotels, countries, cities, and visa services use their existing publication operations. Orders, rates, document delivery, customers, support, marketing leads, and agencies link to their authorized ERP workspaces. Legacy ticket and hotel publication links retain their cross-site controls.
