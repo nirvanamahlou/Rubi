@@ -27,6 +27,69 @@ const panels = Object.entries(assistantGuideCatalogues).map(
 const searchPanelNames = buildGuidePhraseIndex(panels, (panel) => [panel.name]);
 let search: ReturnType<typeof buildGuidePhraseIndex<Entry>> | undefined;
 
+const workflowIntents: readonly [RegExp, readonly string[]][] = [
+  [/مانیفست|مانيفست|\bmanifest\b/i, ['reservations/manifest']],
+  [
+    /بلی[تط].*(?:استرداد|ابطال)|(?:استرداد|ابطال).*بلی[تط]/,
+    ['reservations/cancellation'],
+  ],
+  [
+    /(?:استرداد|ابطال|مسترد).*(?:گزارش رزرواسیون)|گزارش رزرواسیون.*(?:استرداد|ابطال|مسترد)/,
+    ['reservation-report/dates', 'reservation-report/allocation-and-status'],
+  ],
+  [
+    /(?:ثبت|ایجاد).*قرارداد.*(?:جدید|ارسال.*رزرواسیون)|قرارداد.*جدید.*(?:ثبت|ایجاد)/,
+    ['sales/create'],
+  ],
+  [
+    /قرارداد.*(?:معطل|ارسال نشده|ارسال نشدن).*رزرواسیون/,
+    ['sales/list', 'sales/reservation'],
+  ],
+  [
+    /(?:ثبت.*(?:دریافت|پرداخت).*(?:مشتری|طرف حساب)|(?:دریافت|پرداخت).*مشتری.*ثبت)/,
+    ['finance-delivery/customer-receipt'],
+  ],
+  [
+    /مجوز تحویل مدارک.*استثنا|استثنا.*مجوز تحویل مدارک/,
+    ['finance-delivery/exception'],
+  ],
+  [
+    /(?:صدور|صادر).*لغو.*مجوز تحویل|مجوز تحویل.*(?:صدور|صادر).*لغو/,
+    ['finance-delivery/issue', 'finance-delivery/revoke'],
+  ],
+  [
+    /مرخصی.*(?:تایید|تأیید|منتظر)|(?:تایید|تأیید|منتظر).*مرخصی/,
+    ['workbench/leave-approval', 'human-resources/requests'],
+  ],
+  [
+    /(?:تردد|کارکرد).*(?:گزارش|خروجی)|(?:گزارش|خروجی).*(?:تردد|کارکرد)/,
+    ['human-resources/time', 'human-resources/reports'],
+  ],
+  [
+    /(?=.*(?:بارگذاری|آپلود))(?=.*مدرک).*آرشیو/,
+    ['documents/upload', 'documents/archive'],
+  ],
+];
+
+export function resolveDocumentedWorkflow(message: string) {
+  const question = normalizeQuestion(message);
+  const instruction =
+    /چطور|چگونه|چجور|کجا|نحوه|مراحل|راهنما|چه چیز|چه (?:مدارک|تأیید|تایید)/.test(
+      question,
+    );
+  const explicitManifest =
+    /^(?:منظورم )?(?:مانیفست|مانيفست|manifest)(?: است)?$/.test(question);
+  if (!instruction && !explicitManifest) return [];
+  const match = workflowIntents.find(([pattern]) => pattern.test(question));
+  return (match?.[1] ?? []).flatMap((ref) => {
+    const [domain, id] = ref.split('/');
+    const section = byHref.get(
+      '/assistant-guides/' + domain + '#' + id,
+    )?.section;
+    return section ? [section] : [];
+  });
+}
+
 export function prepareCatalogueSearch() {
   return (search ??= buildGuidePhraseIndex(entries, ({ section }) => [
     section.title,

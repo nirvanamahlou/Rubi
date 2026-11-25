@@ -318,6 +318,7 @@
 - [استثنای مدیر](guides/finance-delivery.md#exception)
 - [مجوز رزرواسیون](guides/finance-delivery.md#reservation) ← [ساخت گزارش](guides/reservation-report.md#start)
 - [لغو مجوز](guides/finance-delivery.md#revoke)
+- [ثبت و بررسی دریافت طرف قرارداد](guides/finance-delivery.md#customer-receipt) ← [وضعیت مجوز](guides/finance-delivery.md#status)
 
 ## سرمایه انسانی
 

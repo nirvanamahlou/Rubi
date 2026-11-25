@@ -5,10 +5,59 @@ import { routeAssistantQuestion } from './question-routing';
 import {
   catalogueLookupMode,
   findCatalogueTopics,
+  resolveDocumentedWorkflow,
   workflowDestination,
 } from './catalogue-search';
 
 const open = () => true;
+
+describe('cross-panel workflow arbitration', () => {
+  it.each([
+    ['از کجا قرارداد فروش جدید ثبت کنم و به رزرواسیون بفرستم؟', ['create']],
+    [
+      'چطور قراردادهای معطل ارسال به رزرواسیون را پیدا کنم؟',
+      ['list', 'reservation'],
+    ],
+    ['در کارتابل مالی دریافت مشتری را از کجا ثبت کنم؟', ['customer-receipt']],
+    [
+      'پرداخت مشتری را از کجا ثبت کنم و تطبیق دریافت را کجا ببینم؟',
+      ['customer-receipt'],
+    ],
+    [
+      'برای صدور یا لغو مجوز تحویل مدارک چه تأییدهایی لازم است؟',
+      ['issue', 'revoke'],
+    ],
+    ['مجوز تحویل مدارک با استثنای مدیر چطور صادر می‌شود؟', ['exception']],
+    [
+      'در رزرواسیون چطور بلیت صادرشده را پیدا کنم و استردادش را پیگیری کنم؟',
+      ['cancellation'],
+    ],
+    [
+      'در گزارش رزرواسیون چگونه خدمات مسترد یا ابطال‌شده را پیدا کنم؟',
+      ['dates', 'allocation-and-status'],
+    ],
+    ['مانیفست پرواز را از کجا بگیرم؟', ['manifest']],
+    ['منظورم MANIFEST است.', ['manifest']],
+    [
+      'گردش تأیید درخواست مرخصی از مدیر واحد تا منابع انسانی چطور است؟',
+      ['leave-approval', 'requests'],
+    ],
+    ['گزارش تردد و کارکرد را چطور بگیرم؟', ['time', 'reports']],
+    [
+      'چطور مدرک جدید بارگذاری کنم و آرشیو آن را پیدا کنم؟',
+      ['upload', 'archive'],
+    ],
+    [
+      'فروش امروز را با دیروز مقایسه کن، فقط تعداد قراردادها و بازه گزارش را بگو.',
+      [],
+    ],
+    ['وضعیت مجوز تحویل مدارک قرارداد ۱۲۰۵۸۳ چیست؟', []],
+  ])('resolves %s from its business action', (question, ids) => {
+    expect(
+      resolveDocumentedWorkflow(question).map((section) => section.id),
+    ).toEqual(ids);
+  });
+});
 
 describe('catalogue discovery', () => {
   for (const [domain, catalogue] of Object.entries(assistantGuideCatalogues)) {

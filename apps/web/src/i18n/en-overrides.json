@@ -7176,5 +7176,7 @@
   "برای مشاهدهٔ این بخش، دسترسی منابع انسانی در نشست فعلی لازم است.": "HR access is required to view this section in the current session.",
   "جزئیات محرمانه را از پرونده، فیش یا درخواست در نمای مجاز ERP بررسی کنید.": "Check confidential details in the record, payslip, or request in the authorized ERP view.",
   "کدام بخش منابع انسانی را می‌خواهید بررسی کنید؟ نوع درخواست، قرارداد کاری، کارکرد یا حقوق را مشخص کنید.": "Which HR area would you like to check? Specify the request type, employment contract, attendance, or payroll.",
-  "نتیجهٔ یکتا پیدا نشد. کد را در کارتابل درخواست‌ها بررسی کنید.": "A unique result was not found. Verify the code in the request inbox."
+  "نتیجهٔ یکتا پیدا نشد. کد را در کارتابل درخواست‌ها بررسی کنید.": "A unique result was not found. Verify the code in the request inbox.",
+  "برای این سؤال راهنمای قابل استناد در دسترس نیست.": "There is no verified guide for this question.",
+  "برای عدد به‌روز کال سنتر، کارت یا گزارش همان صفحه را باز کنید.": "Open the Call Center card or report for the latest count."
 }

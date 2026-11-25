@@ -1,8 +1,8 @@
 export type AssistantText = readonly [string, string];
 export const assistantCopy = {
   pilotFollowupClarification: [
-    'منظورتان پیگیری در امور مشتریان، کال‌سنتر یا میزکار من است؟',
-    'Do you mean follow-up in Customer Affairs, Call Center, or My Workbench?',
+    'برای پیگیری، شمارهٔ درخواست را بفرستید.',
+    'Send the request tracking number.',
   ],
   pilotTrackingNumberRequired: [
     'شمارهٔ پیگیری درخواست را بفرستید. برای دیدن مسئول فعلی، در امور مشتریان ← درخواست‌های مشتریان، جزئیات همان پرونده را باز کنید.',
@@ -13,8 +13,8 @@ export const assistantCopy = {
     'There is no verified guide for this question.',
   ],
   internalSourceFallback: [
-    'این پاسخ از منابع داخلی روبی قابل تأیید نیست. نام پنل، مرحلهٔ کار یا گزارش موردنظر را مشخص کنید.',
-    'This answer could not be verified from internal Rubi sources. Specify the panel, workflow step, or report.',
+    'این پاسخ از منابع داخلی روبی قابل تأیید نیست.',
+    'This answer could not be verified from internal Rubi sources.',
   ],
   internalGuideUnavailable: [
     'راهنمای داخلی این گردش‌کار در دسترس نیست.',

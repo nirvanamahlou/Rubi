@@ -179,7 +179,7 @@ export function routeAssistantQuestion(
         kind: 'clarify',
         dataMessage: message,
         clarification:
-          'برای عدد به‌روز کال سنتر، کارت یا گزارش همان صفحه را باز کنید. برای راهنمای استفاده، نام بخش را بگویید.',
+          'برای عدد به‌روز کال سنتر، کارت یا گزارش همان صفحه را باز کنید.',
       };
     return { kind: 'guide', domain: 'workbench', dataMessage: message };
   }

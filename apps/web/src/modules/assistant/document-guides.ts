@@ -103,7 +103,7 @@ export function resolveDocumentQuestion(
   if (onPanel && documentContext && (procedural || status))
     return {
       kind: 'clarify' as const,
-      text: 'نام بخش یا اقدام را بگویید؛ برای نمونه بارگذاری، پیش‌نمایش، نسخهٔ جدید، اشتراک یا بازیابی.',
+      text: 'برای این سؤال راهنمای قابل استناد در دسترس نیست.',
     };
   if (!onPanel && procedural && /فایل من|فایلم/.test(question))
     return {

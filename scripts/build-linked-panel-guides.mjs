@@ -103,6 +103,9 @@ export function buildLinkedPanelGuides(directory, check) {
         (domain === 'package-management' &&
           href === '/sales/pricing/management') ||
         (domain === 'system-management' && href === '/system/users') ||
+        (domain === 'finance-delivery' &&
+          id === 'customer-receipt' &&
+          href === '/finance') ||
         (domain === 'reservations' &&
           [
             '/reservations/processing',
@@ -155,6 +158,9 @@ export function buildLinkedPanelGuides(directory, check) {
           ? fields
           : {}),
         ...(Array.isArray(fields.terms) ? { terms: fields.terms } : {}),
+        ...(domain === 'reservations' && id === 'manifest'
+          ? { route: fields.route, conditions: fields.conditions }
+          : {}),
         ...(fields.workflow ? { workflow: fields.workflow } : {}),
         ...(domain === 'petty-cash' && fields.aliases
           ? { aliases: fields.aliases }
