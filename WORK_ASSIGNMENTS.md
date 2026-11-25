@@ -1,3 +1,7 @@
+## NORA-HISTORICAL-REPORTS-1125 — PC-C — REVIEW
+
+Nora routes dated no-outcome calls and counts of user-created workbench requests through Customer Affairs. Scope includes the existing call drilldown range, the new self-only count endpoint and the assistant source atlas. No migration or dependency changes. Historical Finance settlement remains pending a verified transition source.
+
 ## NSS-CONTRACT-PAYMENT-1125 — PC-A — REVIEW
 
 Reserve Sales website-payment intake, contracts workspace receipt list, the Sales module registration and one additive Prisma migration. Base origin/develop 458e43d31. NSS submits only SEP-verified receipts through its bound integration identity. The operator list is branch-scoped. The supplied number is a reference for a standalone receipt.

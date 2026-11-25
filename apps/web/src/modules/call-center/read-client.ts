@@ -155,6 +155,7 @@ export const readApi = {
     page: number,
     revision: string | undefined,
     signal: AbortSignal,
+    range?: { from: string; to: string },
   ) =>
     callCenterRequest<{
       data: { call: ContactSummary['latest']; callCount: number }[];
@@ -170,6 +171,7 @@ export const readApi = {
       body: JSON.stringify({
         page,
         pageSize: 20,
+        ...(range ?? {}),
         ...(revision ? { revision } : {}),
       }),
       signal,

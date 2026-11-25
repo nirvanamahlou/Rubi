@@ -142,8 +142,13 @@ import {
   callCenterIntent,
   callCenterQueueHref,
   readCallCenterMetric,
+  readHistoricalWithoutOutcome,
   readCallCenterRequestStatus,
 } from './call-center-request-guide';
+import {
+  asksHistoricalOwnRequestCount,
+  historicalReportPeriod,
+} from './historical-report-period';
 import { CallCenterHttpError } from '@/modules/call-center/client';
 import {
   customerAffairsApi,
@@ -1860,6 +1865,7 @@ function AssistantComposerContent({
       message,
       pathname === '/workbench' || hrTrackedRequest,
     );
+    const ownRequestCount = asksHistoricalOwnRequestCount(message);
     if (
       !callCenterStatus &&
       workbenchStatus &&
@@ -1872,7 +1878,7 @@ function AssistantComposerContent({
       replyLocally(t(c.pilotTrackingNumberRequired));
       return;
     }
-    if (callCenterStatus || workbenchStatus) {
+    if (callCenterStatus || workbenchStatus || ownRequestCount) {
       pending.current?.abort();
       const controller = new AbortController();
       pending.current = controller;
@@ -1886,11 +1892,17 @@ function AssistantComposerContent({
                   actor,
                   controller.signal,
                 )
-              : await readCallCenterMetric(
-                  callCenterStatus,
-                  actor,
-                  controller.signal,
-                )
+              : callCenterStatus === 'historicalWithoutOutcome'
+                ? await readHistoricalWithoutOutcome(
+                    message,
+                    actor,
+                    controller.signal,
+                  )
+                : await readCallCenterMetric(
+                    callCenterStatus,
+                    actor,
+                    controller.signal,
+                  )
             : 'اطلاعات دسترسی حساب برای خواندن کال‌سنتر آماده نیست.';
           if (!controller.signal.aborted) {
             previousAnswer.current = undefined;
@@ -1902,6 +1914,28 @@ function AssistantComposerContent({
                   : '/customer-affairs/call-center',
               label: 'کال‌سنتر',
             });
+          }
+          return;
+        }
+        if (ownRequestCount) {
+          const range = historicalReportPeriod(message);
+          if (!range) {
+            replyLocally(
+              'روز یا بازهٔ ثبت درخواست‌ها را با ماه و سال مشخص کنید.',
+            );
+            return;
+          }
+          const { total } = await customerAffairsApi.countOwnWorkbenchRequests(
+            range.from,
+            range.to,
+            controller.signal,
+          );
+          if (!controller.signal.aborted) {
+            previousAnswer.current = undefined;
+            workbenchTopic.current = undefined;
+            replyLocally(
+              `در بازهٔ ${range.label} به وقت تهران، ${total.toLocaleString('fa-IR')} درخواست ثبت‌شده توسط شما در کارتابل قابل مشاهده است.`,
+            );
           }
           return;
         }

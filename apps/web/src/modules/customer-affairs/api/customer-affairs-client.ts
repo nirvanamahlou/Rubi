@@ -176,6 +176,11 @@ export const customerAffairsApi = {
       '/workbench/requests',
       signal ? { signal, cache: 'no-store' } : undefined,
     ),
+  countOwnWorkbenchRequests: (from: string, to: string, signal: AbortSignal) =>
+    request<{ total: number }>(
+      `/workbench/requests/own-count?${new URLSearchParams({ from, to })}`,
+      { signal, cache: 'no-store' },
+    ),
   reviewLeaveSubstitute: (id: string, version: number, status: string) =>
     request(`/workbench/requests/${encodeURIComponent(id)}/substitute`, {
       method: 'PATCH',

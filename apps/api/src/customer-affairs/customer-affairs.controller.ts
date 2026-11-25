@@ -533,6 +533,15 @@ export class CustomerAffairsController {
   workbenchRequests(@Req() req: AuthenticatedRequest) {
     return this.service.workbenchRequests(req.actor);
   }
+  @Get('workbench/requests/own-count')
+  @Header('Cache-Control', 'private, no-store')
+  countOwnWorkbenchRequests(
+    @Req() req: AuthenticatedRequest,
+    @Query('from') from: string,
+    @Query('to') to: string,
+  ) {
+    return this.service.countOwnWorkbenchRequests(req.actor, from, to);
+  }
   @Patch('workbench/requests/:id/substitute')
   reviewLeaveSubstitute(
     @Param('id', ParseUUIDPipe) id: string,
