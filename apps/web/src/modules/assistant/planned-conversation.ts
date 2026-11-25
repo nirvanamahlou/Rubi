@@ -70,8 +70,11 @@ export async function runPlannedConversation(
   if (process.env.NORA_COMPOSITION_ENABLED === 'false') return response(204);
   const useModel =
     (!plan.length || plan.some((step) => step.kind === 'unknown')) &&
-    mightNeedModelPlan(input.message) &&
-    process.env.NORA_MODEL_PLANNER_ENABLED === 'true';
+    process.env.NORA_MODEL_PLANNER_ENABLED === 'true' &&
+    mightNeedModelPlan(
+      input.message,
+      resolveDocumentedWorkflow(input.message).length > 0,
+    );
   if (!plan.length && !useModel) return response(204);
   const base = (
     process.env.NORA_ERP_API_BASE_URL || process.env.ERP_API_BASE_URL

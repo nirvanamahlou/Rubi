@@ -475,6 +475,7 @@ function AssistantComposerContent({
       links?: ContractLink[];
       targets?: { id: string; label: string }[];
       guideLink?: { href: string; label: string; guideHref?: string };
+      relatedGuides?: GuideSection[];
       parts?: AnswerPart[];
       submissionId?: number;
     }>
@@ -662,6 +663,7 @@ function AssistantComposerContent({
       targets?: { id: string; label: string }[],
       guideLink?: { href: string; label: string; guideHref?: string },
       answerContext?: AnswerContext,
+      relatedGuides?: GuideSection[],
     ) => {
       if (answerContext)
         previousAnswer.current = {
@@ -677,6 +679,7 @@ function AssistantComposerContent({
             ...(links?.length ? { links } : {}),
             ...(targets?.length ? { targets } : {}),
             ...(guideLink ? { guideLink } : {}),
+            ...(relatedGuides?.length ? { relatedGuides } : {}),
           },
         ]),
       );
@@ -695,11 +698,12 @@ function AssistantComposerContent({
       );
     const previousPlan = composedContext.current;
     composedContext.current = null;
+    const workflow = resolveDocumentedWorkflow(message);
     if (
       agentMode &&
       (planQuestion(message, previousPlan?.question).length ||
         (process.env.NEXT_PUBLIC_NORA_MODEL_PLANNER_ENABLED === 'true' &&
-          mightNeedModelPlan(message)))
+          mightNeedModelPlan(message, workflow.length > 0)))
     ) {
       pending.current?.abort();
       const controller = new AbortController();
@@ -727,7 +731,14 @@ function AssistantComposerContent({
         else {
           if (!result.ok) {
             if ([401, 403, 409].includes(result.status)) {
-              setMessages([]);
+              // The scope can change during a read. Discard prior ERP evidence,
+              // while keeping the user's own in-flight question beside its reply.
+              setMessages((previous) =>
+                previous.filter(
+                  (row) =>
+                    row.role === 'user' && row.submissionId === submissionId,
+                ),
+              );
               previousAnswer.current = undefined;
             }
             throw new Error('UNAVAILABLE');
@@ -768,10 +779,13 @@ function AssistantComposerContent({
     }
     const priorIndexed = indexedTopic.current;
     indexedTopic.current = undefined;
-    const showSection = (
-      section: GuideSection,
-      displayed = new Set<string>(),
-    ) => {
+    const showSections = (sections: GuideSection[], incomplete = false) => {
+      const [section, ...related] = sections;
+      if (!section) {
+        replyLocally(t(c.pilotGuideInsufficient));
+        return;
+      }
+      const displayed = new Set<string>();
       indexedTopic.current = section;
       systemGuideTopic.current = section.guideHref.startsWith(
         '/assistant-guides/system-management#',
@@ -789,23 +803,28 @@ function AssistantComposerContent({
       previousAnswer.current = undefined;
       replyLocally(
         [
-          section.title,
-          ...((section.route ?? section.path)?.length
-            ? [(section.route ?? section.path)!.join(' ← ')]
-            : []),
-          ...(section.conditions ?? []).filter((condition) => {
-            if (displayed.has(condition)) return false;
-            displayed.add(condition);
-            return true;
-          }),
-          ...section.steps
-            .filter((step) => {
-              if (displayed.has(step)) return false;
-              displayed.add(step);
-              return true;
-            })
-            .map((step, i) => i + 1 + '. ' + step),
-        ].join('\n'),
+          ...sections.map((topic) =>
+            [
+              topic.title,
+              ...((topic.route ?? topic.path)?.length
+                ? [(topic.route ?? topic.path)!.join(' ← ')]
+                : []),
+              ...(topic.conditions ?? []).filter((condition) => {
+                if (displayed.has(condition)) return false;
+                displayed.add(condition);
+                return true;
+              }),
+              ...topic.steps
+                .filter((step) => {
+                  if (displayed.has(step)) return false;
+                  displayed.add(step);
+                  return true;
+                })
+                .map((step, i) => i + 1 + '. ' + step),
+            ].join('\n'),
+          ),
+          ...(incomplete ? [t(c.pilotGuideInsufficient)] : []),
+        ].join('\n\n'),
         undefined,
         undefined,
         {
@@ -813,8 +832,11 @@ function AssistantComposerContent({
           label: english ? 'Open panel' : 'باز کردن پنل',
           guideHref: section.guideHref,
         },
+        undefined,
+        related,
       );
     };
+    const showSection = (section: GuideSection) => showSections([section]);
     const lastReply = messages.at(-1);
     const linkedNext =
       lastReply?.role === 'assistant' &&
@@ -858,17 +880,12 @@ function AssistantComposerContent({
         ? retrieveDocumentSections(message, pathname, mayReadGuide)
         : [];
     if (documentSections.length) {
-      const displayed = new Set<string>();
-      for (const section of documentSections) showSection(section, displayed);
+      showSections(documentSections);
       return;
     }
-    const workflow = resolveDocumentedWorkflow(message);
     if (workflow.length) {
       const permitted = workflow.filter(mayReadGuide);
-      const displayed = new Set<string>();
-      for (const section of permitted) showSection(section, displayed);
-      if (permitted.length !== workflow.length)
-        replyLocally(t(c.pilotGuideInsufficient));
+      showSections(permitted, permitted.length !== workflow.length);
       return;
     }
     const newGuide = retrieveSalesPanelGuide(
@@ -2606,6 +2623,19 @@ function AssistantComposerContent({
                         {item.guideLink.label}
                       </Link>
                     )}
+                    {item.relatedGuides?.map((section) => (
+                      <div key={section.guideHref}>
+                        <Link
+                          className="block underline"
+                          href={section.guideHref}
+                        >
+                          {section.title}
+                        </Link>
+                        <Link className="block underline" href={section.href}>
+                          {english ? 'Open panel' : 'باز کردن پنل'}
+                        </Link>
+                      </div>
+                    ))}
                     {item.local &&
                       item.targets?.map((target) => (
                         <button

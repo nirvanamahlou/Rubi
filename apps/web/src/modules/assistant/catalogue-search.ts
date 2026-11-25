@@ -32,11 +32,19 @@ let wordSearch: ReturnType<typeof buildGuideWordSearch> | undefined;
 
 const workflowIntents: readonly [RegExp, readonly string[]][] = [
   [
+    /(?=.*ویزا)(?=.*(?:کارتابل|درخواست))(?=.*(?:پیگیری|نقص|وضعیت|مدارک))(?!.*(?:ثبت|ایجاد|بفرست))/,
+    ['workbench/request-status'],
+  ],
+  [
     /ویزا.*(?:کارتابل|درخواست داخلی)|(?:کارتابل|درخواست داخلی).*ویزا|درخواست ویزا.*پیگیری/,
     ['workbench/request-create', 'workbench/request-status'],
   ],
   [/مرخصی استعلاجی/, ['workbench/leave-medical']],
   [/جانشین.*مرخصی|مرخصی.*جانشین/, ['workbench/substitute']],
+  [
+    /(?=.*مرخصی)(?=.*(?:مدارک درخواست|پیوست درخواست|(?:تایید|تأیید) من))(?=.*(?:چک|بررسی|کجا))/,
+    ['human-resources/requests', 'workbench/leave-approval'],
+  ],
   [/اصلاح تردد.*ثبت|ثبت.*اصلاح تردد/, ['workbench/attendance-correction']],
   [/مساعده.*درخواست|درخواست.*مساعده/, ['workbench/advance']],
   [/کد پیگیری|کارتابل.*دلیل رد/, ['workbench/request-status']],
@@ -81,6 +89,10 @@ const workflowIntents: readonly [RegExp, readonly string[]][] = [
   [/ایمیل کارگزار.*رزرو/, ['reservations/hotel-mail']],
   [/پرواز رفت و برگشت.*جدا/, ['reservations/flight']],
   [/هتل.*پرونده رزرو/, ['reservations/hotel']],
+  [
+    /(?=.*واچر)(?=.*(?:هتل|اقامت))(?=.*(?:چک|بررسی|ببین|مشاهده|پیدا))(?!.*(?:باطل|ابطال|صدور مجدد|صادر نشده))/,
+    ['travel-issuance/voucher'],
+  ],
   [/قرارداد.*چندتا هتل|چندتا هتل.*قرارداد/, ['sales/multi-hotel']],
   [/اسم انگلیسی مسافر/, ['sales/passport']],
   [/قرارداد.*مدرک پرداخت|رسید پرداخت.*قرارداد/, ['sales/receipt']],
@@ -157,7 +169,7 @@ const workflowIntents: readonly [RegExp, readonly string[]][] = [
     ['reservations/handoff', 'reservations/flight', 'reservations/hotel'],
   ],
   [
-    /(?:ثبت|ایجاد).*قرارداد.*(?:جدید|ارسال.*رزرواسیون)|قرارداد.*جدید.*(?:ثبت|ایجاد)/,
+    /^(?!.*(?:پرسنلی|استخدام|قرارداد کار(?:ی|مند)?(?: |$)))(?:(?:.*(?:ثبت|ایجاد).*قرارداد.*(?:جدید|ارسال.*رزرواسیون))|(?:.*قرارداد.*جدید.*(?:ثبت|ایجاد|بزن|بساز)))/,
     ['sales/create'],
   ],
   [
@@ -184,6 +196,10 @@ const workflowIntents: readonly [RegExp, readonly string[]][] = [
   [
     /مرخصی.*(?:تایید|تأیید|منتظر)|(?:تایید|تأیید|منتظر).*مرخصی/,
     ['workbench/leave-approval', 'human-resources/requests'],
+  ],
+  [
+    /(?=.*(?:ممیزی|آدیت))(?=.*منابع انسانی)|(?=.*گزارش)(?=.*(?:کارکرد|تردد))(?=.*(?:بازه|تنظیم|فیلتر))/,
+    ['human-resources/reports'],
   ],
   [
     /(?:تردد|کارکرد).*(?:گزارش|خروجی)|(?:گزارش|خروجی).*(?:تردد|کارکرد)/,

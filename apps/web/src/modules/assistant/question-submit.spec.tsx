@@ -22,6 +22,7 @@ const h = vi.hoisted(() => ({
   effects: [] as (() => void)[],
   path: '/sales',
   tab: '',
+  query: '',
   key: '',
   company: 'company-a',
   user: 'user-a',
@@ -62,7 +63,8 @@ vi.mock('react', async (original) => ({
 }));
 vi.mock('next/navigation', () => ({
   usePathname: () => h.path,
-  useSearchParams: () => new URLSearchParams(h.tab ? `tab=${h.tab}` : ''),
+  useSearchParams: () =>
+    new URLSearchParams(h.query || (h.tab ? `tab=${h.tab}` : '')),
   useRouter: () => ({ push: vi.fn() }),
 }));
 vi.mock('@/modules/iam/access-context', () => ({
@@ -159,6 +161,7 @@ beforeEach(() => {
   h.key = '';
   h.path = '/sales';
   h.tab = '';
+  h.query = '';
   h.company = 'company-a';
   h.user = 'user-a';
   h.permissions = ['sales.contracts.read.all'];
@@ -376,6 +379,34 @@ describe('actual Composer submit routing and transport', () => {
     await send('از کجا آوردی؟');
     expect(h.fetcher).toHaveBeenCalledTimes(2);
     expect(chat().at(-1)).toContain('کدام پاسخ');
+  });
+  it('passes a comma-prefixed company scope to the scalar reader as one complete question', async () => {
+    const question =
+      'با انتخاب همه شرکت‌ها، تعداد قراردادهای قابل مشاهده در کل شرکت‌های مجاز چقدر است؟';
+    vi.stubEnv('NEXT_PUBLIC_NORA_MODEL_PLANNER_ENABLED', 'true');
+    await send(question);
+    expect(h.fetcher).toHaveBeenCalledOnce();
+    const [url, init] = h.fetcher.mock.calls[0]!;
+    expect(url).toBe('/api/assistant/v3/conversation');
+    expect(init.headers['x-nora-composition']).toBeUndefined();
+    expect(JSON.parse(init.body).message).toBe(question);
+    expect(chat()).toHaveLength(1);
+    expect(chat()[0]).toContain('شواهد تازه');
+  });
+  it('discards stale evidence after a composition scope change but keeps the current question beside its reply', async () => {
+    await send('تعداد قراردادها را بگو');
+    expect(chat()[0]).toContain('شواهد تازه');
+    h.fetcher.mockResolvedValueOnce(new Response(null, { status: 409 }));
+    await send('فروش دو هفته اخیر چقدر بوده؟');
+    expect(h.fetcher.mock.calls.at(-1)?.[1].headers['x-nora-composition']).toBe(
+      '1',
+    );
+    expect(
+      render()
+        .filter((n) => n.props['data-role'])
+        .map((n) => n.props['data-role']),
+    ).toEqual(['user', 'assistant']);
+    expect(chat()).toEqual([assistantCopy.internalSourceFallback[0]]);
   });
   it('keeps numeric objections on v3 after page/tab navigation, then switches explicitly to a receipt guide', async () => {
     await send('تعداد قراردادها را بگو');
@@ -799,8 +830,11 @@ const replayCases: ReplayCase[] = readFileSync(
   .map((row) => JSON.parse(row));
 
 describe('synthetic full-access Composer replay', () => {
-  it.each(replayCases)('$id', async ({ question, expectedGuides }) => {
-    h.path = '/assistant';
+  beforeEach(() => {
+    h.path = '/hr';
+    h.query = 'section=employees';
+    vi.stubEnv('NEXT_PUBLIC_NORA_MODEL_PLANNER_ENABLED', 'true');
+    vi.stubEnv('NORA_MODEL_PLANNER_ENABLED', 'true');
     h.company = 'ALL';
     h.permissions = [
       ...IAM_PERMISSION_CODES.filter(
@@ -846,8 +880,14 @@ describe('synthetic full-access Composer replay', () => {
         return Response.json({ data: { selection: 'ALL', version: 1 } });
       return new Response(null, { status: 503 });
     });
+  });
+  it.each(replayCases)('$id', async ({ question, expectedGuides }) => {
     await send(question);
-    const links = render()
+    const reply = render().find(
+      (node) => node.props['data-role'] === 'assistant',
+    );
+    expect(reply, question).toBeDefined();
+    const links = nodes(reply)
       .map((node) => node.props.href)
       .filter(
         (v): v is string =>
@@ -860,7 +900,35 @@ describe('synthetic full-access Composer replay', () => {
       ].topics.find((t) => t.id === id)!;
       expect(links, question).toContain(expected.guideHref);
       for (const step of expected.steps)
-        expect(chat().join('\n'), question).toContain(step);
+        expect(chat()[0], question).toContain(step);
     }
+  });
+  it('retains one adjacent answer per guide request across a continuous conversation even when provider reads are unavailable', async () => {
+    h.fetcher.mockResolvedValue(new Response(null, { status: 503 }));
+    const ids = [
+      'role-021',
+      'role-044',
+      'role-045',
+      'role-141',
+      'role-161',
+      'role-173',
+      'role-174',
+      'role-175',
+    ];
+    for (const id of ids) {
+      const entry = replayCases.find((row) => row.id === id)!;
+      await send(entry.question);
+      const roles = render().filter((n) => n.props['data-role']);
+      expect(roles.at(-2)?.props['data-role']).toBe('user');
+      expect(roles.at(-1)?.props['data-role']).toBe('assistant');
+      for (const ref of entry.expectedGuides) {
+        const [domain, topic] = ref.split('/');
+        expect(nodes(roles.at(-1)).map((n) => n.props.href)).toContain(
+          '/assistant-guides/' + domain + '#' + topic,
+        );
+      }
+    }
+    expect(chat()).toHaveLength(ids.length);
+    expect(h.fetcher).not.toHaveBeenCalled();
   });
 });

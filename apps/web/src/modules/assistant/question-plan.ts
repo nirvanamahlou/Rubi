@@ -50,8 +50,21 @@ export function classify(question: string): PlannedRead {
   return { kind, question };
 }
 
-export function mightNeedModelPlan(message: string) {
+export function mightNeedModelPlan(
+  message: string,
+  documentedWorkflow = false,
+) {
   const text = normalizeQuestion(message);
+  // A conjunction inside one handbook task (e.g. comparing two statuses)
+  // is not a request to read records. Keep an independently requested figure
+  // or report eligible for planning, even alongside a known instruction.
+  if (
+    documentedWorkflow &&
+    !/(?:چقدر|چندتا|چند تا|چند بود)|(?:^| )(?:بگو|بده|بفرست|استخراج کن|مشخص کن|حساب کن|بشمار|بشمر|بگیر|اجرا کن)(?: |$)/.test(
+      text,
+    )
+  )
+    return false;
   return (
     text.length >= 28 &&
     /(?: و | همچنین | ضمنا | بعلاوه | علاوه بر | بعدش )/u.test(text) &&
@@ -61,13 +74,28 @@ export function mightNeedModelPlan(message: string) {
 }
 
 export function planQuestion(message: string, previous = ''): PlannedRead[] {
-  const clauses = message
-    .trim()
+  const original = message.trim();
+  // A leading scope or time qualifier belongs to the first task. Keep its
+  // original wording (including the comma) for the owner reader.
+  const preamble = original.match(/^[^،,؟?؛;]+[،,]\s*/u)?.[0] ?? '';
+  const lead = normalizeQuestion(preamble);
+  const filterPrefix =
+    /^(?:با (?:انتخاب|فیلتر|احتساب|در نظر گرفتن)|در (?:همه|کل|شرکت|شعبه|بازه|دوره)|برای (?:همه|کل|شرکت|شعبه|بازه|دوره)|از تاریخ|بین تاریخ) /.test(
+      lead,
+    ) &&
+    !/چطور|چجور|چگونه|چقدر|چند|کجا|بگو|بده|نشان بده|ثبت کن|اجرا کن|محاسبه کن|چیه|چیست/.test(
+      lead,
+    )
+      ? preamble
+      : '';
+  const clauses = original
+    .slice(filterPrefix.length)
     .split(
       /(?:\s+(?:و|بعدش|بعد)\s+(?=(?:(?:بهم |هم )?(?:بگو |بگین )?)?(?:چطور|چجور|چگونه|راهنما|مراحل|از کجا|کجا باید|درخواستم|تعداد|مجموع|مبلغ|چند|چقدر))|[؟?؛;]\s*(?=\S)|[،,]\s*(?=(?:(?:و |بهم |بگو )*)(?:چطور|چجور|راهنما|از کجا|تعداد|مجموع)))/u,
     )
     .map((part) => part.replace(/^(?:(?:و|هم|بهم|بگو)\s+)+/u, '').trim())
     .filter(Boolean);
+  if (filterPrefix && clauses.length) clauses[0] = filterPrefix + clauses[0];
   // A trailing identifier qualifies the preceding request, it is not another task.
   if (
     clauses
