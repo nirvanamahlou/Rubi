@@ -1,6 +1,6 @@
 import { ConflictException, ForbiddenException } from '@nestjs/common';
 import type { AuthenticatedActor } from '@nora/contracts';
-import { MasterCurrencyRateStatus } from '@nora/database';
+import { MasterCurrencyRateStatus, Prisma } from '@nora/database';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { DatabaseService } from '../database/database.service';
@@ -62,18 +62,17 @@ function fixture(options?: {
 }
 
 describe('CurrencyRateService decisions', () => {
-  it('publishes the latest active approved sale rate without internal fields', async () => {
+  it('publishes positive active currency-card rates as rials per unit', async () => {
     const findMany = vi.fn().mockResolvedValue([
       {
-        rate: { toFixed: () => '618530.245' },
-        fromCurrency: { code: 'EUR' },
-        validFrom: draft.validFrom,
-        validTo: null,
+        tomanPerUnit: new Prisma.Decimal('98765432109876.1234567891'),
+        code: 'EUR',
+        updatedAt: draft.validFrom,
         source: 'internal',
       },
     ]);
     const service = new CurrencyRateService({
-      client: { masterDraftExchangeRate: { findMany } },
+      client: { masterCurrency: { findMany } },
     } as unknown as DatabaseService);
 
     await expect(service.websiteSellRates()).resolves.toEqual([
@@ -81,20 +80,17 @@ describe('CurrencyRateService decisions', () => {
         currencyCode: 'EUR',
         quoteCurrencyCode: 'IRR',
         rateType: 'SELL',
-        rate: '618530.245',
+        rate: '987654321098761.234567891',
         validFrom: draft.validFrom.toISOString(),
         validTo: null,
       },
     ]);
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        distinct: ['fromCurrencyId'],
         where: expect.objectContaining({
           isActive: true,
-          rateType: 'SELL',
-          status: 'APPROVED',
-          validFrom: { lte: expect.any(Date) },
-          OR: [{ validTo: null }, { validTo: { gt: expect.any(Date) } }],
+          code: { in: ['USD', 'EUR', 'TRY'] },
+          tomanPerUnit: { gt: 0 },
         }),
       }),
     );

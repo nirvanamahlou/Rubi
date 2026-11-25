@@ -16,11 +16,13 @@ import type {
   AuthenticatedActor,
   MasterCurrencyRateQuoteRequest,
 } from '@nora/contracts';
-import { AuditOutcome, MasterCurrencyRateStatus } from '@nora/database';
-import type { Prisma } from '@nora/database';
+import { AuditOutcome, MasterCurrencyRateStatus, Prisma } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import type { CurrencyRateListDto } from './currency-rate.dto';
+
+// A Decimal(24, 10) card can exceed the default 20 significant digits.
+const WebsiteRate = Prisma.Decimal.clone({ precision: 25 });
 
 function branchOf(actor: AuthenticatedActor, requested?: string): string {
   const branchId = requested ?? actor.branchIds[0];
@@ -368,35 +370,29 @@ export class CurrencyRateService {
   }
 
   async websiteSellRates() {
-    const now = new Date();
-    const rows = await this.database.client.masterDraftExchangeRate.findMany({
+    const rows = await this.database.client.masterCurrency.findMany({
       where: {
         isActive: true,
-        status: MasterCurrencyRateStatus.APPROVED,
-        rateType: 'SELL',
-        rate: { gt: 0 },
-        fromCurrency: { code: { in: ['USD', 'EUR', 'TRY'] }, isActive: true },
-        toCurrency: { code: 'IRR', isActive: true },
-        validFrom: { lte: now },
-        OR: [{ validTo: null }, { validTo: { gt: now } }],
+        code: { in: ['USD', 'EUR', 'TRY'] },
+        tomanPerUnit: { gt: 0 },
       },
-      select: {
-        rate: true,
-        validFrom: true,
-        validTo: true,
-        fromCurrency: { select: { code: true } },
-      },
-      orderBy: [{ validFrom: 'desc' }, { approvedAt: 'desc' }, { id: 'desc' }],
-      distinct: ['fromCurrencyId'],
+      select: { code: true, tomanPerUnit: true, updatedAt: true },
+      orderBy: { code: 'asc' },
     });
-    return rows.map((row) => ({
-      currencyCode: row.fromCurrency.code,
-      rateType: 'SELL' as const,
-      quoteCurrencyCode: 'IRR' as const,
-      rate: row.rate.toFixed(),
-      validFrom: row.validFrom.toISOString(),
-      validTo: row.validTo?.toISOString() ?? null,
-    }));
+    return rows.flatMap((row) =>
+      row.tomanPerUnit
+        ? [
+            {
+              currencyCode: row.code,
+              rateType: 'SELL' as const,
+              quoteCurrencyCode: 'IRR' as const,
+              rate: new WebsiteRate(row.tomanPerUnit).times(10).toFixed(),
+              validFrom: row.updatedAt.toISOString(),
+              validTo: null,
+            },
+          ]
+        : [],
+    );
   }
 
   async mutate(
