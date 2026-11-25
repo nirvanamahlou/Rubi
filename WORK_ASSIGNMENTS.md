@@ -13666,3 +13666,7 @@ The production preflight exposed an incorrect full-API destination for two read-
 ## NORA-PRODUCTION-GUIDES-1126 — PC-C
 
 Reserve production acceptance for the 220 administrator questions and their panel comparisons after merging #1958, with targeted repairs for verified discrepancies, on `codex/pc-c-nora-production-guides-1126`. Test through the original administrator session in All Companies. No database or dependency change is planned.
+
+## NORA-SALES-PAGER-DOCK-1126 — PC-C
+
+Reserve the linked Sales report pager layout and its Chromium hit-test on `codex/pc-c-nora-sales-pager-dock-1126`. Verify ordinary pointer navigation and the dock in RTL and LTR. The release updates Web only.

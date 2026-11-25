@@ -45,6 +45,7 @@ import { ContractOutputButton } from './contract-output';
 import { ContractTableScroll } from './contract-table-scroll';
 import { SalesReceivablesCard } from './sales-receivables-card';
 import { PassengerCorrectionButton } from './passenger-correction';
+import pagerStyles from './sales-report-pagination.module.css';
 
 export const DEFAULT_CONTRACT_PAGE_SIZE = 10;
 export const DATE_FILTERED_CONTRACT_PAGE_SIZE = 10_000;
@@ -286,8 +287,6 @@ export function SalesContractPagination({
         page: String(target),
       });
       if (!canOpenRoute(`/sales?${params}`)) return null;
-      // Each report page is initialized from the document's pinned URL. An
-      // intercepted same-path transition can restore the preceding page.
       return (
         <a
           href={`?${params}`}
@@ -306,7 +305,11 @@ export function SalesContractPagination({
   return (
     <nav
       aria-label="صفحه‌بندی قراردادها"
-      className="flex items-center justify-between"
+      className={
+        query.salesPeriodAsOf
+          ? pagerStyles.periodPager
+          : 'flex items-center justify-between'
+      }
     >
       {control(Math.min(page - 1, pages), 'صفحه قبل')}
       <span className="text-sm text-muted-foreground">

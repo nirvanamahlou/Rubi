@@ -10824,3 +10824,5 @@ The generated workflow inventory and guide acceptance corpus live in [workflow c
 ## NORA-SALES-REPORT-PAGINATION — PC-C
 
 The 14-day Sales report now opens each contract page at a durable URL with the original Tehran cutoff. A four-page regression follows the generated links through the Sales route and verifies the request sent on remount. Before the fix, real-admin Excel reconciled both currency totals and all 33 distinct contracts. Browser acceptance of the new links follows deployment.
+
+At a 319 × 678 viewport, a real pointer hit the default floating chat launcher above the period pager. The pager now reserves the launcher's space at the logical inline end and wraps the page indicator on narrow screens. A Chromium regression hit-tests both links in Persian and English layout directions at mobile and desktop widths and reproduces the collision with the previous layout.
