@@ -1,3 +1,7 @@
+## Visa media edit permissions
+
+Visa cover and gallery fields now have individual edit permissions. The contract regression covers granting either field separately from the other.
+
 ## NORA-GUIDE-SEARCH-1124 — PC-C
 
 All 358 authored topics across 25 manuals are indexed under nine sidebar groups. Scoped lookup reuses the authored text and can follow a verified prerequisite, next step or status destination. Access is checked at both ends of a handoff. Local checks and Chromium evidence are in [the acceptance notes](tasks/NORA-GUIDE-SEARCH-1124.md).

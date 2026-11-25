@@ -1,3 +1,7 @@
+## Visa media edit permissions
+
+PC-C added visa image fields to the IAM catalog and tested independent grants.
+
 ## NORA-GUIDE-SEARCH-1124 — PC-C — REVIEW
 
 Delivered the Nora index, workflow links, shared sidebar groups, scoped chat/guidance integration and tests on codex/pc-c-nora-guide-search-1124. No schema, dependency or producer lock. See docs/tasks/NORA-GUIDE-SEARCH-1124.md for acceptance.

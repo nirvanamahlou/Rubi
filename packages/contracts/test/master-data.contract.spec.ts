@@ -13,6 +13,44 @@ import {
 } from '../src';
 
 describe('master data public contract', () => {
+  it('supports separate grants for editing a visa cover and gallery', () => {
+    const prefix = 'field.master-data.visa-services';
+    const values = {
+      sourceMainImage: '/cover.webp',
+      sourceGalleryImages: '/gallery.webp',
+    };
+    const manual = [MANUAL_ACCESS_VERSION, 'master_data.update'];
+    for (const field of Object.keys(values)) {
+      expect(
+        USER_ACCESS_FIELD_CONTROLS.some(
+          ({ id }) => id === `${prefix}.${field}`,
+        ),
+      ).toBe(true);
+    }
+    expect(changedDeniedFields(manual, prefix, values)).toEqual(
+      Object.keys(values),
+    );
+    expect(
+      changedDeniedFields(
+        [...manual, allowAccessControl(`${prefix}.sourceMainImage`)],
+        prefix,
+        values,
+      ),
+    ).toEqual(['sourceGalleryImages']);
+    expect(
+      changedDeniedFields(
+        [
+          ...manual,
+          ...Object.keys(values).map((field) =>
+            allowAccessControl(`${prefix}.${field}`),
+          ),
+        ],
+        prefix,
+        values,
+      ),
+    ).toEqual([]);
+  });
+
   it('exposes hotel currency for explicit manual grants and keeps it restricted otherwise', () => {
     const control = 'field.master-data.hotels.currencyId';
     expect(MASTER_DATA_EDITABLE_FIELDS.hotels).toContain('currencyId');
