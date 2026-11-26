@@ -10842,3 +10842,5 @@ PC-C — A browser comparison exposed mixed sources when a customer/passenger co
 PC-D — Reservations can display saved draft contracts in the branded travel contract template before confirmation. Final PDF and shared document issuance continue to use the final-output endpoint.
 
 PC-C — All 220 role-report prompts were submitted to the production Nora UI under the original administrator in the aggregate company view. Three answers passed the initial reconciliation. Evidence and individual answers are kept outside Git. Report routing, scoped owner reads and session recovery are under test on the live-report-parity branch.
+
+PC-C — The first reconciliation patch passed CI and merged in #1967. The follow-up aligns call-center drilldowns, active reservation requests, tour definitions, insurance issuer grouping, sales passenger and discount projections, and the fiscal-period-independent aggregate journal register with their source owners. Deployment and browser acceptance are tracked separately from CI.

@@ -129,6 +129,14 @@ export function planQuestion(message: string, previous = ''): PlannedRead[] {
   if (ownerRecordRequest(original))
     return [{ kind: 'records', question: original }];
   const whole = normalizeQuestion(original);
+  // The no-cost contract count qualifies the profit calculation. Keep the currency,
+  // period and missing-cost instruction together for the authenticated data reader.
+  if (
+    !procedure.test(whole) &&
+    (/^(?:جمع|مجموع) (?:دریافت|پرداخت)/u.test(whole) ||
+      /^سود (?:ناخالص|خالص) /u.test(whole))
+  )
+    return [{ kind: 'records', question: original }];
   if (
     recordsRequest(whole) &&
     !/درخواستم|درخواست خودم/u.test(whole) &&

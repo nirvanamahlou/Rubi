@@ -1021,6 +1021,22 @@ export class SalesService {
     return {
       data: details.map((detail, index) => ({
         ...summary(detail),
+        ...(query.reportProjection === 'PASSENGER_ROWS'
+          ? {
+              passengerRows: detail.passengersDetail.map((p) => ({
+                id: p.id,
+                displayName: p.displayNameSnapshot,
+              })),
+            }
+          : {}),
+        ...(query.reportProjection === 'DISCOUNT' &&
+        has(actor, 'sales.payments.read')
+          ? {
+              hasDiscount: detail.priceComponents.some(
+                (p) => p.type === 'DISCOUNT' && /[1-9]/.test(p.amount),
+              ),
+            }
+          : {}),
         confirmedAt: result.data[index]!.confirmedAt?.toISOString() ?? null,
         issuerCompany: result.data[index]!.legalEntity,
         sellerName: sellerNames.get(detail.ownerUserId) ?? null,

@@ -13690,3 +13690,5 @@ Scoped to the staff reservation workflow preview and Sales document readiness fo
 The Sales list producer adds optional confirmation and issuer fields and an explicit registered-history selection for the Nora consumer. Existing callers keep the default visibility filter. HR owns the paginated roster and approval resource filter. The Nora report reader consumes both using the same signed-in actor as their panels.
 
 PC-D — Review saved draft contracts in the reservation document viewer on codex/pc-d-reservation-contract-document.
+
+PC-C | codex/pc-c-nora-owner-reconciliation-1126 | Production report reconciliation follow-up to #1967. Sales supplies optional discount and passenger-row projections. Insurance supplies its nullable contract reference. Finance owns the read-only all-company journal register with existing journal, aggregate-company and branch permissions. Nora consumes those reads and the scoped reservation, purchase, call-center and tour readers. Release tooling verifies the type of the Next.js cache directory. No migration or dependency changes.

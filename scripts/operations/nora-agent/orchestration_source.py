@@ -33,6 +33,7 @@ def source_tree(root, allowed, destination=None):
 def check_artifact_drift(inspected):
     """Writable runtime files and source mounts can shadow bytes in Docker's base image."""
     public = "/workspace/apps/web/public"
+    cache = "/workspace/apps/web/.next/cache"
     for mount in inspected["Mounts"]:
         path = mount["Destination"].rstrip("/")
         if (
@@ -44,10 +45,17 @@ def check_artifact_drift(inspected):
     )
     for line in result.stdout.splitlines():
         action, path = line.split(" ", 1)
+        if path == cache and action == "A":
+            kind = subprocess.run(
+                ["docker", "exec", inspected["Id"], "stat", "-c", "%F", cache],
+                capture_output=True, text=True, check=True,
+            ).stdout.strip()
+            if kind == "directory":
+                continue
         if (
             not path.startswith("/workspace/")
             or path.startswith(public + "/")
-            or "/.next/cache/" in path
+            or path.startswith(cache + "/")
         ):
             continue
         if action in ("A", "D") or Path(path).suffix in (

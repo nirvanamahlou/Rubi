@@ -24,6 +24,24 @@ spec.loader.exec_module(builder)
 
 
 class PromotionTests(TestCase):
+    def test_new_next_cache_directory_does_not_hide_runtime_file_drift(self):
+        cache = "/workspace/apps/web/.next/cache"
+        state = {"Id": "live", "Mounts": []}
+        for kind, extra, accepted in [
+            ("directory", "", True),
+            ("symbolic link", "", False),
+            ("directory", "A /workspace/apps/web/.next/server/runtime.js", False),
+        ]:
+            with self.subTest(kind=kind, extra=extra), patch(
+                "orchestration_source.subprocess.run",
+                side_effect=[MagicMock(stdout=f"A {cache}\n{extra}\n".strip()), MagicMock(stdout=kind)],
+            ):
+                if accepted:
+                    builder.check_artifact_drift(state)
+                else:
+                    with self.assertRaisesRegex(RuntimeError, "writable-layer"):
+                        builder.check_artifact_drift(state)
+
     def test_private_read_canary_checks_real_uid_and_removes_its_container_on_failure(self):
         active = {"Config": {"User": "1000:1000", "Entrypoint": ["node"],
                   "Cmd": ["apps/api/dist/assistant-read/main.js"],

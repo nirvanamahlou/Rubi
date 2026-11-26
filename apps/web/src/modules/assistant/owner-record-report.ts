@@ -8,14 +8,24 @@ import { serializeMasterDataListQuery } from '../master-data/api/contracts';
 import type { AnswerPart } from './planned-answer';
 import type { RecordRequest, RecordSubject } from './owner-record-intent';
 import { formatInsuranceSummary } from './insurance-report';
+import {
+  callCenterRecords,
+  reservationRequests,
+} from './owner-operational-records';
 
-type Read = (path: string) => Promise<unknown>;
+export type OwnerRead = (
+  path: string,
+  body?: unknown,
+  branchId?: string,
+) => Promise<unknown>;
+type Read = OwnerRead;
 type Group = { id: string; name: string };
 type Row = {
   id: string;
   label: string;
   branch?: string | null;
   company?: Group | null;
+  contractId?: string | null | undefined;
 };
 type Records = { rows: Row[]; hasBranch: boolean; hasCompany: boolean };
 const count = z.number().int().safe().nonnegative();
@@ -27,6 +37,9 @@ const hrefs: Record<RecordSubject, string> = {
   confirmed: '/sales',
   personContracts: '/sales',
   agencyContracts: '/sales',
+  salePassengers: '/sales',
+  discountContracts: '/sales',
+  tourPackages: '/sales/tours',
   cancelled: '/sales',
   unsettled: '/sales',
   settled: '/sales',
@@ -41,6 +54,11 @@ const hrefs: Record<RecordSubject, string> = {
   policies: '/reservations/insurance',
   reviewPolicies: '/reservations/insurance',
   insuranceSummary: '/reservations/insurance',
+  callsWithoutOutcome: '/customer-affairs/call-center',
+  callbacks: '/customer-affairs/call-center',
+  reservationRequests: '/reservations',
+  flightServices: '/ticket-purchases',
+  hotelServices: '/ticket-purchases',
   users: '/system/users',
   roles: '/system/users',
   campaigns: '/marketing',
@@ -58,6 +76,8 @@ const hrefs: Record<RecordSubject, string> = {
   approvedReceipts: '/finance/requests',
   pettyExpenses: '/purchases',
   pettyFunds: '/purchases',
+  postedJournals: '/finance/accounting/general-ledger/documents',
+  draftJournals: '/finance/accounting/general-ledger/documents',
   dailyLeave: '/hr',
   hourlyLeave: '/hr',
   attendance: '/hr',
@@ -105,6 +125,8 @@ const sale = z.object({
   contractNumber: id,
   branchId: id,
   settlementStatus: id,
+  passengerRows: z.array(z.object({ id, displayName: z.string() })).optional(),
+  hasDiscount: z.boolean().optional(),
   confirmedAt: z.string().datetime().nullable().optional(),
   issuerCompany: z.object({ id, persianName: id }).nullable().optional(),
   balances: z.array(
@@ -118,6 +140,10 @@ async function sales(subject: RecordSubject, read: Read): Promise<Records> {
     pageSize: '50',
   });
   if (subject === 'registeredContracts') filter.set('recordSet', 'REGISTERED');
+  if (subject === 'salePassengers')
+    filter.set('reportProjection', 'PASSENGER_ROWS');
+  if (subject === 'discountContracts')
+    filter.set('reportProjection', 'DISCOUNT');
   if (subject === 'personContracts') filter.set('customerType', 'IN_PERSON');
   if (subject === 'agencyContracts') filter.set('customerType', 'AGENCY');
   if (subject === 'cancelled' || subject === 'cancelledVisa')
@@ -133,10 +159,16 @@ async function sales(subject: RecordSubject, read: Read): Promise<Records> {
   );
   if (subject === 'confirmed' && all.some((r) => r.confirmedAt === undefined))
     throw new Error('MISSING_CONFIRMATION_FIELD');
+  if (
+    subject === 'discountContracts' &&
+    all.some((r) => r.hasDiscount === undefined)
+  )
+    throw new Error('MISSING_DISCOUNT_FIELD');
   const matched = all.filter((r) => {
     if (subject === 'unsettled')
       return ['UNPAID', 'PARTIALLY_SETTLED'].includes(r.settlementStatus);
     if (subject === 'confirmed') return Boolean(r.confirmedAt);
+    if (subject === 'discountContracts') return r.hasDiscount === true;
     if (subject === 'positiveBalance')
       return r.balances.some(
         (b) => !b.outstanding.startsWith('-') && /[1-9]/.test(b.outstanding),
@@ -146,14 +178,23 @@ async function sales(subject: RecordSubject, read: Read): Promise<Records> {
   return {
     hasBranch: true,
     hasCompany: all.every((r) => r.issuerCompany !== undefined),
-    rows: matched.map((r) => ({
-      id: r.id,
-      label: r.contractNumber,
-      branch: r.branchId,
-      company: r.issuerCompany
+    rows: matched.flatMap((r) => {
+      const company = r.issuerCompany
         ? { id: r.issuerCompany.id, name: r.issuerCompany.persianName }
-        : null,
-    })),
+        : null;
+      if (subject === 'salePassengers') {
+        if (!r.passengerRows) throw new Error('MISSING_PASSENGER_ROWS');
+        return r.passengerRows.map((p) => ({
+          id: p.id,
+          label: r.contractNumber + ' — ' + p.displayName,
+          branch: r.branchId,
+          company,
+        }));
+      }
+      return [
+        { id: r.id, label: r.contractNumber, branch: r.branchId, company },
+      ];
+    }),
   };
 }
 
@@ -244,6 +285,47 @@ async function loadRecords(
 ): Promise<Records> {
   const route = hrefs[subject];
   if (route === '/sales') return sales(subject, read);
+  if (subject === 'callsWithoutOutcome' || subject === 'callbacks')
+    return callCenterRecords(subject, read, branches);
+  if (subject === 'reservationRequests') return reservationRequests(read);
+  if (subject === 'postedJournals' || subject === 'draftJournals') {
+    const status = subject === 'postedJournals' ? 'POSTED' : 'DRAFT';
+    const records = await pages(
+      read,
+      (page) =>
+        '/finance/accounting/journal-register?status=' +
+        status +
+        '&page=' +
+        page,
+      z.object({
+        id,
+        number: count.nullable(),
+        branchId: id,
+        company: z.object({ id, name: id }).nullable(),
+      }),
+    );
+    return {
+      hasBranch: true,
+      hasCompany: true,
+      rows: records.map((r) => ({
+        id: r.id,
+        label: r.number === null ? r.id : String(r.number),
+        branch: r.branchId,
+        company: r.company,
+      })),
+    };
+  }
+  if (subject === 'tourPackages') {
+    const { data } = z
+      .object({ data: z.array(z.object({ id, branchId: id, name: id })) })
+      .parse(await read('/ticket-catalog/tours/packages'));
+    if (data.length >= 200) throw new Error('TOUR_PACKAGE_LIST_LIMIT');
+    return {
+      hasBranch: true,
+      hasCompany: false,
+      rows: data.map((r) => ({ id: r.id, label: r.name, branch: r.branchId })),
+    };
+  }
   if (route === '/customers') {
     const all = await pages(
       read,
@@ -315,6 +397,7 @@ async function loadRecords(
         z.object({
           id,
           policyNumber: z.string().nullable(),
+          contractId: id.nullable().optional(),
           branchId: id,
           status: id,
           contractNumber: z.string(),
@@ -340,6 +423,7 @@ async function loadRecords(
           id: r.id,
           label: r.policyNumber ?? (r.contractNumber || r.id),
           branch: r.branchId,
+          contractId: r.contractId,
         })),
     };
   }
@@ -395,6 +479,12 @@ async function loadRecords(
     };
   }
   if (route === '/ticket-purchases') {
+    const kind =
+      subject === 'flightServices'
+        ? 'FLIGHT'
+        : subject === 'hotelServices'
+          ? 'HOTEL'
+          : 'ALL';
     const status =
       subject === 'registeredPurchases'
         ? 'REGISTERED'
@@ -406,6 +496,7 @@ async function loadRecords(
         z.object({
           id,
           branchId: id,
+          contractId: id.optional(),
           snapshot: z.object({ contractNumber: id }),
         }),
       ),
@@ -422,7 +513,9 @@ async function loadRecords(
     const rows = await collect(async (p) => {
       const { data, meta } = schema.parse(
         await read(
-          '/reservations/requests/purchases?kind=ALL&status=' +
+          '/reservations/requests/purchases?kind=' +
+            kind +
+            '&status=' +
             status +
             '&page=' +
             p,
@@ -436,6 +529,7 @@ async function loadRecords(
           id: s.id + ':' + s.clientKey,
           label: r.snapshot.contractNumber + ' — ' + s.clientKey,
           branch: r.branchId,
+          contractId: r.contractId,
         };
       });
       const total =
@@ -628,7 +722,7 @@ export async function runOwnerRecordReport(
   });
   if (
     !canViewRoute(actor.permissions, href) ||
-    (subject === 'positiveBalance' &&
+    ((subject === 'positiveBalance' || subject === 'discountContracts') &&
       !actor.permissions.includes('sales.payments.read'))
   )
     return issue('denied', 'مجوز مشاهدهٔ این گزارش در حساب فعلی وجود ندارد.');
@@ -655,6 +749,26 @@ export async function runOwnerRecordReport(
     };
   const data = await loadRecords(subject, read, actor.branchIds);
   const rows = data.rows;
+  if (
+    shape === 'company' &&
+    !data.hasCompany &&
+    rows.length &&
+    rows.every((r) => r.contractId !== undefined) &&
+    canViewRoute(actor.permissions, '/sales')
+  ) {
+    const contracts = await sales('registeredContracts', read);
+    const issuers = new Map(contracts.rows.map((r) => [r.id, r.company]));
+    if (
+      contracts.hasCompany &&
+      rows.every((r) => r.contractId === null || issuers.has(r.contractId!))
+    ) {
+      for (const row of rows)
+        row.company = row.contractId
+          ? (issuers.get(row.contractId) ?? null)
+          : null;
+      data.hasCompany = true;
+    }
+  }
   // A scope drift or an unsupported dimension must never become a plausible zero.
   if (
     data.hasBranch &&
@@ -663,6 +777,8 @@ export async function runOwnerRecordReport(
     return issue('denied', 'دامنهٔ شعب پاسخ با دسترسی حساب تطبیق ندارد.');
   const total = 'تعداد ' + title + ' در محدودهٔ مجاز: ' + fact(rows.length);
   const lines = [total];
+  if (subject === 'postedJournals' || subject === 'draftJournals')
+    lines.push('بازه: همهٔ دوره‌های مالی دفاتر مجاز.');
   let status: AnswerPart['status'] = rows.length ? 'answer' : 'empty';
   if (shape === 'list') {
     lines.push(
@@ -677,7 +793,7 @@ export async function runOwnerRecordReport(
   }
   if (shape === 'branch' || shape === 'company') {
     const branch = shape === 'branch';
-    if (!(branch ? data.hasBranch : data.hasCompany)) {
+    if (rows.length && !(branch ? data.hasBranch : data.hasCompany)) {
       lines.push(
         branch
           ? 'منبع این پنل شعبهٔ هر رکورد را مشخص نمی‌کند؛ تفکیک شعبه و شمارش موارد بدون شعبه در دسترس نیست.'
@@ -694,7 +810,12 @@ export async function runOwnerRecordReport(
           if (actor.branchIds.includes(b.id))
             groups.set(b.id, { name: b.name, count: 0 });
       }
-      if (!branch && href === '/sales') {
+      if (
+        !branch &&
+        (href === '/sales' ||
+          rows.every((r) => r.contractId !== undefined) ||
+          !rows.length)
+      ) {
         const options = z
           .object({ data: z.array(z.object({ id, persianName: id })) })
           .parse(await read('/legal-entities/selectable'));
