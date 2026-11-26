@@ -13,12 +13,16 @@ export const assistantCopy = {
     'There is no verified guide for this question.',
   ],
   internalSourceFallback: [
-    'این پاسخ از منابع داخلی روبی قابل تأیید نیست.',
-    'This answer could not be verified from internal Rubi sources.',
+    'این پاسخ از منابع داخلی نورا قابل تأیید نیست.',
+    'This answer could not be verified from internal Nora sources.',
   ],
   internalGuideUnavailable: [
     'راهنمای داخلی این گردش‌کار در دسترس نیست.',
     'The internal guide for this workflow is unavailable.',
+  ],
+  reportScopeChanged: [
+    'دامنهٔ شرکت یا دسترسی شما هنگام خواندن گزارش تغییر کرد. سؤال را در دامنهٔ فعلی دوباره بفرستید.',
+    'Your company scope or permissions changed during the report. Resend the question in the current scope.',
   ],
   termNonCancelled: [
     'قراردادهای لغونشده در پنل',

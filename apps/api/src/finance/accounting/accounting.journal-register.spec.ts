@@ -27,12 +27,10 @@ function setup(isAggregate: boolean) {
     },
   };
   const ledger = {
-    current: vi
-      .fn()
-      .mockResolvedValue({
-        isAggregate,
-        companies: [{ id: 'c', title: 'Company' }],
-      }),
+    current: vi.fn().mockResolvedValue({
+      isAggregate,
+      companies: [{ id: 'c', title: 'Company' }],
+    }),
   };
   return {
     journal,

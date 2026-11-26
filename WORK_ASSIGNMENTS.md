@@ -13692,3 +13692,5 @@ The Sales list producer adds optional confirmation and issuer fields and an expl
 PC-D — Review saved draft contracts in the reservation document viewer on codex/pc-d-reservation-contract-document.
 
 PC-C | codex/pc-c-nora-owner-reconciliation-1126 | Production report reconciliation follow-up to #1967. Sales supplies optional discount and passenger-row projections. Insurance supplies its nullable contract reference. Finance owns the read-only all-company journal register with existing journal, aggregate-company and branch permissions. Nora consumes those reads and the scoped reservation, purchase, call-center and tour readers. Release tooling verifies the type of the Next.js cache directory. No migration or dependency changes.
+
+The same item covers the authenticated IAM identity read and Web session helper used by the ERP panels. GET /iam/auth/identity returns the current caller's existing LoginResponse projection. Existing login, token rotation and revocation contracts stay in force. Nora distinguishes scope, transport and source-evidence failures.

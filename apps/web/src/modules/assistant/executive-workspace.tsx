@@ -755,7 +755,18 @@ function AssistantComposerContent({
               );
               previousAnswer.current = undefined;
             }
-            throw new Error('UNAVAILABLE');
+            const errorText =
+              result.status === 401
+                ? c.states.unauthenticated
+                : result.status === 403
+                  ? c.states.forbidden
+                  : result.status === 409
+                    ? c.reportScopeChanged
+                    : result.status === 429
+                      ? c.states['rate-limited']
+                      : c.states.unavailable;
+            replyLocally(t(errorText));
+            return;
           }
           const { parts } = plannedAnswer.parse(await result.json());
           if (controller.signal.aborted) return;
@@ -786,8 +797,7 @@ function AssistantComposerContent({
           return;
         }
       } catch {
-        if (!controller.signal.aborted)
-          replyLocally(t(c.internalSourceFallback));
+        if (!controller.signal.aborted) replyLocally(t(c.states.unavailable));
         return;
       }
     }
