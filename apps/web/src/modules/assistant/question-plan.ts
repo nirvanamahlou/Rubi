@@ -86,6 +86,31 @@ export function mightNeedModelPlan(
 }
 
 export function planQuestion(message: string, previous = ''): PlannedRead[] {
+  // The directory label may apply to both cards. Resolve it before splitting
+  // the prompt so an unqualified passenger count cannot switch to Sales.
+  const pair = normalizeQuestion(message)
+    .replace(/^(?:لطفا |الان )/u, '')
+    .replace(/ (?:چقدر است|چقدره|چند تاست|چندتاست|چنده|را بگو|رو بگو)$/u, '')
+    .replace(/ (?:در|برای) (?:همه|تمام) شرکت ?ها$/u, '')
+    .split(' و ');
+  if (
+    pair.length === 2 &&
+    pair.some((part) => /(?:^| )b2c(?: |$)/u.test(part))
+  ) {
+    const cards = pair.map((part) => {
+      const label = part
+        .replace(/(?:^| )b2c(?= |$)/u, ' ')
+        .trim()
+        .replace(/ +/gu, ' ');
+      return /^(?:تعداد )?(?:کل )?(?:مشتریان|مسافران)$/u.test(label)
+        ? {
+            kind: 'operational' as const,
+            question: 'تعداد ' + label.replace(/^تعداد /u, '') + ' B2C',
+          }
+        : null;
+    });
+    if (cards[0] && cards[1]) return [cards[0], cards[1]];
+  }
   const original = message.trim();
   // A leading scope or time qualifier belongs to the first task. Keep its
   // original wording (including the comma) for the owner reader.

@@ -13674,3 +13674,5 @@ Reserve the linked Sales report pager layout and its Chromium hit-test on `codex
 - PC-C | codex/pc-c-nora-guide-parity-1126 | اصلاح راهنمای اکسل قرارداد، فوروارد و یادداشت؛ بدون تغییر پایگاه داده.
 
 - PC-C | codex/pc-c-nora-report-acceptance-1126 | Nora role-report acceptance corpus and parity audit, including the requested GPT-6.1 Sol runtime and its provider tests | active
+
+- PC-C | codex/pc-c-nora-b2c-paired-counts-1126 | Reconcile the scoped B2C customer and passenger count pair with the directory cards.
