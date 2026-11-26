@@ -30,10 +30,18 @@ export class SalesOutputService {
     id: string,
     actor: AuthenticatedActor,
     traceId?: string,
+    reservationPreview = false,
   ): Promise<{ data: SalesContractOutputV1 }> {
     // The authoritative row-read policy also authorizes this document's output.
     const { data: contract } = await this.sales.detail(id, actor);
-    if (['DRAFT', 'PENDING_CONFIRMATION'].includes(contract.status))
+    if (
+      ['DRAFT', 'PENDING_CONFIRMATION'].includes(contract.status) &&
+      !(
+        reservationPreview &&
+        actor.permissions.includes('reservations.read') &&
+        actor.branchIds.includes(contract.branchId)
+      )
+    )
       throw new ConflictException(
         'قرارداد را پیش از تهیه خروجی نهایی تأیید کنید.',
       );

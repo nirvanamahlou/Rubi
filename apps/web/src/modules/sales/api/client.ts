@@ -277,9 +277,9 @@ export const salesApi = {
       true,
     );
   },
-  output: (id: string) =>
+  output: (id: string, reservationPreview = false) =>
     request<{ data: SalesContractOutputV1 }>(
-      `/contracts/${encodeURIComponent(id)}/output`,
+      `/contracts/${encodeURIComponent(id)}/output${reservationPreview ? '?mode=reservation-preview' : ''}`,
     ),
   dashboard: () => request<SalesDashboard>('/dashboard'),
   receivables: (query: SalesReceivablesQuery = {}) =>
