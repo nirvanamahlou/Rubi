@@ -1,3 +1,7 @@
+## Niyayesh website receipts and active company
+
+Sales shows standalone Niyayesh website receipts only with Niyayesh Seir Sahar selected. The receipt API requires the same company context alongside existing branch and payment permissions for both listing and contract-number searches.
+
 ## NORA-PRODUCTION-GUIDES-1126 — PC-C
 
 PR #1958 shipped to the primary ERP from develop `6b58d1a20`. All 12 release probes passed. In the original administrator session with All Companies, all 220 replies contained the expected sections, steps and panel links. Comparison with 40 native destinations identified incorrect priority for reservations and HR reports, missing workflow details and a Sales pagination issue. The verified two-week sales export had 32 contracts in the period anchored at 20:52:11 UTC on 25 November. [Production acceptance](assistant/production-acceptance-2026-11-25.md)

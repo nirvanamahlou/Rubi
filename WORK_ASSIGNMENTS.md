@@ -1,3 +1,7 @@
+## NSS-PAYMENT-COMPANY-SCOPE-1126 — PC-A
+
+Reserve the NSS receipt list company guard, Sales panel visibility and focused regressions. The existing company context determines eligibility in Web and API. The completed NSS receipt tasks supply the unchanged intake and records. Owner authorizes a green `develop` merge. No schema, payment destination or deployment change.
+
 ## NSS-CONTRACT-PAYMENT-RIAL-1125 — PC-A — REVIEW
 
 Reserve the NSS standalone receipt validation and amount display. Preserve prior receipts and accept any positive whole rial amount within the existing checkout limit. No schema or shared service changes.
