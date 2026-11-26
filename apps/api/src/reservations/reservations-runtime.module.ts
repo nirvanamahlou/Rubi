@@ -457,19 +457,20 @@ export class ReservationRequestsController {
     const savedIntake = await this.workflow.detail(
       id,
       req.actor.branchIds,
-      historical !== '1',
+      historical === '1' ? false : 'preview',
     );
-    let intake =
-      historical === '1' ||
-      !isFloatingSalesContract(savedIntake.snapshot.serviceSelections)
-        ? savedIntake
-        : await this.workflow.floatingDocumentOutput(savedIntake, req.actor);
+    const floatingOutput =
+      historical !== '1' &&
+      savedIntake.requestId !== savedIntake.contractId &&
+      isFloatingSalesContract(savedIntake.snapshot.serviceSelections);
+    let intake = floatingOutput
+      ? await this.workflow.floatingDocumentOutput(savedIntake, req.actor)
+      : savedIntake;
     const delivery = await this.delivery.read(id);
     if (
-      historical !== '1' &&
+      floatingOutput &&
       delivery.approved &&
       this.ticketDocuments &&
-      isFloatingSalesContract(intake.snapshot.serviceSelections) &&
       intake.workflow.supplierStatus !== 'CANCELLED'
     )
       intake = {

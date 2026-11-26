@@ -105,12 +105,18 @@ export class SalesController {
   ) {
     const { data: contract } = await this.service.detail(id, req.actor);
     const authorization = await this.delivery.readCustomerContract(id);
-    const intake = await this.travel.forContract(id, [contract.branchId]);
+    const intake = await this.travel.forContract(
+      id,
+      [contract.branchId],
+      'preview',
+    );
     return {
       data: {
         deliverable:
           authorization.approved &&
-          contract.status !== 'CANCELLED' &&
+          !['CANCELLED', 'DRAFT', 'PENDING_CONFIRMATION'].includes(
+            contract.status,
+          ) &&
           intake.workflow.supplierStatus !== 'CANCELLED',
         financeApproved: authorization.approved,
         tickets: intake.ticketDocuments.length,
