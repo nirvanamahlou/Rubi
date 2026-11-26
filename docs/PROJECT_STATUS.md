@@ -10832,3 +10832,5 @@ PC-C — اصلاح تطبیق راهنمای اکسل قرارداد، فورو
 PC-C — Nora targets GPT-6.1 Sol through Chat Completions for OpenAI reporting and the authorized guide fallback. A synthetic call from the ERP container confirmed model access on this endpoint.
 
 PC-D — Staff can preview current Sales data for provisional website reservations. Operational changes and document delivery retain their confirmation requirements.
+
+PC-C — A browser comparison exposed mixed sources when a customer/passenger count pair mentioned B2C only once. Both directory counts now use the existing permission- and company-checked B2C card reader.

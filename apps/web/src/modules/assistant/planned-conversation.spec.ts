@@ -5,6 +5,24 @@ import { planQuestion } from './question-plan';
 
 const message =
   'فروش دو هفته اخیر چقدر بوده و اطلاعات قرارداد های این دو هفته رو بده و بهم بگو چطور قرارداد جدید بزنم؟';
+it('keeps both directory totals scoped to B2C when the label appears only once', () => {
+  for (const question of [
+    'تعداد کل مشتریان B2C و تعداد کل مسافران در همه شرکت‌ها چقدر است؟',
+    'تعداد کل مشتریان و تعداد کل مسافران B2C چنده؟',
+  ]) {
+    expect(planQuestion(question)).toEqual([
+      { kind: 'operational', question: 'تعداد کل مشتریان B2C' },
+      { kind: 'operational', question: 'تعداد کل مسافران B2C' },
+    ]);
+  }
+  expect(
+    planQuestion('تعداد کل مشتریان B2C و تعداد کل مسافران پرواز امروز چنده؟'),
+  ).not.toContainEqual({
+    kind: 'operational',
+    question: 'تعداد کل مسافران B2C',
+  });
+});
+
 const cutoff = '2026-11-25T13:00:00.000Z';
 const id = '5de3367e-308e-4de3-bc30-0683cfc144cd';
 const actor = {
