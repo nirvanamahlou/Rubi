@@ -17,8 +17,9 @@ export class SalesOperationalAmendmentService {
     tx: Pick<Prisma.TransactionClient, 'salesContract'>,
     snapshot: SalesReservationRequestV1,
     branchIds: readonly string[],
+    previewWebsiteIntake = false,
   ) {
-    return currentSalesExecution(tx, snapshot, branchIds);
+    return currentSalesExecution(tx, snapshot, branchIds, previewWebsiteIntake);
   }
 
   async assertActive(

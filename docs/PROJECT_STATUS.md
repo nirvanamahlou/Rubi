@@ -10828,3 +10828,5 @@ The 14-day Sales report now opens each contract page at a durable URL with the o
 At a 319 × 678 viewport, a real pointer hit the default floating chat launcher above the period pager. The pager now reserves the launcher's space at the logical inline end and wraps the page indicator on narrow screens. A Chromium regression hit-tests both links in Persian and English layout directions at mobile and desktop widths and reproduces the collision with the previous layout.
 
 PC-C — اصلاح تطبیق راهنمای اکسل قرارداد، فوروارد و بازیابی یادداشت با پنل‌های فروش و میزکار در شاخه codex/pc-c-nora-guide-parity-1126.
+
+PC-D — Staff can preview current Sales data for provisional website reservations. Operational changes and document delivery retain their confirmation requirements.

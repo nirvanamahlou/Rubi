@@ -13672,3 +13672,7 @@ Reserve production acceptance for the 220 administrator questions and their pane
 Reserve the linked Sales report pager layout and its Chromium hit-test on `codex/pc-c-nora-sales-pager-dock-1126`. Verify ordinary pointer navigation and the dock in RTL and LTR. The release updates Web only.
 
 - PC-C | codex/pc-c-nora-guide-parity-1126 | اصلاح راهنمای اکسل قرارداد، فوروارد و یادداشت؛ بدون تغییر پایگاه داده.
+
+## Website reservation draft visibility — PC-D
+
+Scoped to the staff reservation workflow preview and Sales document readiness for provisional website intakes.
