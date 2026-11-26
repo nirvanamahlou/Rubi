@@ -13679,4 +13679,6 @@ Reserve the linked Sales report pager layout and its Chromium hit-test on `codex
 
 Scoped to the staff reservation workflow preview and Sales document readiness for provisional website intakes.
 
+- PC-C | codex/pc-c-nora-b2c-paired-counts-1126 | Reconcile the scoped B2C customer and passenger count pair with the directory cards.
+
 PC-D — Review saved draft contracts in the reservation document viewer on codex/pc-d-reservation-contract-document.

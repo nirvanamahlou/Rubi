@@ -10833,4 +10833,6 @@ PC-C — Nora targets GPT-6.1 Sol through Chat Completions for OpenAI reporting 
 
 PC-D — Staff can preview current Sales data for provisional website reservations. Operational changes and document delivery retain their confirmation requirements.
 
+PC-C — A browser comparison exposed mixed sources when a customer/passenger count pair mentioned B2C only once. Both directory counts now use the existing permission- and company-checked B2C card reader.
+
 PC-D — Reservations can display saved draft contracts in the branded travel contract template before confirmation. Final PDF and shared document issuance continue to use the final-output endpoint.
