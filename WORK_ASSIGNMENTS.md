@@ -13674,3 +13674,7 @@ Reserve the linked Sales report pager layout and its Chromium hit-test on `codex
 - PC-C | codex/pc-c-nora-guide-parity-1126 | اصلاح راهنمای اکسل قرارداد، فوروارد و یادداشت؛ بدون تغییر پایگاه داده.
 
 - PC-C | codex/pc-c-nora-report-acceptance-1126 | Nora role-report acceptance corpus and parity audit, including the requested GPT-6.1 Sol runtime and its provider tests | active
+
+## Website reservation draft visibility — PC-D
+
+Scoped to the staff reservation workflow preview and Sales document readiness for provisional website intakes.

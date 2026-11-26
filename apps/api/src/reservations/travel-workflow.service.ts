@@ -108,7 +108,7 @@ export class TravelWorkflowService {
   async detail(
     id: string,
     branchIds: readonly string[],
-    currentOutput = false,
+    currentOutput: boolean | 'preview' = false,
   ) {
     if (!/^[0-9a-f-]{36}$/i.test(id)) throw new NotFoundException();
     const row = await this.database.client.reservationIntake.findFirst({
@@ -146,6 +146,7 @@ export class TravelWorkflowService {
           this.database.client,
           original,
           branchIds,
+          currentOutput === 'preview',
         )
       : original;
     const snapshot = this.tickets?.currentSelections
@@ -229,14 +230,18 @@ export class TravelWorkflowService {
       select: { version: true, state: true, createdAt: true },
     });
   }
-  async forContract(contractId: string, branchIds: readonly string[]) {
+  async forContract(
+    contractId: string,
+    branchIds: readonly string[],
+    currentOutput: true | 'preview' = true,
+  ) {
     const row = await this.database.client.reservationIntake.findFirst({
       where: { contractId, branchId: { in: [...branchIds] } },
       orderBy: { contractVersion: 'desc' },
     });
     if (!row)
       throw new NotFoundException('درخواست هنوز به رزرواسیون نرسیده است.');
-    return this.detail(row.id, branchIds, true);
+    return this.detail(row.id, branchIds, currentOutput);
   }
   async update(
     id: string,
