@@ -4,7 +4,7 @@
 {"id":"role-004","role":"مدیر فروش","question":"قرارداد ویزا رو چجوری ثبت کنم؟","expectedGuides":["sales/visa"]}
 {"id":"role-005","role":"مدیر فروش","question":"تو قرارداد از کجا بیمه انتخاب کنم؟","expectedGuides":["sales/insurance"]}
 {"id":"role-006","role":"مدیر فروش","question":"تاریخ مسیر قرارداد رو کجا تنظیم کنم؟","expectedGuides":["sales/route"]}
-{"id":"role-007","role":"مدیر فروش","question":"خروجی اکسل قراردادارو چجوری بگیرم؟","expectedGuides":["sales/output"]}
+{"id":"role-007","role":"مدیر فروش","question":"خروجی اکسل قراردادارو چجوری بگیرم؟","expectedGuides":["sales/list"]}
 {"id":"role-008","role":"مدیر فروش","question":"قرارداد رو چجوری پیدا کنم؟","expectedGuides":["sales/list"]}
 {"id":"role-009","role":"مدیر فروش","question":"کمیسیون آژانسی تو قرارداد از کجا میزنن؟","expectedGuides":["sales/commission"]}
 {"id":"role-010","role":"مدیر فروش","question":"بعد ثبت قراردادو چطور پیگیری کنم؟","expectedGuides":["sales/reservation"]}
@@ -16,7 +16,7 @@
 {"id":"role-016","role":"مدیر فروش","question":"مساعده رو چجوری درخواست بدم؟","expectedGuides":["workbench/advance"]}
 {"id":"role-017","role":"مدیر فروش","question":"مرخصی روزانه از کجا بزنم؟","expectedGuides":["workbench/leave-daily"]}
 {"id":"role-018","role":"مدیر فروش","question":"جانشین مرخسی رو کجا بزارم؟","expectedGuides":["workbench/substitute"]}
-{"id":"role-019","role":"مدیر فروش","question":"پیام داخلی رو چطور فوروارد کنم؟","expectedGuides":["workbench/messages"]}
+{"id":"role-019","role":"مدیر فروش","question":"پیام داخلی رو چطور فوروارد کنم؟","expectedGuides":["workbench/message-search"]}
 {"id":"role-020","role":"مدیر فروش","question":"تو فایلای من چطور فایل پیدا کنم؟","expectedGuides":["workbench/files"]}
 {"id":"role-021","role":"کارشناس فروش","question":"قرارداد جدیو چجوری بزنم؟","expectedGuides":["sales/create"]}
 {"id":"role-022","role":"کارشناس فروش","question":"تخفیف قرارداد و پیش فاکتور کجاس؟","expectedGuides":["sales/price"]}
@@ -156,7 +156,7 @@
 {"id":"role-156","role":"کارشناس ارشد ویزا","question":"مساعده رو چجوری درخواست بدم؟","expectedGuides":["workbench/advance"]}
 {"id":"role-157","role":"کارشناس ارشد ویزا","question":"مرخصی روزانه از کجا بزنم؟","expectedGuides":["workbench/leave-daily"]}
 {"id":"role-158","role":"کارشناس ارشد ویزا","question":"جانشین مرخسی رو کجا بزارم؟","expectedGuides":["workbench/substitute"]}
-{"id":"role-159","role":"کارشناس ارشد ویزا","question":"پیام داخلی رو چطور فوروارد کنم؟","expectedGuides":["workbench/messages"]}
+{"id":"role-159","role":"کارشناس ارشد ویزا","question":"پیام داخلی رو چطور فوروارد کنم؟","expectedGuides":["workbench/message-search"]}
 {"id":"role-160","role":"کارشناس ارشد ویزا","question":"تو فایلای من چطور فایل پیدا کنم؟","expectedGuides":["workbench/files"]}
 {"id":"role-161","role":"مدیر منابع انسانی","question":"مرخصی منتظر تایید من تو کارتابل کجاس؟","expectedGuides":["human-resources/requests"]}
 {"id":"role-162","role":"مدیر منابع انسانی","question":"گزارش تردود واحد رو چجوری بگیرم؟","expectedGuides":["human-resources/reports"]}
@@ -186,7 +186,7 @@
 {"id":"role-186","role":"مدیر واحد ثبت‌نشده","question":"مساعده رو چجوری درخواست بدم؟","expectedGuides":["workbench/advance"]}
 {"id":"role-187","role":"مدیر واحد ثبت‌نشده","question":"مرخصی روزانه از کجا بزنم؟","expectedGuides":["workbench/leave-daily"]}
 {"id":"role-188","role":"مدیر واحد ثبت‌نشده","question":"جانشین مرخسی رو کجا بزارم؟","expectedGuides":["workbench/substitute"]}
-{"id":"role-189","role":"مدیر واحد ثبت‌نشده","question":"پیام داخلی رو چطور فوروارد کنم؟","expectedGuides":["workbench/messages"]}
+{"id":"role-189","role":"مدیر واحد ثبت‌نشده","question":"پیام داخلی رو چطور فوروارد کنم؟","expectedGuides":["workbench/message-search"]}
 {"id":"role-190","role":"مدیر واحد ثبت‌نشده","question":"تو فایلای من چطور فایل پیدا کنم؟","expectedGuides":["workbench/files"]}
 {"id":"role-191","role":"مدیر واحد ثبت‌نشده","question":"پکیجای روزو کجا ببینم؟","expectedGuides":["workbench/daily-packages"]}
 {"id":"role-192","role":"مدیر واحد ثبت‌نشده","question":"جلسه های تقویمو از کجا ببینم؟","expectedGuides":["workbench/calendar"]}
