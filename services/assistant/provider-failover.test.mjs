@@ -26,21 +26,14 @@ test('privileged guide quota uses GPT with identical allowlisted topic after rea
         return Response.json({
           choices: [
             {
-              finish_reason: 'tool_calls',
+              finish_reason: 'stop',
               message: {
-                tool_calls: [
-                  {
-                    id: 'call_1',
-                    type: 'function',
-                    function: {
-                      name: 'workbench_guide',
-                      arguments: JSON.stringify({
-                        topicId: 'leave',
-                        goal: 'steps',
-                      }),
-                    },
+                content: JSON.stringify({
+                  call: {
+                    name: 'workbench_guide',
+                    arguments: { topicId: input.topicId, goal: input.goal },
                   },
-                ],
+                }),
               },
             },
           ],

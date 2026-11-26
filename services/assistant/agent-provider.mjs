@@ -2,6 +2,7 @@ import {
   OPENAI_ENDPOINT,
   OPENAI_MODEL,
   openaiChatRequest,
+  openaiToolSelection,
 } from './openai-responses.mjs';
 import { ServiceError } from './errors.mjs';
 import { CALCULATION_POLICY } from './calculation-policy.mjs';
@@ -434,7 +435,11 @@ export function createAgentProvider({
           if (status === 429) error.retryAfterMs = unavailableUntil - now();
           throw error;
         }
-        const result = await boundedAgentJson(response, 65536);
+        const payload = await boundedAgentJson(response, 65536);
+        const result =
+          openai && !request.response_format
+            ? openaiToolSelection(payload, tools)
+            : payload;
         const choice = result.choices?.[0];
         const calls = choice?.message?.tool_calls;
         if (result.choices?.length !== 1)

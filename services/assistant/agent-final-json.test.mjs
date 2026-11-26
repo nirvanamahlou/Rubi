@@ -11,16 +11,34 @@ test('OpenAI Chat Completions accepts a completed offered tool call', async () =
         if (provider === 'openai') {
           assert.equal(url, 'https://api.openai.com/v1/chat/completions');
           const request = JSON.parse(init.body);
-          assert.deepEqual(request.tool_choice, {
-            type: 'function',
-            function: { name: 'set_plan' },
-          });
+          const variants =
+            request.response_format.json_schema.schema.properties.call.anyOf;
+          assert.deepEqual(
+            variants.map((v) => v.properties.name.enum),
+            [['set_plan']],
+          );
           assert.equal(request.store, false);
+          return Response.json({
+            choices: [
+              {
+                finish_reason: 'stop',
+                message: {
+                  content: JSON.stringify({
+                    call: {
+                      name: 'set_plan',
+                      arguments: { steps: ['Inspect allowed data'] },
+                    },
+                  }),
+                },
+              },
+            ],
+            usage: { total_tokens: 12 },
+          });
         }
         return Response.json({
           choices: [
             {
-              finish_reason: provider === 'openai' ? 'tool_calls' : 'stop',
+              finish_reason: 'stop',
               message: {
                 content: null,
                 tool_calls: [
