@@ -74,7 +74,7 @@ export class ReservationTicketDocumentsService {
     });
     if (documents.length > 10000)
       throw new BadRequestException(
-        'ط¨ط§ط²ظ‡ ط±ط§ ع©ظˆع†ع©â€Œطھط± ع©ظ†غŒط¯ط› ع¯ط²ط§ط±ط´ ط¨غŒط´ ط§ط² غ±غ°غ°غ°غ° ط¨ظ„غŒط· ط¯ط§ط±ط¯.',
+        'بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ بلیط دارد.',
       );
     const rows = documents.flatMap((doc) =>
       issuedRows(
@@ -88,7 +88,7 @@ export class ReservationTicketDocumentsService {
     );
     if (rows.length > 20000)
       throw new BadRequestException(
-        'ط¨ط§ط²ظ‡ ط±ط§ ع©ظˆع†ع©â€Œطھط± ع©ظ†غŒط¯ط› ع¯ط²ط§ط±ط´ ط¨غŒط´ ط§ط² غ²غ°غ°غ°غ° ظ‚ط·ط¹ظ‡ ظ¾ط±ظˆط§ط² ط¯ط§ط±ط¯.',
+        'بازه را کوچک‌تر کنید؛ گزارش بیش از ۲۰۰۰۰ قطعه پرواز دارد.',
       );
     const names = new Map<string, string>();
     const cityIds = [
@@ -103,10 +103,10 @@ export class ReservationTicketDocumentsService {
             names.set(
               id,
               (await this.directory?.cityReference(id))?.name ??
-                'ظ†ط§ظ… ط´ظ‡ط± ط«ط¨طھ ظ†ط´ط¯ظ‡',
+                'نام شهر ثبت نشده',
             );
           } catch {
-            names.set(id, 'ظ†ط§ظ… ط´ظ‡ط± ط«ط¨طھ ظ†ط´ط¯ظ‡');
+            names.set(id, 'نام شهر ثبت نشده');
           }
         }),
       );
@@ -131,7 +131,7 @@ export class ReservationTicketDocumentsService {
       query.dateBasis &&
       !['ISSUED', 'TRAVEL'].includes(String(query.dateBasis))
     )
-      throw new BadRequestException('ظپغŒظ„طھط± ظ†ط§ظ…ط¹طھط¨ط± ط§ط³طھ.');
+      throw new BadRequestException('فیلتر نامعتبر است.');
     if (
       query.serviceKind &&
       ![
@@ -148,7 +148,7 @@ export class ReservationTicketDocumentsService {
         'OTHER',
       ].includes(String(query.serviceKind))
     )
-      throw new BadRequestException('ظپغŒظ„طھط± ظ†ط§ظ…ط¹طھط¨ط± ط§ط³طھ.');
+      throw new BadRequestException('فیلتر نامعتبر است.');
     const intakes = await this.db.client.reservationIntake.findMany({
       where: { branchId: { in: [...actor.branchIds] } },
       orderBy: [{ contractId: 'asc' }, { contractVersion: 'desc' }],
@@ -167,7 +167,7 @@ export class ReservationTicketDocumentsService {
     });
     if (intakes.length > 10000)
       throw new BadRequestException(
-        'ط¨ط§ط²ظ‡ ط±ط§ ع©ظˆع†ع©â€Œطھط± ع©ظ†غŒط¯ط› ع¯ط²ط§ط±ط´ ط¨غŒط´ ط§ط² غ±غ°غ°غ°غ° ط¨ظ„غŒط· ط¯ط§ط±ط¯.',
+        'بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ بلیط دارد.',
       );
     const documentsByContract = new Map<
       string,
@@ -202,7 +202,7 @@ export class ReservationTicketDocumentsService {
     });
     if (rows.length > 20000)
       throw new BadRequestException(
-        'ط¨ط§ط²ظ‡ ط±ط§ ع©ظˆع†ع©â€Œطھط± ع©ظ†غŒط¯ط› ع¯ط²ط§ط±ط´ ط¨غŒط´ ط§ط² غ²غ°غ°غ°غ° ظ‚ط·ط¹ظ‡ ظ¾ط±ظˆط§ط² ط¯ط§ط±ط¯.',
+        'بازه را کوچک‌تر کنید؛ گزارش بیش از ۲۰۰۰۰ قطعه پرواز دارد.',
       );
     const ids = [
       ...new Set(
@@ -219,10 +219,10 @@ export class ReservationTicketDocumentsService {
             names.set(
               id,
               (await this.directory?.cityReference(id))?.name ??
-                'ظ†ط§ظ… ط´ظ‡ط± ط«ط¨طھ ظ†ط´ط¯ظ‡',
+                'نام شهر ثبت نشده',
             );
           } catch {
-            names.set(id, 'ظ†ط§ظ… ط´ظ‡ط± ط«ط¨طھ ظ†ط´ط¯ظ‡');
+            names.set(id, 'نام شهر ثبت نشده');
           }
         }),
       );
@@ -268,7 +268,7 @@ export class ReservationTicketDocumentsService {
       throw new ForbiddenException();
     const intake = await this.workflow.detail(id, actor.branchIds, mode);
     if (intake.workflow.supplierStatus === 'CANCELLED')
-      throw new BadRequestException('ط¯ط±ط®ظˆط§ط³طھ ط§ط¨ط·ط§ظ„ ط´ط¯ظ‡ ط§ط³طھ.');
+      throw new BadRequestException('درخواست ابطال شده است.');
     const flights = salesContractFlights(
       intake.snapshot.serviceSelections,
       intake.snapshot.ticketSelections ?? [],
@@ -300,23 +300,21 @@ export class ReservationTicketDocumentsService {
     if (!actor.permissions.includes('reservations.documents.manage'))
       throw new ForbiddenException();
     if (!input || typeof input.customerId !== 'string')
-      throw new BadRequestException('ظ…ط³ط§ظپط± ط±ط§ ط§ظ†طھط®ط§ط¨ ع©ظ†غŒط¯.');
+      throw new BadRequestException('مسافر را انتخاب کنید.');
     const choice = (await this.choices(id, actor, true)).find(
       (p) => p.customerId === input.customerId,
     );
     if (!choice)
-      throw new BadRequestException(
-        'ظ¾ط±ظˆط§ط² ط¨ظ‡ ط§غŒظ† ظ…ط³ط§ظپط± طھط®طµغŒطµ ظ†ط¯ط§ط±ط¯.',
-      );
+      throw new BadRequestException('پرواز به این مسافر تخصیص ندارد.');
     if (input.number !== undefined && typeof input.number !== 'string')
       throw new BadRequestException(
-        'ط´ظ…ط§ط±ظ‡ ط¨ظ„غŒط· ط±ط§ ط¨ط§ غ¶ ط±ظ‚ظ… ط§ظ†ع¯ظ„غŒط³غŒ ظˆط§ط±ط¯ ع©ظ†غŒط¯.',
+        'شماره بلیط را با ۶ رقم انگلیسی وارد کنید.',
       );
     const supplied =
       typeof input.number === 'string' ? input.number.trim() : '';
     if (supplied && !/^[0-9]{6}$/.test(supplied))
       throw new BadRequestException(
-        'ط´ظ…ط§ط±ظ‡ ط¨ظ„غŒط· ط±ط§ ط¨ط§ غ¶ ط±ظ‚ظ… ط§ظ†ع¯ظ„غŒط³غŒ ظˆط§ط±ط¯ ع©ظ†غŒط¯.',
+        'شماره بلیط را با ۶ رقم انگلیسی وارد کنید.',
       );
     return this.writeNumber(id, choice.customerId, input, actor);
   }
@@ -377,9 +375,7 @@ export class ReservationTicketDocumentsService {
       const state = intake?.workflowRevisions[0]?.state as
         { supplierStatus?: string } | undefined;
       if (!intake || state?.supplierStatus === 'CANCELLED')
-        throw new BadRequestException(
-          'ط¯ط±ط®ظˆط§ط³طھ ظ…ظˆط¬ظˆط¯ ظ†غŒط³طھ غŒط§ ط§ط¨ط·ط§ظ„ ط´ط¯ظ‡ ط§ط³طھ.',
-        );
+        throw new BadRequestException('درخواست موجود نیست یا ابطال شده است.');
       const old = await tx.reservationTicketDocument.findUnique({
         where: {
           intakeId_customerId: { intakeId: id, customerId },
@@ -389,7 +385,7 @@ export class ReservationTicketDocumentsService {
         if (supplied && supplied !== old.number) {
           if (input.expectedNumber !== old.number)
             throw new ConflictException(
-              'ط´ظ…ط§ط±ظ‡ ط¨ظ„غŒط· طھط؛غŒغŒط± ع©ط±ط¯ظ‡ ط§ط³طھط› ط¢ط®ط±غŒظ† ظ†ط³ط®ظ‡ ط±ط§ ط¯ط±غŒط§ظپطھ ع©ظ†غŒط¯.',
+              'شماره بلیط تغییر کرده است؛ آخرین نسخه را دریافت کنید.',
             );
           if (
             await tx.reservationTicketDocument.findUnique({
@@ -397,7 +393,7 @@ export class ReservationTicketDocumentsService {
             })
           )
             throw new ConflictException(
-              'ط§غŒظ† ط´ظ…ط§ط±ظ‡ ط¨ظ„غŒط· ظ‚ط¨ظ„ط§ظ‹ ط§ط³طھظپط§ط¯ظ‡ ط´ط¯ظ‡ ط§ط³طھ.',
+              'این شماره بلیط قبلاً استفاده شده است.',
             );
           await tx.reservationTicketDocument.update({
             where: { id: old.id },
@@ -433,7 +429,7 @@ export class ReservationTicketDocumentsService {
       let number = supplied;
       if (input.expectedNumber)
         throw new ConflictException(
-          'ط´ظ…ط§ط±ظ‡ ط¨ظ„غŒط· طھط؛غŒغŒط± ع©ط±ط¯ظ‡ ط§ط³طھط› ط¢ط®ط±غŒظ† ظ†ط³ط®ظ‡ ط±ط§ ط¯ط±غŒط§ظپطھ ع©ظ†غŒط¯.',
+          'شماره بلیط تغییر کرده است؛ آخرین نسخه را دریافت کنید.',
         );
       if (!supplied) {
         do {
@@ -441,9 +437,7 @@ export class ReservationTicketDocumentsService {
             Prisma.sql`SELECT nextval('reservation_ticket_number_seq') AS value`,
           );
           if (!seq || seq.value > 999999n)
-            throw new ConflictException(
-              'ط¸ط±ظپغŒطھ ط´ظ…ط§ط±ظ‡ ط´ط´â€Œط±ظ‚ظ…غŒ طھع©ظ…غŒظ„ ط´ط¯ظ‡ ط§ط³طھ.',
-            );
+            throw new ConflictException('ظرفیت شماره شش‌رقمی تکمیل شده است.');
           number = seq.value.toString();
         } while (
           await tx.reservationTicketDocument.findUnique({ where: { number } })
@@ -451,9 +445,7 @@ export class ReservationTicketDocumentsService {
       } else if (
         await tx.reservationTicketDocument.findUnique({ where: { number } })
       )
-        throw new ConflictException(
-          'ط§غŒظ† ط´ظ…ط§ط±ظ‡ ط¨ظ„غŒط· ظ‚ط¨ظ„ط§ظ‹ ط§ط³طھظپط§ط¯ظ‡ ط´ط¯ظ‡ ط§ط³طھ.',
-        );
+        throw new ConflictException('این شماره بلیط قبلاً استفاده شده است.');
       const doc = await tx.reservationTicketDocument.create({
         data: {
           intakeId: id,

@@ -73,9 +73,7 @@ const uploadSchema = Joi.object({
 function parse<T>(schema: Joi.Schema, value: unknown): T {
   const result = schema.validate(value, { convert: false });
   if (result.error)
-    throw new BadRequestException(
-      'ط§ط·ظ„ط§ط¹ط§طھ ظˆط§ط±ط¯ط´ط¯ظ‡ ظ…ط¹طھط¨ط± ظ†غŒط³طھ.',
-    );
+    throw new BadRequestException('اطلاعات واردشده معتبر نیست.');
   return result.value as T;
 }
 export function passengerDocumentSource(
@@ -151,9 +149,7 @@ export class ReservationPassengerFilesService {
         (actor.permissions as readonly string[]).includes(p),
       )
     )
-      throw new ForbiddenException(
-        'ظ…ط¬ظˆط² ط§ظ†ط¬ط§ظ… ط§غŒظ† ط¹ظ…ظ„غŒط§طھ ظˆط¬ظˆط¯ ظ†ط¯ط§ط±ط¯.',
-      );
+      throw new ForbiddenException('مجوز انجام این عملیات وجود ندارد.');
   }
   private async intake(
     id: string,
@@ -164,9 +160,7 @@ export class ReservationPassengerFilesService {
     this.require(actor, ['reservations.read']);
     const intake = await this.workflow.detail(id, actor.branchIds, mode);
     if (passengerId && !intake.snapshot.passengerIds.includes(passengerId))
-      throw new NotFoundException(
-        'ظ…ط³ط§ظپط± ظ…طھط¹ظ„ظ‚ ط¨ظ‡ ط§غŒظ† ظ‚ط±ط§ط±ط¯ط§ط¯ ظ†غŒط³طھ.',
-      );
+      throw new NotFoundException('مسافر متعلق به این قرارداد نیست.');
     return intake;
   }
   async passengers(id: string, actor: AuthenticatedActor, traceId?: string) {
@@ -237,9 +231,7 @@ export class ReservationPassengerFilesService {
     }>(namesSchema, raw);
     const { data: current } = await this.customers.detail(passengerId, actor);
     if (current.kind !== 'person')
-      throw new BadRequestException(
-        'ظپظ‚ط· ظ†ط§ظ… ظ…ط³ط§ظپط± ط­ظ‚غŒظ‚غŒ ظ‚ط§ط¨ظ„ ظˆغŒط±ط§غŒط´ ط§ط³طھ.',
-      );
+      throw new BadRequestException('فقط نام مسافر حقیقی قابل ویرایش است.');
     // Keep non-name fields, protected identity values and commercial snapshots untouched.
     const result = await this.customers.update(
       passengerId,
@@ -293,9 +285,7 @@ export class ReservationPassengerFilesService {
       'customer-verification',
     );
     if (current.kind !== 'person')
-      throw new BadRequestException(
-        'ظپظ‚ط· ظ…ط´ط®طµط§طھ ظ…ط³ط§ظپط± ط­ظ‚غŒظ‚غŒ ظ‚ط§ط¨ظ„ ظˆغŒط±ط§غŒط´ ط§ط³طھ.',
-      );
+      throw new BadRequestException('فقط مشخصات مسافر حقیقی قابل ویرایش است.');
     const optional = (value: string) => value.trim() || null;
     const protectedValue = (value: string) => value.trim() || undefined;
     const nationalId = protectedValue(input.nationalId);
@@ -401,27 +391,21 @@ export class ReservationPassengerFilesService {
       !type ||
       !['TRAVEL', 'SALES', 'CUSTOMER_IDENTITY', 'GENERAL'].includes(type.domain)
     )
-      throw new BadRequestException(
-        'ظ†ظˆط¹ ظ…ط¯ط±ع© ط¨ط±ط§غŒ ظ‚ط±ط§ط±ط¯ط§ط¯ ط³ظپط± ظ…ط¹طھط¨ط± ظ†غŒط³طھ.',
-      );
+      throw new BadRequestException('نوع مدرک برای قرارداد سفر معتبر نیست.');
     if (type.requiresExpiry && !input.validUntil)
-      throw new BadRequestException(
-        'طھط§ط±غŒط® ط§ظ†ظ‚ط¶ط§غŒ ط§غŒظ† ظ…ط¯ط±ع© ط±ط§ ظˆط§ط±ط¯ ع©ظ†غŒط¯.',
-      );
+      throw new BadRequestException('تاریخ انقضای این مدرک را وارد کنید.');
     if (input.validUntil) {
       const date = new Date(input.validUntil);
       if (
         !Number.isFinite(date.getTime()) ||
         date.toISOString().slice(0, 10) !== input.validUntil
       )
-        throw new BadRequestException(
-          'طھط§ط±غŒط® ط§ظ†ظ‚ط¶ط§ ظ…ط¹طھط¨ط± ظ†غŒط³طھ.',
-        );
+        throw new BadRequestException('تاریخ انقضا معتبر نیست.');
     }
-    const label = `${intake.snapshot.contractNumber} آ· ${passenger?.displayName ?? 'ظ…ط¯ط§ط±ع© ط¹ظ…ظˆظ…غŒ ظ‚ط±ط§ط±ط¯ط§ط¯'}`;
+    const label = `${intake.snapshot.contractNumber} · ${passenger?.displayName ?? 'مدارک عمومی قرارداد'}`;
     return this.documents.upload(
       {
-        title: `${type.name} آ· ${label}`.slice(0, 240),
+        title: `${type.name} · ${label}`.slice(0, 240),
         description: input.description ?? '',
         documentTypeId: input.documentTypeId,
         categoryId: input.categoryId,
