@@ -10832,3 +10832,5 @@ PC-C — اصلاح تطبیق راهنمای اکسل قرارداد، فورو
 PC-C — Nora targets GPT-6.1 Sol through Chat Completions for OpenAI reporting and the authorized guide fallback. A synthetic call from the ERP container confirmed model access on this endpoint.
 
 PC-D — Staff can preview current Sales data for provisional website reservations. Operational changes and document delivery retain their confirmation requirements.
+
+PC-D — Reservations can display saved draft contracts in the branded travel contract template before confirmation. Final PDF and shared document issuance continue to use the final-output endpoint.

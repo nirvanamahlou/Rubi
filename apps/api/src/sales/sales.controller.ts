@@ -162,8 +162,14 @@ export class SalesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Req() request: AuthenticatedRequest,
     @Headers('x-request-id') traceId?: string,
+    @Query('mode') mode?: string,
   ) {
-    return this.output.prepare(id, request.actor, traceId);
+    return this.output.prepare(
+      id,
+      request.actor,
+      traceId,
+      mode === 'reservation-preview',
+    );
   }
 
   @Get('contracts/export.xlsx')

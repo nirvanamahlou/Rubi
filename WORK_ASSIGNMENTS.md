@@ -13678,3 +13678,5 @@ Reserve the linked Sales report pager layout and its Chromium hit-test on `codex
 ## Website reservation draft visibility — PC-D
 
 Scoped to the staff reservation workflow preview and Sales document readiness for provisional website intakes.
+
+PC-D — Review saved draft contracts in the reservation document viewer on codex/pc-d-reservation-contract-document.
