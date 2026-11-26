@@ -2,14 +2,22 @@ import { normalizeSalesText } from './persian-sales-period.mjs';
 import { ServiceError } from './errors.mjs';
 
 const words = new Set(
-  'لطفا لطفاً فروش فروشمون فروشمان چقدر چقد چقدره بوده بود هست است شده شد چنده جمع مجموع مبلغ کل تعداد و اطلاعات مشخصات جزئیات فهرست لیست شماره قرارداد قراردادها قراردادهای قراردادارو قراردادا های ها این همین اخیر گذشته دو 2 هفته هفته ی 14 چهارده روز برای در از تا الان رو را بده بگو بهم هم نشون نمایش نشان بدهید بدید میخوام ببینم'.split(
+  'لطفا لطفاً فروش فروشمون فروشمان چقدر چقد چقدره بوده بود هست است شده شد چنده چیه جمع مجموع مبلغ کل تعداد و اطلاعات مشخصات جزئیات فهرست لیست شماره قرارداد قراردادها قراردادهای قراردادارو قراردادا های ها این همین اخیر گذشته دو 2 هفته هفته ی 14 چهارده روز برای در از تا الان رو را بده بگو بهم هم نشون نمایش نشان بدهید بدید میخوام ببینم'.split(
     ' ',
   ),
 );
 
 export function rollingSalesRequest(request) {
   if (request.context?.selectedContractId) return null;
-  const text = normalizeSalesText(request.message)
+  const normalized = normalizeSalesText(request.message);
+  const text = normalized
+    .replace(/به تفکیک ارز/gu, ' ')
+    .replace(/شماره و وضعیت قرارداد/gu, 'شماره قرارداد')
+    .replace(/قراردادهای همین بازه/gu, (phrase) =>
+      /فروش.*(?:دو هفته|14 روز|چهارده روز)/u.test(normalized)
+        ? 'قراردادهای دو هفته اخیر'
+        : phrase,
+    )
     .replace(
       /(?:^|\s)قرارداد(?:هاش|اش|اشون|هاشو|اشو)(?=\s|[؟?،؛.!]|$)/gu,
       ' فهرست قراردادها ',

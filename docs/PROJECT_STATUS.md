@@ -10840,3 +10840,5 @@ PC-D — Staff can preview current Sales data for provisional website reservatio
 PC-C — A browser comparison exposed mixed sources when a customer/passenger count pair mentioned B2C only once. Both directory counts now use the existing permission- and company-checked B2C card reader.
 
 PC-D — Reservations can display saved draft contracts in the branded travel contract template before confirmation. Final PDF and shared document issuance continue to use the final-output endpoint.
+
+PC-C — All 220 role-report prompts were submitted to the production Nora UI under the original administrator in the aggregate company view. Three answers passed the initial reconciliation. Evidence and individual answers are kept outside Git. Report routing, scoped owner reads and session recovery are under test on the live-report-parity branch.

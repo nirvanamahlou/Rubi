@@ -121,6 +121,59 @@ export async function runOperationalPanel(
   }
   const show = (label: string, value: number) =>
     label + ' ' + value.toLocaleString('fa-IR');
+  if (intent.kind === 'employees') {
+    if (
+      !canViewRoute(actor.permissions, '/hr') ||
+      !actor.permissions.some((p) =>
+        ['hr.read', 'hr.manage', 'hr.directory.read'].includes(p),
+      )
+    )
+      return denied();
+    const employees = new Map<string, string>();
+    const schema = z.object({
+      hasMore: z.boolean(),
+      employees: z
+        .array(
+          z.object({
+            id: z.string().uuid(),
+            name: z.string().min(1),
+            branchId: z.string().uuid(),
+          }),
+        )
+        .max(50),
+    });
+    for (let page = 1; page <= 200; page++) {
+      const data = schema.parse(await read('/hr/directory?page=' + page));
+      for (const row of data.employees) {
+        if (!actor.branchIds.includes(row.branchId)) return denied();
+        if (employees.has(row.id))
+          return issue(
+            'unavailable',
+            'فهرست کارکنان حین دریافت تغییر کرد. دوباره تلاش کنید.',
+          );
+        employees.set(row.id, row.name);
+      }
+      if (!data.hasMore) {
+        const total = show('تعداد کارکنان فعال', employees.size);
+        const names = [...employees.values()].join('، ');
+        return intent.names && names.length > 13000
+          ? {
+              ...answer(total, 'hr.directory', '/hr?section=employees'),
+              status: 'partial',
+              text: total + '؛ فهرست کامل در پنل کارکنان در دسترس است.',
+            }
+          : answer(
+              intent.names && names ? total + '\n' + names : total,
+              'hr.directory',
+              '/hr?section=employees',
+            );
+      }
+    }
+    return issue(
+      'unavailable',
+      'دریافت تمام صفحه‌های فهرست کارکنان تکمیل نشد.',
+    );
+  }
   if (
     intent.kind === 'b2b-status' ||
     (intent.kind === 'card' &&

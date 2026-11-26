@@ -2,7 +2,10 @@ import { normalizeQuestion } from './question-text';
 import { historicalReportPeriod } from './historical-report-period';
 
 const cards = {
-  customers: ['مشتریان b2c', /^(?:کل )?(?:مشتریان|مشتری های) (?:b2c|حقیقی)$/u],
+  customers: [
+    'مشتریان b2c',
+    /^(?:کل )?(?:مشتریان|مشتری های) (?:b2c|حقیقی|شخصی)$/u,
+  ],
   passengers: ['مسافران b2c', /^(?:کل )?مسافران (?:b2c|مشتریان حقیقی)$/u],
   newCustomers: [
     'مشتریان جدید سه ماه اخیر',
@@ -40,6 +43,7 @@ const cards = {
 } as const;
 
 export type PanelIntent =
+  | { kind: 'employees'; names: boolean }
   | { kind: 'card'; key: keyof typeof cards; label: string }
   | { kind: 'b2b-status'; role: 'AGENCY' | 'CORPORATE_CUSTOMER'; code: string }
   | { kind: 'b2c-status'; name: string }
@@ -48,6 +52,14 @@ export type PanelIntent =
 export function panelIntent(question: string): PanelIntent | null {
   const text = normalizeQuestion(question).replace(/^لطفا /u, '');
   if (/راهنما|چطور|چجور|چگونه|چرا|از کجا|نحوه|مراحل/u.test(text)) return null;
+  if (
+    /^(?:الان )?تعداد (?:کارکنان|پرسنل|کارمندان) فعال (?:چنده|چندتاست|چند است)$/u.test(
+      text,
+    )
+  )
+    return { kind: 'employees', names: false };
+  if (/^اسم همه (?:کارکنان|پرسنل|کارمندان) فعال و تعدادشون رو بده$/u.test(text))
+    return { kind: 'employees', names: true };
   const status =
     /^وضعیت (آژانس(?: همکار)?|مشتری سازمانی) (?:با )?کد ([a-z0-9][a-z0-9_-]{0,79})(?: (?:چیست|چیه|رو بگو|را بگو))?$/u.exec(
       text,
@@ -64,9 +76,9 @@ export function panelIntent(question: string): PanelIntent | null {
     );
   if (customer) return { kind: 'b2c-status', name: customer[1]!.trim() };
   const phrase = text
-    .replace(/^(?:(?:تعداد|چند تا|چند) )/u, '')
+    .replace(/^(?:الان )?(?:تعداد|چند تا|چند) /u, '')
     .replace(
-      / (?:چند(?: تا)?(?:ست| است| هستند| داریم)?|چندتاست|چقدره|چقدر است|چقدر بوده|را بگو|رو بگو|داریم|هستند|هست)$/u,
+      / (?:چنده|چند(?: تا)?(?:ست| است| هستند| داریم)?|چندتاست|چقدره|چقدر است|چقدر بوده|را بگو|رو بگو|داریم|هستند|هست)$/u,
       '',
     );
   for (const [id, [label, pattern]] of Object.entries(cards)) {

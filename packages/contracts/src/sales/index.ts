@@ -280,6 +280,8 @@ export interface SalesPaymentCreateRequest extends SalesPaymentInput {
 }
 
 export interface SalesContractListQuery {
+  /** Include historical cancellations when explicitly requesting the register. */
+  recordSet?: 'REGISTERED';
   /** Confirmed contractual sales during fourteen Tehran days through this cutoff. */
   salesPeriodAsOf?: string;
   supplyType?: 'ALL' | 'FLOATING' | 'CHARTER' | undefined;
@@ -312,6 +314,8 @@ export interface SalesBalance extends SalesMoney {
 }
 
 export interface SalesContractSummary {
+  confirmedAt?: string | null;
+  issuerCompany?: { id: string; persianName: string } | null;
   isFloating?: boolean;
   travelDates?: {
     outbound: { date: string; calendar: 'persian' | 'gregorian' } | null;

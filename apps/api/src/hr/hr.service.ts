@@ -468,6 +468,63 @@ export class HrService {
       throw new NotFoundException('رکورد در محدوده دسترسی پیدا نشد.');
     return result;
   }
+  async employeeRoster(rawPage: string | undefined, actor: AuthenticatedActor) {
+    const where = this.employeeScope(actor);
+    const page = Number(rawPage ?? 1);
+    if (!Number.isSafeInteger(page) || page < 1 || page > 10000)
+      throw new BadRequestException('شماره صفحه معتبر نیست.');
+    const pageSize = 50;
+    const [rows, total] = await this.database.client.$transaction(
+      [
+        this.database.client.hrEmployee.findMany({
+          where,
+          orderBy: { id: 'asc' },
+          take: pageSize,
+          skip: (page - 1) * pageSize,
+          select: {
+            id: true,
+            name: true,
+            status: true,
+            branchId: true,
+            organizationBranch: { select: { values: true } },
+            records: {
+              ...employeeExtensionProjection,
+              where: {
+                ...employeeExtensionProjection.where,
+                tab: 'companyScope',
+              },
+            },
+          },
+        }),
+        this.database.client.hrEmployee.count({ where }),
+      ],
+      { isolationLevel: 'RepeatableRead' },
+    );
+    return {
+      meta: { page, pageSize, total },
+      data: rows.map((row) => {
+        const scope = row.records[0]?.values;
+        const name = row.organizationBranch?.values;
+        const shared = Array.isArray(scope) && scope[0] === 'ALL';
+        const companyId =
+          Array.isArray(scope) && typeof scope[1] === 'string' && scope[1]
+            ? scope[1]
+            : row.branchId;
+        return {
+          id: row.id,
+          name: row.name,
+          status: row.status,
+          branchId: row.branchId,
+          companyId: shared ? 'ALL' : companyId,
+          companyName: shared
+            ? 'مشترک میان همه شرکت‌ها'
+            : Array.isArray(name) && typeof name[0] === 'string' && name[0]
+              ? name[0]
+              : companyId,
+        };
+      }),
+    };
+  }
   private employeeDto(
     row: Employee & {
       manager?: { name: string } | null;
@@ -1170,6 +1227,7 @@ export class HrService {
   async listRecords(input: Record<string, unknown>, actor: AuthenticatedActor) {
     validate.object(input, [
       'section',
+      'approvalOnly',
       'tab',
       'employeeId',
       'parentId',
@@ -1199,6 +1257,19 @@ export class HrService {
     )
       throw new BadRequestException('صفحه‌بندی معتبر نیست.');
     const filters: Prisma.HrRecordWhereInput = {};
+    const approvalFilter: Prisma.HrRecordWhereInput[] = [];
+    if (input.approvalOnly !== undefined) {
+      if (input.approvalOnly !== 'true')
+        throw new BadRequestException('فیلتر کارتابل معتبر نیست.');
+      approvalFilter.push({
+        OR: HR_RESOURCE_KEYS.flatMap((key) => {
+          const [section, tab] = key.split('.');
+          return section && tab && getHrResource(section, tab)?.approval
+            ? [{ section, tab }]
+            : [];
+        }),
+      });
+    }
     if (input.branchId) filters.branchId = this.branch(actor, input.branchId);
     if (input.organizationBranchId) {
       const company = await this.record(
@@ -1332,7 +1403,9 @@ export class HrService {
                 { id: 'asc' },
               ]
             : [{ createdAt: 'desc' }, { id: 'asc' }];
-    const where = { AND: [this.recordScope(actor), filters] };
+    const where = {
+      AND: [this.recordScope(actor), filters, ...approvalFilter],
+    };
     if (filters.section === 'organization' && filters.tab === 'units') {
       // Shared units have a record per company. Pick one visible member before
       // paginating so copies neither consume page slots nor inflate the total.

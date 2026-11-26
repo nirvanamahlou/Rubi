@@ -1,5 +1,8 @@
 'use client';
 
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import { getPublicApiBaseUrl } from '@/lib/environment';
+
 import {
   retrieveCompositeGuides,
   selectCompositeChecklist,
@@ -710,22 +713,33 @@ function AssistantComposerContent({
       pending.current = controller;
       setActionState('loading');
       try {
-        const result = await fetch('/api/assistant/v3/conversation', {
-          method: 'POST',
-          credentials: 'same-origin',
-          cache: 'no-store',
-          headers: {
-            'content-type': 'application/json',
-            'x-nora-composition': '1',
-          },
-          body: JSON.stringify({
-            version: 3,
-            message,
-            previous: previousPlan?.question,
-            salesPeriodAsOf: previousPlan?.cutoff,
-          }),
-          signal: controller.signal,
-        });
+        const sendPlan = () =>
+          fetch('/api/assistant/v3/conversation', {
+            method: 'POST',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: {
+              'content-type': 'application/json',
+              'x-nora-composition': '1',
+            },
+            body: JSON.stringify({
+              version: 3,
+              message,
+              previous: previousPlan?.question,
+              salesPeriodAsOf: previousPlan?.cutoff,
+            }),
+            signal: controller.signal,
+          });
+        let result = await sendPlan();
+        const apiBase = getPublicApiBaseUrl();
+        if (
+          result.status === 401 &&
+          apiBase &&
+          !controller.signal.aborted &&
+          (await refreshAuthenticatedSession(apiBase)) &&
+          !controller.signal.aborted
+        )
+          result = await sendPlan();
         if (controller.signal.aborted) return;
         if (result.status === 204) setActionState(null);
         else {
