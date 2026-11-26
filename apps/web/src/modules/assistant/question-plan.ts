@@ -1,4 +1,5 @@
 import { normalizeQuestion } from './question-text';
+import { ownerRecordRequest } from './owner-record-intent';
 import { asksWorkbenchRequestStatus } from './workbench-request-guide';
 import { resolveOperationalMetric } from './operational-metrics';
 import { panelIntent } from './planned-operational-intent';
@@ -19,6 +20,7 @@ export type PlannedRead = {
     | 'settled-vouchers'
     | 'guide'
     | 'sales'
+    | 'records'
     | 'unknown';
   question: string;
   reuseSalesCutoff?: boolean;
@@ -27,6 +29,17 @@ export type PlannedRead = {
 const procedure =
   /(?:چطور|چجور|چگونه|چه جوری|از کجا|کجا باید|راهنما|مراحل|نحوه)/u;
 const figure = /چقدر|چقد|چند|فروش|اطلاعات|فهرست|لیست|تعداد|وضعیت|کدام|کدوم/u;
+// A list limit, sort order or breakdown qualifies the same read. Preserve
+// these instructions when dispatching to the authenticated data agent.
+function recordsRequest(text: string) {
+  return (
+    !procedure.test(text) &&
+    /^(?:(?:لطفا|الان) )*(?:تعداد |فهرست |لیست |شرکت ها رو به ترتیب تعداد |اسم همه |شماره آخرین )/u.test(
+      text,
+    ) &&
+    /چند|چقد|رو بده|را بده|مرتب کن|نشون بده|شمار/u.test(text)
+  );
+}
 const fortnight =
   /(?:دو|2) هفته(?: ی)? (?:اخیر|گذشته)|(?:14|چهارده) روز (?:اخیر|گذشته)/u;
 const voucherRequest =
@@ -36,7 +49,8 @@ const voucherRequest =
 export function classify(question: string): PlannedRead {
   const text = normalizeQuestion(question);
   let kind: PlannedRead['kind'] = 'unknown';
-  if (asksWorkbenchRequestStatus(question, false)) kind = 'request';
+  if (ownerRecordRequest(question)) kind = 'records';
+  else if (asksWorkbenchRequestStatus(question, false)) kind = 'request';
   else if (procedure.test(text)) kind = 'guide';
   else if (voucherRequest.test(text)) kind = 'settled-vouchers';
   else if (/^(?:لطفا )?(?:اجرای گزارش |گزارش .+ اجرا کن$)/u.test(text))
@@ -112,6 +126,34 @@ export function planQuestion(message: string, previous = ''): PlannedRead[] {
     if (cards[0] && cards[1]) return [cards[0], cards[1]];
   }
   const original = message.trim();
+  if (ownerRecordRequest(original))
+    return [{ kind: 'records', question: original }];
+  const whole = normalizeQuestion(original);
+  if (
+    recordsRequest(whole) &&
+    !/درخواستم|درخواست خودم/u.test(whole) &&
+    !(
+      fortnight.test(normalizeQuestion(previous)) &&
+      /همون|همین|همان/u.test(whole)
+    )
+  ) {
+    const native = classify(original);
+    if (
+      native.kind === 'operational' &&
+      panelIntent(original)?.kind !== 'unsupported'
+    )
+      return [native];
+    if (
+      native.kind === 'rolling-sales' ||
+      native.kind === 'settled-vouchers' ||
+      native.kind === 'metric' ||
+      standardSalesIntent(whole) ||
+      ownContractCountIntent(whole) ||
+      analyticalSalesSources(whole).length
+    )
+      return [native];
+    return [{ kind: 'records', question: original }];
+  }
   // A leading scope or time qualifier belongs to the first task. Keep its
   // original wording (including the comma) for the owner reader.
   const preamble = original.match(/^[^،,؟?؛;]+[،,]\s*/u)?.[0] ?? '';

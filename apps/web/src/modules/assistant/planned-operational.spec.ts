@@ -19,6 +19,35 @@ const actor = {
 };
 const all = { selection: 'ALL' };
 
+it('counts and names active employees from every authorized directory page', async () => {
+  const employee = (id: string, name: string) => ({
+    id,
+    name,
+    branchId: first,
+  });
+  const read = vi
+    .fn()
+    .mockResolvedValueOnce({
+      employees: [employee(first, 'الف')],
+      hasMore: true,
+    })
+    .mockResolvedValueOnce({
+      employees: [employee(second, 'ب')],
+      hasMore: false,
+    });
+  const result = await runOperationalPanel(
+    'اسم همه کارکنان فعال و تعدادشون رو بده.',
+    { permissions: [...IAM_PERMISSION_CODES], branchIds: [first] },
+    all,
+    read,
+  );
+  expect(read.mock.calls.map(([path]) => path)).toEqual([
+    '/hr/directory?page=1',
+    '/hr/directory?page=2',
+  ]);
+  expect(result.text).toContain('۲\nالف، ب');
+});
+
 it('holds narrowed card questions while preserving other scoped workflows and the native dated call report', () => {
   for (const question of [
     'تعداد آژانس‌های همکار غیرفعال',

@@ -78,6 +78,14 @@ test('rolling report recognizer preserves explicit filters and guide clauses', (
     }),
     { unsupported: true },
   );
+  const grouped =
+    'فروش دو هفته اخیر به تفکیک ارز چقدره و شماره و وضعیت قراردادهای همین بازه چیه؟';
+  assert.deepEqual(rollingSalesRequest({ message: grouped }), {
+    contracts: true,
+  });
+  assert.deepEqual(rollingSalesRequest({ message: grouped + ' فقط شیراز' }), {
+    unsupported: true,
+  });
   for (const text of ['فروش هفته گذشته', message + ' و بگو چطور قرارداد بزنم'])
     assert.equal(rollingSalesRequest({ message: text }), null);
 });

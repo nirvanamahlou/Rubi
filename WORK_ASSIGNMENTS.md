@@ -13685,4 +13685,8 @@ Scoped to the staff reservation workflow preview and Sales document readiness fo
 
 - PC-C | codex/pc-c-nora-b2c-paired-counts-1126 | Reconcile the scoped B2C customer and passenger count pair with the directory cards.
 
+- PC-C | codex/pc-c-nora-live-report-parity-1126 | Verify the role reporting corpus against the authenticated production panels, repair report routing and use owner-scoped reads for reproducible failures. Preserve the ongoing PC-C report acceptance changes and other machines' work. No database migration or dependency lock.
+
+The Sales list producer adds optional confirmation and issuer fields and an explicit registered-history selection for the Nora consumer. Existing callers keep the default visibility filter. HR owns the paginated roster and approval resource filter. The Nora report reader consumes both using the same signed-in actor as their panels.
+
 PC-D — Review saved draft contracts in the reservation document viewer on codex/pc-d-reservation-contract-document.

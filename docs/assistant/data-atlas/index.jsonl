@@ -1155,6 +1155,7 @@
 {"kind":"api-route","id":"apps/api/src/hr/hr.controller.ts#uploadLeaveEvidence","method":"POST","route":"/hr/leave-evidence","directCalls":["service.uploadLeaveEvidence"],"module":"hr","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/hr/hr.controller.ts#leaveEvidence","method":"GET","route":"/hr/records/:id/leave-evidence/:documentId","directCalls":["service.leaveEvidence"],"module":"hr","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/hr/hr.controller.ts#bootstrap","method":"GET","route":"/hr/bootstrap","directCalls":["service.bootstrap"],"module":"hr","access":"inventory-only"}
+{"kind":"api-route","id":"apps/api/src/hr/hr.controller.ts#roster","method":"GET","route":"/hr/employee-roster","directCalls":["service.employeeRoster"],"module":"hr","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/hr/hr.controller.ts#list","method":"GET","route":"/hr/records","directCalls":["service.listRecords"],"module":"hr","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/hr/hr.controller.ts#detail","method":"GET","route":"/hr/records/:id","directCalls":["service.getRecord"],"module":"hr","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/hr/hr.controller.ts#createEmployee","method":"POST","route":"/hr/employees","directCalls":["service.createEmployee"],"module":"hr","access":"inventory-only"}

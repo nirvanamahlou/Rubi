@@ -25,6 +25,8 @@ import { normalizeQuestion } from './question-text';
 import { describeReportSources } from './report-source-discovery';
 import { runNativeReport } from './planned-native-report';
 import { runOperationalPanel } from './planned-operational';
+import { ownerRecordRequest } from './owner-record-intent';
+import { runOwnerRecordReport } from './owner-record-report';
 import {
   standardSalesIntent,
   standardSalesAnswer,
@@ -410,8 +412,24 @@ export async function runPlannedConversation(
             ];
           return [await settledVouchers(step, read)];
         }
-        if (step.kind === 'sales' || step.kind === 'rolling-sales') {
-          if (!canOpen('/sales'))
+        if (
+          step.kind === 'sales' ||
+          step.kind === 'rolling-sales' ||
+          step.kind === 'records'
+        ) {
+          const records =
+            step.kind === 'records' && ownerRecordRequest(question);
+          if (records)
+            return [
+              await runOwnerRecordReport(
+                question,
+                records,
+                first.actor,
+                first.company,
+                read,
+              ),
+            ];
+          if (step.kind !== 'records' && !canOpen('/sales'))
             return [
               issue(
                 step,

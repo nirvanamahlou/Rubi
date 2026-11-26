@@ -1019,8 +1019,10 @@ export class SalesService {
       }),
     );
     return {
-      data: details.map((detail) => ({
+      data: details.map((detail, index) => ({
         ...summary(detail),
+        confirmedAt: result.data[index]!.confirmedAt?.toISOString() ?? null,
+        issuerCompany: result.data[index]!.legalEntity,
         sellerName: sellerNames.get(detail.ownerUserId) ?? null,
         reservationContractChanged: amendedIds.has(detail.id),
         customerPhone:

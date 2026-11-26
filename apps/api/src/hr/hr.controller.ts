@@ -166,6 +166,12 @@ export class HrController {
   ) {
     return this.service.bootstrap(req.actor);
   }
+  @Get('employee-roster') @Header('Cache-Control', 'private, no-store') roster(
+    @Query('page') page: string | undefined,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.employeeRoster(page, req.actor);
+  }
   @Get('records') @Header('Cache-Control', 'private, no-store') list(
     @Query() query: Record<string, unknown>,
     @Req() req: AuthenticatedRequest,
