@@ -1,8 +1,7 @@
 import {
   OPENAI_ENDPOINT,
   OPENAI_MODEL,
-  responsesRequest,
-  responsesResult,
+  openaiChatRequest,
 } from './openai-responses.mjs';
 import { ServiceError } from './errors.mjs';
 import { CALCULATION_POLICY } from './calculation-policy.mjs';
@@ -355,7 +354,9 @@ export function createAgentProvider({
               parallel_tool_calls: false,
             }),
       };
-      const body = JSON.stringify(openai ? responsesRequest(request) : request);
+      const body = JSON.stringify(
+        openai ? openaiChatRequest(request) : request,
+      );
       const wireBody = body;
       if (Buffer.byteLength(wireBody) > 256 * 1024)
         throw new ServiceError(503, 'AGENT_CONTEXT_BUDGET_EXCEEDED');
@@ -433,8 +434,7 @@ export function createAgentProvider({
           if (status === 429) error.retryAfterMs = unavailableUntil - now();
           throw error;
         }
-        const payload = await boundedAgentJson(response, 65536);
-        const result = openai ? responsesResult(payload) : payload;
+        const result = await boundedAgentJson(response, 65536);
         const choice = result.choices?.[0];
         const calls = choice?.message?.tool_calls;
         if (result.choices?.length !== 1)
@@ -469,12 +469,7 @@ export function createAgentProvider({
         }
         if (
           result.choices?.length !== 1 ||
-          (choice.finish_reason !== 'tool_calls' &&
-            !(
-              openai &&
-              choice.finish_reason === 'stop' &&
-              !choice.message?.content
-            )) ||
+          choice.finish_reason !== 'tool_calls' ||
           !Array.isArray(calls) ||
           calls.length !== 1
         )

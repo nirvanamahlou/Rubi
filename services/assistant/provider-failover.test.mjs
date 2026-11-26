@@ -18,20 +18,30 @@ test('privileged guide quota uses GPT with identical allowlisted topic after rea
     openaiTransport: {
       fetch: async (url, init) => {
         secondaryCalls++;
-        assert.equal(url, 'https://api.openai.com/v1/responses');
+        assert.equal(url, 'https://api.openai.com/v1/chat/completions');
         const body = JSON.parse(init.body);
-        assert.equal(body.model, 'gpt-6.2-sol');
-        assert.equal(body.reasoning.effort, 'low');
-        assert.deepEqual(JSON.parse(body.input[1].content), input);
+        assert.equal(body.model, 'gpt-6.1-sol');
+        assert.equal(body.reasoning_effort, 'low');
+        assert.deepEqual(JSON.parse(body.messages[1].content), input);
         return Response.json({
-          status: 'completed',
-          output: [
+          choices: [
             {
-              type: 'function_call',
-              status: 'completed',
-              call_id: 'call_1',
-              name: 'workbench_guide',
-              arguments: JSON.stringify({ topicId: 'leave', goal: 'steps' }),
+              finish_reason: 'tool_calls',
+              message: {
+                tool_calls: [
+                  {
+                    id: 'call_1',
+                    type: 'function',
+                    function: {
+                      name: 'workbench_guide',
+                      arguments: JSON.stringify({
+                        topicId: 'leave',
+                        goal: 'steps',
+                      }),
+                    },
+                  },
+                ],
+              },
             },
           ],
         });

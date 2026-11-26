@@ -2,38 +2,25 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createAgentProvider } from './agent-provider.mjs';
 
-test('OpenAI Responses accepts a completed offered function call', async () => {
+test('OpenAI Chat Completions accepts a completed offered tool call', async () => {
   const adapter = (provider) =>
     createAgentProvider({
       provider,
       apiKey: 'synthetic',
       fetcher: async (url, init) => {
         if (provider === 'openai') {
-          assert.equal(url, 'https://api.openai.com/v1/responses');
+          assert.equal(url, 'https://api.openai.com/v1/chat/completions');
           const request = JSON.parse(init.body);
           assert.deepEqual(request.tool_choice, {
             type: 'function',
-            name: 'set_plan',
+            function: { name: 'set_plan' },
           });
           assert.equal(request.store, false);
-          return Response.json({
-            status: 'completed',
-            output: [
-              {
-                type: 'function_call',
-                status: 'completed',
-                call_id: 'call_plan',
-                name: 'set_plan',
-                arguments: '{"steps":["Inspect allowed data"]}',
-              },
-            ],
-            usage: { total_tokens: 12 },
-          });
         }
         return Response.json({
           choices: [
             {
-              finish_reason: 'stop',
+              finish_reason: provider === 'openai' ? 'tool_calls' : 'stop',
               message: {
                 content: null,
                 tool_calls: [
