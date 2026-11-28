@@ -701,6 +701,103 @@ function AssistantComposerContent({
       );
     const previousPlan = composedContext.current;
     composedContext.current = null;
+    const operationalMetric = resolveOperationalMetric(message);
+    const runOperationalMetric = async (
+      metric: NonNullable<typeof operationalMetric>,
+    ) => {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      const controller = new AbortController();
+      pending.current = controller;
+      setActionState('loading');
+      try {
+        const answer = await readOperationalMetric(
+          metric,
+          companySelection,
+          controller.signal,
+        );
+        if (!controller.signal.aborted) replyLocally(answer);
+      } catch (error) {
+        if (!controller.signal.aborted) throw error;
+      } finally {
+        if (pending.current === controller) setActionState(null);
+      }
+    };
+    if (operationalMetric?.metric.id === 'active-employee-count') {
+      await runOperationalMetric(operationalMetric);
+      return;
+    }
+    const callCenterStatus = callCenterIntent(
+      message,
+      workbenchTab === 'call-center',
+    );
+    const historicalCalls = callCenterStatus === 'historicalWithoutOutcome';
+    const ownRequestCount = asksHistoricalOwnRequestCount(message);
+    if (historicalCalls || ownRequestCount) {
+      pending.current?.abort();
+      previousAnswer.current = undefined;
+      indexedTopic.current = undefined;
+      workbenchTopic.current = undefined;
+      const controller = new AbortController();
+      pending.current = controller;
+      setActionState('loading');
+      try {
+        if (historicalCalls) {
+          const answer = actor
+            ? await readHistoricalWithoutOutcome(
+                message,
+                actor,
+                controller.signal,
+              )
+            : 'اطلاعات دسترسی حساب برای خواندن کال‌سنتر آماده نیست.';
+          if (!controller.signal.aborted)
+            replyLocally(answer, undefined, undefined, {
+              href: '/customer-affairs/call-center',
+              label: 'کال‌سنتر',
+            });
+          return;
+        }
+        const range = historicalReportPeriod(message);
+        if (!range) {
+          replyLocally(
+            'روز یا بازهٔ ثبت درخواست‌ها را با ماه و سال مشخص کنید.',
+          );
+          return;
+        }
+        const { total } = await customerAffairsApi.countOwnWorkbenchRequests(
+          range.from,
+          range.to,
+          controller.signal,
+        );
+        if (!controller.signal.aborted) {
+          replyLocally(
+            `در بازهٔ ${range.label} به وقت تهران، ${total.toLocaleString('fa-IR')} درخواست ثبت‌شده توسط شما در کارتابل قابل مشاهده است.`,
+            undefined,
+            undefined,
+            { href: '/workbench?tab=requests', label: 'کارتابل درخواست‌ها' },
+          );
+        }
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        if (
+          (error instanceof CustomerAffairsApiError ||
+            error instanceof CallCenterHttpError) &&
+          [401, 403].includes(error.status)
+        ) {
+          setMessages([]);
+          setActionState(
+            error.status === 403 ? 'forbidden' : 'unauthenticated',
+          );
+        } else {
+          replyLocally(
+            historicalCalls
+              ? 'دریافت وضعیت صف کال‌سنتر انجام نشد. دوباره تلاش کنید یا صف را باز کنید.'
+              : 'دریافت وضعیت از کارتابل انجام نشد. دوباره تلاش کنید یا کارتابل درخواست‌ها را باز کنید.',
+          );
+        }
+      }
+      return;
+    }
     const workflow = resolveDocumentedWorkflow(message);
     if (
       agentMode &&
@@ -1215,25 +1312,8 @@ function AssistantComposerContent({
     }
     const previousHrGuide = hrGuideTopic.current;
     hrGuideTopic.current = undefined;
-    const operationalMetric = resolveOperationalMetric(message);
     if (operationalMetric) {
-      pending.current?.abort();
-      previousAnswer.current = undefined;
-      const controller = new AbortController();
-      pending.current = controller;
-      setActionState('loading');
-      try {
-        const answer = await readOperationalMetric(
-          operationalMetric,
-          companySelection,
-          controller.signal,
-        );
-        if (!controller.signal.aborted) replyLocally(answer);
-      } catch (error) {
-        if (!controller.signal.aborted) throw error;
-      } finally {
-        if (pending.current === controller) setActionState(null);
-      }
+      await runOperationalMetric(operationalMetric);
       return;
     }
     const hrGuidance =
@@ -1973,10 +2053,6 @@ function AssistantComposerContent({
       }
       return;
     }
-    const callCenterStatus = callCenterIntent(
-      message,
-      workbenchTab === 'call-center',
-    );
     if (callCenterStatus === 'report') {
       replyLocally(
         'این شمارش به بازه، کارشناس یا فیلتر تماس بستگی دارد. فیلترهای تماس امروز یا گزارش عملکرد کارشناسان را در کال‌سنتر بررسی کنید.',
@@ -1996,7 +2072,6 @@ function AssistantComposerContent({
       message,
       pathname === '/workbench' || hrTrackedRequest,
     );
-    const ownRequestCount = asksHistoricalOwnRequestCount(message);
     if (
       !callCenterStatus &&
       workbenchStatus &&
@@ -2009,7 +2084,7 @@ function AssistantComposerContent({
       replyLocally(t(c.pilotTrackingNumberRequired));
       return;
     }
-    if (callCenterStatus || workbenchStatus || ownRequestCount) {
+    if (callCenterStatus || workbenchStatus) {
       pending.current?.abort();
       const controller = new AbortController();
       pending.current = controller;
@@ -2023,17 +2098,11 @@ function AssistantComposerContent({
                   actor,
                   controller.signal,
                 )
-              : callCenterStatus === 'historicalWithoutOutcome'
-                ? await readHistoricalWithoutOutcome(
-                    message,
-                    actor,
-                    controller.signal,
-                  )
-                : await readCallCenterMetric(
-                    callCenterStatus,
-                    actor,
-                    controller.signal,
-                  )
+              : await readCallCenterMetric(
+                  callCenterStatus,
+                  actor,
+                  controller.signal,
+                )
             : 'اطلاعات دسترسی حساب برای خواندن کال‌سنتر آماده نیست.';
           if (!controller.signal.aborted) {
             previousAnswer.current = undefined;
@@ -2045,28 +2114,6 @@ function AssistantComposerContent({
                   : '/customer-affairs/call-center',
               label: 'کال‌سنتر',
             });
-          }
-          return;
-        }
-        if (ownRequestCount) {
-          const range = historicalReportPeriod(message);
-          if (!range) {
-            replyLocally(
-              'روز یا بازهٔ ثبت درخواست‌ها را با ماه و سال مشخص کنید.',
-            );
-            return;
-          }
-          const { total } = await customerAffairsApi.countOwnWorkbenchRequests(
-            range.from,
-            range.to,
-            controller.signal,
-          );
-          if (!controller.signal.aborted) {
-            previousAnswer.current = undefined;
-            workbenchTopic.current = undefined;
-            replyLocally(
-              `در بازهٔ ${range.label} به وقت تهران، ${total.toLocaleString('fa-IR')} درخواست ثبت‌شده توسط شما در کارتابل قابل مشاهده است.`,
-            );
           }
           return;
         }

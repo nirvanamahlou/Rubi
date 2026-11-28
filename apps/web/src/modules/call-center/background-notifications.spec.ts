@@ -72,10 +72,26 @@ describe.each(['fa', 'en'] as const)(
     });
 
     it('silences real POST query clients while retaining real call and request saves', async () => {
-      const { notify } = trackedBrowser(language);
+      const { transport, notify } = trackedBrowser(language);
       const signal = new AbortController().signal;
       await readApi.search('branch-a', emptySearch, 1, undefined, signal);
-      await readApi.withoutOutcome('branch-a', 1, undefined, signal);
+      const range = {
+        from: '2026-11-21T20:30:00.000Z',
+        to: '2026-11-27T20:30:00.000Z',
+        label: 'display only',
+      };
+      await readApi.withoutOutcome('branch-a', 1, undefined, signal, range);
+      expect(transport).toHaveBeenLastCalledWith(
+        `${apiBaseUrl}/customer-affairs/call-center/without-outcome`,
+        expect.objectContaining({
+          body: JSON.stringify({
+            page: 1,
+            pageSize: 20,
+            from: range.from,
+            to: range.to,
+          }),
+        }),
+      );
       await readApi.todayCalls('branch-a', 1, undefined, signal);
       await readApi.weekCalls('branch-a', 1, undefined, signal);
       await readApi.missedCallbacks('branch-a', 1, undefined, signal);

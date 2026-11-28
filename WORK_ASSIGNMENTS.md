@@ -13708,3 +13708,5 @@ PC-C | codex/pc-c-nora-owner-reconciliation-1126 | Production report reconciliat
 The same item covers the authenticated IAM identity read and Web session helper used by the ERP panels. GET /iam/auth/identity returns the current caller's existing LoginResponse projection. Existing login, token rotation and revocation contracts stay in force. Nora distinguishes scope, transport and source-evidence failures.
 
 PC-C | codex/pc-c-nora-sales-period-integration-1128 | Resolve the #1955 project status conflict against develop ca19a7656 and verify the existing sales-period parser and regressions. No schema or dependency changes.
+
+PC-C | codex/pc-c-nora-natural-report-routing-1128 | Reserve Nora Web intent and existing read adapters for historical no-outcome calls, own workbench request counts, and active HR headcount, associated regressions and generated inventory/status. Baseline 202278e53. Reuse owner contracts and preserve Call Center UI. No migration or dependency scope.
