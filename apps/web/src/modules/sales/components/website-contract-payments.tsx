@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
 import { salesApi, type WebsiteContractPayment } from '../api/client';
 
 const dateFormat = new Intl.DateTimeFormat('fa-IR', {
@@ -11,6 +12,12 @@ const dateFormat = new Intl.DateTimeFormat('fa-IR', {
 const numberFormat = new Intl.NumberFormat('fa-IR');
 
 export function WebsiteContractPayments() {
+  const { context, switching } = useLegalEntityContext();
+  if (switching || context?.selection !== 'NIYAYESH_SEIR_SAHAR') return null;
+  return <NiyayeshReceiptList />;
+}
+
+function NiyayeshReceiptList() {
   const [rows, setRows] = useState<WebsiteContractPayment[]>();
   const [reference, setReference] = useState('');
   const [loading, setLoading] = useState(false);
@@ -110,7 +117,7 @@ export function WebsiteContractPayments() {
                   </td>
                   <td className="px-3 py-2">{row.customerName}</td>
                   <td className="px-3 py-2">
-                    {numberFormat.format(BigInt(row.amountRial) / 10n)} تومان
+                    {numberFormat.format(BigInt(row.amountRial))} ریال
                   </td>
                   <td className="px-3 py-2">
                     <bdi>{row.trackingNumber}</bdi>

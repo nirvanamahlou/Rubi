@@ -1,51 +1,59 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { responsesRequest, responsesResult } from './openai-responses.mjs';
+import { openaiChatRequest, openaiToolSelection } from './openai-responses.mjs';
 
-test('Responses carries authorized tool output with the matching call ID', () => {
-  const result = responsesResult({
-    status: 'completed',
-    output: [
-      { type: 'reasoning' },
+test('Sol receives matching tool call IDs and only the authorized tool result', () => {
+  const messages = [
+    { role: 'user', content: 'Count records' },
+    {
+      role: 'assistant',
+      tool_calls: [
+        {
+          id: 'call_lookup',
+          type: 'function',
+          function: { name: 'lookup', arguments: '{}' },
+        },
+      ],
+    },
+    { role: 'tool', tool_call_id: 'call_lookup', content: '{"count":12}' },
+  ];
+  const request = openaiChatRequest({
+    messages,
+    tools: [
       {
-        type: 'function_call',
-        status: 'completed',
-        id: 'fc_item',
-        call_id: 'call_lookup',
-        name: 'lookup',
-        arguments: '{}',
+        type: 'function',
+        function: {
+          name: 'lookup',
+          parameters: {
+            type: 'object',
+            properties: {},
+            additionalProperties: false,
+          },
+        },
       },
     ],
-    usage: {
-      input_tokens: 12,
-      output_tokens: 8,
-      total_tokens: 20,
-      output_tokens_details: { reasoning_tokens: 4 },
-    },
-  });
-  const body = responsesRequest({
-    messages: [
-      { role: 'user', content: 'Count records' },
-      { role: 'assistant', tool_calls: result.choices[0].message.tool_calls },
-      { role: 'tool', tool_call_id: 'call_lookup', content: '{"count":12}' },
-    ],
-    tools: [],
     tool_choice: 'auto',
     max_completion_tokens: 2048,
   });
-  assert.deepEqual(body.input.slice(1), [
-    {
-      type: 'function_call',
-      call_id: 'call_lookup',
-      name: 'lookup',
-      arguments: '{}',
-    },
-    {
-      type: 'function_call_output',
-      call_id: 'call_lookup',
-      output: '{"count":12}',
-    },
-  ]);
-  assert.equal(result.usage.completion_tokens_details.reasoning_tokens, 4);
-  assert.deepEqual(responsesResult({ status: 'incomplete', output: [] }), {});
+  assert.deepEqual(request.messages, messages);
+  assert.equal(request.model, 'gpt-6.1-sol');
+  assert.equal(request.store, false);
+  assert.equal(request.response_format.json_schema.strict, true);
+  assert.equal(request.reasoning_effort, 'medium');
+});
+
+test('truncated, refused and unoffered selections cannot become tool calls', () => {
+  const tools = [{ function: { name: 'lookup' } }];
+  const content = JSON.stringify({ call: { name: 'lookup', arguments: {} } });
+  for (const [finish_reason, message] of [
+    ['length', { content }],
+    ['stop', { content, refusal: 'unavailable' }],
+    ['stop', { content: content.replace('lookup', 'other') }],
+    ['stop', { content: '?' }],
+  ]) {
+    assert.deepEqual(
+      openaiToolSelection({ choices: [{ finish_reason, message }] }, tools),
+      {},
+    );
+  }
 });

@@ -7,6 +7,7 @@ type LoginUser = LoginResponse['user'];
 type HeaderSessionStorage = Pick<Storage, 'getItem' | 'removeItem' | 'setItem'>;
 
 export interface HeaderSessionIdentity {
+  userId?: string;
   displayName: string;
   loggedInAt: string;
   roleNames: string[];
@@ -31,6 +32,7 @@ function isHeaderSessionIdentity(
   if (!value || typeof value !== 'object') return false;
   const candidate = value as Partial<HeaderSessionIdentity>;
   return (
+    (candidate.userId === undefined || typeof candidate.userId === 'string') &&
     typeof candidate.displayName === 'string' &&
     typeof candidate.loggedInAt === 'string' &&
     (candidate.roleNames === undefined ||
@@ -42,13 +44,18 @@ function isHeaderSessionIdentity(
 
 export function readHeaderSession(
   storage: HeaderSessionStorage | null = browserSessionStorage(),
+  userId?: string,
 ): HeaderSessionIdentity | null {
   if (!storage) return null;
   try {
     const raw = storage.getItem(HEADER_SESSION_STORAGE_KEY);
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
-    if (!isHeaderSessionIdentity(parsed)) return null;
+    if (
+      !isHeaderSessionIdentity(parsed) ||
+      (userId !== undefined && parsed.userId !== userId)
+    )
+      return null;
     const selectedTitle = selectedHeaderRoleName(parsed.roleNames ?? []);
     return { ...parsed, roleNames: selectedTitle ? [selectedTitle] : [] };
   } catch {
@@ -71,6 +78,7 @@ export function rememberHeaderSession(
       .find(({ code }) => !code.startsWith('personal-access-'))
       ?.name.trim();
   const identity: HeaderSessionIdentity = {
+    userId: user.id,
     displayName: user.displayName.trim() || 'کاربر سامانه',
     loggedInAt,
     roleNames: selectedTitle ? [selectedTitle] : [],
@@ -98,8 +106,9 @@ export function subscribeHeaderSession(onChange: () => void): () => void {
 
 export function getHeaderRoleLabel(
   storage: HeaderSessionStorage | null = browserSessionStorage(),
+  userId?: string,
 ): string {
-  return readHeaderSession(storage)?.roleNames[0] ?? '';
+  return readHeaderSession(storage, userId)?.roleNames[0] ?? '';
 }
 
 export function clearHeaderSession(

@@ -1,12 +1,28 @@
 # Explicit opt-in overlay for PC-C. Use only after the additive migration,
 # private SQL-role provisioning and an authorized local Germany tunnel exist.
 # The original rubi API/Web ports and volumes are retained.
+x-nora-public-build-args: &nora-public-build-args
+  NEXT_PUBLIC_API_BASE_URL: ${RUBI_PUBLIC_API_BASE_URL:-http://localhost:4192/api/v1}
+  NEXT_PUBLIC_ASSISTANT_AGENT_ENABLED: 'true'
+  NEXT_PUBLIC_NORA_MODEL_PLANNER_ENABLED: ${NORA_MODEL_PLANNER_ENABLED:-false}
 services:
+  api:
+    build:
+      args: *nora-public-build-args
   web:
+    build:
+      args: *nora-public-build-args
     environment:
       ASSISTANT_SERVICE_URL: http://127.0.0.1:4300
       ASSISTANT_AGENT_ENABLED: 'true'
       NEXT_PUBLIC_ASSISTANT_AGENT_ENABLED: 'true'
+      NEXT_PUBLIC_NORA_MODEL_PLANNER_ENABLED: ${NORA_MODEL_PLANNER_ENABLED:-false}
+      NORA_COMPOSITION_ENABLED: ${NORA_COMPOSITION_ENABLED:-true}
+      NORA_COMPOSITION_TOOLS: ${NORA_COMPOSITION_TOOLS:-rolling-sales,sales,settled-vouchers,metric,request,report,guide,operational}
+      NORA_COMPOSITION_TELEMETRY: ${NORA_COMPOSITION_TELEMETRY:-false}
+      NORA_MODEL_PLANNER_ENABLED: ${NORA_MODEL_PLANNER_ENABLED:-false}
+      NORA_ERP_API_BASE_URL: http://api:4000/api/v1
+      NORA_SALES_READ_API_BASE_URL: http://127.0.0.1:4301/api/v1
 
   assistant-read:
     image: ${RUBI_APP_IMAGE:-rubi-app-local:latest}
@@ -28,6 +44,7 @@ services:
     network_mode: service:web
     environment:
       ASSISTANT_AGENT_ENABLED: 'true'
+      NORA_MODEL_PLANNER_ENABLED: ${NORA_MODEL_PLANNER_ENABLED:-false}
       ASSISTANT_MODEL_PROVIDER: groq
       ASSISTANT_DATA_POLICY: authorized-erp-results
       ASSISTANT_GROQ_EGRESS: germany-proxy

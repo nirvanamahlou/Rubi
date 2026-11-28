@@ -1,6 +1,6 @@
-## NORA-HISTORICAL-REPORTS-1125
+## NORA-PRODUCTION-GUIDES-1126 — PC-C
 
-Nora resolves explicit Persian dates within one named month for counts of no-outcome calls and the signed-in user's visible workbench submissions. Counts use the existing authorized call predicates and the ticket creation timestamp, in Tehran time. Production acceptance is pending.
+PR #1958 shipped to the primary ERP from develop `6b58d1a20`. All 12 release probes passed. In the original administrator session with All Companies, all 220 replies contained the expected sections, steps and panel links. Comparison with 40 native destinations identified incorrect priority for reservations and HR reports, missing workflow details and a Sales pagination issue. The verified two-week sales export had 32 contracts in the period anchored at 20:52:11 UTC on 25 November. [Production acceptance](assistant/production-acceptance-2026-11-25.md)
 
 ## NSS-CONTRACT-PAYMENT-1125
 
@@ -52,6 +52,16 @@ Stage 3 expands five procedural guides with 15 additional source-linked topics a
 ## NORA-GUIDE-PILOT-1124 — PC-C
 
 Stage 2 completed its 18 authenticated local browser cases across Sales, Travel Issuance and Customer Affairs. Customer-status questions without a tracking number now request it and identify the appropriate panel. Evidence and fixture limitations are in docs/tasks/NORA-GUIDE-PILOT-VERIFICATION-1124.md. Draft PR #1907 remains subject to CI and review.
+
+## NORA-HISTORICAL-REPORTS-1125
+
+Nora resolves explicit Persian dates within one named month for counts of no-outcome calls and the signed-in user's visible workbench submissions. Counts use the existing authorized call predicates and the ticket creation timestamp, in Tehran time. Production acceptance is pending.
+
+## Niyayesh website receipts and active company
+
+Sales shows standalone Niyayesh website receipts only with Niyayesh Seir Sahar selected. The receipt API requires the same company context alongside existing branch and payment permissions for both listing and contract-number searches.
+
+The original #1954 CI failure was the English UI completeness test. The current develop already includes the historical report implementation and translation fixes. All six focused translation and historical-period tests passed on the integrated tree.
 
 ## NORA-GUIDE-COVERAGE-1124 — PC-C
 
@@ -10814,3 +10824,31 @@ Nora combines authorized catalog sections for independently recognizable procedu
 Align sales, finance, reservations and HR guidance with the UI and add documented organizational-report and answer-source workflows.
 
 The explicit Tehran today/yesterday contract comparison reads both server-bounded counts without model-generated queries.
+
+## NORA-ERP-ORCHESTRATION — PC-C
+
+The v3 composer can combine independently scoped ERP reads and documented workflows. The first release units cover rolling sales with a reproducible contract list, hotel-stay voucher reconciliation, and execution of authorized native reports. The integrated historical call-center and workbench readers preserve the other workstation's date-filter work.
+
+The generated workflow inventory and guide acceptance corpus live in [workflow coverage](assistant/WORKFLOW-COVERAGE.md). Production parity and the four-unit rollback sequence are tracked in the [rollout record](tasks/NORA-ERP-ORCHESTRATION-ROLLOUT.md). The current live acceptance account is the administrator in the all-companies context. Limited-role live acceptance is deferred by product decision. No schema migration or dependency upgrade.
+
+## NORA-SALES-REPORT-PAGINATION — PC-C
+
+The 14-day Sales report now opens each contract page at a durable URL with the original Tehran cutoff. A four-page regression follows the generated links through the Sales route and verifies the request sent on remount. Before the fix, real-admin Excel reconciled both currency totals and all 33 distinct contracts. Browser acceptance of the new links follows deployment.
+
+At a 319 × 678 viewport, a real pointer hit the default floating chat launcher above the period pager. The pager now reserves the launcher's space at the logical inline end and wraps the page indicator on narrow screens. A Chromium regression hit-tests both links in Persian and English layout directions at mobile and desktop widths and reproduces the collision with the previous layout.
+
+PC-C — اصلاح تطبیق راهنمای اکسل قرارداد، فوروارد و بازیابی یادداشت با پنل‌های فروش و میزکار در شاخه codex/pc-c-nora-guide-parity-1126.
+
+PC-C — Nora targets GPT-6.1 Sol through Chat Completions for OpenAI reporting and the authorized guide fallback. A synthetic call from the ERP container confirmed model access on this endpoint.
+
+PC-D — Staff can preview current Sales data for provisional website reservations. Operational changes and document delivery retain their confirmation requirements.
+
+PC-C — A browser comparison exposed mixed sources when a customer/passenger count pair mentioned B2C only once. Both directory counts now use the existing permission- and company-checked B2C card reader.
+
+PC-D — Reservations can display saved draft contracts in the branded travel contract template before confirmation. Final PDF and shared document issuance continue to use the final-output endpoint.
+
+PC-C — All 220 role-report prompts were submitted to the production Nora UI under the original administrator in the aggregate company view. Three answers passed the initial reconciliation. Evidence and individual answers are kept outside Git. Report routing, scoped owner reads and session recovery are under test on the live-report-parity branch.
+
+PC-C — The first reconciliation patch passed CI and merged in #1967. The follow-up aligns call-center drilldowns, active reservation requests, tour definitions, insurance issuer grouping, sales passenger and discount projections, and the fiscal-period-independent aggregate journal register with their source owners. Deployment and browser acceptance are tracked separately from CI.
+
+PC-C — The second full browser run recorded 220 final responses. During the run, the production edge logged 434 HTTP 401 conversation attempts including retries. The change in #1968 adds a guarded current-identity read before session rotation and distinguishes authorization and transport failures from Nora evidence failures. Live revalidation follows deployment.

@@ -98,7 +98,7 @@ describe.skipIf(!enabled)(
         actors.set(id, {
           userId: id,
           branchIds: [accountBranch],
-          permissions: [],
+          permissions: ['ui.profile', 'ui.screen.workbench.tab.requests'],
         } as unknown as AuthenticatedActor);
       }
       const database = { client };
@@ -213,6 +213,17 @@ describe.skipIf(!enabled)(
             destinationUnit: 'رزرواسیون',
             description: input.description,
           });
+        const own = await request(http)
+          .get('/customer-affairs/workbench/requests/mine')
+          .query({
+            trackingNumber: created.body.data.trackingNumber.toLowerCase(),
+          })
+          .set('x-test-actor', userId)
+          .expect(200);
+        expect(own.body.meta).toEqual({ ownership: 'mine', hasMore: false });
+        expect(own.body.data.map((row: { id: string }) => row.id)).toEqual(
+          userId === senderId ? [id] : [],
+        );
       }
       const notices = await client.notification.findMany({
         where: { entityId: id },

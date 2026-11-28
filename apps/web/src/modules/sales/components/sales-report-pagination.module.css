@@ -1,0 +1,25 @@
+.periodPager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  /* The unmoved chat launcher occupies the page's inline end in both locales. */
+  margin-inline-end: calc(
+    68px + max(20px, env(safe-area-inset-left), env(safe-area-inset-right))
+  );
+}
+
+@media (max-width: 480px) {
+  .periodPager {
+    margin-inline-end: calc(
+      64px + max(12px, env(safe-area-inset-left), env(safe-area-inset-right))
+    );
+  }
+
+  .periodPager > span {
+    flex-basis: 100%;
+    order: -1;
+    text-align: center;
+  }
+}

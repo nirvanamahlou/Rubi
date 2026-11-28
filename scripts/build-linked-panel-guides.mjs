@@ -87,6 +87,9 @@ export function buildLinkedPanelGuides(directory, check) {
       const validAction =
         href === action ||
         (domain === 'human-resources' &&
+          id === 'leave-balance' &&
+          href === '/hr?section=reports&tab=leaveBalance') ||
+        (domain === 'human-resources' &&
           /^\/hr\?section=(dashboard|employees|organization|recruitment|time|development|expenses|assets|requests|surveys|reports|payroll)$/.test(
             href,
           )) ||
@@ -107,7 +110,10 @@ export function buildLinkedPanelGuides(directory, check) {
         (domain === 'system-management' && href === '/system/users') ||
         (domain === 'finance-delivery' &&
           id === 'customer-receipt' &&
-          href === '/finance') ||
+          href === '/finance/requests') ||
+        (domain === 'reservations' &&
+          id === 'settled-vouchers' &&
+          href === '/reservations?report=settled-vouchers') ||
         (domain === 'reservations' &&
           [
             '/reservations/processing',

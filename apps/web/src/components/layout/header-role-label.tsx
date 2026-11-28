@@ -1,15 +1,17 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { useAccessActor } from '@/modules/iam/access-context';
 import {
   getHeaderRoleLabel,
   subscribeHeaderSession,
 } from '@/lib/header-session';
 
 export function HeaderRoleLabel() {
+  const userId = useAccessActor()?.userId;
   const roleLabel = useSyncExternalStore(
     subscribeHeaderSession,
-    getHeaderRoleLabel,
+    () => (userId ? getHeaderRoleLabel(undefined, userId) : ''),
     () => '',
   );
   if (!roleLabel) return null;

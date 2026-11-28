@@ -2,7 +2,7 @@ import type {
   WorkbenchMissionV1,
   WorkbenchLeaveInputV1,
 } from '@nora/contracts';
-import { getHrResource } from '@nora/contracts';
+import { canViewScreen, getHrResource } from '@nora/contracts';
 import {
   HrConnectionsService,
   type HrInboxSource,
@@ -2560,14 +2560,21 @@ export class CustomerAffairsService {
 
   async workbenchRequests(
     actor: AuthenticatedActor,
-  ): Promise<{ data: WorkbenchRequestItemV1[] }> {
-    const rows = await this.repository.workbenchRequests(
-      actor.userId,
-      actor.branchIds,
-    );
+    own?: { trackingNumber?: string },
+  ) {
+    if (own && !canViewScreen(actor.permissions, 'workbench.tab.requests'))
+      throw new ForbiddenException('WORKBENCH_REQUESTS_RESTRICTED');
+    const rows = own
+      ? await this.repository.workbenchRequests(
+          actor.userId,
+          actor.branchIds,
+          own,
+        )
+      : await this.repository.workbenchRequests(actor.userId, actor.branchIds);
     return {
+      ...(own && { meta: { ownership: 'mine', hasMore: rows.length > 100 } }),
       data: [
-        ...rows.map((row): WorkbenchRequestItemV1 => ({
+        ...rows.slice(0, 100).map((row): WorkbenchRequestItemV1 => ({
           id: row.id,
           version: row.version,
           substituteStatus: row.timeline?.find(
@@ -2632,8 +2639,10 @@ export class CustomerAffairsService {
           senderName: row.createdBy?.displayName ?? '',
           recipientName: row.executionOwner?.displayName ?? null,
         })),
-        ...(this.hr ? await this.hr.leaveSubstituteRequests(actor) : []),
-        ...(this.hrConnections
+        ...(!own && this.hr
+          ? await this.hr.leaveSubstituteRequests(actor)
+          : []),
+        ...(!own && this.hrConnections
           ? await this.hrConnections.inboxForwardedToUser(actor)
           : []),
       ],

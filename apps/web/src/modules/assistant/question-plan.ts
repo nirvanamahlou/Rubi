@@ -1,0 +1,261 @@
+import { normalizeQuestion } from './question-text';
+import { ownerRecordRequest } from './owner-record-intent';
+import { asksWorkbenchRequestStatus } from './workbench-request-guide';
+import { resolveOperationalMetric } from './operational-metrics';
+import { panelIntent } from './planned-operational-intent';
+import { standardSalesIntent } from './standard-sales-summary';
+import {
+  analyticalSalesSources,
+  joinsSalesMeasures,
+  ownContractCountIntent,
+} from './planned-sales-intent';
+
+export type PlannedRead = {
+  kind:
+    | 'rolling-sales'
+    | 'metric'
+    | 'report'
+    | 'operational'
+    | 'request'
+    | 'settled-vouchers'
+    | 'guide'
+    | 'sales'
+    | 'records'
+    | 'unknown';
+  question: string;
+  reuseSalesCutoff?: boolean;
+};
+
+const procedure =
+  /(?:چطور|چجور|چگونه|چه جوری|از کجا|کجا باید|راهنما|مراحل|نحوه)/u;
+const figure = /چقدر|چقد|چند|فروش|اطلاعات|فهرست|لیست|تعداد|وضعیت|کدام|کدوم/u;
+// A list limit, sort order or breakdown qualifies the same read. Preserve
+// these instructions when dispatching to the authenticated data agent.
+function recordsRequest(text: string) {
+  return (
+    !procedure.test(text) &&
+    /^(?:(?:لطفا|الان) )*(?:تعداد |فهرست |لیست |شرکت ها رو به ترتیب تعداد |اسم همه |شماره آخرین )/u.test(
+      text,
+    ) &&
+    /چند|چقد|رو بده|را بده|مرتب کن|نشون بده|شمار/u.test(text)
+  );
+}
+const fortnight =
+  /(?:دو|2) هفته(?: ی)? (?:اخیر|گذشته)|(?:14|چهارده) روز (?:اخیر|گذشته)/u;
+const voucherRequest =
+  /(?=.*(?:قرارداد|اقامت|هتل))(?=.*تسویه)(?=.*واچر)(?=.*(?:ندار|نداش|فاقد|بدون|صادر نشده)).+/u;
+
+// Keep filters on the data clause. A qualified sales report is sent verbatim to its reader.
+export function classify(question: string): PlannedRead {
+  const text = normalizeQuestion(question);
+  let kind: PlannedRead['kind'] = 'unknown';
+  if (ownerRecordRequest(question)) kind = 'records';
+  else if (asksWorkbenchRequestStatus(question, false)) kind = 'request';
+  else if (procedure.test(text)) kind = 'guide';
+  else if (voucherRequest.test(text)) kind = 'settled-vouchers';
+  else if (/^(?:لطفا )?(?:اجرای گزارش |گزارش .+ اجرا کن$)/u.test(text))
+    kind = 'report';
+  else if (
+    standardSalesIntent(text) ||
+    ownContractCountIntent(text) ||
+    analyticalSalesSources(text).length
+  )
+    kind = 'sales';
+  else if (fortnight.test(text) && /فروش|قرارداد/.test(text))
+    kind = 'rolling-sales';
+  else if (resolveOperationalMetric(question)) kind = 'metric';
+  else if (
+    /^(?:لطفا )?(?:اجرای گزارش |گزارش .+ (?:اجرا کن|بگیر|نمایش بده|نشون بده|نشان بده|بده)$)/u.test(
+      text,
+    )
+  )
+    kind = 'report';
+  else if (panelIntent(question)) kind = 'operational';
+  else if (/فروش|قرارداد|مسافر|وصول/.test(text) && figure.test(text))
+    kind = 'sales';
+  return { kind, question };
+}
+
+export function mightNeedModelPlan(
+  message: string,
+  documentedWorkflow = false,
+) {
+  const text = normalizeQuestion(message);
+  // A conjunction inside one handbook task (e.g. comparing two statuses)
+  // is not a request to read records. Keep an independently requested figure
+  // or report eligible for planning, even alongside a known instruction.
+  if (
+    documentedWorkflow &&
+    !/(?:چقدر|چندتا|چند تا|چند بود)|(?:^| )(?:بگو|بده|بفرست|استخراج کن|مشخص کن|حساب کن|بشمار|بشمر|بگیر|اجرا کن)(?: |$)/.test(
+      text,
+    )
+  )
+    return false;
+  return (
+    text.length >= 28 &&
+    /(?: و | همچنین | ضمنا | بعلاوه | علاوه بر | بعدش )/u.test(text) &&
+    (figure.test(text) || /گزارش|بده|بگیر/u.test(text)) &&
+    procedure.test(text)
+  );
+}
+
+export function planQuestion(message: string, previous = ''): PlannedRead[] {
+  // The directory label may apply to both cards. Resolve it before splitting
+  // the prompt so an unqualified passenger count cannot switch to Sales.
+  const pair = normalizeQuestion(message)
+    .replace(/^(?:لطفا |الان )/u, '')
+    .replace(/ (?:چقدر است|چقدره|چند تاست|چندتاست|چنده|را بگو|رو بگو)$/u, '')
+    .replace(/ (?:در|برای) (?:همه|تمام) شرکت ?ها$/u, '')
+    .split(' و ');
+  if (
+    pair.length === 2 &&
+    pair.some((part) => /(?:^| )b2c(?: |$)/u.test(part))
+  ) {
+    const cards = pair.map((part) => {
+      const label = part
+        .replace(/(?:^| )b2c(?= |$)/u, ' ')
+        .trim()
+        .replace(/ +/gu, ' ');
+      return /^(?:تعداد )?(?:کل )?(?:مشتریان|مسافران)$/u.test(label)
+        ? {
+            kind: 'operational' as const,
+            question: 'تعداد ' + label.replace(/^تعداد /u, '') + ' B2C',
+          }
+        : null;
+    });
+    if (cards[0] && cards[1]) return [cards[0], cards[1]];
+  }
+  const original = message.trim();
+  if (ownerRecordRequest(original))
+    return [{ kind: 'records', question: original }];
+  const whole = normalizeQuestion(original);
+  // The no-cost contract count qualifies the profit calculation. Keep the currency,
+  // period and missing-cost instruction together for the authenticated data reader.
+  if (
+    !procedure.test(whole) &&
+    (/^(?:جمع|مجموع) (?:دریافت|پرداخت)/u.test(whole) ||
+      /^سود (?:ناخالص|خالص) /u.test(whole))
+  )
+    return [{ kind: 'records', question: original }];
+  if (
+    recordsRequest(whole) &&
+    !/درخواستم|درخواست خودم/u.test(whole) &&
+    !(
+      fortnight.test(normalizeQuestion(previous)) &&
+      /همون|همین|همان/u.test(whole)
+    )
+  ) {
+    const native = classify(original);
+    if (
+      native.kind === 'operational' &&
+      panelIntent(original)?.kind !== 'unsupported'
+    )
+      return [native];
+    if (
+      native.kind === 'rolling-sales' ||
+      native.kind === 'settled-vouchers' ||
+      native.kind === 'metric' ||
+      standardSalesIntent(whole) ||
+      ownContractCountIntent(whole) ||
+      analyticalSalesSources(whole).length
+    )
+      return [native];
+    return [{ kind: 'records', question: original }];
+  }
+  // A leading scope or time qualifier belongs to the first task. Keep its
+  // original wording (including the comma) for the owner reader.
+  const preamble = original.match(/^[^،,؟?؛;]+[،,]\s*/u)?.[0] ?? '';
+  const lead = normalizeQuestion(preamble);
+  const filterPrefix =
+    /^(?:با (?:انتخاب|فیلتر|احتساب|در نظر گرفتن)|در (?:همه|کل|شرکت|شعبه|بازه|دوره)|برای (?:همه|کل|شرکت|شعبه|بازه|دوره)|از تاریخ|بین تاریخ) /.test(
+      lead,
+    ) &&
+    !/چطور|چجور|چگونه|چقدر|چند|کجا|بگو|بده|نشان بده|ثبت کن|اجرا کن|محاسبه کن|چیه|چیست/.test(
+      lead,
+    )
+      ? preamble
+      : '';
+  const body = original.slice(filterPrefix.length);
+  const splits =
+    /(?:\s+(?:و|بعدش|بعد)\s+(?=(?:(?:بهم |هم )?(?:بگو |بگین )?)?(?:چطور|چجور|چگونه|راهنما|مراحل|از کجا|کجا باید|درخواستم|تعداد|مجموع|مبلغ|چند|چقدر))|[؟?؛;]\s*(?=\S)|[،,]\s*(?=(?:(?:و |بهم |بگو )*)(?:چطور|چجور|راهنما|از کجا|تعداد|مجموع)))/gu;
+  let start = 0;
+  const grouped: string[] = [];
+  for (const separator of body.matchAll(splits)) {
+    const before = body.slice(start, separator.index);
+    const after = separator.index + separator[0].length;
+    if (joinsSalesMeasures(before, separator[0], body.slice(after))) continue;
+    grouped.push(before);
+    start = after;
+  }
+  grouped.push(body.slice(start));
+  const clauses = grouped
+    .map((part) => part.replace(/^(?:(?:و|هم|بهم|بگو)\s+)+/u, '').trim())
+    .filter(Boolean);
+  if (filterPrefix && clauses.length) clauses[0] = filterPrefix + clauses[0];
+  // A trailing identifier qualifies the preceding request, it is not another task.
+  if (
+    clauses
+      .slice(1)
+      .some((s) =>
+        /^(?:کد پیگیری|شماره درخواست|شماره قرارداد)\s+/u.test(
+          normalizeQuestion(s),
+        ),
+      )
+  )
+    return [];
+  const parts = clauses.map(classify);
+  const normalized = normalizeQuestion(message);
+  const sameList =
+    /^(?:(?:اطلاعات|فهرست|لیست|جزئیات) )?(?:همون|همان|همین) قرارداد(?:ها|ا| های)(?: (?:رو|را))?(?: (?:هم )?(?:بده|بگو|نشون بده|نمایش بده))?$/u.test(
+      normalized,
+    );
+  if (
+    parts.length === 1 &&
+    fortnight.test(normalizeQuestion(previous)) &&
+    (sameList ||
+      /^(?:(?:اطلاعات|فهرست|لیست|جزئیات) )?قرارداد(?:ها| های|هاش|اش).*?(?:همین|همون|همان) (?:دوره|بازه)/u.test(
+        normalized,
+      ))
+  ) {
+    return [
+      {
+        kind: 'rolling-sales',
+        reuseSalesCutoff: true,
+        question: sameList
+          ? 'فهرست قراردادهای دو هفته اخیر رو بده'
+          : message.replace(
+              /(?:همین|همون|همان) (?:دوره|بازه)/u,
+              'دو هفته اخیر',
+            ),
+      },
+    ];
+  }
+  if (parts.length > 6) return [{ kind: 'unknown', question: message }];
+  if (
+    parts.length === 1 &&
+    parts[0]?.kind === 'sales' &&
+    (standardSalesIntent(normalized) ||
+      ownContractCountIntent(normalized) ||
+      analyticalSalesSources(normalized).length)
+  )
+    return parts;
+  if (
+    parts.length === 1 &&
+    parts[0]?.kind === 'request' &&
+    /درخواستم|درخواست (?:من|خودم)|مرخصی من|م[اأ]موریت من/.test(normalized)
+  )
+    return parts;
+  if (
+    parts.length === 1 &&
+    !['rolling-sales', 'settled-vouchers', 'report', 'operational'].includes(
+      parts[0]!.kind,
+    )
+  )
+    return [];
+  if (
+    parts.length > 1 &&
+    parts.every((x) => x.kind === 'guide' || x.kind === 'unknown')
+  )
+    return [];
+  return parts;
+}

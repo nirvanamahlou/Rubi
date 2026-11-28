@@ -232,6 +232,15 @@ export class IamService implements IamStepUpPort {
     };
   }
 
+  async currentIdentity(actor: AuthenticatedActor): Promise<LoginResponse> {
+    const user = await this.database.client.user.findFirst({
+      where: { id: actor.userId, status: UserStatus.ACTIVE },
+      include: this.userAccessInclude(),
+    });
+    if (!user) throw new UnauthorizedException();
+    return this.loginResponse(user);
+  }
+
   async refresh(rawToken: string | undefined, metadata: RequestMetadata) {
     const [sessionId, secret] = rawToken?.split('.', 2) ?? [];
     if (!sessionId || !secret)

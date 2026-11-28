@@ -1,4 +1,5 @@
 import { localizedFetch } from '@/i18n/localized-fetch';
+import { authenticatedFetch } from '@/lib/authenticated-fetch';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import type { Call } from './model';
 
@@ -29,19 +30,21 @@ export async function callCenterRequest<T>(
 ): Promise<T> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new Error('نشانی API پیکربندی نشده است.');
-  const response = await localizedFetch(
-    `${base}/customer-affairs/call-center${path}`,
-    {
-      ...init,
-      credentials: 'include',
-      cache: 'no-store',
-      headers: {
-        accept: 'application/json',
-        'x-branch-id': branchId,
-        ...(init.body ? { 'content-type': 'application/json' } : {}),
-      },
+  const url = `${base}/customer-affairs/call-center${path}`;
+  const options: RequestInit = {
+    ...init,
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'x-branch-id': branchId,
+      ...(init.body ? { 'content-type': 'application/json' } : {}),
     },
-  );
+  };
+  const response =
+    (init.method ?? 'GET').toUpperCase() === 'GET'
+      ? await authenticatedFetch(url, base, { ...options, timeoutMs: null })
+      : await localizedFetch(url, options);
   if (!response.ok) {
     const body = (await response.json().catch(() => null)) as {
       message?: string;

@@ -95,6 +95,7 @@ export async function* scanSalesReportingPages(
   const mayReadPayments = actor.permissions.includes('sales.payments.read');
   const reportQuery = {
     where: {
+      hiddenAt: null,
       AND: [
         scope,
         ...(branchId ? [{ branchId }] : []),

@@ -2,7 +2,7 @@
 import { WebsiteContractPayments } from './website-contract-payments';
 import { FloatingContractPurchaseDialog } from './floating-contract-purchase-dialog';
 import { canSelfServeSalesContract } from '@nora/contracts';
-import { useAccessActor } from '@/modules/iam/access-context';
+import { useAccessActor, useRouteAccess } from '@/modules/iam/access-context';
 import { currencySymbol } from '@/lib/currency-symbol';
 
 import {
@@ -45,6 +45,7 @@ import { ContractOutputButton } from './contract-output';
 import { ContractTableScroll } from './contract-table-scroll';
 import { SalesReceivablesCard } from './sales-receivables-card';
 import { PassengerCorrectionButton } from './passenger-correction';
+import pagerStyles from './sales-report-pagination.module.css';
 
 export const DEFAULT_CONTRACT_PAGE_SIZE = 10;
 export const DATE_FILTERED_CONTRACT_PAGE_SIZE = 10_000;
@@ -261,10 +262,75 @@ export function paymentReferenceSearchQuery(
   return { search: reference.trim(), page: 1 };
 }
 
+export function SalesContractPagination({
+  query,
+  total,
+  onPage,
+}: {
+  query: SalesContractListQuery;
+  total: number;
+  onPage: (page: number) => void;
+}) {
+  const canOpenRoute = useRouteAccess();
+  const page = query.page ?? 1;
+  const pages = Math.ceil(total / DEFAULT_CONTRACT_PAGE_SIZE);
+  function control(target: number, label: string) {
+    if (target < 1 || target > pages || target === page)
+      return (
+        <Button variant="outline" type="button" disabled>
+          {label}
+        </Button>
+      );
+    if (query.salesPeriodAsOf) {
+      const params = new URLSearchParams({
+        salesPeriodAsOf: query.salesPeriodAsOf,
+        page: String(target),
+      });
+      if (!canOpenRoute(`/sales?${params}`)) return null;
+      return (
+        <a
+          href={`?${params}`}
+          className={buttonVariants({ variant: 'outline' })}
+        >
+          {label}
+        </a>
+      );
+    }
+    return (
+      <Button variant="outline" type="button" onClick={() => onPage(target)}>
+        {label}
+      </Button>
+    );
+  }
+  return (
+    <nav
+      aria-label="صفحه‌بندی قراردادها"
+      className={
+        query.salesPeriodAsOf
+          ? pagerStyles.periodPager
+          : 'flex items-center justify-between'
+      }
+    >
+      {control(Math.min(page - 1, pages), 'صفحه قبل')}
+      <span className="text-sm text-muted-foreground">
+        صفحه {page.toLocaleString('fa-IR')} از {pages.toLocaleString('fa-IR')}
+      </span>
+      {control(page + 1, 'صفحه بعد')}
+    </nav>
+  );
+}
+
 export function SalesWorkspace({
   initialContract = '',
   initialRecord = '',
-}: { initialContract?: string; initialRecord?: string } = {}) {
+  initialSalesPeriodAsOf = '',
+  initialReportPage = 1,
+}: {
+  initialContract?: string;
+  initialRecord?: string;
+  initialSalesPeriodAsOf?: string;
+  initialReportPage?: number;
+} = {}) {
   const contractsSearchPanel = useRef<HTMLElement>(null);
   const actor = useAccessActor();
   const [purchaseContractId, setPurchaseContractId] = useState<string | null>(
@@ -281,7 +347,16 @@ export function SalesWorkspace({
     initialRecord || null,
   );
   const [query, setQuery] = useState<SalesContractListQuery>(
-    initialContract ? { search: initialContract } : {},
+    initialSalesPeriodAsOf
+      ? {
+          salesPeriodAsOf: initialSalesPeriodAsOf,
+          page: initialReportPage,
+          sortBy: 'createdAt',
+          sortDirection: 'desc',
+        }
+      : initialContract
+        ? { search: initialContract }
+        : {},
   );
   const [total, setTotal] = useState(0);
   const requestVersion = useRef(0);
@@ -293,6 +368,7 @@ export function SalesWorkspace({
   const [exportNotice, setExportNotice] = useState('');
   const dateFilterApplied = hasContractDateFilter(query);
   const filtersApplied = Boolean(
+    query.salesPeriodAsOf ||
     query.ownerUserId ||
     (query.supplyType && query.supplyType !== 'ALL') ||
     query.search ||
@@ -465,6 +541,24 @@ export function SalesWorkspace({
           <p role="status" className="mb-3 text-sm text-emerald-700">
             {exportNotice}
           </p>
+        ) : null}
+        {query.salesPeriodAsOf &&
+        Number.isFinite(Date.parse(query.salesPeriodAsOf)) ? (
+          <div className="flex items-center gap-2 text-sm">
+            <span>فروش تأییدشدهٔ ۱۴ روز اخیر تا</span>
+            <time dateTime={query.salesPeriodAsOf}>
+              {new Date(query.salesPeriodAsOf).toLocaleString('fa-IR', {
+                timeZone: 'Asia/Tehran',
+              })}
+            </time>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setQuery({})}
+            >
+              نمایش همه قراردادها
+            </Button>
+          </div>
         ) : null}
         {dateFilterApplied ? (
           <p className="mt-3 text-xs text-muted-foreground">
@@ -705,42 +799,13 @@ export function SalesWorkspace({
       {!loading &&
       !error &&
       !dateFilterApplied &&
-      total > DEFAULT_CONTRACT_PAGE_SIZE ? (
-        <nav
-          aria-label="صفحه‌بندی قراردادها"
-          className="flex items-center justify-between"
-        >
-          <Button
-            variant="outline"
-            disabled={(query.page ?? 1) <= 1}
-            onClick={() =>
-              setQuery((current) => ({
-                ...current,
-                page: (current.page ?? 1) - 1,
-              }))
-            }
-          >
-            صفحه قبل
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            صفحه {(query.page ?? 1).toLocaleString('fa-IR')} از{' '}
-            {Math.ceil(total / DEFAULT_CONTRACT_PAGE_SIZE).toLocaleString(
-              'fa-IR',
-            )}
-          </span>
-          <Button
-            variant="outline"
-            disabled={(query.page ?? 1) * DEFAULT_CONTRACT_PAGE_SIZE >= total}
-            onClick={() =>
-              setQuery((current) => ({
-                ...current,
-                page: (current.page ?? 1) + 1,
-              }))
-            }
-          >
-            صفحه بعد
-          </Button>
-        </nav>
+      (total > DEFAULT_CONTRACT_PAGE_SIZE ||
+        (total > 0 && (query.page ?? 1) > 1)) ? (
+        <SalesContractPagination
+          query={query}
+          total={total}
+          onPage={(page) => setQuery((current) => ({ ...current, page }))}
+        />
       ) : null}
       {purchaseContractId ? (
         <FloatingContractPurchaseDialog

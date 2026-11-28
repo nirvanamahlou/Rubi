@@ -108,6 +108,14 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @ApiCookieAuth(ACCESS_COOKIE)
+  @Get('identity')
+  @Header('Cache-Control', 'private, no-store')
+  identity(@Req() request: AuthenticatedRequest) {
+    return this.iam.currentIdentity(request.actor);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth(ACCESS_COOKIE)
   @Get('password-change/status')
   passwordChangeStatus(@Res({ passthrough: true }) response: Response) {
     response.setHeader('Cache-Control', 'no-store');

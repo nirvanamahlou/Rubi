@@ -22,6 +22,7 @@ import {
 } from '../finance/payments/verified-gateway-receipt.public';
 import { AuthGuard } from '../iam/auth.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
+import { LegalEntitiesService } from '../legal-entities/legal-entities.service';
 import { siteBinding, stableFingerprint } from './site-commerce.policy';
 import { SiteCommerceWriteGuard } from './site-commerce-write.guard';
 
@@ -45,7 +46,8 @@ function receiptDetails(input: PaymentDetails) {
     typeof input.contractNumber !== 'string' ||
     !/^[\p{L}0-9][\p{L}0-9./_-]{0,39}$/u.test(input.contractNumber) ||
     typeof input.amount !== 'string' ||
-    !/^[1-9][0-9]{0,13}0$/.test(input.amount)
+    !/^[1-9][0-9]{0,14}$/.test(input.amount) ||
+    BigInt(input.amount) > 999_999_999_999_990n
   )
     throw new BadRequestException();
   const { customerName, contractNumber, amount } = input;
@@ -66,6 +68,8 @@ export class WebsiteContractPayments {
     @Inject(DatabaseService) private readonly db: DatabaseService,
     @Inject(VerifiedGatewayReceiptPublic)
     private readonly gateway: VerifiedGatewayReceiptPublic,
+    @Inject(LegalEntitiesService)
+    private readonly entities: LegalEntitiesService,
   ) {}
 
   async prepare(
@@ -135,6 +139,10 @@ export class WebsiteContractPayments {
 
   async list(actor: AuthenticatedActor, contractNumber?: string) {
     if (!canViewWebsiteContractPayments(actor)) throw new ForbiddenException();
+    // The standalone receipts belong to NSS even when several companies share a branch.
+    const { data: context } = await this.entities.current(actor);
+    if (context.selection !== 'NIYAYESH_SEIR_SAHAR')
+      throw new ForbiddenException();
     const reference = contractNumber?.trim();
     if (reference && reference.length > 40) throw new BadRequestException();
     const data = await this.db.client.websiteContractPayment.findMany({

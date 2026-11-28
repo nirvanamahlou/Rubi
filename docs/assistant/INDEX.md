@@ -6,6 +6,7 @@
 
 ### [راهنمای منابع پاسخ نورا](guides/nora-sources.md)
 
+- [انتخاب شرکت فعال](guides/nora-sources.md#company-scope)
 - [مشاهده منبع و بازه پاسخ نورا](guides/nora-sources.md#evidence)
 - [عیب یابی گزارش در نورا](guides/nora-sources.md#troubleshoot)
 
@@ -278,6 +279,7 @@
 - [خروجی اکسل درخواست‌ها](guides/reservations.md#queue-export) ← [دانلود اکسل و PDF](guides/reservation-report.md#exports)
 - [ارسال به کارگزار](guides/reservations.md#hotel-mail) ← [ثبت و اصلاح خرید خدمات قرارداد](guides/purchase.md#save)
 - [اصلاح بیمه‌نامه](guides/reservations.md#insurance-correction) ← [سفر و رزرواسیون](guides/documents.md#travel)
+- [اقامت‌های بدون واچر در قراردادهای تسویه‌شده](guides/reservations.md#settled-vouchers) ← [تسویه کامل قرارداد](guides/finance-delivery.md#settlement)
 
 ### [راهنمای صدور مدارک سفر](guides/travel-issuance.md)
 
@@ -336,6 +338,7 @@
 - [چرخه همکاری و قرارداد کاری](guides/human-resources.md#contracts)
 - [کارکرد، شیفت و اصلاح تردد](guides/human-resources.md#time)
 - [مرخصی و مرکز درخواست‌ها](guides/human-resources.md#requests)
+- [گزارش مانده و کاردکس مرخصی](guides/human-resources.md#leave-balance)
 - [توسعه کارکنان](guides/human-resources.md#development)
 - [مأموریت و هزینه‌ها](guides/human-resources.md#expenses) ← [موجودی، حساب و شارژ](guides/petty-cash.md#fund)
 - [تجهیزات تحویلی](guides/human-resources.md#assets)

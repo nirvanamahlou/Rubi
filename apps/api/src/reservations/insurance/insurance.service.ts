@@ -365,6 +365,7 @@ export class ReservationInsuranceService {
       if (!branchId) throw new NotFoundException();
       data.push({
         ...this.present(row),
+        contractId: row.contractId,
         branchId,
         contractNumber: row.intake
           ? (row.intake.snapshot as unknown as SalesReservationRequestV1)

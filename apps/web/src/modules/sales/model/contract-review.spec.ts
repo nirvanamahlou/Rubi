@@ -105,6 +105,16 @@ describe('unregistered contract review', () => {
     );
     expect(output.contract.balances[0]?.amount).toBe('100000');
   });
+  it('marks the saved reservation draft in the printed contract itself', () => {
+    const html = contractPrintHtml(
+      printFixture,
+      { names: {} },
+      { savedDraft: true },
+    );
+    expect(html).toContain('پیش‌نویس قرارداد · در انتظار تأیید نهایی');
+    expect(html).toContain(printFixture.contract.contractNumber);
+    expect(html).not.toContain('هنوز ثبت و به رزرواسیون ارسال نشده');
+  });
   it('updates the same canonical contract presentation after editing, escaping entered names', () => {
     const output = contractReviewOutput(
       { ...state, customerName: '<script>bad</script>' },

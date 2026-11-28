@@ -14,6 +14,12 @@
 2. برای درخواست تازه، فرم همان تب را باز کنید و اطلاعات خواسته‌شده و موضوع درخواست را ثبت کنید.
 3. ردیف را باز کنید و وضعیت، مسئول و مسیر پیگیری ثبت‌شده را بررسی کنید.
 
+### مرجع
+
+[customer-affairs-nora-workspace.tsx](../../../apps/web/src/modules/customer-affairs/components/customer-affairs-nora-workspace.tsx)
+
+[customer-affairs-workspace.tsx](../../../apps/web/src/modules/customer-affairs/components/customer-affairs-workspace.tsx)
+
 <a id="handoffs"></a>
 
 ## پیگیری و ارجاع درخواست
