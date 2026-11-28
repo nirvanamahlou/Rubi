@@ -115,9 +115,8 @@ describe('customers browser client', () => {
     expect(second).toEqual(branches);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:4000/api/v1/iam/auth/refresh',
+      'http://localhost:4000/api/v1/iam/auth/identity',
       expect.objectContaining({
-        method: 'POST',
         credentials: 'include',
         cache: 'no-store',
       }),
@@ -245,6 +244,7 @@ describe('customers browser client', () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce({ ok: false, status: 401 })
+      .mockResolvedValueOnce({ ok: false, status: 401 })
       .mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -259,11 +259,14 @@ describe('customers browser client', () => {
 
     await customersApi.detail('10000000-0000-4000-8000-000000000001');
 
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
     expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      'http://localhost:4000/api/v1/iam/auth/identity',
+    );
+    expect(fetchMock.mock.calls[2]?.[0]).toBe(
       'http://localhost:4000/api/v1/iam/auth/refresh',
     );
-    expect(fetchMock.mock.calls[1]?.[1]).toEqual(
+    expect(fetchMock.mock.calls[2]?.[1]).toEqual(
       expect.objectContaining({ method: 'POST', credentials: 'include' }),
     );
   });

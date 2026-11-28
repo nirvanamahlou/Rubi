@@ -153,5 +153,14 @@
   "نامه های وارده منابع انسانی": "Incoming HR correspondence",
   "نقش های تعریف شده": "Configured roles",
   "نیازمند بررسی:": "Requiring review:",
-  "هزینه های تنخواه": "Petty cash expenses"
+  "هزینه های تنخواه": "Petty cash expenses",
+  "بازه: همهٔ دوره‌های مالی دفاتر مجاز.": "Period: all fiscal periods in the authorized ledgers.",
+  "تماس های بدون نتیجه": "Calls without an outcome",
+  "تماس های نیازمند پیگیری": "Calls requiring follow-up",
+  "تورهای تعریف شده": "Defined tour packages",
+  "درخواست های رزرواسیون": "Reservation requests",
+  "سندهای پیش نویس حسابداری": "Draft journal entries",
+  "سندهای قطعی حسابداری": "Posted journal entries",
+  "قراردادهای دارای تخفیف": "Discounted contracts",
+  "مسافران قراردادهای فروش": "Passengers on sales contracts"
 }

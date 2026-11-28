@@ -1,10 +1,110 @@
 import { it, expect, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { IAM_PERMISSION_CODES } from '@nora/contracts';
 import { planQuestion } from './question-plan';
 import { ownerRecordRequest } from './owner-record-intent';
 import { runOwnerRecordReport } from './owner-record-report';
 const actor = { permissions: [...IAM_PERMISSION_CODES], branchIds: ['west'] };
 const context = { selection: 'ALL' };
+it('routes each role reporting scenario to a data reader and preserves its qualifications', () => {
+  const corpus = readFileSync(
+    new URL(
+      '../../../../../docs/assistant/role-report-acceptance.jsonl',
+      import.meta.url,
+    ),
+    'utf8',
+  )
+    .trim()
+    .split('\n')
+    .map((line) => JSON.parse(line) as { id: string; question: string });
+  expect(new Set(corpus.map((row) => row.id)).size).toBe(220);
+  const unrouted = corpus
+    .filter((row) => {
+      const plan = planQuestion(row.question);
+      return (
+        !plan.length ||
+        plan.some((p) => p.kind === 'guide' || p.kind === 'unknown')
+      );
+    })
+    .map((row) => row.id);
+  expect(unrouted).toEqual([]);
+});
+it('uses the call-center branch inventory and carries the owner revision across pages', async () => {
+  const q = 'فهرست تماس‌های نیازمند پیگیری رو بده';
+  const read = vi
+    .fn()
+    .mockResolvedValueOnce({ data: [{ id: 'west' }] })
+    .mockResolvedValueOnce({
+      data: [{ call: { id: 'b', occurredAt: '2026-11-01T10:00:00Z' } }],
+      meta: { total: 2, page: 1, revision: 'r1' },
+    })
+    .mockResolvedValueOnce({
+      data: [{ call: { id: 'a', occurredAt: '2026-11-02T10:00:00Z' } }],
+      meta: { total: 2, page: 2, revision: 'r1' },
+    });
+  const result = await runOwnerRecordReport(
+    q,
+    ownerRecordRequest(q)!,
+    actor,
+    context,
+    read,
+  );
+  expect(result.status).toBe('answer');
+  expect(result.text.indexOf('a —')).toBeLessThan(result.text.indexOf('b —'));
+  expect(read).toHaveBeenLastCalledWith(
+    '/customer-affairs/call-center/missed-callbacks',
+    { page: 2, pageSize: 50, revision: 'r1' },
+    'west',
+  );
+});
+it('does not count a policy with an inaccessible contract as unassigned', async () => {
+  const q = 'شرکت‌ها رو به ترتیب تعداد بیمه‌نامه‌های مسافرتی مرتب کن';
+  const read = vi
+    .fn()
+    .mockResolvedValueOnce({
+      page: 1,
+      count: 1,
+      data: [
+        {
+          id: 'p',
+          branchId: 'west',
+          contractId: 'hidden',
+          contractNumber: 'H',
+          policyNumber: null,
+          status: 'ISSUED',
+        },
+      ],
+    })
+    .mockResolvedValueOnce({ data: [], meta: { page: 1, total: 0 } });
+  const result = await runOwnerRecordReport(
+    q,
+    ownerRecordRequest(q)!,
+    actor,
+    context,
+    read,
+  );
+  expect(result.status).toBe('partial');
+  expect(result.text).not.toContain('بدون شرکت — ۱');
+});
+it('keeps the fiscal owner and journal status for an empty posted journal register', async () => {
+  const q = 'الان تعداد سندهای قطعی حسابداری چنده؟';
+  const read = vi.fn().mockResolvedValue({
+    data: [],
+    meta: { page: 1, total: 0, period: 'ALL' },
+  });
+  const result = await runOwnerRecordReport(
+    q,
+    ownerRecordRequest(q)!,
+    actor,
+    context,
+    read,
+  );
+  expect(result.status).toBe('empty');
+  expect(read).toHaveBeenCalledWith(
+    '/finance/accounting/journal-register?status=POSTED&page=1',
+  );
+  expect(result.text).toContain('۰');
+});
 const sale = (id: string, company: string | null) => ({
   id,
   contractNumber: 'C' + id,

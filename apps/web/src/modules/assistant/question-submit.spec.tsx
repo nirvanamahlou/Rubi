@@ -407,7 +407,7 @@ describe('actual Composer submit routing and transport', () => {
         .filter((n) => n.props['data-role'])
         .map((n) => n.props['data-role']),
     ).toEqual(['user', 'assistant']);
-    expect(chat()).toEqual([assistantCopy.internalSourceFallback[0]]);
+    expect(chat()).toEqual([assistantCopy.reportScopeChanged[0]]);
   });
   it('keeps numeric objections on v3 after page/tab navigation, then switches explicitly to a receipt guide', async () => {
     await send('تعداد قراردادها را بگو');
