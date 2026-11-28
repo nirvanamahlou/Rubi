@@ -74,6 +74,18 @@ export class HrDirectoryService {
     };
   }
 
+  async countActiveEmployees(actor: AuthenticatedActor) {
+    if (
+      !actor.permissions.some(
+        (permission) => permission === 'hr.read' || permission === 'hr.manage',
+      )
+    )
+      throw new ForbiddenException();
+    return this.database.client.hrEmployee.count({
+      where: { ...this.scope(actor), status: 'فعال' },
+    });
+  }
+
   async employees(
     query: Record<string, unknown>,
     actor: AuthenticatedActor,

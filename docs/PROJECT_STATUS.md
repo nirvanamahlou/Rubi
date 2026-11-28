@@ -1,3 +1,7 @@
+## Nora colloquial sales periods
+
+The sales evidence route recognizes colloquial possessive suffixes on relative periods, including «فروش هفته پیشمون چقدر بوده». The existing Tehran calendar and authorized sales calculations answer the request. The three focused sales-period tests passed during integration of #1955.
+
 ## Niyayesh website receipts and active company
 
 Sales shows standalone Niyayesh website receipts only with Niyayesh Seir Sahar selected. The receipt API requires the same company context alongside existing branch and payment permissions for both listing and contract-number searches.
@@ -56,6 +60,12 @@ Stage 3 expands five procedural guides with 15 additional source-linked topics a
 ## NORA-GUIDE-PILOT-1124 — PC-C
 
 Stage 2 completed its 18 authenticated local browser cases across Sales, Travel Issuance and Customer Affairs. Customer-status questions without a tracking number now request it and identify the appropriate panel. Evidence and fixture limitations are in docs/tasks/NORA-GUIDE-PILOT-VERIFICATION-1124.md. Draft PR #1907 remains subject to CI and review.
+
+## NORA-HISTORICAL-REPORTS-1125
+
+Nora resolves explicit Persian dates within one named month for counts of no-outcome calls and the signed-in user's visible workbench submissions. Counts use the existing authorized call predicates and the ticket creation timestamp, in Tehran time. Production acceptance is pending.
+
+The original #1954 CI failure was the English UI completeness test. The current develop already includes the historical report implementation and translation fixes. All six focused translation and historical-period tests passed on the integrated tree.
 
 ## NORA-GUIDE-COVERAGE-1124 — PC-C
 
@@ -10846,5 +10856,9 @@ PC-C — All 220 role-report prompts were submitted to the production Nora UI un
 PC-C — The first reconciliation patch passed CI and merged in #1967. The follow-up aligns call-center drilldowns, active reservation requests, tour definitions, insurance issuer grouping, sales passenger and discount projections, and the fiscal-period-independent aggregate journal register with their source owners. Deployment and browser acceptance are tracked separately from CI.
 
 PC-C — The second full browser run recorded 220 final responses. During the run, the production edge logged 434 HTTP 401 conversation attempts including retries. The change in #1968 adds a guarded current-identity read before session rotation and distinguishes authorization and transport failures from Nora evidence failures. Live revalidation follows deployment.
+
+PC-C | #1951 combined the employee metric with the current data atlas. Regeneration produced 1798 records and discovery validated 20 source cases and 29 report cases.
+
+PC-C | Nora now routes supported active employee and historical workbench/call counts to ERP readers before generic planning. Persian month and date ranges retain the inclusive final Tehran day. The call drilldown sends only its documented filter fields. No permission, persistence or Call Center panel changes.
 
 PC-C: Added a 353-table ERP feature dictionary to the Nora data agent. SQL hints are intersected with the caller's native catalog. Live acceptance pending.
