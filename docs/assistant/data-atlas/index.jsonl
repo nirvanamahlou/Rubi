@@ -1188,6 +1188,7 @@
 {"kind":"api-route","id":"apps/api/src/iam/auth.controller.ts#refresh","method":"POST","route":"/iam/auth/refresh","directCalls":["iam.refresh"],"module":"iam","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/iam/auth.controller.ts#logout","method":"POST","route":"/iam/auth/logout","directCalls":["iam.logout"],"module":"iam","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/iam/auth.controller.ts#access","method":"GET","route":"/iam/auth/access","directCalls":[],"module":"iam","access":"inventory-only"}
+{"kind":"api-route","id":"apps/api/src/iam/auth.controller.ts#identity","method":"GET","route":"/iam/auth/identity","directCalls":["iam.currentIdentity"],"module":"iam","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/iam/auth.controller.ts#passwordChangeStatus","method":"GET","route":"/iam/auth/password-change/status","directCalls":[],"module":"iam","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/iam/auth.controller.ts#changePassword","method":"POST","route":"/iam/auth/change-password","directCalls":["iam.changePassword"],"module":"iam","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/iam/auth.controller.ts#sessions","method":"GET","route":"/iam/auth/sessions","directCalls":["iam.listSessions"],"module":"iam","access":"inventory-only"}
