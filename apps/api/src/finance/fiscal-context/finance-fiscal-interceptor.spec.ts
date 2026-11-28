@@ -119,6 +119,26 @@ describe('Finance HTTP fiscal boundary', () => {
     ).rejects.toThrow('تعریف نشده');
     expect(read.handler.handle).not.toHaveBeenCalled();
   });
+  it('reads owner-scoped sales receipt status without a fiscal year and keeps writes guarded', async () => {
+    const missing = { ...scope, period: null };
+    const path = '/api/finance/reports/sales-receipts';
+    const read = fixture(path, 'GET', {}, missing);
+    expect(
+      await lastValueFrom(
+        await read.interceptor.intercept(read.context as never, read.handler),
+      ),
+    ).toBe('A');
+    const write = fixture(path, 'POST', {}, missing);
+    await expect(
+      lastValueFrom(
+        await write.interceptor.intercept(
+          write.context as never,
+          write.handler,
+        ),
+      ),
+    ).rejects.toThrow();
+    expect(write.handler.handle).not.toHaveBeenCalled();
+  });
   it('loads the read-only detail code suggestion before a fiscal year is assigned', async () => {
     const f = fixture(
       '/api/finance/accounting/books/book/detail-code-suggestion',

@@ -10868,3 +10868,5 @@ PC-C | Nora now routes supported active employee and historical workbench/call c
 PC-C: Added a 353-table ERP feature dictionary to the Nora data agent. SQL hints are intersected with the caller's native catalog. Live acceptance pending.
 
 PC-C: Nora petty-fund identity regression and structured reader diagnostics implemented; full report parity pending.
+
+PC-C: The read-only Nora sales receipt status report uses Sales actor scope independently of a default accounting year. Finance writes remain fiscal-year guarded.

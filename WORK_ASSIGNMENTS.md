@@ -13718,3 +13718,5 @@ PC-C | codex/pc-c-nora-natural-report-routing-1128 | Reserve Nora Web intent and
 PC-C | codex/pc-c-nora-table-guide-1128 | Assistant table and feature dictionary, scoped retrieval, release and production reporting acceptance. No migration.
 
 PC-C | codex/pc-c-nora-report-parity-1128 | Nora reporting source and identity parity | active
+
+PC-C | codex/pc-c-nora-sales-receipts-fiscal-1128 | Finance sales receipt report fiscal boundary and regression tests. No migration.
