@@ -136,6 +136,27 @@ it('requests an explicit date basis without live panel context and uses authoriz
   ).toContain('مجوز مشاهده');
 });
 
+it('does not infer separate refund counts from the combined card or an empty refund filter', async () => {
+  expect(
+    resolveReservationReportQuestion('تعداد استرداد و ابطال را جدا بگو', true),
+  ).toMatchObject({
+    kind: 'clarify',
+    text: expect.stringContaining('جداگانه مشخص نمی‌کند'),
+  });
+  const filtered = {
+    ...snapshot,
+    rows: [],
+    query: { ...snapshot.query, status: 'refunded' as const },
+  };
+  const answer = await readReservationReportAnswer(
+    read('تعداد خدمات همین گزارش'),
+    filtered,
+    signal,
+  );
+  expect(answer).toContain('جداگانه مشخص نمی‌کند');
+  expect(answer).not.toContain('۰');
+});
+
 it('does not pick a row from repeated PNR or expose passenger names', async () => {
   const intent = read('وضعیت بلیت PNR ABCD');
   const load = vi.fn().mockResolvedValue({ data: snapshot.rows });

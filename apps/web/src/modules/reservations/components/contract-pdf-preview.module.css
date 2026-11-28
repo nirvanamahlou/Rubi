@@ -1,6 +1,5 @@
 .preview {
   display: grid;
-  min-height: min(68dvh, 760px);
   gap: 12px;
   place-items: center;
   margin-top: 16px;

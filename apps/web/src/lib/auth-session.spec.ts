@@ -113,11 +113,14 @@ describe('shared authentication refresh', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
   it('notifies mounted UI when a session is recovered', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: vi.fn().mockResolvedValue(session),
-    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 401 })
+      .mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue(session),
+      });
     const dispatchEvent = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     vi.stubGlobal('window', { dispatchEvent });
@@ -131,6 +134,10 @@ describe('shared authentication refresh', () => {
     const dispatchedEvent = dispatchEvent.mock.calls[0]?.[0] as CustomEvent;
     expect(dispatchedEvent.type).toBe(AUTH_SESSION_RECOVERED_EVENT);
     expect(dispatchedEvent.detail).toEqual(session);
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      'http://localhost/api/v1/iam/auth/identity',
+      'http://localhost/api/v1/iam/auth/refresh',
+    ]);
   });
 
   it('deduplicates simultaneous refreshes in the same tab', async () => {
@@ -154,6 +161,7 @@ describe('shared authentication refresh', () => {
   it('retries a concurrent-refresh conflict with the newer shared cookie', async () => {
     const fetchMock = vi
       .fn()
+      .mockResolvedValueOnce({ ok: false, status: 401 })
       .mockResolvedValueOnce({ ok: false, status: 409 })
       .mockResolvedValueOnce({
         ok: true,
@@ -166,6 +174,27 @@ describe('shared authentication refresh', () => {
     await expect(
       refreshAuthenticatedSession('http://localhost/api/v1'),
     ).resolves.toEqual(session);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      'http://localhost/api/v1/iam/auth/identity',
+      'http://localhost/api/v1/iam/auth/refresh',
+      'http://localhost/api/v1/iam/auth/identity',
+    ]);
+  });
+
+  it('reads healthy identity repeatedly without rotating or broadcasting recovery', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, status: 200, json: async () => session });
+    const dispatchEvent = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('window', { dispatchEvent });
+    const { refreshAuthenticatedSession } = await import('./auth-session');
+    await refreshAuthenticatedSession('/api/v1');
+    await refreshAuthenticatedSession('/api/v1');
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      '/api/v1/iam/auth/identity',
+      '/api/v1/iam/auth/identity',
+    ]);
+    expect(dispatchEvent).not.toHaveBeenCalled();
   });
 });

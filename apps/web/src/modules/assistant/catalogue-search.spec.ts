@@ -1,6 +1,8 @@
 import { catalogueQuestions } from '../../../tests/fixtures/catalogue-questions';
 import { describe, expect, it } from 'vitest';
 import { assistantGuideCatalogues } from './assistant-guide-registry';
+import { canOpenAssistantGuide } from './guide-access';
+import { pilotGuideResponse } from './guide-pilot';
 import { routeAssistantQuestion } from './question-routing';
 import {
   catalogueLookupMode,
@@ -17,7 +19,11 @@ describe('cross-panel workflow arbitration', () => {
     ['پی دی اف قرارداد رو چجوری بگیرم؟', ['output']],
     ['اکسل کارکنان رو از کجا بگیرم؟', ['employees']],
     ['شرکت فعال رو چطور تغییر بدم؟', ['company-scope']],
-    ['درخاست داخلی ویزا رو کجا ثپت کنم؟', ['request-create', 'request-status']],
+    ['درخاست داخلی ویزا رو کجا ثپت کنم؟', ['request-create']],
+    [
+      'درخواست داخلی ویزا را چطور ثبت کنم و بعد پیگیری کنم؟',
+      ['request-create', 'request-status'],
+    ],
     ['در گزارش رزرو تاریخ صدور رو کجا بزنم؟', ['dates']],
     ['کد پیگیری HR-123 الان کجاست؟', []],
     ['از کجا قرارداد فروش جدید ثبت کنم و به رزرواسیون بفرستم؟', ['create']],
@@ -41,7 +47,11 @@ describe('cross-panel workflow arbitration', () => {
     ],
     [
       'در گزارش رزرواسیون چگونه خدمات مسترد یا ابطال‌شده را پیدا کنم؟',
-      ['dates', 'filters', 'allocation-and-status'],
+      ['allocation-and-status'],
+    ],
+    [
+      'در گزارش رزرو بر اساس تاریخ صدور چطور استرداد و ابطال را تفکیک کنم و شماره بلیت را کجا بزنم؟',
+      ['allocation-and-status', 'dates', 'filters'],
     ],
     ['مانیفست پرواز را از کجا بگیرم؟', ['manifest']],
     ['منظورم MANIFEST است.', ['manifest']],
@@ -50,6 +60,13 @@ describe('cross-panel workflow arbitration', () => {
       ['leave-approval', 'requests'],
     ],
     ['گزارش تردد و کارکرد را چطور بگیرم؟', ['time', 'reports']],
+    ['گزارش تردود واحد رو چجوری بگیرم؟', ['reports']],
+    ['مدارک درخواست مرخصی رو کجا چک کنم؟', ['requests']],
+    ['درخواست تو کارای من نیس چیکار کنم؟', ['call-center-queue']],
+    [
+      'درخواست توی کارهای من و کارتابل درخواست میزکار را در کال سنتر چطور مقایسه کنم؟',
+      ['call-center-queue', 'requests'],
+    ],
     [
       'چطور مدرک جدید بارگذاری کنم و آرشیو آن را پیدا کنم؟',
       ['upload', 'archive'],
@@ -177,4 +194,53 @@ describe('catalogue discovery', () => {
       findCatalogueTopics('ساخت کمپین', '/marketing', () => false),
     ).toEqual([]);
   });
+});
+
+const voucherPermissions = [
+  'ui.manual.v3',
+  'ui.screen.finance.delivery',
+  'ui.screen.reservations.home',
+  'finance.read',
+  'finance.financial_release.read',
+  'reservations.read',
+];
+describe('settled voucher report guide', () => {
+  const href = '/reservations?report=settled-vouchers';
+  const question = 'راهنمای گزارش کسری واچر';
+  it('opens the report guide with the same read grants as the report controller', () => {
+    expect(canOpenAssistantGuide(voucherPermissions, href)).toBe(true);
+    const result = pilotGuideResponse(
+      question,
+      '/assistant',
+      undefined,
+      (link, permission) =>
+        canOpenAssistantGuide(voucherPermissions, link, permission),
+    );
+    expect(result.sections.map((section) => section.guideHref)).toEqual([
+      '/assistant-guides/reservations#settled-vouchers',
+    ]);
+    expect(result.sections[0]?.href).toBe(href);
+    expect(result.sections[0]?.steps.join(' ')).toContain('۲۵ ردیف');
+  });
+  it.each(voucherPermissions.slice(1))(
+    'withholds the report link without %s',
+    (grant) => {
+      const scoped = voucherPermissions.filter((p) => p !== grant);
+      for (const link of [
+        href,
+        '/reservations?Report=Settled-Vouchers',
+        '/reservations?x=1&report=settled-vouchers#report',
+      ]) {
+        expect(canOpenAssistantGuide(scoped, link)).toBe(false);
+      }
+      expect(
+        pilotGuideResponse(
+          question,
+          '/assistant',
+          undefined,
+          (link, permission) => canOpenAssistantGuide(scoped, link, permission),
+        ).sections.some((section) => section.href === href),
+      ).toBe(false);
+    },
+  );
 });

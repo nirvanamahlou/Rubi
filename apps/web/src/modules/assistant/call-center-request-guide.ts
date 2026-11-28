@@ -5,6 +5,7 @@ import { readApi } from '@/modules/call-center/read-client';
 import { requestLabels } from '@/modules/call-center/workflow';
 import { workflowApi } from '@/modules/call-center/workflow-client';
 import { normalizeQuestion } from './question-text';
+import { historicalReportPeriod } from './historical-report-period';
 
 export const callCenterQueueHref =
   '/customer-affairs/call-center#cc-follow-up-queue';
@@ -25,6 +26,13 @@ export function callCenterIntent(message: string, onPanel: boolean) {
     /مرخصی|مأموریت|ماموریت|مساعده|میز ?کار/.test(text)
   )
     return;
+  if (
+    /تماس/.test(text) &&
+    /تعداد|چند|چن تا/.test(text) &&
+    /بدون نتیجه|نتیجه ثبت نشده/.test(text) &&
+    /بازه|1[34]\d{2}/.test(text)
+  )
+    return 'historicalWithoutOutcome';
   if (!onPanel && !/کال سنتر|صف رسیدگی/.test(text)) return;
   if (
     /درخواست|پیگیری|صف رسیدگی/.test(text) &&
@@ -148,6 +156,26 @@ const metricLabels = {
   withoutOutcome: 'تماس‌های بدون نتیجه',
   needsFollowUp: 'تماس‌های ازدست‌رفتهٔ نیازمند تماس مجدد',
 };
+export async function readHistoricalWithoutOutcome(
+  message: string,
+  actor: AuthenticatedActor,
+  signal: AbortSignal,
+) {
+  const range = historicalReportPeriod(message);
+  if (!range) return 'بازهٔ گزارش را با روز، ماه و سال مشخص کنید.';
+  const branch = await allowedBranch(actor, signal);
+  if (!branch)
+    return 'شعبه یا مجوز لازم برای خواندن گزارش کال‌سنتر در دسترس نیست.';
+  const { meta } = await readApi.withoutOutcome(
+    branch,
+    1,
+    undefined,
+    signal,
+    range,
+  );
+  signal.throwIfAborted();
+  return `در بازهٔ ${range.label} به وقت تهران، ${meta.total.toLocaleString('fa-IR')} تماس بدون نتیجه در محدودهٔ مجاز گزارش ثبت شده است.`;
+}
 export async function readCallCenterMetric(
   metric: keyof typeof metricLabels,
   actor: AuthenticatedActor,

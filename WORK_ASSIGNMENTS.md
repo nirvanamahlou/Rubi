@@ -1,4 +1,18 @@
+## NSS-PAYMENT-COMPANY-SCOPE-1126 — PC-A
+
+Reserve the NSS receipt list company guard, Sales panel visibility and focused regressions. The existing company context determines eligibility in Web and API. The completed NSS receipt tasks supply the unchanged intake and records. Owner authorizes a green `develop` merge. No schema, payment destination or deployment change.
+
+## NSS-CONTRACT-PAYMENT-RIAL-1125 — PC-A — REVIEW
+
+Reserve the NSS standalone receipt validation and amount display. Preserve prior receipts and accept any positive whole rial amount within the existing checkout limit. No schema or shared service changes.
+
+## NSS-CONTRACT-PAYMENT-1125 — PC-A — REVIEW
+
+Reserve Sales website-payment intake, contracts workspace receipt list, the Sales module registration and one additive Prisma migration. Base origin/develop 458e43d31. NSS submits only SEP-verified receipts through its bound integration identity. The operator list is branch-scoped. The supplied number is a reference for a standalone receipt.
+
 ## CHARTER-EXCEL-PRICING-1125 — PC-A — READY_FOR_CI
+
+PC-D · Ticket management · Hide site commissions in the outbound and return load details. Frontend display only.
 
 Owner authorizes `develop` merge after checks. Reserve Package Pricing charter Excel preview/publication, dated sales catalog, bounded pricing workspace/client, localized labels, and focused tests. Reserve one additive Package Pricing migration and the related Prisma relations. The native catalog remains the Sales consumer. Ticket Catalog and hotel rate providers are read through their public services.
 
@@ -13637,6 +13651,46 @@ Reserve Nora's guide catalogue, document routing, response source display and fo
 
 Reserve the narrowly recognized Tehran day contract-count route and its evidence checks. Reuse the authenticated read contract.
 
-## NORA-ROLE-GUIDE-AUDIT — PC-C
+## NORA-ERP-ORCHESTRATION — PC-C
 
-Reserve catalogue retrieval, guide wording and regression coverage for role-based conversational guidance.
+Reserve the v3 conversation planner and Web composer, scoped Sales period and list tools, authorized settlement-to-voucher reconciliation, and the role/capability acceptance inventory. Reuse producer-owned read boundaries. No migration or dependency lock.
+
+## NORA-SALES-REPORT-PAGINATION — PC-C
+
+Reserve the Sales panel pagination of the fixed Tehran period linked by Nora, regression coverage and release verification. Branch `codex/pc-c-nora-sales-report-pagination`. No schema or dependency changes.
+
+The same acceptance follow-up reserves the Sales-owned reporting projection and its Reporting source regression. The production pipeline report included contracts hidden from Sales. Enforce the Sales visibility predicate in the shared preview/export scan for every page and status.
+
+## NORA-ADMIN-ACCEPTANCE-1125 — PC-C
+
+Reserve the isolated acceptance value checker, its focused regression tests, and sanitized production acceptance receipts on `codex/pc-c-nora-admin-acceptance-1125`. Reference deployment is develop `e8e21ecee`. This verification unit does not require a database migration.
+
+The production preflight exposed an incorrect full-API destination for two read-only Sales metrics. Reserve their web-to-owner routing, affected deployment probes, the guide source references identified by this acceptance pass and their coverage assertions for this unit. Coordinate deployment against the pinned develop revision and preserve the live changes of other ERP modules.
+
+## NORA-PRODUCTION-GUIDES-1126 — PC-C
+
+Reserve production acceptance for the 220 administrator questions and their panel comparisons after merging #1958, with targeted repairs for verified discrepancies, on `codex/pc-c-nora-production-guides-1126`. Test through the original administrator session in All Companies. No database or dependency change is planned.
+
+## NORA-SALES-PAGER-DOCK-1126 — PC-C
+
+Reserve the linked Sales report pager layout and its Chromium hit-test on `codex/pc-c-nora-sales-pager-dock-1126`. Verify ordinary pointer navigation and the dock in RTL and LTR. The release updates Web only.
+
+- PC-C | codex/pc-c-nora-guide-parity-1126 | اصلاح راهنمای اکسل قرارداد، فوروارد و یادداشت؛ بدون تغییر پایگاه داده.
+
+- PC-C | codex/pc-c-nora-report-acceptance-1126 | Nora role-report acceptance corpus and parity audit, including the requested GPT-6.1 Sol runtime and its provider tests | active
+
+## Website reservation draft visibility — PC-D
+
+Scoped to the staff reservation workflow preview and Sales document readiness for provisional website intakes.
+
+- PC-C | codex/pc-c-nora-b2c-paired-counts-1126 | Reconcile the scoped B2C customer and passenger count pair with the directory cards.
+
+- PC-C | codex/pc-c-nora-live-report-parity-1126 | Verify the role reporting corpus against the authenticated production panels, repair report routing and use owner-scoped reads for reproducible failures. Preserve the ongoing PC-C report acceptance changes and other machines' work. No database migration or dependency lock.
+
+The Sales list producer adds optional confirmation and issuer fields and an explicit registered-history selection for the Nora consumer. Existing callers keep the default visibility filter. HR owns the paginated roster and approval resource filter. The Nora report reader consumes both using the same signed-in actor as their panels.
+
+PC-D — Review saved draft contracts in the reservation document viewer on codex/pc-d-reservation-contract-document.
+
+PC-C | codex/pc-c-nora-owner-reconciliation-1126 | Production report reconciliation follow-up to #1967. Sales supplies optional discount and passenger-row projections. Insurance supplies its nullable contract reference. Finance owns the read-only all-company journal register with existing journal, aggregate-company and branch permissions. Nora consumes those reads and the scoped reservation, purchase, call-center and tour readers. Release tooling verifies the type of the Next.js cache directory. No migration or dependency changes.
+
+The same item covers the authenticated IAM identity read and Web session helper used by the ERP panels. GET /iam/auth/identity returns the current caller's existing LoginResponse projection. Existing login, token rotation and revocation contracts stay in force. Nora distinguishes scope, transport and source-evidence failures.

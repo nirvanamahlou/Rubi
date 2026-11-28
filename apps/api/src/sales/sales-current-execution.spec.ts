@@ -59,3 +59,26 @@ it('denies missing and cancelled contracts instead of falling back to stale outp
     currentSalesExecution(tx as never, snapshot, ['branch']),
   ).rejects.toThrow('ابطال');
 });
+it.each(['DRAFT', 'PENDING_CONFIRMATION'])(
+  'previews a provisional website %s without enabling operational output',
+  async (status) => {
+    const tx = {
+      salesContract: { findFirst: vi.fn().mockResolvedValue({ status }) },
+    };
+    vi.mocked(presentSalesContract).mockReturnValue({
+      version: 2,
+      passengersDetail: [],
+      servicesDetail: [],
+    } as never);
+    const provisional = { ...snapshot, requestId: snapshot.contractId };
+    await expect(
+      currentSalesExecution(tx as never, provisional, ['branch'], true),
+    ).resolves.toMatchObject({ contractVersion: 2 });
+    await expect(
+      currentSalesExecution(tx as never, provisional, ['branch']),
+    ).rejects.toThrow();
+    await expect(
+      currentSalesExecution(tx as never, snapshot, ['branch'], true),
+    ).rejects.toThrow();
+  },
+);

@@ -37,7 +37,8 @@ export function fiscalYearIndependentRequest(
 ) {
   if (
     method === 'GET' &&
-    (/^\/finance\/source-contracts\/[^/]+\/read$/.test(path) ||
+    (path === '/finance/accounting/journal-register' ||
+      /^\/finance\/source-contracts\/[^/]+\/read$/.test(path) ||
       /^\/finance\/accounting\/books\/[^/]+\/journals\/[^/]+\/read$/.test(
         path,
       ) ||

@@ -1,5 +1,8 @@
 'use client';
 
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import { getPublicApiBaseUrl } from '@/lib/environment';
+
 import {
   retrieveCompositeGuides,
   selectCompositeChecklist,
@@ -49,6 +52,7 @@ import {
   readDocumentGuide,
 } from './document-guides';
 
+import { canOpenAssistantGuide } from './guide-access';
 import { canViewRoute, canViewScreen } from '@nora/contracts';
 import {
   catalogueLookupMode,
@@ -116,6 +120,12 @@ import {
   renderPettyCashGuide,
   resolvePettyCashGuide,
 } from './petty-cash-guide';
+import { planQuestion, mightNeedModelPlan } from './question-plan';
+import {
+  plannedAnswer,
+  summarizeParts,
+  type AnswerPart,
+} from './planned-answer';
 import { normalizeQuestion } from './question-text';
 import {
   renderSystemManagementGuide,
@@ -142,8 +152,13 @@ import {
   callCenterIntent,
   callCenterQueueHref,
   readCallCenterMetric,
+  readHistoricalWithoutOutcome,
   readCallCenterRequestStatus,
 } from './call-center-request-guide';
+import {
+  asksHistoricalOwnRequestCount,
+  historicalReportPeriod,
+} from './historical-report-period';
 import { CallCenterHttpError } from '@/modules/call-center/client';
 import {
   customerAffairsApi,
@@ -463,6 +478,8 @@ function AssistantComposerContent({
       links?: ContractLink[];
       targets?: { id: string; label: string }[];
       guideLink?: { href: string; label: string; guideHref?: string };
+      relatedGuides?: GuideSection[];
+      parts?: AnswerPart[];
       submissionId?: number;
     }>
   >([]);
@@ -474,6 +491,10 @@ function AssistantComposerContent({
   );
   const submissionSequence = useRef(0);
   const submitting = useRef(false);
+  const composedContext = useRef<{
+    question: string;
+    cutoff?: string | undefined;
+  } | null>(null);
   const {
     viewport: chatViewportRef,
     content: chatContentRef,
@@ -645,6 +666,7 @@ function AssistantComposerContent({
       targets?: { id: string; label: string }[],
       guideLink?: { href: string; label: string; guideHref?: string },
       answerContext?: AnswerContext,
+      relatedGuides?: GuideSection[],
     ) => {
       if (answerContext)
         previousAnswer.current = {
@@ -660,6 +682,7 @@ function AssistantComposerContent({
             ...(links?.length ? { links } : {}),
             ...(targets?.length ? { targets } : {}),
             ...(guideLink ? { guideLink } : {}),
+            ...(relatedGuides?.length ? { relatedGuides } : {}),
           },
         ]),
       );
@@ -670,16 +693,123 @@ function AssistantComposerContent({
     const mayReadGuide = (section: GuideSection) =>
       Boolean(
         actor &&
-        canViewRoute(actor.permissions, section.href) &&
-        (!section.permission ||
-          actor.permissions.some((p) => p === section.permission)),
+        canOpenAssistantGuide(
+          actor.permissions,
+          section.href,
+          section.permission,
+        ),
       );
+    const previousPlan = composedContext.current;
+    composedContext.current = null;
+    const workflow = resolveDocumentedWorkflow(message);
+    if (
+      agentMode &&
+      (planQuestion(message, previousPlan?.question).length ||
+        (process.env.NEXT_PUBLIC_NORA_MODEL_PLANNER_ENABLED === 'true' &&
+          mightNeedModelPlan(message, workflow.length > 0)))
+    ) {
+      pending.current?.abort();
+      const controller = new AbortController();
+      pending.current = controller;
+      setActionState('loading');
+      try {
+        const sendPlan = () =>
+          fetch('/api/assistant/v3/conversation', {
+            method: 'POST',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: {
+              'content-type': 'application/json',
+              'x-nora-composition': '1',
+            },
+            body: JSON.stringify({
+              version: 3,
+              message,
+              previous: previousPlan?.question,
+              salesPeriodAsOf: previousPlan?.cutoff,
+            }),
+            signal: controller.signal,
+          });
+        let result = await sendPlan();
+        const apiBase = getPublicApiBaseUrl();
+        if (
+          result.status === 401 &&
+          apiBase &&
+          !controller.signal.aborted &&
+          (await refreshAuthenticatedSession(apiBase)) &&
+          !controller.signal.aborted
+        )
+          result = await sendPlan();
+        if (controller.signal.aborted) return;
+        if (result.status === 204) setActionState(null);
+        else {
+          if (!result.ok) {
+            if ([401, 403, 409].includes(result.status)) {
+              // The scope can change during a read. Discard prior ERP evidence,
+              // while keeping the user's own in-flight question beside its reply.
+              setMessages((previous) =>
+                previous.filter(
+                  (row) =>
+                    row.role === 'user' && row.submissionId === submissionId,
+                ),
+              );
+              previousAnswer.current = undefined;
+            }
+            const errorText =
+              result.status === 401
+                ? c.states.unauthenticated
+                : result.status === 403
+                  ? c.states.forbidden
+                  : result.status === 409
+                    ? c.reportScopeChanged
+                    : result.status === 429
+                      ? c.states['rate-limited']
+                      : c.states.unavailable;
+            replyLocally(t(errorText));
+            return;
+          }
+          const { parts } = plannedAnswer.parse(await result.json());
+          if (controller.signal.aborted) return;
+          const reportHref = parts
+            .flatMap((p) => p.links)
+            .find((l) => l.href.startsWith('/sales?salesPeriodAsOf='))?.href;
+          composedContext.current = {
+            question: reportHref ? 'فروش دو هفته اخیر' : message,
+            cutoff: reportHref
+              ? (new URLSearchParams(reportHref.split('?')[1]).get(
+                  'salesPeriodAsOf',
+                ) ?? undefined)
+              : undefined,
+          };
+          previousAnswer.current = undefined;
+          indexedTopic.current = undefined;
+          setMessages((previous) =>
+            appendChatExchange(previous, [
+              {
+                role: 'assistant',
+                local: true,
+                content: summarizeParts(parts),
+                parts,
+              },
+            ]),
+          );
+          setActionState(null);
+          return;
+        }
+      } catch {
+        if (!controller.signal.aborted) replyLocally(t(c.states.unavailable));
+        return;
+      }
+    }
     const priorIndexed = indexedTopic.current;
     indexedTopic.current = undefined;
-    const showSection = (
-      section: GuideSection,
-      displayed = new Set<string>(),
-    ) => {
+    const showSections = (sections: GuideSection[], incomplete = false) => {
+      const [section, ...related] = sections;
+      if (!section) {
+        replyLocally(t(c.pilotGuideInsufficient));
+        return;
+      }
+      const displayed = new Set<string>();
       indexedTopic.current = section;
       systemGuideTopic.current = section.guideHref.startsWith(
         '/assistant-guides/system-management#',
@@ -697,23 +827,28 @@ function AssistantComposerContent({
       previousAnswer.current = undefined;
       replyLocally(
         [
-          section.title,
-          ...((section.route ?? section.path)?.length
-            ? [(section.route ?? section.path)!.join(' ← ')]
-            : []),
-          ...(section.conditions ?? []).filter((condition) => {
-            if (displayed.has(condition)) return false;
-            displayed.add(condition);
-            return true;
-          }),
-          ...section.steps
-            .filter((step) => {
-              if (displayed.has(step)) return false;
-              displayed.add(step);
-              return true;
-            })
-            .map((step, i) => i + 1 + '. ' + step),
-        ].join('\n'),
+          ...sections.map((topic) =>
+            [
+              topic.title,
+              ...((topic.route ?? topic.path)?.length
+                ? [(topic.route ?? topic.path)!.join(' ← ')]
+                : []),
+              ...(topic.conditions ?? []).filter((condition) => {
+                if (displayed.has(condition)) return false;
+                displayed.add(condition);
+                return true;
+              }),
+              ...topic.steps
+                .filter((step) => {
+                  if (displayed.has(step)) return false;
+                  displayed.add(step);
+                  return true;
+                })
+                .map((step, i) => i + 1 + '. ' + step),
+            ].join('\n'),
+          ),
+          ...(incomplete ? [t(c.pilotGuideInsufficient)] : []),
+        ].join('\n\n'),
         undefined,
         undefined,
         {
@@ -721,14 +856,20 @@ function AssistantComposerContent({
           label: english ? 'Open panel' : 'باز کردن پنل',
           guideHref: section.guideHref,
         },
+        undefined,
+        related,
       );
     };
+    const showSection = (section: GuideSection) => showSections([section]);
     const lastReply = messages.at(-1);
     const linkedNext =
       lastReply?.role === 'assistant' &&
       workflowDestination(
         message,
-        lastReply.guideLink?.guideHref,
+        lastReply.guideLink?.guideHref ??
+          lastReply.parts?.findLast((p) =>
+            p.source?.startsWith('/assistant-guides/'),
+          )?.source,
         mayReadGuide,
       );
     if (linkedNext === null) {
@@ -763,17 +904,12 @@ function AssistantComposerContent({
         ? retrieveDocumentSections(message, pathname, mayReadGuide)
         : [];
     if (documentSections.length) {
-      const displayed = new Set<string>();
-      for (const section of documentSections) showSection(section, displayed);
+      showSections(documentSections);
       return;
     }
-    const workflow = resolveDocumentedWorkflow(message);
     if (workflow.length) {
       const permitted = workflow.filter(mayReadGuide);
-      const displayed = new Set<string>();
-      for (const section of permitted) showSection(section, displayed);
-      if (permitted.length !== workflow.length)
-        replyLocally(t(c.pilotGuideInsufficient));
+      showSections(permitted, permitted.length !== workflow.length);
       return;
     }
     const newGuide = retrieveSalesPanelGuide(
@@ -1860,6 +1996,7 @@ function AssistantComposerContent({
       message,
       pathname === '/workbench' || hrTrackedRequest,
     );
+    const ownRequestCount = asksHistoricalOwnRequestCount(message);
     if (
       !callCenterStatus &&
       workbenchStatus &&
@@ -1872,7 +2009,7 @@ function AssistantComposerContent({
       replyLocally(t(c.pilotTrackingNumberRequired));
       return;
     }
-    if (callCenterStatus || workbenchStatus) {
+    if (callCenterStatus || workbenchStatus || ownRequestCount) {
       pending.current?.abort();
       const controller = new AbortController();
       pending.current = controller;
@@ -1886,11 +2023,17 @@ function AssistantComposerContent({
                   actor,
                   controller.signal,
                 )
-              : await readCallCenterMetric(
-                  callCenterStatus,
-                  actor,
-                  controller.signal,
-                )
+              : callCenterStatus === 'historicalWithoutOutcome'
+                ? await readHistoricalWithoutOutcome(
+                    message,
+                    actor,
+                    controller.signal,
+                  )
+                : await readCallCenterMetric(
+                    callCenterStatus,
+                    actor,
+                    controller.signal,
+                  )
             : 'اطلاعات دسترسی حساب برای خواندن کال‌سنتر آماده نیست.';
           if (!controller.signal.aborted) {
             previousAnswer.current = undefined;
@@ -1902,6 +2045,28 @@ function AssistantComposerContent({
                   : '/customer-affairs/call-center',
               label: 'کال‌سنتر',
             });
+          }
+          return;
+        }
+        if (ownRequestCount) {
+          const range = historicalReportPeriod(message);
+          if (!range) {
+            replyLocally(
+              'روز یا بازهٔ ثبت درخواست‌ها را با ماه و سال مشخص کنید.',
+            );
+            return;
+          }
+          const { total } = await customerAffairsApi.countOwnWorkbenchRequests(
+            range.from,
+            range.to,
+            controller.signal,
+          );
+          if (!controller.signal.aborted) {
+            previousAnswer.current = undefined;
+            workbenchTopic.current = undefined;
+            replyLocally(
+              `در بازهٔ ${range.label} به وقت تهران، ${total.toLocaleString('fa-IR')} درخواست ثبت‌شده توسط شما در کارتابل قابل مشاهده است.`,
+            );
           }
           return;
         }
@@ -2441,6 +2606,31 @@ function AssistantComposerContent({
                     ) : (
                       item.content
                     )}
+                    {item.parts && (
+                      <details>
+                        <summary>{t(c.agentSources)}</summary>
+                        {item.parts.map((part, i) => (
+                          <div key={i}>
+                            <p>{part.question}</p>
+                            <p>{part.text}</p>
+                            <p>
+                              {[part.source, part.observedAt]
+                                .filter(Boolean)
+                                .join(' · ')}
+                            </p>
+                            {part.links.map((link) => (
+                              <Link
+                                className="block underline"
+                                key={link.href}
+                                href={link.href}
+                              >
+                                {link.label}
+                              </Link>
+                            ))}
+                          </div>
+                        ))}
+                      </details>
+                    )}
                     {item.guideLink?.guideHref && (
                       <Link
                         className="block underline"
@@ -2457,6 +2647,19 @@ function AssistantComposerContent({
                         {item.guideLink.label}
                       </Link>
                     )}
+                    {item.relatedGuides?.map((section) => (
+                      <div key={section.guideHref}>
+                        <Link
+                          className="block underline"
+                          href={section.guideHref}
+                        >
+                          {section.title}
+                        </Link>
+                        <Link className="block underline" href={section.href}>
+                          {english ? 'Open panel' : 'باز کردن پنل'}
+                        </Link>
+                      </div>
+                    ))}
                     {item.local &&
                       item.targets?.map((target) => (
                         <button

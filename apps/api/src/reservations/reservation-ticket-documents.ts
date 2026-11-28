@@ -259,10 +259,14 @@ export class ReservationTicketDocumentsService {
     const selected = filterServiceRows(dated, query, range);
     return { data: filterIssuedRows(selected, query), options };
   }
-  async choices(id: string, actor: AuthenticatedActor) {
+  async choices(
+    id: string,
+    actor: AuthenticatedActor,
+    mode: true | 'preview' = 'preview',
+  ) {
     if (!actor.permissions.includes('reservations.read'))
       throw new ForbiddenException();
-    const intake = await this.workflow.detail(id, actor.branchIds, true);
+    const intake = await this.workflow.detail(id, actor.branchIds, mode);
     if (intake.workflow.supplierStatus === 'CANCELLED')
       throw new BadRequestException('درخواست ابطال شده است.');
     const flights = salesContractFlights(
@@ -297,7 +301,7 @@ export class ReservationTicketDocumentsService {
       throw new ForbiddenException();
     if (!input || typeof input.customerId !== 'string')
       throw new BadRequestException('مسافر را انتخاب کنید.');
-    const choice = (await this.choices(id, actor)).find(
+    const choice = (await this.choices(id, actor, true)).find(
       (p) => p.customerId === input.customerId,
     );
     if (!choice)

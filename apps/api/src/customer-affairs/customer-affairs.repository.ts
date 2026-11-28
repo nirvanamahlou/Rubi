@@ -510,10 +510,33 @@ export class CustomerAffairsRepository {
     });
   }
 
-  workbenchRequests(userId: string, branchIds: string[]) {
+  countOwnWorkbenchRequests(
+    userId: string,
+    branchIds: string[],
+    from: Date,
+    to: Date,
+  ) {
+    return this.database.client.customerAffairsTicket.count({
+      where: {
+        createdByUserId: userId,
+        branchId: { in: branchIds },
+        category: { startsWith: 'WORKBENCH_' },
+        createdAt: { gte: from, lt: to },
+        timeline: { none: { type: 'WORKBENCH_REMOVED', actorUserId: userId } },
+      },
+    });
+  }
+
+  workbenchRequests(
+    userId: string,
+    branchIds: string[],
+    own?: { trackingNumber?: string },
+  ) {
     return this.database.client.customerAffairsTicket.findMany({
       where: {
         timeline: { none: { type: 'WORKBENCH_REMOVED', actorUserId: userId } },
+        ...(own && { createdByUserId: userId }),
+        ...(own?.trackingNumber && { trackingNumber: own.trackingNumber }),
         OR: [
           { createdByUserId: userId },
           {
@@ -553,7 +576,7 @@ export class CustomerAffairsRepository {
         executionOwner: { select: { displayName: true } },
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-      take: 100,
+      take: own ? 101 : 100,
     });
   }
 

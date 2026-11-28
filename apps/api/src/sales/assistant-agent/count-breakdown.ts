@@ -7,6 +7,7 @@ import type { AgentScope } from './query.service';
 export async function readContractCountBreakdown(
   database: DatabaseClient,
   scope: AgentScope,
+  ownership: 'visible' | 'mine' = 'visible',
 ) {
   return database.$transaction(
     async (tx) => {
@@ -19,7 +20,9 @@ export async function readContractCountBreakdown(
           ...(scope.mode !== 'all'
             ? { branchId: { in: [...scope.branchIds] } }
             : {}),
-          ...(scope.mode === 'own' ? { ownerUserId: scope.userId } : {}),
+          ...(scope.mode === 'own' || ownership === 'mine'
+            ? { ownerUserId: scope.userId }
+            : {}),
         },
         select: { id: true, status: true },
         take: 50001,

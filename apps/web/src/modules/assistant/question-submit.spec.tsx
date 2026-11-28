@@ -1,7 +1,13 @@
+import { canOpenAssistantGuide } from './guide-access';
+import { readFileSync } from 'node:fs';
 import { IAM_PERMISSION_CODES, USER_ACCESS_SCREENS } from '@nora/contracts';
+import { REPORTING_PERMISSION_MATRIX } from '@/modules/reports/model/reporting';
+import { pilotGuideResponse } from './guide-pilot';
+import { runPlannedConversation } from './planned-conversation';
 import {
   assistantGuideCatalogues,
   type AssistantGuideModule,
+  type GuideSection,
 } from './assistant-guide-registry';
 import { catalogueQuestions } from '../../../tests/fixtures/catalogue-questions';
 import { assistantCopy } from '@/i18n/assistant-copy';
@@ -17,6 +23,7 @@ const h = vi.hoisted(() => ({
   effects: [] as (() => void)[],
   path: '/sales',
   tab: '',
+  query: '',
   key: '',
   company: 'company-a',
   user: 'user-a',
@@ -57,7 +64,8 @@ vi.mock('react', async (original) => ({
 }));
 vi.mock('next/navigation', () => ({
   usePathname: () => h.path,
-  useSearchParams: () => new URLSearchParams(h.tab ? `tab=${h.tab}` : ''),
+  useSearchParams: () =>
+    new URLSearchParams(h.query || (h.tab ? `tab=${h.tab}` : '')),
   useRouter: () => ({ push: vi.fn() }),
 }));
 vi.mock('@/modules/iam/access-context', () => ({
@@ -154,6 +162,7 @@ beforeEach(() => {
   h.key = '';
   h.path = '/sales';
   h.tab = '';
+  h.query = '';
   h.company = 'company-a';
   h.user = 'user-a';
   h.permissions = ['sales.contracts.read.all'];
@@ -371,6 +380,34 @@ describe('actual Composer submit routing and transport', () => {
     await send('از کجا آوردی؟');
     expect(h.fetcher).toHaveBeenCalledTimes(2);
     expect(chat().at(-1)).toContain('کدام پاسخ');
+  });
+  it('passes a comma-prefixed company scope to the scalar reader as one complete question', async () => {
+    const question =
+      'با انتخاب همه شرکت‌ها، تعداد قراردادهای قابل مشاهده در کل شرکت‌های مجاز چقدر است؟';
+    vi.stubEnv('NEXT_PUBLIC_NORA_MODEL_PLANNER_ENABLED', 'true');
+    await send(question);
+    expect(h.fetcher).toHaveBeenCalledOnce();
+    const [url, init] = h.fetcher.mock.calls[0]!;
+    expect(url).toBe('/api/assistant/v3/conversation');
+    expect(init.headers['x-nora-composition']).toBeUndefined();
+    expect(JSON.parse(init.body).message).toBe(question);
+    expect(chat()).toHaveLength(1);
+    expect(chat()[0]).toContain('شواهد تازه');
+  });
+  it('discards stale evidence after a composition scope change but keeps the current question beside its reply', async () => {
+    await send('تعداد قراردادها را بگو');
+    expect(chat()[0]).toContain('شواهد تازه');
+    h.fetcher.mockResolvedValueOnce(new Response(null, { status: 409 }));
+    await send('فروش دو هفته اخیر چقدر بوده؟');
+    expect(h.fetcher.mock.calls.at(-1)?.[1].headers['x-nora-composition']).toBe(
+      '1',
+    );
+    expect(
+      render()
+        .filter((n) => n.props['data-role'])
+        .map((n) => n.props['data-role']),
+    ).toEqual(['user', 'assistant']);
+    expect(chat()).toEqual([assistantCopy.reportScopeChanged[0]]);
   });
   it('keeps numeric objections on v3 after page/tab navigation, then switches explicitly to a receipt guide', async () => {
     await send('تعداد قراردادها را بگو');
@@ -780,3 +817,154 @@ it.each(catalogueQuestions)(
     expect(h.fetcher).not.toHaveBeenCalled();
   },
 );
+
+type ReplayCase = { id: string; question: string; expectedGuides: string[] };
+const replayCases: ReplayCase[] = readFileSync(
+  new URL(
+    '../../../../../docs/assistant/role-guide-acceptance.jsonl',
+    import.meta.url,
+  ),
+  'utf8',
+)
+  .trim()
+  .split('\n')
+  .map((row) => JSON.parse(row));
+
+describe('synthetic full-access Composer replay', () => {
+  beforeEach(() => {
+    h.path = '/hr';
+    h.query = 'section=employees';
+    vi.stubEnv('NEXT_PUBLIC_NORA_MODEL_PLANNER_ENABLED', 'true');
+    vi.stubEnv('NORA_MODEL_PLANNER_ENABLED', 'true');
+    h.company = 'ALL';
+    h.permissions = [
+      ...IAM_PERMISSION_CODES.filter(
+        (p) => !p.startsWith('ui.deny.') && String(p) !== 'ui.manual.v3',
+      ),
+      ...REPORTING_PERMISSION_MATRIX,
+      'ui.administrator',
+      ...USER_ACCESS_SCREENS.map(({ id }) => 'ui.screen.' + id),
+    ];
+    h.hrAccess = true;
+    vi.stubEnv('NORA_ERP_API_BASE_URL', 'https://erp-fixture.invalid/api');
+    h.fetcher.mockImplementation(async (url, init) => {
+      if (url === '/api/assistant/v3/guidance') {
+        const { question: q, panel, previous } = JSON.parse(init.body);
+        return Response.json(
+          pilotGuideResponse(q, panel, previous, (href, perm) =>
+            canOpenAssistantGuide(h.permissions, href, perm),
+          ),
+        );
+      }
+      if (
+        url === '/api/assistant/v3/conversation' &&
+        init.headers?.['x-nora-composition'] === '1'
+      ) {
+        const request = JSON.parse(init.body);
+        return runPlannedConversation(
+          new Request(
+            'https://erp-fixture.invalid/api/assistant/v3/conversation',
+            { method: 'POST' },
+          ),
+          JSON.stringify(request),
+          'nora_access=fixture',
+        );
+      }
+      if (url.endsWith('/iam/auth/access'))
+        return Response.json({
+          userId: 'fixture-admin',
+          sessionId: 'fixture-session',
+          branchIds: ['branch-a'],
+          permissions: h.permissions,
+        });
+      if (url.endsWith('/legal-entities/context'))
+        return Response.json({ data: { selection: 'ALL', version: 1 } });
+      return new Response(null, { status: 503 });
+    });
+  });
+  it.each(replayCases)(
+    '$id',
+    async ({ id: caseId, question, expectedGuides }) => {
+      await send(question);
+      const reply = render().find(
+        (node) => node.props['data-role'] === 'assistant',
+      );
+      expect(reply, question).toBeDefined();
+      const links = nodes(reply)
+        .map((node) => node.props.href)
+        .filter(
+          (v): v is string =>
+            typeof v === 'string' && v.includes('/assistant-guides/'),
+        );
+      const answer = chat()[0]!;
+      for (const [index, ref] of expectedGuides.entries()) {
+        const [module, id] = ref.split('/');
+        const expected: GuideSection = assistantGuideCatalogues[
+          module as AssistantGuideModule
+        ].topics.find((t) => t.id === id)!;
+        if (index === 0) {
+          expect(links[0], question).toBe(expected.guideHref);
+          const breadcrumb = (expected.route ?? expected.path)?.join(' ← ');
+          expect([expected.title, breadcrumb], question).toContain(
+            answer.split('\n')[0],
+          );
+        }
+        expect(links, question).toContain(expected.guideHref);
+        for (const step of expected.steps)
+          expect(answer, question).toContain(step);
+      }
+      if (
+        [
+          'role-045',
+          'role-075',
+          'role-143',
+          'role-148',
+          'role-162',
+          'role-175',
+        ].includes(caseId)
+      ) {
+        expect(links, question).toHaveLength(1);
+      }
+      if (['role-045', 'role-075'].includes(caseId)) {
+        const firstStep = answer
+          .split('\n')
+          .find((line) => line.startsWith('1. '));
+        expect(firstStep).toContain('«استردادشده»');
+        expect(firstStep).toContain('«باطل‌شده»');
+        expect(firstStep).toContain('بنویسید «باطل»');
+        expect(firstStep).toContain('به معنی صفر استرداد نیست');
+      }
+      if (caseId === 'role-143') {
+        expect(answer).not.toContain('مرخصی');
+      }
+    },
+  );
+  it('retains one adjacent answer per guide request across a continuous conversation even when provider reads are unavailable', async () => {
+    h.fetcher.mockResolvedValue(new Response(null, { status: 503 }));
+    const ids = [
+      'role-021',
+      'role-044',
+      'role-045',
+      'role-141',
+      'role-161',
+      'role-173',
+      'role-174',
+      'role-175',
+    ];
+    for (const id of ids) {
+      const entry = replayCases.find((row) => row.id === id)!;
+      await send(entry.question);
+      const roles = render().filter((n) => n.props['data-role']);
+      expect(roles.at(-2)?.props['data-role']).toBe('user');
+      expect(roles.at(-1)?.props['data-role']).toBe('assistant');
+      for (const ref of entry.expectedGuides) {
+        const [domain, topic] = ref.split('/');
+        expect(nodes(roles.at(-1)).map((n) => n.props.href)).toContain(
+          '/assistant-guides/' + domain + '#' + topic,
+        );
+      }
+    }
+    expect(chat()).toHaveLength(ids.length);
+    expect(h.fetcher).not.toHaveBeenCalled();
+  });
+});

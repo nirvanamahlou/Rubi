@@ -86,6 +86,7 @@ export interface InsuranceDraftInputV1 {
 }
 
 export interface InsurancePolicyRowV1 {
+  contractId?: string | null;
   standalone?: boolean;
   automatic?: boolean;
   sandbox?: boolean;
