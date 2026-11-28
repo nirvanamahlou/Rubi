@@ -13710,3 +13710,5 @@ The same item covers the authenticated IAM identity read and Web session helper 
 PC-C | codex/pc-c-nora-sales-period-integration-1128 | Resolve the #1955 project status conflict against develop ca19a7656 and verify the existing sales-period parser and regressions. No schema or dependency changes.
 
 PC-C | codex/pc-c-nora-natural-report-routing-1128 | Reserve Nora Web intent and existing read adapters for historical no-outcome calls, own workbench request counts, and active HR headcount, associated regressions and generated inventory/status. Baseline 202278e53. Reuse owner contracts and preserve Call Center UI. No migration or dependency scope.
+
+PC-C | codex/pc-c-nora-table-guide-1128 | Assistant table and feature dictionary, scoped retrieval, release and production reporting acceptance. No migration.
