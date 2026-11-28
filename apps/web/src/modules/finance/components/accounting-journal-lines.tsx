@@ -35,6 +35,11 @@ import {
 } from '@/components/ui/overlays';
 import { journalDisplayTotals } from '../accounting-money';
 import { descriptionRows } from '../accounting-chart-form';
+import {
+  baseFigures,
+  journalCurrencyBalances,
+} from '../accounting-voucher-display';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { AccountingJournalFigures } from './accounting-journal-figures';
 import { AccountingDocumentStatement } from './accounting-document-statement';
 import {
@@ -117,7 +122,13 @@ export function AccountingJournalLines({
   const [selected, setSelected] = useState(0);
   const [multiple, setMultiple] = useState(false);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
-  const [currencyVisible, setCurrencyVisible] = useState(false);
+  const [currencyVisible, setCurrencyVisible] = useState(() =>
+    rows.some((line) => !!line.currency),
+  );
+  const [showBalance, setShowBalance] = useState(false);
+  const balances = showBalance
+    ? journalCurrencyBalances(rows, book.book.baseCurrency)
+    : null;
   const [searchVisible, setSearchVisible] = useState(false);
   const [search, setSearch] = useState('');
   const [targetVisible, setTargetVisible] = useState(false);
@@ -353,7 +364,47 @@ export function AccountingJournalLines({
           book={book}
           row={selectedRow}
           periodId={periodId}
+          canExport={canExport}
         />
+        <button
+          type="button"
+          className="rounded border px-2 text-xs"
+          disabled={!rows.length}
+          onClick={() => setShowBalance(true)}
+        >
+          تراز ارزی سند
+        </button>
+        <Dialog open={showBalance} onOpenChange={setShowBalance}>
+          <DialogContent>
+            <DialogTitle>تراز ارزی سند</DialogTitle>
+            {balances ? (
+              <table>
+                <thead>
+                  <tr>
+                    {['ارز', 'بدهکار', 'بستانکار', 'مانده'].map((h) => (
+                      <th key={h}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {balances.map((r) => (
+                    <tr key={r.currency}>
+                      {[r.currency, r.debit, r.credit, r.difference].map(
+                        (v, i) => (
+                          <td key={i}>
+                            <bdi>{v}</bdi>
+                          </td>
+                        ),
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p role="alert">مبالغ ردیف‌ها معتبر نیستند.</p>
+            )}
+          </DialogContent>
+        </Dialog>
         <AccountingDocumentStatement
           book={book}
           journalId={journalId}
@@ -537,7 +588,16 @@ export function AccountingJournalLines({
                 'شرح',
                 'بدهکار',
                 'بستانکار',
-                ...(currencyVisible ? ['ارز', 'نرخ ارز', 'مبلغ ارز'] : []),
+                ...(currencyVisible
+                  ? [
+                      'ارز',
+                      'ارز مبنا',
+                      'نرخ ارز',
+                      'مبلغ ارز',
+                      'نرخ تبدیل ارز',
+                      'مبلغ به ارز مبنا',
+                    ]
+                  : []),
                 'شماره پیگیری',
                 'تاریخ پیگیری',
                 'شرح به زبان دوم',
@@ -553,6 +613,7 @@ export function AccountingJournalLines({
           </thead>
           <tbody>
             {rows.map((row, index) => {
+              const conversion = baseFigures(row, book.book);
               const chosen = book.accounts.find(
                 (item) => item.id === row.accountId,
               );
@@ -612,7 +673,9 @@ export function AccountingJournalLines({
                       value={row.accountId ?? ''}
                       options={book.accounts
                         .filter(
-                          (item) => item.active && item.level === 'SUBSIDIARY',
+                          (item) =>
+                            (item.active || item.id === row.accountId) &&
+                            item.level === 'SUBSIDIARY',
                         )
                         .map((item) => ({
                           value: item.id,
@@ -744,6 +807,7 @@ export function AccountingJournalLines({
                           }
                         />
                       </td>
+                      <td className={td}>{book.book.baseCurrency}</td>
                       <td className={td}>
                         <SearchCombobox
                           label={`نرخ ارز ردیف ${index + 1}`}
@@ -783,6 +847,12 @@ export function AccountingJournalLines({
                             })
                           }
                         />
+                      </td>
+                      <td className={td}>
+                        <bdi>{conversion.rate ?? '—'}</bdi>
+                      </td>
+                      <td className={td}>
+                        <bdi>{conversion.amount}</bdi>
                       </td>
                     </>
                   ) : null}

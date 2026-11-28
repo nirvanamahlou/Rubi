@@ -55,12 +55,39 @@ export async function documentFigures(
       clauses.map((clause) => Prisma.sql`(${clause})`),
       ' AND ',
     );
-    const page = Number(query.page ?? 1);
+    const exporting = query.export === 'true';
+    const pageSize = exporting ? 10000 : 50;
+    const page = exporting ? 1 : Number(query.page ?? 1);
+    const search = v.text(query.search, 160);
+    // Filter the displayed movement after calculating the running account balance.
+    const movements = Prisma.sql`WITH movements AS (
+      SELECT l.id, j.id AS "journalId", l.position, j.reference, j.number, j."documentDate",
+        l.description, l.debit, l.credit,
+        ROW_NUMBER() OVER w AS ordinal, SUM(l.debit-l.credit) OVER w AS balance
+      FROM accounting_journal_lines l JOIN accounting_journals j ON j.id=l."journalId"
+      WHERE ${where}
+      WINDOW w AS (ORDER BY j."documentDate", j.number NULLS LAST, j."createdAt", j.id, l.position, l.id)
+    )`;
+    const filters: Prisma.Sql[] = [];
+    if (search) {
+      const numeric = search
+        .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+        .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+      filters.push(Prisma.sql`(strpos(description,${search})>0 OR strpos(reference,${search})>0
+        OR strpos(reference,${numeric})>0 OR number::text=${numeric} OR "documentDate"=${numeric})`);
+    }
+    if (query.documentDate)
+      filters.push(Prisma.sql`"documentDate"=${v.date(query.documentDate)!}`);
+    const matching = filters.length
+      ? Prisma.sql`WHERE ${Prisma.join(filters, ' AND ')}`
+      : Prisma.empty;
     if (!Number.isSafeInteger(page) || page < 1 || page > 10000)
       v.invalid('صفحه معتبر نیست.');
     const rows = await tx.$queryRaw<
       {
         id: string;
+        journalId: string;
+        position: number;
         reference: string | null;
         number: number | null;
         documentDate: string;
@@ -69,11 +96,8 @@ export async function documentFigures(
         credit: Prisma.Decimal;
         balance: Prisma.Decimal;
       }[]
-    >(Prisma.sql`SELECT l.id,j.reference,j.number,j."documentDate",l.description,l.debit,l.credit,
-      SUM(l.debit-l.credit) OVER (ORDER BY j."documentDate",j.number NULLS LAST,j."createdAt",j.id,l.position,l.id) AS balance
-      FROM accounting_journal_lines l JOIN accounting_journals j ON j.id=l."journalId"
-      WHERE ${where} ORDER BY j."documentDate",j.number NULLS LAST,j."createdAt",j.id,l.position,l.id
-      LIMIT 50 OFFSET ${(page - 1) * 50}`);
+    >(Prisma.sql`${movements} SELECT id,"journalId",position,reference,number,"documentDate",description,debit,credit,balance
+      FROM movements ${matching} ORDER BY ordinal LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`);
     const sums = await tx.$queryRaw<
       {
         total: bigint;
@@ -81,12 +105,15 @@ export async function documentFigures(
         credit: Prisma.Decimal | null;
         balance: Prisma.Decimal | null;
       }[]
-    >(Prisma.sql`SELECT COUNT(*) AS total,SUM(l.debit) AS debit,SUM(l.credit) AS credit,SUM(l.debit-l.credit) AS balance
-      FROM accounting_journal_lines l JOIN accounting_journals j ON j.id=l."journalId" WHERE ${where}`);
+    >(
+      Prisma.sql`${movements} SELECT COUNT(*) AS total,SUM(debit) AS debit,SUM(credit) AS credit,SUM(debit-credit) AS balance FROM movements ${matching}`,
+    );
     const sum = sums[0]!;
+    if (exporting && Number(sum.total) > pageSize)
+      v.rule('برای خروجی، محدوده گردش حساب را کوچک‌تر کنید.');
     return {
       page,
-      pageSize: 50,
+      pageSize,
       total: Number(sum.total),
       totals: {
         debit: sum.debit?.toString() ?? '0',
@@ -107,6 +134,9 @@ export async function documentFigures(
     clauses.map((clause) => Prisma.sql`(${clause})`),
     ' AND ',
   );
+  const periodScope = query.periodId
+    ? Prisma.sql` AND j."periodId"=${v.uuid(query.periodId)!}::uuid`
+    : Prisma.empty;
   const amount = Prisma.sql`CASE WHEN COALESCE(l.currency,${book.baseCurrency})=${book.baseCurrency} THEN l.debit+l.credit ELSE COALESCE(l."foreignAmount",0) END`;
   const rows = await tx.$queryRaw<
     {
@@ -121,7 +151,7 @@ export async function documentFigures(
     SUM(CASE WHEN l.credit>0 THEN ${amount} ELSE 0 END) AS credit,
     SUM(CASE WHEN l.debit>0 THEN ${amount} ELSE -${amount} END) AS balance
     FROM accounting_journal_lines l JOIN accounting_journals j ON j.id=l."journalId"
-    WHERE ${where} GROUP BY 1,2
+    WHERE ${where} ${periodScope} GROUP BY 1,2
     ORDER BY j."periodId",currency`);
   return {
     rows: rows.map((row) => ({

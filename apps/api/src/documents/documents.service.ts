@@ -1617,6 +1617,25 @@ export class DocumentsService {
       : this.download(id, scoped, metadata);
   }
 
+  financialJournalAttachmentIds(
+    branchId: string,
+    journalIds: string[],
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      !journalIds.length ||
+      !actor.branchIds.includes(branchId) ||
+      !actor.permissions.includes('documents.list') ||
+      !actor.permissions.includes('documents.finance.read')
+    )
+      return new Set<string>();
+    return this.repository.financialJournalAttachmentIds(
+      branchId,
+      journalIds,
+      actor.permissions.includes('documents.sensitive.read'),
+    );
+  }
+
   async list(query: DocumentListQueryV1, actor: AuthenticatedActor) {
     const sourceReference = [
       query.sourceModule,

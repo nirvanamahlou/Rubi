@@ -362,11 +362,11 @@ function Rule({
                     .map((c) => ({ value: c.id, label: c.title }))
                 : rule.field === 'status'
                   ? [
-                      { value: 'MEMORANDUM', label: 'ثبت یادداشت' },
-                      { value: 'DRAFT', label: 'ثبت موقت' },
-                      { value: 'PENDING_APPROVAL', label: 'در انتظار بررسی' },
+                      { value: 'MEMORANDUM', label: 'یادداشت' },
+                      { value: 'DRAFT', label: 'موقت' },
+                      { value: 'PENDING_APPROVAL', label: 'در حال بررسی' },
                       { value: 'APPROVED', label: 'بررسی شده' },
-                      { value: 'POSTED', label: 'قطعی' },
+                      { value: 'POSTED', label: 'قطعی شده' },
                       { value: 'CANCELLED', label: 'حذف شده' },
                     ]
                   : kind === 'boolean'

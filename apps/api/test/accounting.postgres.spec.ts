@@ -2620,7 +2620,10 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
         },
       ],
     };
-    await command('journal-document-save', header);
+    const source = await command<AccountingJournalV1>(
+      'journal-document-save',
+      header,
+    );
     await command('journal-memorandum-save', {
       ...header,
       lines: [{ accountId: account.id, debit: '900', credit: '0' }],
@@ -2645,7 +2648,11 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
       totals: { balance: string };
     };
     expect(result.total).toBe(1);
-    expect(result.rows[0]?.debit).toBe('30');
+    expect(result.rows[0]).toMatchObject({
+      journalId: source.id,
+      id: source.lines[0]!.id,
+      debit: '30',
+    });
     expect(result.rows[0]?.balance).toBe('30');
     expect(result.totals.balance).toBe('30');
     const fx = (await service.analyticalReport(
@@ -2664,6 +2671,43 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
         balance: string;
       }[];
     };
+    const next = await command<AccountingJournalV1>('journal-document-save', {
+      ...header,
+      documentDate: '2026-01-06',
+      lines: header.lines.map((line) => ({
+        ...line,
+        description: 'Second movement',
+      })),
+    });
+    const filtered = await service.analyticalReport(
+      bookId,
+      'document-turnover',
+      {
+        accountId: account.id,
+        periodId,
+        level: '3',
+        search: 'Second movement',
+        documentDate: '2026-01-06',
+        export: 'true',
+      },
+      { ...maker, permissions: [...maker.permissions, 'finance.export'] },
+    );
+    expect(filtered).toMatchObject({
+      total: 1,
+      totals: { debit: '30' },
+      rows: [{ journalId: next.id, id: next.lines[0]!.id, balance: '60' }],
+    });
+    await expect(
+      service.analyticalReport(
+        bookId,
+        'document-turnover',
+        { accountId: account.id, periodId, export: 'true' },
+        {
+          ...maker,
+          permissions: maker.permissions.filter((p) => p !== 'finance.export'),
+        },
+      ),
+    ).rejects.toThrow();
     expect(fx.rows).toHaveLength(1);
     expect(fx.rows[0]).toMatchObject({
       currency: 'IRR',

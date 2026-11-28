@@ -1,12 +1,14 @@
 import { ForbiddenException } from '@nestjs/common';
 import type { ModuleRef } from '@nestjs/core';
 import type { AuthenticatedActor } from '@nora/contracts';
+import { HrDirectoryService } from '../hr/hr-directory.service';
 import { AccountingService } from '../finance/accounting/accounting.service';
 import { MarketingRecordsService } from '../marketing/marketing-records.service';
 import { ProcurementService } from '../procurement/procurement.service';
 import { dashboardCalendarRangeStart } from './reporting-dashboard-calendar';
 
 export const noraInventoryMetrics = new Set([
+  'active-employee-count',
   'accounting-books',
   'active-marketing-campaigns',
   'procurement-request-count',
@@ -34,6 +36,12 @@ export async function readNoraOwnerMetric(
   actor: AuthenticatedActor,
   now: Date,
 ) {
+  if (id === 'active-employee-count') {
+    const total = await modules
+      .get(HrDirectoryService, { strict: false })
+      .countActiveEmployees(actor);
+    return { total, companyScoped: false };
+  }
   if (id === 'active-marketing-campaigns') {
     const { total } = await modules
       .get(MarketingRecordsService, { strict: false })

@@ -1,3 +1,7 @@
+## LEDGER-VOUCHERS-1128 — PC-D — REVIEW
+
+Ledger document forms, voucher list presets, authorized attachment indicators, print, and source-linked turnover. The Documents owner supplies a batch presence lookup. The additive optional journal field preserves existing consumers. Reference gaps and the verified routes are recorded in docs/tasks/LEDGER-VOUCHERS-1128.md.
+
 ## NSS-PAYMENT-COMPANY-SCOPE-1126 — PC-A
 
 Reserve the NSS receipt list company guard, Sales panel visibility and focused regressions. The existing company context determines eligibility in Web and API. The completed NSS receipt tasks supply the unchanged intake and records. Owner authorizes a green `develop` merge. No schema, payment destination or deployment change.
@@ -5,6 +9,10 @@ Reserve the NSS receipt list company guard, Sales panel visibility and focused r
 ## NSS-CONTRACT-PAYMENT-RIAL-1125 — PC-A — REVIEW
 
 Reserve the NSS standalone receipt validation and amount display. Preserve prior receipts and accept any positive whole rial amount within the existing checkout limit. No schema or shared service changes.
+
+## NORA-COLLOQUIAL-SALES-WEEK — PC-C — REVIEW
+
+Reserve sales-period text normalization and its regression test for colloquial possessive suffixes on relative dates. No API, migration, or dependency change.
 
 ## NSS-CONTRACT-PAYMENT-1125 — PC-A — REVIEW
 
@@ -58,6 +66,12 @@ Stage 4, based on #1917. Reserve only the purchase and reservation-report guide 
 
 Stacked on #1907. Reserve the five Stage 3 guide documents, their generated catalogue, bounded pilot retrieval integration, focused tests and acceptance notes. Producer modules are referenced read-only. No migration, dependency, merge or deployment.
 
+## NORA-HISTORICAL-REPORTS-1125 — PC-C — REVIEW
+
+Nora routes dated no-outcome calls and counts of user-created workbench requests through Customer Affairs. Scope includes the existing call drilldown range, the new self-only count endpoint and the assistant source atlas. No migration or dependency changes. Historical Finance settlement remains pending a verified transition source.
+
+PC-C | codex/pc-c-nora-historical-report-integration-1128 | Integrate #1954 with develop ca19a7656 using the current Customer Affairs owner reads, Nora date handling, translations and generated atlas. No runtime or schema difference against develop.
+
 ## NORA-PETTY-CASH-GUIDE-1124 — PC-C — ACTIVE
 
 Reserve Nora petty cash guide, generation, read-only Composer dispatch and focused tests. Reuse native Procurement access and workflows.
@@ -109,6 +123,8 @@ Own the city and country photo fields, geography dialog, additive migration, and
 ## NORA-ERP-FIRST-1124 — PC-C — ACTIVE
 
 Reserve Nora Web routing, supported guide selection, and the assistant sales period parser with focused regressions. Keep producer permissions and APIs unchanged.
+
+PC-C | codex/pc-c-nora-employee-integration-1128 | Integrate #1951 with develop ca19a7656. Scope is the existing HR read metric and regenerated Nora data atlas. No schema or dependency changes.
 
 ## NORA-OPT-IN-EVIDENCE-1124 — PC-C — ACTIVE
 
@@ -13694,6 +13710,10 @@ PC-D — Review saved draft contracts in the reservation document viewer on code
 PC-C | codex/pc-c-nora-owner-reconciliation-1126 | Production report reconciliation follow-up to #1967. Sales supplies optional discount and passenger-row projections. Insurance supplies its nullable contract reference. Finance owns the read-only all-company journal register with existing journal, aggregate-company and branch permissions. Nora consumes those reads and the scoped reservation, purchase, call-center and tour readers. Release tooling verifies the type of the Next.js cache directory. No migration or dependency changes.
 
 The same item covers the authenticated IAM identity read and Web session helper used by the ERP panels. GET /iam/auth/identity returns the current caller's existing LoginResponse projection. Existing login, token rotation and revocation contracts stay in force. Nora distinguishes scope, transport and source-evidence failures.
+
+PC-C | codex/pc-c-nora-sales-period-integration-1128 | Resolve the #1955 project status conflict against develop ca19a7656 and verify the existing sales-period parser and regressions. No schema or dependency changes.
+
+PC-C | codex/pc-c-nora-natural-report-routing-1128 | Reserve Nora Web intent and existing read adapters for historical no-outcome calls, own workbench request counts, and active HR headcount, associated regressions and generated inventory/status. Baseline 202278e53. Reuse owner contracts and preserve Call Center UI. No migration or dependency scope.
 
 PC-C | codex/pc-c-nora-table-guide-1128 | Assistant table and feature dictionary, scoped retrieval, release and production reporting acceptance. No migration.
 

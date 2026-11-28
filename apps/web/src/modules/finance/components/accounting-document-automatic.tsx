@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { defaultVoucherType } from '../accounting-voucher-display';
 import type {
   AccountingJournalV1,
   AccountingLineV1,
@@ -34,12 +35,12 @@ export function AccountingDocumentAutomatic({
   canCreate: boolean;
 }) {
   const [step, setStep] = useState(0);
-  const [showPreview, setShowPreview] = useState(true);
+  const [showPreview, setShowPreview] = useState(false);
   const [head, setHead] = useState({
     templateId: '',
     asOf: '',
     documentDate: '',
-    typeId: '',
+    typeId: defaultVoucherType(book)?.id ?? '',
     description: '',
     descriptionEn: '',
     auxiliaryNumber: '',
@@ -118,7 +119,7 @@ export function AccountingDocumentAutomatic({
       {step === 1 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           <SearchCombobox
-            label="الگو"
+            label="الگو *"
             value={head.templateId}
             disabled={busy}
             options={templates.map((template) => ({
@@ -138,14 +139,14 @@ export function AccountingDocumentAutomatic({
               setPreview(null);
             }}
           />
-          <FormField label="تا تاریخ">
+          <FormField label="تا تاریخ" required>
             <DatePicker
               value={head.asOf}
               onChange={(value) => set('asOf', value)}
               disabled={busy}
             />
           </FormField>
-          <FormField label="شرح">
+          <FormField label="شرح" required>
             <Input
               value={head.description}
               onChange={(event) => set('description', event.target.value)}
@@ -184,7 +185,7 @@ export function AccountingDocumentAutomatic({
               disabled={busy}
             />
           </FormField>
-          <FormField label="تاریخ سند">
+          <FormField label="تاریخ سند" required>
             <DatePicker
               value={head.documentDate}
               onChange={(value) => set('documentDate', value)}
@@ -246,7 +247,13 @@ export function AccountingDocumentAutomatic({
           </DocumentIconAction>
         ) : null}
         <DocumentIconAction
-          label={step === 3 ? 'پایان' : 'ادامه'}
+          label={
+            step === 3
+              ? 'پایان'
+              : step === 2 || (step === 1 && !showPreview)
+                ? 'صدور سند اتوماتیک'
+                : 'ادامه'
+          }
           shortcut="Alt+Enter"
           disabled={
             busy ||
