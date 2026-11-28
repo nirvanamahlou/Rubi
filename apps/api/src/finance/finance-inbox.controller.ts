@@ -101,6 +101,13 @@ export class FinanceInboxController {
     return this.inbox.list(request.actor);
   }
 
+  @Get('reports/sales-receipts')
+  @RequirePermissions('finance.read')
+  @Header('Cache-Control', 'private, no-store')
+  reportSalesReceipts(@Req() request: AuthenticatedRequest) {
+    return this.inbox.salesReceiptRecords(request.actor);
+  }
+
   @Get('inbox/page')
   @RequirePermissions('finance.read')
   @Header('Cache-Control', 'private, no-store')

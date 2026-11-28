@@ -575,47 +575,30 @@ async function loadRecords(
       hasCompany: false,
       rows: rows.map((r) => ({
         id: r.contractId,
+        contractId: r.contractId,
         label: r.contractNumber,
         branch: r.branchId,
       })),
     };
   }
   if (route === '/finance/requests') {
-    const group = subject === 'approvedReceipts' ? 'APPROVED' : 'PENDING';
-    const schema = z.object({
-      page: count,
-      total: count,
-      sources: z.array(z.object({ source: id, connection: id })),
-      items: z.array(z.object({ id, title: id, branchReference: id })),
-    });
-    const all = await collect(async (p) => {
-      const status = group === 'APPROVED' ? 'RECEIPT_CONFIRMED' : 'NEW';
-      const r = schema.parse(
-        await read(
-          '/finance/inbox/page?source=SALES&category=RECEIPT&approvalGroup=' +
-            group +
-            '&status=' +
-            status +
-            '&pageSize=25&page=' +
-            p,
-        ),
-      );
-      if (
-        !r.sources.some(
-          (s) => s.source === 'SALES' && s.connection === 'CONNECTED',
-        )
+    const receipts = z
+      .array(
+        z.object({
+          id,
+          contractId: id,
+          branch: id,
+          label: id,
+          confirmed: z.boolean(),
+        }),
       )
-        throw new Error('FINANCE_SOURCE_UNAVAILABLE');
-      return { data: r.items, page: r.page, total: r.total };
-    });
+      .parse(await read('/finance/reports/sales-receipts'));
     return {
       hasCompany: false,
       hasBranch: true,
-      rows: all.map((r) => ({
-        id: r.id,
-        label: r.title,
-        branch: r.branchReference,
-      })),
+      rows: receipts.filter(
+        (receipt) => receipt.confirmed === (subject === 'approvedReceipts'),
+      ),
     };
   }
   if (subject === 'pettyExpenses') {
@@ -644,7 +627,7 @@ async function loadRecords(
     const rows: Row[] = [];
     for (const branch of branches) {
       const fund = z
-        .object({ currencyCode: id })
+        .object({ id, currencyCode: id })
         .nullable()
         .parse(
           await read(
@@ -652,7 +635,11 @@ async function loadRecords(
           ),
         );
       if (fund)
-        rows.push({ id: branch, label: 'تنخواه ' + fund.currencyCode, branch });
+        rows.push({
+          id: fund.id,
+          label: 'تنخواه ' + fund.currencyCode,
+          branch,
+        });
     }
     return { rows, hasCompany: false, hasBranch: true };
   }

@@ -1071,6 +1071,7 @@
 {"kind":"api-route","id":"apps/api/src/finance/finance-inbox.controller.ts#payingSuppliers","method":"GET","route":"/finance/paying-suppliers","directCalls":["inbox.payingSuppliers"],"module":"finance","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/finance/finance-inbox.controller.ts#history","method":"GET","route":"/finance/transaction-history","directCalls":["inbox.history"],"module":"finance","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/finance/finance-inbox.controller.ts#list","method":"GET","route":"/finance/inbox","directCalls":["inbox.list"],"module":"finance","access":"inventory-only"}
+{"kind":"api-route","id":"apps/api/src/finance/finance-inbox.controller.ts#reportSalesReceipts","method":"GET","route":"/finance/reports/sales-receipts","directCalls":["inbox.salesReceiptRecords"],"module":"finance","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/finance/finance-inbox.controller.ts#page","method":"GET","route":"/finance/inbox/page","directCalls":["inbox.page"],"module":"finance","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/finance/finance-inbox.controller.ts#exportData","method":"GET","route":"/finance/export-data","directCalls":[],"module":"finance","access":"inventory-only"}
 {"kind":"api-route","id":"apps/api/src/finance/finance-inbox.controller.ts#exportXlsx","method":"GET","route":"/finance/export.xlsx","directCalls":[],"module":"finance","access":"inventory-only"}

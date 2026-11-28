@@ -10866,3 +10866,5 @@ PC-C | #1951 combined the employee metric with the current data atlas. Regenerat
 PC-C | Nora now routes supported active employee and historical workbench/call counts to ERP readers before generic planning. Persian month and date ranges retain the inclusive final Tehran day. The call drilldown sends only its documented filter fields. No permission, persistence or Call Center panel changes.
 
 PC-C: Added a 353-table ERP feature dictionary to the Nora data agent. SQL hints are intersected with the caller's native catalog. Live acceptance pending.
+
+PC-C: Nora petty-fund identity regression and structured reader diagnostics implemented; full report parity pending.

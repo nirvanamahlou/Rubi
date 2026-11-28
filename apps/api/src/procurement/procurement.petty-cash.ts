@@ -167,6 +167,7 @@ export function pettyFundDto(
   fund: Prisma.ProcurementPettyFundGetPayload<null>,
 ) {
   return {
+    id: fund.id,
     balance: fund.balance.toString(),
     currencyCode: fund.currencyCode,
     bankName: fund.bankName,

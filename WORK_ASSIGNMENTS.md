@@ -13716,3 +13716,5 @@ PC-C | codex/pc-c-nora-sales-period-integration-1128 | Resolve the #1955 project
 PC-C | codex/pc-c-nora-natural-report-routing-1128 | Reserve Nora Web intent and existing read adapters for historical no-outcome calls, own workbench request counts, and active HR headcount, associated regressions and generated inventory/status. Baseline 202278e53. Reuse owner contracts and preserve Call Center UI. No migration or dependency scope.
 
 PC-C | codex/pc-c-nora-table-guide-1128 | Assistant table and feature dictionary, scoped retrieval, release and production reporting acceptance. No migration.
+
+PC-C | codex/pc-c-nora-report-parity-1128 | Nora reporting source and identity parity | active

@@ -203,3 +203,36 @@ it('checks the authorized scope before reading', async () => {
   expect(result.status).toBe('denied');
   expect(read).not.toHaveBeenCalled();
 });
+it('lists the petty fund identifier separately from its branch', async () => {
+  const question = 'فهرست حساب‌های تنخواه رو بده';
+  const result = await runOwnerRecordReport(
+    question,
+    ownerRecordRequest(question)!,
+    actor,
+    context,
+    vi.fn().mockResolvedValue({ id: 'fund-123', currencyCode: 'IRR' }),
+  );
+  expect(result.text).toContain('fund-123 —');
+  expect(result.text).not.toContain('west —');
+});
+it('lists the receipt source identity from the connected finance queue', async () => {
+  const question = 'فهرست دریافت‌های تأییدشده رو بده';
+  const read = vi.fn().mockResolvedValue([
+    {
+      id: 'payment-1',
+      contractId: 'contract-1',
+      label: 'CNT-1',
+      branch: 'west',
+      confirmed: true,
+    },
+  ]);
+  const answer = await runOwnerRecordReport(
+    question,
+    ownerRecordRequest(question)!,
+    actor,
+    context,
+    read,
+  );
+  expect(answer.text).toContain('payment-1 —');
+  expect(answer.text).not.toContain('sales:payment-1');
+});
