@@ -24,6 +24,14 @@ import type {
   AccountingJournalV1,
   AccountingSnapshotV1,
 } from '@nora/contracts';
+import { journalStates } from '../accounting-voucher-display';
+import {
+  AccountingVoucherPrint,
+  printVouchers,
+} from './accounting-voucher-print';
+import { parseSetupNotes } from './accounting-setup-notes';
+import { AccountingDate } from './accounting-date';
+import { completionJournalHref } from '../accounting-completion-routes';
 import { Input, Textarea } from '@/components/ui/form-controls';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { AccountingButton } from './accounting-operations';
@@ -45,17 +53,11 @@ type Column = {
   kind?: 'number' | 'date' | 'choice';
   sortable?: boolean;
 };
-const statuses: Record<string, string> = {
-  MEMORANDUM: 'ثبت یادداشت',
-  DRAFT: 'ثبت موقت',
-  PENDING_APPROVAL: 'ثبت موقت',
-  APPROVED: 'بررسی شده',
-  POSTED: 'قطعی',
-  CANCELLED: 'حذف شده',
-};
+const statuses: Record<string, string> = journalStates;
 export function AccountingDocumentList({
   book,
   mode = 'list',
+  branch,
   busy,
   run,
   can,
@@ -63,6 +65,7 @@ export function AccountingDocumentList({
 }: {
   book: AccountingSnapshotV1;
   mode?: Mode;
+  branch?: string | undefined;
   busy: boolean;
   run: <T = unknown>(
     action: string,
@@ -87,6 +90,8 @@ export function AccountingDocumentList({
   const [showFilters, setShowFilters] = useState(true);
   const [hidden, setHidden] = useState<string[]>([]);
   const [groupBy, setGroupBy] = useState('');
+  const [view, setView] = useState('all');
+  const [printRows, setPrintRows] = useState<AccountingJournalV1[]>([]);
   const [reviewStatus, setReviewStatus] = useState('DRAFT');
   const [reviewIntent, setReviewIntent] = useState<boolean | null>(null);
   const [reviewReason, setReviewReason] = useState('');
@@ -103,7 +108,13 @@ export function AccountingDocumentList({
       period.endDate >= today,
   );
   const currentPeriod =
-    currentPeriods.length === 1 ? currentPeriods[0] : undefined;
+    book.periods.length === 1
+      ? book.periods[0]?.status === 'OPEN'
+        ? book.periods[0]
+        : undefined
+      : currentPeriods.length === 1
+        ? currentPeriods[0]
+        : undefined;
   const [countVisible, setCountVisible] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
@@ -124,6 +135,16 @@ export function AccountingDocumentList({
     children: [
       filter,
       ...columnFilters,
+      ...(mode === 'list' && view === 'non-memo'
+        ? [
+            {
+              type: 'rule' as const,
+              field: 'status',
+              operator: 'not-equals',
+              value: 'MEMORANDUM',
+            },
+          ]
+        : []),
       ...(mode === 'review' && reviewStatus === 'DRAFT'
         ? [
             {
@@ -165,12 +186,17 @@ export function AccountingDocumentList({
         ? 'APPROVED'
         : '';
   const query = useQuery({
-    enabled: mode !== 'review' || !!currentPeriod,
+    enabled:
+      (mode !== 'review' || !!currentPeriod) &&
+      !(mode === 'list' && view === 'supplementary'),
     queryKey: [
       'accounting',
       'document-list',
       book.book.id,
       mode,
+      currentPeriod?.id,
+      book.periods.map((p) => p.id).join(','),
+      view,
       status,
       page,
       JSON.stringify(condition),
@@ -182,6 +208,10 @@ export function AccountingDocumentList({
       if (mode === 'review' && !currentPeriod)
         throw new Error('دوره جاری باز و یکتا پیدا نشد.');
       return accountingApi.journals(book.book.id, {
+        ...(mode === 'list' || mode === 'review'
+          ? { includeAttachments: 'true' }
+          : {}),
+        ...(mode === 'list' && view === 'editable' ? { editable: 'true' } : {}),
         page: String(page),
         pageSize: '50',
         filter: JSON.stringify(condition),
@@ -213,9 +243,7 @@ export function AccountingDocumentList({
         )
       : onOpen
         ? onOpen(row)
-        : router.push(
-            `/finance/accounting/general-ledger/documents/journals?journalId=${row.id}`,
-          );
+        : router.push(completionJournalHref(book.book.id, row.id));
   const attr = (row: AccountingJournalV1, key: string) =>
     String(row.attributes[key] ?? '');
   const columns: Column[] =
@@ -440,15 +468,13 @@ export function AccountingDocumentList({
             {
               key: 'notes',
               label: 'یادداشت/پیوست',
-              value: (r) => {
-                try {
-                  return JSON.parse(String(r.attributes.notes ?? '[]')).length
-                    ? 'یادداشت'
-                    : '';
-                } catch {
-                  return '';
-                }
-              },
+              value: (r) =>
+                [
+                  parseSetupNotes(r.attributes.notes).length ? 'یادداشت' : '',
+                  r.hasVisibleAttachment ? 'پیوست' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' / '),
             },
           ];
   const visible = columns.filter((column) => !hidden.includes(column.key));
@@ -485,7 +511,13 @@ export function AccountingDocumentList({
           label: currency.label,
         }))
       : key === 'status'
-        ? Object.entries(statuses).map(([value, label]) => ({ value, label }))
+        ? Object.entries(statuses)
+            .filter(([value]) =>
+              mode === 'deleted'
+                ? value === 'CANCELLED'
+                : value !== 'CANCELLED',
+            )
+            .map(([value, label]) => ({ value, label }))
         : key === 'isCurrency'
           ? [
               { value: 'true', label: 'بله' },
@@ -587,6 +619,10 @@ export function AccountingDocumentList({
     try {
       const result = await accountingApi.journals(book.book.id, {
         export: 'true',
+        ...(mode === 'list' || mode === 'review'
+          ? { includeAttachments: 'true' }
+          : {}),
+        ...(mode === 'list' && view === 'editable' ? { editable: 'true' } : {}),
         ...(mode === 'revaluation' ? { sourceKind: 'revaluation' } : {}),
         filter: JSON.stringify(condition),
         status,
@@ -796,6 +832,34 @@ export function AccountingDocumentList({
       </DocumentIconAction>
     </div>
   );
+  const viewPicker = (
+    <select
+      aria-label="نمای فهرست اسناد"
+      value={view}
+      onChange={(e) => {
+        setView(e.target.value);
+        setPage(1);
+        setSelected([]);
+      }}
+    >
+      <option value="all">لیست اسناد</option>
+      <option value="non-memo">لیست اسناد غیر یادداشت</option>
+      <option value="editable" disabled={!can('finance.journal.create')}>
+        لیست اسناد قابل ویرایش
+      </option>
+      <option value="supplementary">لیست اسناد دوره متمم</option>
+    </select>
+  );
+  if (mode === 'list' && view === 'supplementary')
+    return (
+      <section data-accounting-list className="space-y-3">
+        <h2 className="font-bold">فهرست سند حسابداری</h2>
+        {viewPicker}
+        <p role="status">
+          طبقه‌بندی دوره متمم برای اسناد این دفتر تعریف نشده است.
+        </p>
+      </section>
+    );
   return (
     <section
       className="space-y-3"
@@ -811,6 +875,67 @@ export function AccountingDocumentList({
               ? 'فهرست تسعیر ارز'
               : 'فهرست سند حسابداری'}
       </h2>
+      {mode === 'list' && (
+        <div className="flex flex-wrap items-center gap-3">
+          {viewPicker}
+          {can('finance.export') && (
+            <>
+              <button
+                type="button"
+                disabled={selectedRows.length !== 1}
+                onClick={() => setPrintRows(selectedRows)}
+              >
+                چاپ سند
+              </button>
+              <button
+                type="button"
+                disabled={selectedRows.length !== 1}
+                onClick={() => printVouchers(book, selectedRows)}
+              >
+                چاپ مستقیم سند
+              </button>
+              <button
+                type="button"
+                disabled={!selectedRows.length}
+                onClick={() => setPrintRows(selectedRows)}
+              >
+                چاپ گروهی
+              </button>
+            </>
+          )}
+          {can('finance.journal.create') && (
+            <button
+              type="button"
+              disabled={selectedRows.length !== 1}
+              onClick={() => {
+                if (selectedRows[0])
+                  router.push(
+                    '/finance/accounting/general-ledger/documents/journals?' +
+                      new URLSearchParams({
+                        bookId: book.book.id,
+                        copyFrom: selectedRows[0].id,
+                      }),
+                  );
+              }}
+            >
+              کپی سند
+            </button>
+          )}
+          <AccountingVoucherPrint
+            book={book}
+            items={printRows}
+            onClose={() => setPrintRows([])}
+          />
+        </div>
+      )}
+      {mode === 'review' && branch && (
+        <label className="flex items-center gap-2">
+          شعبه
+          <select aria-label="شعبه" value={book.book.branchId} disabled>
+            <option value={book.book.branchId}>{branch}</option>
+          </select>
+        </label>
+      )}
       {mode === 'review' && !currentPeriod ? (
         <p role="alert" className="text-destructive">
           دوره جاری باز و یکتا پیدا نشد.
@@ -863,8 +988,8 @@ export function AccountingDocumentList({
         <DialogContent data-document-shortcut-scope>
           <DialogTitle>حذف اسناد انتخاب‌شده</DialogTitle>
           <p>
-            {selectedRows.length} سند حذف شود؟ اسناد در فهرست اسناد حذف‌شده قابل
-            بازیابی‌اند.
+            {selectedRows.length} سند حذف شود؟ سابقهٔ حذف در فهرست اسناد حذف‌شده
+            نمایش داده می‌شود.
           </p>
           <DocumentIconAction
             label="حذف"
@@ -890,7 +1015,7 @@ export function AccountingDocumentList({
               key={route}
               onClick={() =>
                 router.push(
-                  `/finance/accounting/general-ledger/documents/lists/${route}`,
+                  `/finance/accounting/general-ledger/documents/lists/${route}?bookId=${book.book.id}`,
                 )
               }
             >
@@ -1258,7 +1383,11 @@ function DocumentListRow({
         ) : null}
         {columns.map((column) => (
           <td key={column.key} className="border px-2 py-2 text-right">
-            {column.value(row)}
+            {column.kind === 'date' && column.value(row) ? (
+              <AccountingDate value={column.value(row).slice(0, 10)} />
+            ) : (
+              column.value(row)
+            )}
           </td>
         ))}
       </tr>

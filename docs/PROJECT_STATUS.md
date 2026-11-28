@@ -1,3 +1,7 @@
+## اسناد دفتر کل و گردش آرتیکل — ۷ آذر ۱۴۰۵
+
+مسیر آرتیکل به گردش و سند مبدأ، نماهای فهرست، چاپ، کپی سند، اطلاعات ارزی و سوابق سند با دورهٔ ۱۴۰۵ تطبیق داده شدند. [جزئیات رفتارها و حدود مشاهده](tasks/LEDGER-VOUCHERS-1128.md)
+
 ## Nora colloquial sales periods
 
 The sales evidence route recognizes colloquial possessive suffixes on relative periods, including «فروش هفته پیشمون چقدر بوده». The existing Tehran calendar and authorized sales calculations answer the request. The three focused sales-period tests passed during integration of #1955.

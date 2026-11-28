@@ -32,6 +32,12 @@ export const accountingApi = {
   journalEvents: (id: string, journalId: string) =>
     apiRequest<{
       historicalGap: boolean;
+      workflow?: {
+        id: string;
+        kind: string;
+        reference: string;
+        createdAt: string;
+      } | null;
       events: {
         id: string;
         eventType: 'CREATE' | 'STATUS' | 'MOVE';

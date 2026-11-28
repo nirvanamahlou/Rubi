@@ -9728,5 +9728,6 @@
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
   "version برای ویرایش الزامی است.": "version is required for editing.",
-  "بازهٔ تاریخ درخواست معتبر نیست.": "The request date range is invalid."
+  "بازهٔ تاریخ درخواست معتبر نیست.": "The request date range is invalid.",
+  "برای خروجی، محدوده گردش حساب را کوچک‌تر کنید.": "Narrow the account movement filters before exporting."
 }

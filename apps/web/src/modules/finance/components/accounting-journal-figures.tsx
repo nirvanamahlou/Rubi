@@ -6,6 +6,10 @@ import { ListTree, Coins, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { AccountingLineV1, AccountingSnapshotV1 } from '@nora/contracts';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { DocumentIconAction } from './accounting-document-filter';
+import { FinanceJournalReadView } from './finance-source-references';
+import { DatePicker } from '@/components/ui/date-picker';
+import { AccountingDate } from './accounting-date';
+import { exportAccountingRows } from '../accounting-view-export';
 import { accountingApi } from '../api/accounting-api';
 
 type Figures = {
@@ -15,6 +19,8 @@ type Figures = {
   totals?: { debit: string; credit: string; balance: string };
   rows: {
     id?: string;
+    journalId?: string;
+    position?: number;
     reference?: string | null;
     number?: number | null;
     documentDate?: string;
@@ -30,10 +36,12 @@ export function AccountingJournalFigures({
   book,
   row,
   periodId,
+  canExport,
 }: {
   book: AccountingSnapshotV1;
   row: AccountingLineV1 | undefined;
   periodId: string | undefined;
+  canExport: boolean;
 }) {
   const [kind, setKind] = useState<
     'document-turnover' | 'document-fx-balance' | null
@@ -41,6 +49,65 @@ export function AccountingJournalFigures({
   const [chooseLevel, setChooseLevel] = useState(false);
   const [level, setLevel] = useState(3);
   const [page, setPage] = useState(1);
+  const [term, setTerm] = useState('');
+  const [documentDate, setDocumentDate] = useState('');
+  const [search, setSearch] = useState('');
+  const [group, setGroup] = useState<'' | 'documentDate' | 'journalId'>('');
+  const [detail, setDetail] = useState<Figures['rows'][number] | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState('');
+  const headers = [
+    'شماره عطف',
+    'شماره سند',
+    'تاریخ سند',
+    'شرح',
+    'بدهکار',
+    'بستانکار',
+    'مانده',
+  ];
+  const cells = (r: Figures['rows'][number]) => [
+    r.reference ?? '',
+    String(r.number ?? ''),
+    r.documentDate ?? '',
+    r.description ?? '',
+    r.debit,
+    r.credit,
+    r.balance,
+  ];
+  const request = {
+    accountId: row?.accountId ?? '',
+    level: String(level),
+    page: String(page),
+    search,
+    documentDate,
+    ...(periodId ? { periodId } : {}),
+    ...Object.fromEntries(
+      accountingDetailLevels
+        .filter((n) => n <= level)
+        .map((n) => [`detail${n}Id`, row?.[`detail${n}Id`] ?? '']),
+    ),
+  };
+  const download = async () => {
+    if (!canExport || exporting) return;
+    setExporting(true);
+    setError('');
+    try {
+      const all = await accountingApi.analytical<Figures>(
+        book.book.id,
+        'document-turnover',
+        { ...request, export: 'true' },
+      );
+      const file = await exportAccountingRows(
+        [['گردش حساب'], headers, ...all.rows.map(cells)],
+        'xlsx',
+      );
+      window.setTimeout(() => URL.revokeObjectURL(file.url), 30000);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'خروجی ساخته نشد.');
+    } finally {
+      setExporting(false);
+    }
+  };
   const account = book.accounts.find(
     (account) => account.id === row?.accountId,
   );
@@ -50,6 +117,8 @@ export function AccountingJournalFigures({
       'document-figures',
       book.book.id,
       kind,
+      search,
+      documentDate,
       row?.accountId,
       ...accountingDetailLevels.map((n) => row?.[`detail${n}Id`]),
       periodId,
@@ -59,17 +128,7 @@ export function AccountingJournalFigures({
     enabled:
       !!kind && !!account && (kind !== 'document-turnover' || !!periodId),
     queryFn: () =>
-      accountingApi.analytical<Figures>(book.book.id, kind!, {
-        accountId: account!.id,
-        level: String(level),
-        page: String(page),
-        ...(periodId ? { periodId } : {}),
-        ...Object.fromEntries(
-          accountingDetailLevels
-            .filter((n) => n <= level)
-            .map((n) => [`detail${n}Id`, String(row?.[`detail${n}Id`] ?? '')]),
-        ),
-      }),
+      accountingApi.analytical<Figures>(book.book.id, kind!, request),
   });
   const periodTitle = (id: string | undefined) => {
     const period = book.periods.find((period) => period.id === id);
@@ -81,6 +140,12 @@ export function AccountingJournalFigures({
     );
   };
   const open = (next: NonNullable<typeof kind>, selectedLevel: number) => {
+    setTerm('');
+    setSearch('');
+    setDocumentDate('');
+    setGroup('');
+    setError('');
+    setDetail(null);
     setLevel(selectedLevel);
     setPage(1);
     setChooseLevel(false);
@@ -144,6 +209,60 @@ export function AccountingJournalFigures({
           <DialogTitle>
             {kind === 'document-turnover' ? 'گردش حساب' : 'تراز ارزی'}
           </DialogTitle>
+          {kind === 'document-turnover' && (
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                aria-label="جستجوی گردش حساب"
+                placeholder="شماره سند، عطف، تاریخ یا شرح"
+                className="rounded border px-2"
+                value={term}
+                onChange={(e) => setTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    setPage(1);
+                    setSearch(term.trim());
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setPage(1);
+                  setSearch(term.trim());
+                }}
+              >
+                جستجو
+              </button>
+              <DatePicker
+                aria-label="تاریخ سند"
+                value={documentDate}
+                onChange={(value) => {
+                  setDocumentDate(value);
+                  setPage(1);
+                }}
+              />
+              <select
+                aria-label="گروه بندی"
+                value={group}
+                onChange={(e) => setGroup(e.target.value as typeof group)}
+              >
+                <option value="">بدون گروه‌بندی</option>
+                <option value="documentDate">تاریخ سند</option>
+                <option value="journalId">شماره سند</option>
+              </select>
+              {canExport && (
+                <button
+                  type="button"
+                  disabled={exporting || !query.data?.total}
+                  onClick={() => void download()}
+                >
+                  خروجی اکسل
+                </button>
+              )}
+              {error && <p role="alert">{error}</p>}
+            </div>
+          )}
           {query.error ? (
             <p role="alert" className="text-destructive">
               {query.error.message}
@@ -157,15 +276,7 @@ export function AccountingJournalFigures({
               <thead className="bg-muted/40">
                 <tr>
                   {(kind === 'document-turnover'
-                    ? [
-                        'شماره عطف',
-                        'شماره سند',
-                        'تاریخ سند',
-                        'شرح',
-                        'بدهکار',
-                        'بستانکار',
-                        'مانده',
-                      ]
+                    ? headers
                     : ['ارز', 'بدهکار', 'بستانکار', 'مانده']
                   ).map((label) => (
                     <th key={label} className="border p-2 text-right">
@@ -192,17 +303,31 @@ export function AccountingJournalFigures({
                         </td>
                       </tr>
                     ) : null}
-                    <tr key={item.id ?? `${item.periodId}:${item.currency}`}>
+                    {kind === 'document-turnover' &&
+                      group &&
+                      (!index ||
+                        item[group] !==
+                          query.data?.rows[index - 1]?.[group]) && (
+                        <tr>
+                          <th colSpan={7} className="text-start">
+                            {group === 'journalId' ? (
+                              (item.number ?? '—')
+                            ) : item.documentDate ? (
+                              <AccountingDate value={item.documentDate} />
+                            ) : (
+                              '—'
+                            )}
+                          </th>
+                        </tr>
+                      )}
+                    <tr
+                      key={item.id ?? `${item.periodId}:${item.currency}`}
+                      onDoubleClick={() => {
+                        if (item.journalId) setDetail(item);
+                      }}
+                    >
                       {(kind === 'document-turnover'
-                        ? [
-                            item.reference ?? '',
-                            item.number?.toString() ?? '',
-                            item.documentDate ?? '',
-                            item.description ?? '',
-                            item.debit,
-                            item.credit,
-                            item.balance,
-                          ]
+                        ? cells(item)
                         : [
                             item.currency ?? '',
                             item.debit,
@@ -211,7 +336,24 @@ export function AccountingJournalFigures({
                           ]
                       ).map((value, n) => (
                         <td key={n} className="border p-2">
-                          {value}
+                          {kind === 'document-turnover' &&
+                          n === 1 &&
+                          item.journalId ? (
+                            <button
+                              type="button"
+                              className="text-primary underline"
+                              aria-label={`مشاهده سند ${item.number ?? ''}`}
+                              onClick={() => setDetail(item)}
+                            >
+                              {value || 'مشاهده سند'}
+                            </button>
+                          ) : kind === 'document-turnover' &&
+                            n === 2 &&
+                            item.documentDate ? (
+                            <AccountingDate value={item.documentDate} />
+                          ) : (
+                            value
+                          )}
                         </td>
                       ))}
                     </tr>
@@ -266,6 +408,23 @@ export function AccountingJournalFigures({
               </DocumentIconAction>
             </div>
           ) : null}
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={!!detail}
+        onOpenChange={(open) => {
+          if (!open) setDetail(null);
+        }}
+      >
+        <DialogContent className="max-h-[85vh] max-w-6xl overflow-auto">
+          <DialogTitle>مشاهده سند</DialogTitle>
+          {detail?.journalId && (
+            <FinanceJournalReadView
+              bookId={book.book.id}
+              id={detail.journalId}
+              position={detail.position}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </>

@@ -71,7 +71,15 @@ function Facts({ values }: { values: [string, ReactNode][] }) {
     </dl>
   );
 }
-function Rows({ headers, rows }: { headers: string[]; rows: ReactNode[][] }) {
+function Rows({
+  headers,
+  rows,
+  selectedIndex,
+}: {
+  headers: string[];
+  rows: ReactNode[][];
+  selectedIndex?: number;
+}) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-start text-sm">
@@ -86,7 +94,13 @@ function Rows({ headers, rows }: { headers: string[]; rows: ReactNode[][] }) {
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i}>
+            <tr
+              key={i}
+              aria-current={selectedIndex === i ? 'true' : undefined}
+              className={
+                selectedIndex === i ? 'bg-primary/10 font-semibold' : undefined
+              }
+            >
               {row.map((cell, j) => (
                 <td key={j} className="border p-2 whitespace-pre-wrap">
                   {cell ?? '—'}
@@ -254,9 +268,11 @@ export function FinanceContractReadView({ id }: { id: string }) {
 export function FinanceJournalReadView({
   bookId,
   id,
+  position,
 }: {
   bookId: string;
   id: string;
+  position?: number | undefined;
 }) {
   return (
     <ReadResult<FinanceJournalReadV1>
@@ -282,6 +298,9 @@ export function FinanceJournalReadView({
             ]}
           />
           <Rows
+            selectedIndex={j.lines.findIndex(
+              (line) => line.position === position,
+            )}
             headers={[
               'ردیف',
               'حساب',
