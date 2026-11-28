@@ -215,3 +215,29 @@ it('lists the petty fund identifier separately from its branch', async () => {
   expect(result.text).toContain('fund-123 —');
   expect(result.text).not.toContain('west —');
 });
+it('lists the receipt source identity from the connected finance queue', async () => {
+  const question = 'فهرست دریافت‌های تأییدشده رو بده';
+  const read = vi.fn().mockResolvedValue({
+    page: 1,
+    total: 1,
+    sources: [{ source: 'SALES', connection: 'CONNECTED' }],
+    items: [
+      {
+        id: 'sales:payment-1',
+        sourceReference: 'payment-1',
+        sourceContextReference: 'contract-1',
+        title: 'دریافت',
+        branchReference: 'west',
+      },
+    ],
+  });
+  const answer = await runOwnerRecordReport(
+    question,
+    ownerRecordRequest(question)!,
+    actor,
+    context,
+    read,
+  );
+  expect(answer.text).toContain('payment-1 —');
+  expect(answer.text).not.toContain('sales:payment-1');
+});

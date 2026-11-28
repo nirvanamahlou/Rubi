@@ -575,6 +575,7 @@ async function loadRecords(
       hasCompany: false,
       rows: rows.map((r) => ({
         id: r.contractId,
+        contractId: r.contractId,
         label: r.contractNumber,
         branch: r.branchId,
       })),
@@ -586,7 +587,15 @@ async function loadRecords(
       page: count,
       total: count,
       sources: z.array(z.object({ source: id, connection: id })),
-      items: z.array(z.object({ id, title: id, branchReference: id })),
+      items: z.array(
+        z.object({
+          id,
+          sourceReference: id,
+          sourceContextReference: id,
+          title: id,
+          branchReference: id,
+        }),
+      ),
     });
     const all = await collect(async (p) => {
       const status = group === 'APPROVED' ? 'RECEIPT_CONFIRMED' : 'NEW';
@@ -612,7 +621,8 @@ async function loadRecords(
       hasCompany: false,
       hasBranch: true,
       rows: all.map((r) => ({
-        id: r.id,
+        id: r.sourceReference,
+        contractId: r.sourceContextReference,
         label: r.title,
         branch: r.branchReference,
       })),

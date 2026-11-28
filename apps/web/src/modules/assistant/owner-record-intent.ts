@@ -53,7 +53,7 @@ const subjects = {
   approvedReceipts: ['دریافت های تاییدشده', 'دریافت های تایید شده'],
   pettyExpenses: ['هزینه های تنخواه'],
   pettyFunds: ['حساب های تنخواه'],
-  postedJournals: ['سندهای قطعی حسابداری'],
+  postedJournals: ['سندهای قطعی حسابداری', 'سندهای مالی قطعی'],
   draftJournals: ['سندهای پیش نویس حسابداری'],
   dailyLeave: ['درخواست های مرخصی روزانه'],
   hourlyLeave: ['درخواست های مرخصی ساعتی'],
