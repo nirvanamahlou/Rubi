@@ -1,3 +1,7 @@
+## NSS-PAYMENT-COMPANY-SCOPE-1126 — PC-A
+
+Reserve the NSS receipt list company guard, Sales panel visibility and focused regressions. The existing company context determines eligibility in Web and API. The completed NSS receipt tasks supply the unchanged intake and records. Owner authorizes a green `develop` merge. No schema, payment destination or deployment change.
+
 ## NSS-CONTRACT-PAYMENT-RIAL-1125 — PC-A — REVIEW
 
 Reserve the NSS standalone receipt validation and amount display. Preserve prior receipts and accept any positive whole rial amount within the existing checkout limit. No schema or shared service changes.
@@ -57,10 +61,6 @@ Stacked on #1907. Reserve the five Stage 3 guide documents, their generated cata
 ## NORA-HISTORICAL-REPORTS-1125 — PC-C — REVIEW
 
 Nora routes dated no-outcome calls and counts of user-created workbench requests through Customer Affairs. Scope includes the existing call drilldown range, the new self-only count endpoint and the assistant source atlas. No migration or dependency changes. Historical Finance settlement remains pending a verified transition source.
-
-## NSS-PAYMENT-COMPANY-SCOPE-1126 — PC-A
-
-Reserve the NSS receipt list company guard, Sales panel visibility and focused regressions. The existing company context determines eligibility in Web and API. The completed NSS receipt tasks supply the unchanged intake and records. Owner authorizes a green `develop` merge. No schema, payment destination or deployment change.
 
 PC-C | codex/pc-c-nora-historical-report-integration-1128 | Integrate #1954 with develop ca19a7656 using the current Customer Affairs owner reads, Nora date handling, translations and generated atlas. No runtime or schema difference against develop.
 

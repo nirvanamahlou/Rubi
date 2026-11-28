@@ -1,3 +1,7 @@
+## Niyayesh website receipts and active company
+
+Sales shows standalone Niyayesh website receipts only with Niyayesh Seir Sahar selected. The receipt API requires the same company context alongside existing branch and payment permissions for both listing and contract-number searches.
+
 ## NORA-PRODUCTION-GUIDES-1126 — PC-C
 
 PR #1958 shipped to the primary ERP from develop `6b58d1a20`. All 12 release probes passed. In the original administrator session with All Companies, all 220 replies contained the expected sections, steps and panel links. Comparison with 40 native destinations identified incorrect priority for reservations and HR reports, missing workflow details and a Sales pagination issue. The verified two-week sales export had 32 contracts in the period anchored at 20:52:11 UTC on 25 November. [Production acceptance](assistant/production-acceptance-2026-11-25.md)
@@ -56,10 +60,6 @@ Stage 2 completed its 18 authenticated local browser cases across Sales, Travel 
 ## NORA-HISTORICAL-REPORTS-1125
 
 Nora resolves explicit Persian dates within one named month for counts of no-outcome calls and the signed-in user's visible workbench submissions. Counts use the existing authorized call predicates and the ticket creation timestamp, in Tehran time. Production acceptance is pending.
-
-## Niyayesh website receipts and active company
-
-Sales shows standalone Niyayesh website receipts only with Niyayesh Seir Sahar selected. The receipt API requires the same company context alongside existing branch and payment permissions for both listing and contract-number searches.
 
 The original #1954 CI failure was the English UI completeness test. The current develop already includes the historical report implementation and translation fixes. All six focused translation and historical-period tests passed on the integrated tree.
 
