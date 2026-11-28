@@ -1,3 +1,4 @@
+import { rollingSalesFilter } from './assistant-agent/rolling-sales';
 import { captureSalesContractAccounting } from '../finance/accounting/sales-contract-accounting.public';
 import { readReservationReportingCancellations } from '../reservations/reservation-reporting-cancellations.public';
 import {
@@ -409,6 +410,9 @@ export class SalesRepository {
     const where: Prisma.SalesContractWhereInput = {
       AND: [
         whereScope,
+        ...(query.salesPeriodAsOf !== undefined
+          ? [rollingSalesFilter(query.salesPeriodAsOf)]
+          : []),
         query.search
           ? {
               OR: [
@@ -458,7 +462,9 @@ export class SalesRepository {
         query.destinationId ? { destinationId: query.destinationId } : {},
         query.status
           ? { status: query.status }
-          : { status: { not: 'CANCELLED' } },
+          : query.recordSet === 'REGISTERED'
+            ? {}
+            : { status: { not: 'CANCELLED' } },
         query.settlementStatus
           ? { settlementStatus: query.settlementStatus }
           : {},
@@ -497,7 +503,7 @@ export class SalesRepository {
           : {},
       ],
     };
-    if (query.status !== 'CANCELLED') {
+    if (query.status !== 'CANCELLED' && query.recordSet !== 'REGISTERED') {
       // Reservations cancellation is independent of Sales status. Resolve the
       // latest intake/workflow before pagination, counts and Excel export.
       const candidates = await this.database.client.salesContract.findMany({
@@ -525,10 +531,14 @@ export class SalesRepository {
     );
     const sortBy = query.sortBy ?? 'updatedAt';
     const sortDirection = query.sortDirection ?? 'desc';
+    const listInclude = {
+      ...salesDetailInclude,
+      legalEntity: { select: { id: true, persianName: true } },
+    } as const;
     if (exportLimit) {
       const data = await this.database.client.salesContract.findMany({
         where,
-        include: salesDetailInclude,
+        include: listInclude,
         orderBy: [{ [sortBy]: sortDirection }, { id: 'asc' }],
         take: exportLimit + 1,
       });
@@ -537,8 +547,8 @@ export class SalesRepository {
     const [data, total] = await Promise.all([
       this.database.client.salesContract.findMany({
         where,
-        include: salesDetailInclude,
-        orderBy: { [sortBy]: sortDirection },
+        include: listInclude,
+        orderBy: [{ [sortBy]: sortDirection }, { id: 'asc' }],
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),

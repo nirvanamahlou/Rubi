@@ -75,6 +75,32 @@ function setup(companyScope?: ContractCompanyScope) {
   return { service, contract, sales, repo, customers, legal, iam };
 }
 describe('Sales saved output authorization', () => {
+  it.each(['DRAFT', 'PENDING_CONFIRMATION'] as const)(
+    'previews %s in Reservations without enabling final output',
+    async (status) => {
+      const t = setup();
+      t.contract.status = status;
+      const viewer: AuthenticatedActor = {
+        ...actor,
+        permissions: [...actor.permissions, 'reservations.read'],
+      };
+      await expect(t.service.prepare('contract', viewer)).rejects.toThrow();
+      await expect(
+        t.service.prepare('contract', actor, undefined, true),
+      ).rejects.toThrow();
+      await expect(
+        t.service.prepare(
+          'contract',
+          { ...viewer, branchIds: [] },
+          undefined,
+          true,
+        ),
+      ).rejects.toThrow();
+      await expect(
+        t.service.prepare('contract', viewer, undefined, true),
+      ).resolves.toMatchObject({ data: { contract: { status } } });
+    },
+  );
   it('uses the saved contract issuer even when another company is selected', async () => {
     const owner = vi.fn().mockResolvedValue({ id: 'company' });
     const t = setup({ owner } as unknown as ContractCompanyScope);

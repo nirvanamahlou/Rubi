@@ -1,96 +1,92 @@
-export const OPENAI_MODEL = 'gpt-6.2-sol';
-export const OPENAI_ENDPOINT = 'https://api.openai.com/v1/responses';
+export const OPENAI_MODEL = 'gpt-6.1-sol';
+export const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 
-export function responsesRequest(body, effort = 'medium') {
-  const input = body.messages.flatMap((message) => {
-    if (message.role === 'tool') {
-      return [
-        {
-          type: 'function_call_output',
-          call_id: message.tool_call_id,
-          output: message.content,
+// Sol supports strict structured output on this endpoint. Express only the
+// tools offered for this step, with the same arguments as the server dispatcher.
+function toolSelectionFormat(body) {
+  const forced = body.tool_choice?.function?.name;
+  const choices = body.tools
+    .filter((tool) => !forced || tool.function.name === forced)
+    .map(({ function: { name, parameters } }) => ({
+      type: 'object',
+      properties: {
+        name: { type: 'string', enum: [name] },
+        arguments: {
+          ...parameters,
+          required: Object.keys(parameters.properties),
         },
-      ];
-    }
-    const items = message.content
-      ? [{ role: message.role, content: message.content }]
-      : [];
-    for (const call of message.tool_calls ?? []) {
-      items.push({
-        type: 'function_call',
-        call_id: call.id,
-        name: call.function.name,
-        arguments: call.function.arguments,
-      });
-    }
-    return items;
-  });
-  const schema = body.response_format?.json_schema;
+      },
+      required: ['name', 'arguments'],
+      additionalProperties: false,
+    }));
   return {
-    model: OPENAI_MODEL,
-    input,
-    store: false,
-    reasoning: { effort },
-    max_output_tokens: body.max_completion_tokens,
-    ...(schema
-      ? { text: { format: { type: 'json_schema', ...schema } } }
-      : {
-          tools: body.tools.map(({ function: definition }) => ({
-            type: 'function',
-            ...definition,
-            strict: definition.strict ?? false,
-          })),
-          tool_choice:
-            typeof body.tool_choice === 'string'
-              ? body.tool_choice
-              : { type: 'function', name: body.tool_choice.function.name },
-          parallel_tool_calls: false,
-        }),
+    type: 'json_schema',
+    json_schema: {
+      name: 'nora_tool_selection',
+      strict: true,
+      schema: {
+        type: 'object',
+        properties: { call: { anyOf: choices } },
+        required: ['call'],
+        additionalProperties: false,
+      },
+    },
   };
 }
 
-// Translate only completed, recognized outputs into the existing validators.
-export function responsesResult(result) {
-  const output = result?.output;
-  if (result?.status !== 'completed' || !Array.isArray(output)) return {};
-  const calls = [];
-  const texts = [];
-  for (const item of output) {
-    if (item.type === 'reasoning') continue;
-    if (item.type === 'function_call' && item.status === 'completed') {
-      calls.push({
-        id: item.call_id,
-        type: 'function',
-        function: { name: item.name, arguments: item.arguments },
-      });
-    } else if (
-      item.type === 'message' &&
-      item.role === 'assistant' &&
-      item.status === 'completed' &&
-      Array.isArray(item.content) &&
-      item.content.every(
-        (part) => part.type === 'output_text' && typeof part.text === 'string',
-      )
-    ) {
-      texts.push(...item.content.map((part) => part.text));
-    } else {
-      return {};
-    }
-  }
-  const usage = result.usage;
+export function openaiChatRequest(body, effort = 'medium') {
   return {
+    model: OPENAI_MODEL,
+    messages: body.messages,
+    max_completion_tokens: body.max_completion_tokens,
+    reasoning_effort: effort,
+    store: false,
+    response_format: body.response_format ?? toolSelectionFormat(body),
+  };
+}
+
+export function openaiToolSelection(result, offered) {
+  const choices = result?.choices;
+  if (choices?.length !== 1) return {};
+  const [{ finish_reason, message }] = choices;
+  if (
+    finish_reason !== 'stop' ||
+    message?.refusal ||
+    typeof message?.content !== 'string'
+  )
+    return {};
+  let call;
+  try {
+    ({ call } = JSON.parse(message.content));
+  } catch {
+    return {};
+  }
+  if (
+    !call ||
+    !offered.some((t) => t.function.name === call.name) ||
+    !call.arguments ||
+    typeof call.arguments !== 'object' ||
+    Array.isArray(call.arguments)
+  )
+    return {};
+  return {
+    usage: result.usage,
     choices: [
       {
-        finish_reason: calls.length ? 'tool_calls' : 'stop',
-        message: { content: texts.join(''), tool_calls: calls },
+        finish_reason: 'tool_calls',
+        message: {
+          tool_calls: [
+            {
+              id: 'call_' + crypto.randomUUID(),
+              type: 'function',
+              function: {
+                name: call.name,
+                arguments: JSON.stringify(call.arguments),
+              },
+            },
+          ],
+        },
       },
     ],
-    usage: {
-      total_tokens: usage?.total_tokens,
-      prompt_tokens: usage?.input_tokens,
-      completion_tokens: usage?.output_tokens,
-      prompt_tokens_details: usage?.input_tokens_details,
-      completion_tokens_details: usage?.output_tokens_details,
-    },
   };
 }

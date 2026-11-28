@@ -2,6 +2,10 @@ import {
   createCompositeGuideSelector,
   validateCompositeGuide,
 } from './composite-guide.mjs';
+import {
+  planQuestionParts,
+  validatePlanningRequest,
+} from './question-plan.mjs';
 import { groqConfigurations } from './groq-runtime.mjs';
 import {
   createWorkbenchGuideSelector,
@@ -44,6 +48,7 @@ export function createAssistantServer({
   now = () => new Date(),
   conversation,
   agent,
+  modelPlannerEnabled = process.env.NORA_MODEL_PLANNER_ENABLED === 'true',
   workbenchGuide,
   rateLimitExemptUserIds = requestQuotaExemptions(),
 }) {
@@ -90,6 +95,7 @@ export function createAssistantServer({
       const started = Date.now();
       const deadline = new AbortController();
       const agentRequest = request.url === '/v3/assistant/conversation';
+      const planningRequest = request.url === '/v3/assistant/plan';
       const guideRequest = request.url === '/v1/assistant/workbench-guide';
       const timer = setTimeout(
         () => deadline.abort(),
@@ -101,6 +107,7 @@ export function createAssistantServer({
       const conversationRequest =
         request.url === '/v2/assistant/conversation' ||
         agentRequest ||
+        planningRequest ||
         guideRequest;
       let actorId;
       let action;
@@ -207,6 +214,26 @@ export function createAssistantServer({
             throw new ServiceError(429, 'RATE_LIMITED');
           inFlight++;
           counted = true;
+        }
+        if (planningRequest) {
+          const input = await readMessage(
+            request,
+            deadline.signal,
+            validatePlanningRequest,
+          );
+          const result = await planQuestionParts(input, {
+            agent,
+            enabled: modelPlannerEnabled,
+            signal: deadline.signal,
+            beforeRetry: () => authenticate(cookie, deadline.signal, actorId),
+            consumptionExempt: exemptUsers.has(actorId.toLowerCase()),
+            audit,
+            requestId: correlationId,
+          });
+          await authenticate(cookie, deadline.signal, actorId);
+          outcome = 'SUCCESS';
+          send(200, result);
+          return;
         }
         if (guideRequest) {
           const input = await readMessage(request, deadline.signal, (value) =>

@@ -29,8 +29,11 @@ import {
   type ContractPrintReferences,
 } from '../model/contract-print';
 
-export async function loadContractPrint(id: string) {
-  const { data: output } = await salesApi.output(id);
+export async function loadContractPrint(
+  id: string,
+  reservationPreview = false,
+) {
+  const { data: output } = await salesApi.output(id, reservationPreview);
   const c = output.contract;
   const keys: [MasterDataResource, string][] = [
     ['cities', c.originId],
@@ -105,6 +108,13 @@ export async function loadContractPrint(id: string) {
     async (resource, id) =>
       (await masterDataApi.detail(resource, id, 'sales')).data,
   );
+  if (['DRAFT', 'PENDING_CONFIRMATION'].includes(c.status)) {
+    return {
+      output,
+      html: contractPrintHtml(output, refs, { savedDraft: true }),
+      warnings,
+    };
+  }
   const shared = await readPublicDocumentLink(
     '/sales/contracts/' + encodeURIComponent(id) + '/pdf?format=share',
   );

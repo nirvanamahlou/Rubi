@@ -155,16 +155,17 @@ export class ReservationPassengerFilesService {
     id: string,
     actor: AuthenticatedActor,
     passengerId?: string,
+    mode: true | 'preview' = true,
   ) {
     this.require(actor, ['reservations.read']);
-    const intake = await this.workflow.detail(id, actor.branchIds, true);
+    const intake = await this.workflow.detail(id, actor.branchIds, mode);
     if (passengerId && !intake.snapshot.passengerIds.includes(passengerId))
       throw new NotFoundException('مسافر متعلق به این قرارداد نیست.');
     return intake;
   }
   async passengers(id: string, actor: AuthenticatedActor, traceId?: string) {
     this.require(actor, ['customers.read']);
-    const intake = await this.intake(id, actor);
+    const intake = await this.intake(id, actor, undefined, 'preview');
     const canReadSensitive = actor.permissions.includes(
       'customers.sensitive.read',
     );
@@ -319,7 +320,7 @@ export class ReservationPassengerFilesService {
   }
   async options(id: string, actor: AuthenticatedActor) {
     this.require(actor, ['documents.list']);
-    await this.intake(id, actor);
+    await this.intake(id, actor, undefined, 'preview');
     const result = await this.documents.options(actor);
     return {
       ...result,
@@ -336,7 +337,7 @@ export class ReservationPassengerFilesService {
     actor: AuthenticatedActor,
   ) {
     this.require(actor, ['documents.list']);
-    const intake = await this.intake(id, actor, passengerId);
+    const intake = await this.intake(id, actor, passengerId, 'preview');
     const numericPage = Number(page ?? 1);
     if (
       !Number.isInteger(numericPage) ||

@@ -117,7 +117,24 @@ function queryString(query: SalesContractListQuery): string {
   return parameters.toString();
 }
 
+export type WebsiteContractPayment = {
+  id: string;
+  receiptNumber: string;
+  contractNumber: string;
+  customerName: string;
+  trackingNumber: string;
+  amountRial: string;
+  verifiedAt: string;
+  seller: string;
+};
+
 export const salesApi = {
+  websiteContractPayments(contractNumber: string) {
+    const query = new URLSearchParams({ contractNumber });
+    return request<{ data: WebsiteContractPayment[] }>(
+      `/website-contract-payments?${query}`,
+    );
+  },
   purchaseContext: (id: string) =>
     waitForPurchaseContext(() =>
       request<{ data: ReservationIntakeV1 }>(
@@ -232,6 +249,9 @@ export const salesApi = {
   exportXlsx: (query: SalesContractListQuery) => {
     // Export the applied list filters, never just the visible page or unsubmitted input.
     const filters: SalesContractListQuery = {
+      ...(query.salesPeriodAsOf
+        ? { salesPeriodAsOf: query.salesPeriodAsOf }
+        : {}),
       ...(query.ownerUserId ? { ownerUserId: query.ownerUserId } : {}),
       ...(query.supplyType ? { supplyType: query.supplyType } : {}),
       ...(query.search ? { search: query.search } : {}),
@@ -257,9 +277,9 @@ export const salesApi = {
       true,
     );
   },
-  output: (id: string) =>
+  output: (id: string, reservationPreview = false) =>
     request<{ data: SalesContractOutputV1 }>(
-      `/contracts/${encodeURIComponent(id)}/output`,
+      `/contracts/${encodeURIComponent(id)}/output${reservationPreview ? '?mode=reservation-preview' : ''}`,
     ),
   dashboard: () => request<SalesDashboard>('/dashboard'),
   receivables: (query: SalesReceivablesQuery = {}) =>

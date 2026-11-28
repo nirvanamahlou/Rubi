@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { allowsAssistantReadRequest } from './request-policy';
 describe('Assistant read HTTP boundary', () => {
-  it.each(['query', 'count-breakdown', 'hotel-ranking'])(
+  it.each(['query', 'count-breakdown', 'hotel-ranking', 'rolling-sales'])(
     'permits the authenticated read-only %s command only when enabled',
     (route) => {
       const path = '/api/v1/sales/assistant-agent/' + route;

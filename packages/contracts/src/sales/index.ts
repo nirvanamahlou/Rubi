@@ -280,6 +280,11 @@ export interface SalesPaymentCreateRequest extends SalesPaymentInput {
 }
 
 export interface SalesContractListQuery {
+  reportProjection?: 'PASSENGER_ROWS' | 'DISCOUNT';
+  /** Include historical cancellations when explicitly requesting the register. */
+  recordSet?: 'REGISTERED';
+  /** Confirmed contractual sales during fourteen Tehran days through this cutoff. */
+  salesPeriodAsOf?: string;
   supplyType?: 'ALL' | 'FLOATING' | 'CHARTER' | undefined;
   customerType?: SalesReceivablesQuery['customerType'];
   agencyCustomerId?: string | undefined;
@@ -310,6 +315,10 @@ export interface SalesBalance extends SalesMoney {
 }
 
 export interface SalesContractSummary {
+  passengerRows?: readonly { id: string; displayName: string }[];
+  hasDiscount?: boolean;
+  confirmedAt?: string | null;
+  issuerCompany?: { id: string; persianName: string } | null;
   isFloating?: boolean;
   travelDates?: {
     outbound: { date: string; calendar: 'persian' | 'gregorian' } | null;

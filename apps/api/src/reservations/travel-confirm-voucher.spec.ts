@@ -45,7 +45,16 @@ it('persists confirmation and voucher together and notifies the sales owner in t
     workflow: state,
     salesOwnerUserId: 'owner',
     contractId: 'contract',
-    snapshot: { passengerIds: [], contractNumber: 'DEMO' },
+    snapshot: {
+      passengerIds: [],
+      contractNumber: 'DEMO',
+      hotelSelection: {
+        serviceClientKey: 'hotel-main',
+        hotelId: 'hotel-a',
+        checkInDate: '2026-11-01',
+        checkOutDate: '2026-11-05',
+      },
+    },
   } as unknown as Awaited<ReturnType<TravelWorkflowService['detail']>>);
   const result = await service.update(
     'intake',
@@ -63,6 +72,14 @@ it('persists confirmation and voucher together and notifies the sales owner in t
     } as AuthenticatedActor,
   );
   expect(result.voucherIssued).toBe(true);
+  expect(result.issuedHotelStays).toEqual([
+    {
+      key: 'hotel-main',
+      hotelId: 'hotel-a',
+      checkInDate: '2026-11-01',
+      checkOutDate: '2026-11-05',
+    },
+  ]);
   expect(create).toHaveBeenCalledTimes(1);
   expect(create).toHaveBeenCalledWith(
     expect.objectContaining({

@@ -19,6 +19,30 @@ export const agentResponseSchema = z
     version: z.literal(3),
     status: z.enum(['ANSWER', 'CLARIFY', 'REPLY']),
     text: z.string().min(1).max(6000),
+    reportParts: z
+      .object({
+        summary: z.string().max(6000),
+        contracts: z.string().max(6000).optional(),
+      })
+      .strict()
+      .optional(),
+    reportHref: z
+      .string()
+      .regex(
+        /^\/sales\?salesPeriodAsOf=\d{4}-\d{2}-\d{2}T\d{2}(?:%3A|:)\d{2}(?:%3A|:)\d{2}\.\d{3}Z$/i,
+      )
+      .optional(),
+    reportCoverage: z
+      .object({
+        total: z.number().int().nonnegative(),
+        listed: z.number().int().nonnegative(),
+        missingAmounts: z.number().int().nonnegative(),
+        truncated: z.boolean(),
+        currencyTotalsOmitted: z.boolean(),
+        rowCurrenciesOmitted: z.boolean(),
+      })
+      .strict()
+      .optional(),
     plan: z.array(z.string().max(200)).max(5),
     sources: z
       .array(

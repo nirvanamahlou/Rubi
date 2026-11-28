@@ -1,0 +1,220 @@
+{"id":"role-001","role":"مدیر فروش","question":"قرارداد آژانسو کجا ثبت کنم؟","expectedGuides":["sales/agency"]}
+{"id":"role-002","role":"مدیر فروش","question":"چطور برنامه پرداخت قرارداد رو کامل کنم؟","expectedGuides":["sales/payment"]}
+{"id":"role-003","role":"مدیر فروش","question":"برای قرارداد بلیط پرواز چجوری پرواز انتخاب کنم؟","expectedGuides":["sales/flight"]}
+{"id":"role-004","role":"مدیر فروش","question":"قرارداد ویزا رو چجوری ثبت کنم؟","expectedGuides":["sales/visa"]}
+{"id":"role-005","role":"مدیر فروش","question":"تو قرارداد از کجا بیمه انتخاب کنم؟","expectedGuides":["sales/insurance"]}
+{"id":"role-006","role":"مدیر فروش","question":"تاریخ مسیر قرارداد رو کجا تنظیم کنم؟","expectedGuides":["sales/route"]}
+{"id":"role-007","role":"مدیر فروش","question":"خروجی اکسل قراردادارو چجوری بگیرم؟","expectedGuides":["sales/list"]}
+{"id":"role-008","role":"مدیر فروش","question":"قرارداد رو چجوری پیدا کنم؟","expectedGuides":["sales/list"]}
+{"id":"role-009","role":"مدیر فروش","question":"کمیسیون آژانسی تو قرارداد از کجا میزنن؟","expectedGuides":["sales/commission"]}
+{"id":"role-010","role":"مدیر فروش","question":"بعد ثبت قراردادو چطور پیگیری کنم؟","expectedGuides":["sales/reservation"]}
+{"id":"role-011","role":"مدیر فروش","question":"مرخسی ساعتی رو از کجا ثبت کنم؟","expectedGuides":["workbench/leave-hourly"]}
+{"id":"role-012","role":"مدیر فروش","question":"درخواستامو با کد پیگری کجا ببینم؟","expectedGuides":["workbench/request-status"]}
+{"id":"role-013","role":"مدیر فروش","question":"اصلاح ترددو چجوری ثبت کنم؟","expectedGuides":["workbench/attendance-correction"]}
+{"id":"role-014","role":"مدیر فروش","question":"یه یاداشت با یاداوری چطور بسازم؟","expectedGuides":["workbench/note-checklist"]}
+{"id":"role-015","role":"مدیر فروش","question":"تو تقویم خودم چیزای امروز کجان؟","expectedGuides":["workbench/calendar"]}
+{"id":"role-016","role":"مدیر فروش","question":"مساعده رو چجوری درخواست بدم؟","expectedGuides":["workbench/advance"]}
+{"id":"role-017","role":"مدیر فروش","question":"مرخصی روزانه از کجا بزنم؟","expectedGuides":["workbench/leave-daily"]}
+{"id":"role-018","role":"مدیر فروش","question":"جانشین مرخسی رو کجا بزارم؟","expectedGuides":["workbench/substitute"]}
+{"id":"role-019","role":"مدیر فروش","question":"پیام داخلی رو چطور فوروارد کنم؟","expectedGuides":["workbench/message-search"]}
+{"id":"role-020","role":"مدیر فروش","question":"تو فایلای من چطور فایل پیدا کنم؟","expectedGuides":["workbench/files"]}
+{"id":"role-021","role":"کارشناس فروش","question":"قرارداد جدیو چجوری بزنم؟","expectedGuides":["sales/create"]}
+{"id":"role-022","role":"کارشناس فروش","question":"تخفیف قرارداد و پیش فاکتور کجاس؟","expectedGuides":["sales/price"]}
+{"id":"role-023","role":"کارشناس فروش","question":"قراردادای معطل ارسال رزرو رو چطور پیدا کنم؟","expectedGuides":["sales/list","sales/reservation"]}
+{"id":"role-024","role":"کارشناس فروش","question":"چجور به قرارداد چندتا هتل اضافه کنم؟","expectedGuides":["sales/multi-hotel"]}
+{"id":"role-025","role":"کارشناس فروش","question":"اسم انگلیسی مسافرو کجا بزنم؟","expectedGuides":["sales/passport"]}
+{"id":"role-026","role":"کارشناس فروش","question":"برای قرارداد مدرک پرداخت کجا بذارم؟","expectedGuides":["sales/receipt"]}
+{"id":"role-027","role":"کارشناس فروش","question":"پی دی اف قرارداد از کجا دربیارم؟","expectedGuides":["sales/output"]}
+{"id":"role-028","role":"کارشناس فروش","question":"مسافرا رو چطور به پرواز تخصیس بدم؟","expectedGuides":["sales/allocation"]}
+{"id":"role-029","role":"کارشناس فروش","question":"پیش نویس قرارداد رو چجوری ادامه بدم؟","expectedGuides":["sales/draft"]}
+{"id":"role-030","role":"کارشناس فروش","question":"مبلغ قرارداد ثبت شده رو چجوری اصلح کنم؟","expectedGuides":["sales/correction"]}
+{"id":"role-031","role":"کارشناس فروش","question":"پکیجای روزو کجا ببینم؟","expectedGuides":["workbench/daily-packages"]}
+{"id":"role-032","role":"کارشناس فروش","question":"جلسه های تقویمو از کجا ببینم؟","expectedGuides":["workbench/calendar"]}
+{"id":"role-033","role":"کارشناس فروش","question":"اعلانای خونده نشده رو کجا ببینم؟","expectedGuides":["workbench/notifications"]}
+{"id":"role-034","role":"کارشناس فروش","question":"یادداشت بایگانی رو چجور برگردونم؟","expectedGuides":["workbench/note-organize"]}
+{"id":"role-035","role":"کارشناس فروش","question":"تو کارتابل کجا دلیل رد درخواستو بخونم؟","expectedGuides":["workbench/request-status"]}
+{"id":"role-036","role":"کارشناس فروش","question":"تو میزکار سوابق ترددم کجاس؟","expectedGuides":["workbench/performance"]}
+{"id":"role-037","role":"کارشناس فروش","question":"مرخصی اسعلاجی چجوری ثبت میشه؟","expectedGuides":["workbench/leave-medical"]}
+{"id":"role-038","role":"کارشناس فروش","question":"توی میزکار کجا تنظیمات حسابه؟","expectedGuides":["workbench/account"]}
+{"id":"role-039","role":"کارشناس فروش","question":"مکاتبه داخلی رو چجوری بفرستم؟","expectedGuides":["correspondence/internal-send"]}
+{"id":"role-040","role":"کارشناس فروش","question":"نامه صادره رو چجور چاپ کنم؟","expectedGuides":["correspondence/outgoing-export"]}
+{"id":"role-041","role":"کارشناس رزرواسیون","question":"مانیفست پرواز کجاس چجوری خروجی بگیرم؟","expectedGuides":["reservations/manifest"]}
+{"id":"role-042","role":"کارشناس رزرواسیون","question":"بلیت صادر شده رو چطور پیدا کنم و استردادشو ببینم؟","expectedGuides":["reservations/flight","reservations/cancellation"]}
+{"id":"role-043","role":"کارشناس رزرواسیون","question":"قرار داد رسیده از فروشو چطور بررسی کنم؟","expectedGuides":["reservations/handoff"]}
+{"id":"role-044","role":"کارشناس رزرواسیون","question":"هتل دوم واچرشو کجا چک کنم؟","expectedGuides":["travel-issuance/voucher"]}
+{"id":"role-045","role":"کارشناس رزرواسیون","question":"تو گزارش رزرو استرداد و ابطال رو چطور جدا کنم؟","expectedGuides":["reservation-report/allocation-and-status"]}
+{"id":"role-046","role":"کارشناس رزرواسیون","question":"خروجی اکسل گزارش رزرواسیون از کجا دانلود کنم؟","expectedGuides":["reservation-report/exports"]}
+{"id":"role-047","role":"کارشناس رزرواسیون","question":"شماره PNR قرارداد رو از کجا تو گزارش پیدا کنم؟","expectedGuides":["reservation-report/filters"]}
+{"id":"role-048","role":"کارشناس رزرواسیون","question":"برای هتل نرخ خرید رو کجای رزرو ببینم؟","expectedGuides":["reservations/hotel-rates"]}
+{"id":"role-049","role":"کارشناس رزرواسیون","question":"آخرین اصلاحیه فروش رو تو رزرو کجا چک کنم؟","expectedGuides":["reservations/amendment"]}
+{"id":"role-050","role":"کارشناس رزرواسیون","question":"ایمیل کارگزار تو رزرو کجاس؟","expectedGuides":["reservations/hotel-mail"]}
+{"id":"role-051","role":"کارشناس رزرواسیون","question":"بیمه مسافرتی رو از رزرواسیون چطور چک کنم؟","expectedGuides":["reservations/insurance"]}
+{"id":"role-052","role":"کارشناس رزرواسیون","question":"پرواز رفت و برگشت رو جدا کجا ببینم؟","expectedGuides":["reservations/flight"]}
+{"id":"role-053","role":"کارشناس رزرواسیون","question":"چطور فیلتر صف درخاست رزرواسیون رو بزنم؟","expectedGuides":["reservations/queue"]}
+{"id":"role-054","role":"کارشناس رزرواسیون","question":"چجوری یه هتل رو در پرونده رزرو بررسی کنم؟","expectedGuides":["reservations/hotel"]}
+{"id":"role-055","role":"کارشناس رزرواسیون","question":"مسافر از مانیفست جا مونده کجا چک کنم؟","expectedGuides":["reservations/manifest"]}
+{"id":"role-056","role":"کارشناس رزرواسیون","question":"تو گزارش رزرو فیلتر وضعیت صادرشده کجاس؟","expectedGuides":["reservation-report/filters"]}
+{"id":"role-057","role":"کارشناس رزرواسیون","question":"بازه گزارش رزرواسیون رو چطور بزنم؟","expectedGuides":["reservation-report/dates"]}
+{"id":"role-058","role":"کارشناس رزرواسیون","question":"فرق تاریخ حرکت و صدور تو گزارش رزرو چیه؟","expectedGuides":["reservation-report/date-comparison"]}
+{"id":"role-059","role":"کارشناس رزرواسیون","question":"اختلاف خروجی اکسل و کارت گزارش رزرو رو از کجا چک کنم؟","expectedGuides":["reservation-report/count-difference"]}
+{"id":"role-060","role":"کارشناس رزرواسیون","question":"فهرست قیمت گذاری بلیطو چجوری فیلتر کنم؟","expectedGuides":["flight-pricing/filters"]}
+{"id":"role-061","role":"مدیر رزرواسیون","question":"بیمه مسافرتی رو از رزرواسیون چطور چک کنم؟","expectedGuides":["reservations/insurance"]}
+{"id":"role-062","role":"مدیر رزرواسیون","question":"پرواز رفت و برگشت رو جدا کجا ببینم؟","expectedGuides":["reservations/flight"]}
+{"id":"role-063","role":"مدیر رزرواسیون","question":"چطور فیلتر صف درخاست رزرواسیون رو بزنم؟","expectedGuides":["reservations/queue"]}
+{"id":"role-064","role":"مدیر رزرواسیون","question":"چجوری یه هتل رو در پرونده رزرو بررسی کنم؟","expectedGuides":["reservations/hotel"]}
+{"id":"role-065","role":"مدیر رزرواسیون","question":"مسافر از مانیفست جا مونده کجا چک کنم؟","expectedGuides":["reservations/manifest"]}
+{"id":"role-066","role":"مدیر رزرواسیون","question":"تو گزارش رزرو فیلتر وضعیت صادرشده کجاس؟","expectedGuides":["reservation-report/filters"]}
+{"id":"role-067","role":"مدیر رزرواسیون","question":"بازه گزارش رزرواسیون رو چطور بزنم؟","expectedGuides":["reservation-report/dates"]}
+{"id":"role-068","role":"مدیر رزرواسیون","question":"فرق تاریخ حرکت و صدور تو گزارش رزرو چیه؟","expectedGuides":["reservation-report/date-comparison"]}
+{"id":"role-069","role":"مدیر رزرواسیون","question":"اختلاف خروجی اکسل و کارت گزارش رزرو رو از کجا چک کنم؟","expectedGuides":["reservation-report/count-difference"]}
+{"id":"role-070","role":"مدیر رزرواسیون","question":"فهرست قیمت گذاری بلیطو چجوری فیلتر کنم؟","expectedGuides":["flight-pricing/filters"]}
+{"id":"role-071","role":"مدیر رزرواسیون","question":"مانیفست پرواز کجاس چجوری خروجی بگیرم؟","expectedGuides":["reservations/manifest"]}
+{"id":"role-072","role":"مدیر رزرواسیون","question":"بلیت صادر شده رو چطور پیدا کنم و استردادشو ببینم؟","expectedGuides":["reservations/flight","reservations/cancellation"]}
+{"id":"role-073","role":"مدیر رزرواسیون","question":"قرار داد رسیده از فروشو چطور بررسی کنم؟","expectedGuides":["reservations/handoff"]}
+{"id":"role-074","role":"مدیر رزرواسیون","question":"هتل دوم واچرشو کجا چک کنم؟","expectedGuides":["travel-issuance/voucher"]}
+{"id":"role-075","role":"مدیر رزرواسیون","question":"تو گزارش رزرو استرداد و ابطال رو چطور جدا کنم؟","expectedGuides":["reservation-report/allocation-and-status"]}
+{"id":"role-076","role":"مدیر رزرواسیون","question":"خروجی اکسل گزارش رزرواسیون از کجا دانلود کنم؟","expectedGuides":["reservation-report/exports"]}
+{"id":"role-077","role":"مدیر رزرواسیون","question":"شماره PNR قرارداد رو از کجا تو گزارش پیدا کنم؟","expectedGuides":["reservation-report/filters"]}
+{"id":"role-078","role":"مدیر رزرواسیون","question":"برای هتل نرخ خرید رو کجای رزرو ببینم؟","expectedGuides":["reservations/hotel-rates"]}
+{"id":"role-079","role":"مدیر رزرواسیون","question":"آخرین اصلاحیه فروش رو تو رزرو کجا چک کنم؟","expectedGuides":["reservations/amendment"]}
+{"id":"role-080","role":"مدیر رزرواسیون","question":"ایمیل کارگزار تو رزرو کجاس؟","expectedGuides":["reservations/hotel-mail"]}
+{"id":"role-081","role":"کارشناس مالی","question":"ثپت دریافت مشتری تو مالی کجاس؟","expectedGuides":["finance-delivery/customer-receipt"]}
+{"id":"role-082","role":"کارشناس مالی","question":"تطبیق واریزی مشتری چه جوریه؟","expectedGuides":["finance-delivery/customer-receipt"]}
+{"id":"role-083","role":"کارشناس مالی","question":"معنی مسدود تو تحویل مدارک چیه؟","expectedGuides":["finance-delivery/status"]}
+{"id":"role-084","role":"کارشناس مالی","question":"لغو و صدور مجوز تحویل از کجا انجام میشه؟","expectedGuides":["finance-delivery/issue","finance-delivery/revoke"]}
+{"id":"role-085","role":"کارشناس مالی","question":"استثنا مدیر مجوز تحویل مدارک چجوری میزنن؟","expectedGuides":["finance-delivery/exception"]}
+{"id":"role-086","role":"کارشناس مالی","question":"کدوم دکمه رو برای تسویه کامل مجوز بزنم؟","expectedGuides":["finance-delivery/settlement"]}
+{"id":"role-087","role":"کارشناس مالی","question":"رسید تایید نشده مجوز تحویل میگیره؟ چطور چک کنم؟","expectedGuides":["finance-delivery/receipt"]}
+{"id":"role-088","role":"کارشناس مالی","question":"مانده مطالبات مشتری رو با فیلتر شعبه کجا پیدا کنم؟","expectedGuides":["reporting/receivables"]}
+{"id":"role-089","role":"کارشناس مالی","question":"مطالبات و تحویل مدارک رو از چه گزارشی ببینم؟","expectedGuides":["reporting/receivables","reporting/delivery"]}
+{"id":"role-090","role":"کارشناس مالی","question":"جستجوی شماره قرارداد تو تحویل مدارک کجاس؟","expectedGuides":["finance-delivery/search"]}
+{"id":"role-091","role":"کارشناس مالی","question":"واریزی مشتری ثبت شد کجا مانده حساب رو ببینم؟","expectedGuides":["finance-delivery/customer-receipt"]}
+{"id":"role-092","role":"کارشناس مالی","question":"ثبت شارژ تنخاه چجوریه؟","expectedGuides":["petty-cash/recharge"]}
+{"id":"role-093","role":"کارشناس مالی","question":"تنخواه رو چجوری ببندم؟","expectedGuides":["petty-cash/settlement-policy"]}
+{"id":"role-094","role":"کارشناس مالی","question":"مدرک خرید رو چطور بارگزاری کنم؟","expectedGuides":["documents/upload"]}
+{"id":"role-095","role":"کارشناس مالی","question":"سند بایگونی شده رو کجا پیدا کنم؟","expectedGuides":["documents/archive"]}
+{"id":"role-096","role":"کارشناس مالی","question":"دریافت در انتظار تایید کجای حساب طرفه؟","expectedGuides":["finance-delivery/customer-receipt"]}
+{"id":"role-097","role":"کارشناس مالی","question":"چه جوری حساب مشتری و آژانس رو پیدا کنم؟","expectedGuides":["finance-delivery/customer-receipt"]}
+{"id":"role-098","role":"کارشناس مالی","question":"تاریخ انقضای استثنا مالی کجاس؟","expectedGuides":["finance-delivery/exception"]}
+{"id":"role-099","role":"کارشناس مالی","question":"وضعیت تسویه قرارداد از کجا بررسی میشه؟","expectedGuides":["finance-delivery/settlement"]}
+{"id":"role-100","role":"کارشناس مالی","question":"گزارش مطالبات ارزی رو چجوری بخونم؟","expectedGuides":["reporting/receivables"]}
+{"id":"role-101","role":"مدیر مالی","question":"واریزی مشتری ثبت شد کجا مانده حساب رو ببینم؟","expectedGuides":["finance-delivery/customer-receipt"]}
+{"id":"role-102","role":"مدیر مالی","question":"ثبت شارژ تنخاه چجوریه؟","expectedGuides":["petty-cash/recharge"]}
+{"id":"role-103","role":"مدیر مالی","question":"تنخواه رو چجوری ببندم؟","expectedGuides":["petty-cash/settlement-policy"]}
+{"id":"role-104","role":"مدیر مالی","question":"مدرک خرید رو چطور بارگزاری کنم؟","expectedGuides":["documents/upload"]}
+{"id":"role-105","role":"مدیر مالی","question":"سند بایگونی شده رو کجا پیدا کنم؟","expectedGuides":["documents/archive"]}
+{"id":"role-106","role":"مدیر مالی","question":"دریافت در انتظار تایید کجای حساب طرفه؟","expectedGuides":["finance-delivery/customer-receipt"]}
+{"id":"role-107","role":"مدیر مالی","question":"چه جوری حساب مشتری و آژانس رو پیدا کنم؟","expectedGuides":["finance-delivery/customer-receipt"]}
+{"id":"role-108","role":"مدیر مالی","question":"تاریخ انقضای استثنا مالی کجاس؟","expectedGuides":["finance-delivery/exception"]}
+{"id":"role-109","role":"مدیر مالی","question":"وضعیت تسویه قرارداد از کجا بررسی میشه؟","expectedGuides":["finance-delivery/settlement"]}
+{"id":"role-110","role":"مدیر مالی","question":"گزارش مطالبات ارزی رو چجوری بخونم؟","expectedGuides":["reporting/receivables"]}
+{"id":"role-111","role":"مدیر مالی","question":"ثپت دریافت مشتری تو مالی کجاس؟","expectedGuides":["finance-delivery/customer-receipt"]}
+{"id":"role-112","role":"مدیر مالی","question":"تطبیق واریزی مشتری چه جوریه؟","expectedGuides":["finance-delivery/customer-receipt"]}
+{"id":"role-113","role":"مدیر مالی","question":"معنی مسدود تو تحویل مدارک چیه؟","expectedGuides":["finance-delivery/status"]}
+{"id":"role-114","role":"مدیر مالی","question":"لغو و صدور مجوز تحویل از کجا انجام میشه؟","expectedGuides":["finance-delivery/issue","finance-delivery/revoke"]}
+{"id":"role-115","role":"مدیر مالی","question":"استثنا مدیر مجوز تحویل مدارک چجوری میزنن؟","expectedGuides":["finance-delivery/exception"]}
+{"id":"role-116","role":"مدیر مالی","question":"کدوم دکمه رو برای تسویه کامل مجوز بزنم؟","expectedGuides":["finance-delivery/settlement"]}
+{"id":"role-117","role":"مدیر مالی","question":"رسید تایید نشده مجوز تحویل میگیره؟ چطور چک کنم؟","expectedGuides":["finance-delivery/receipt"]}
+{"id":"role-118","role":"مدیر مالی","question":"مانده مطالبات مشتری رو با فیلتر شعبه کجا پیدا کنم؟","expectedGuides":["reporting/receivables"]}
+{"id":"role-119","role":"مدیر مالی","question":"مطالبات و تحویل مدارک رو از چه گزارشی ببینم؟","expectedGuides":["reporting/receivables","reporting/delivery"]}
+{"id":"role-120","role":"مدیر مالی","question":"جستجوی شماره قرارداد تو تحویل مدارک کجاس؟","expectedGuides":["finance-delivery/search"]}
+{"id":"role-121","role":"کارشناس هوش مصنوعی","question":"شواهد پاسخ نورا رو از کجا ببینم؟","expectedGuides":["nora-sources/evidence"]}
+{"id":"role-122","role":"کارشناس هوش مصنوعی","question":"اگر نورا گزارشو پیدا نکرد چی چک کنم؟","expectedGuides":["nora-sources/troubleshoot"]}
+{"id":"role-123","role":"کارشناس هوش مصنوعی","question":"برا منبع و بازه پاسخ نورا چی تایپ کنم؟","expectedGuides":["nora-sources/evidence"]}
+{"id":"role-124","role":"کارشناس هوش مصنوعی","question":"کجا گزارش عملکرد شعب رو مقایسه کنم؟","expectedGuides":["reporting/branch-sales"]}
+{"id":"role-125","role":"کارشناس هوش مصنوعی","question":"گزارش فروش و رزرواسیون شعب کجاس؟","expectedGuides":["reporting/branch-sales","reporting/branch-reservations"]}
+{"id":"role-126","role":"کارشناس هوش مصنوعی","question":"گزارش مانده مطالبات و تحویل مدارک از کجا؟","expectedGuides":["reporting/receivables","reporting/delivery"]}
+{"id":"role-127","role":"کارشناس هوش مصنوعی","question":"تغییر شرکت فعال رو از کجا بزنم؟","expectedGuides":["nora-sources/company-scope"]}
+{"id":"role-128","role":"کارشناس هوش مصنوعی","question":"تعریف کاربر جدید از کدوم بخشه؟","expectedGuides":["system-management/accounts"]}
+{"id":"role-129","role":"کارشناس هوش مصنوعی","question":"نقش و شعب مجاز کاربر رو کجا ببینم؟","expectedGuides":["system-management/permissions"]}
+{"id":"role-130","role":"کارشناس هوش مصنوعی","question":"چطور پیشنهاد ادغام پرونده مشتری رو ثبت کنم؟","expectedGuides":["b2c/duplicate"]}
+{"id":"role-131","role":"کارشناس هوش مصنوعی","question":"اعتبار موقت آژانس رو چجوری ثبت کنم؟","expectedGuides":["b2b/credit"]}
+{"id":"role-132","role":"کارشناس هوش مصنوعی","question":"هتل رو از کدوم صفحه تعریف کنم؟","expectedGuides":["master-data/hotels"]}
+{"id":"role-133","role":"کارشناس هوش مصنوعی","question":"کشورو از کجا تعریف کنم؟","expectedGuides":["master-data/countries"]}
+{"id":"role-134","role":"کارشناس هوش مصنوعی","question":"قیمت پلکانی پرواز رو چجوری بزنم؟","expectedGuides":["flight-pricing/tiers"]}
+{"id":"role-135","role":"کارشناس هوش مصنوعی","question":"بنر پک رو چطور بگیرم؟","expectedGuides":["package-generator/visual-output"]}
+{"id":"role-136","role":"کارشناس هوش مصنوعی","question":"فایل رو چجوری آپلود کنم و آرشیوشو پیدا کنم؟","expectedGuides":["documents/upload","documents/archive"]}
+{"id":"role-137","role":"کارشناس هوش مصنوعی","question":"استعلام خرید رو از کجا ثبت کنم؟","expectedGuides":["purchase/supplier-quote"]}
+{"id":"role-138","role":"کارشناس هوش مصنوعی","question":"مغایرت خرید رو چجوری ثبت کنم؟","expectedGuides":["purchase/discrepancy"]}
+{"id":"role-139","role":"کارشناس هوش مصنوعی","question":"قیمت پروازو کجا تو سایت منتشر کنم؟","expectedGuides":["flight-pricing/publish"]}
+{"id":"role-140","role":"کارشناس هوش مصنوعی","question":"ارسال پکیج روز رو چطور انجام بدم؟","expectedGuides":["package-generator/daily-publication"]}
+{"id":"role-141","role":"کارشناس ارشد ویزا","question":"پرونده ویزا رو تو کارتابل چجوری پیگیری کنم؟","expectedGuides":["workbench/request-status"]}
+{"id":"role-142","role":"کارشناس ارشد ویزا","question":"نقص مدارک ویزارو کجا تو درخواست داخلی ببینم؟","expectedGuides":["workbench/request-status"]}
+{"id":"role-143","role":"کارشناس ارشد ویزا","question":"درخواست داخلی برا پیگیری ویزا چجوری بفرستم؟","expectedGuides":["workbench/request-create"]}
+{"id":"role-144","role":"کارشناس ارشد ویزا","question":"چطوری بدون کدملی تو چت درخواست ویزامو پیگیری کنم؟","expectedGuides":["workbench/request-status"]}
+{"id":"role-145","role":"کارشناس ارشد ویزا","question":"تو کال سنتر تماس بی نتیجه رو کجا ببینم؟","expectedGuides":["call-center/call-center-outcome"]}
+{"id":"role-146","role":"کارشناس ارشد ویزا","question":"درخواست مشتری رو چجوری ثبت کنم؟","expectedGuides":["customer-affairs/requests"]}
+{"id":"role-147","role":"کارشناس ارشد ویزا","question":"پاپ اپ تماس نیومد چیکار کنم؟","expectedGuides":["call-center/call-center-notification"]}
+{"id":"role-148","role":"کارشناس ارشد ویزا","question":"درخواست تو کارای من نیس چیکار کنم؟","expectedGuides":["call-center/call-center-queue"]}
+{"id":"role-149","role":"کارشناس ارشد ویزا","question":"تیکت رو چطور تشدید کنم؟","expectedGuides":["customer-affairs/ticket-escalation"]}
+{"id":"role-150","role":"کارشناس ارشد ویزا","question":"پرونده مخاطب رو تو کال سنتر کجا ببینم؟","expectedGuides":["call-center/call-center-dossier"]}
+{"id":"role-151","role":"کارشناس ارشد ویزا","question":"مرخسی ساعتی رو از کجا ثبت کنم؟","expectedGuides":["workbench/leave-hourly"]}
+{"id":"role-152","role":"کارشناس ارشد ویزا","question":"درخواستامو با کد پیگری کجا ببینم؟","expectedGuides":["workbench/request-status"]}
+{"id":"role-153","role":"کارشناس ارشد ویزا","question":"اصلاح ترددو چجوری ثبت کنم؟","expectedGuides":["workbench/attendance-correction"]}
+{"id":"role-154","role":"کارشناس ارشد ویزا","question":"یه یاداشت با یاداوری چطور بسازم؟","expectedGuides":["workbench/note-checklist"]}
+{"id":"role-155","role":"کارشناس ارشد ویزا","question":"تو تقویم خودم چیزای امروز کجان؟","expectedGuides":["workbench/calendar"]}
+{"id":"role-156","role":"کارشناس ارشد ویزا","question":"مساعده رو چجوری درخواست بدم؟","expectedGuides":["workbench/advance"]}
+{"id":"role-157","role":"کارشناس ارشد ویزا","question":"مرخصی روزانه از کجا بزنم؟","expectedGuides":["workbench/leave-daily"]}
+{"id":"role-158","role":"کارشناس ارشد ویزا","question":"جانشین مرخسی رو کجا بزارم؟","expectedGuides":["workbench/substitute"]}
+{"id":"role-159","role":"کارشناس ارشد ویزا","question":"پیام داخلی رو چطور فوروارد کنم؟","expectedGuides":["workbench/message-search"]}
+{"id":"role-160","role":"کارشناس ارشد ویزا","question":"تو فایلای من چطور فایل پیدا کنم؟","expectedGuides":["workbench/files"]}
+{"id":"role-161","role":"مدیر منابع انسانی","question":"مرخصی منتظر تایید من تو کارتابل کجاس؟","expectedGuides":["human-resources/requests"]}
+{"id":"role-162","role":"مدیر منابع انسانی","question":"گزارش تردود واحد رو چجوری بگیرم؟","expectedGuides":["human-resources/reports"]}
+{"id":"role-163","role":"مدیر منابع انسانی","question":"ترتیب تایید مدیر و منابع انسانی چیه؟","expectedGuides":["workbench/leave-approval"]}
+{"id":"role-164","role":"مدیر منابع انسانی","question":"کارمند سابق رو کجای منابع انسانی پیدا کنم؟","expectedGuides":["human-resources/employees"]}
+{"id":"role-165","role":"مدیر منابع انسانی","question":"شیفت رد شده از نصفه شب رو از کجا بررسی کنم؟","expectedGuides":["human-resources/time"]}
+{"id":"role-166","role":"مدیر منابع انسانی","question":"تایید مدیر شده چرا مانده مرخسی عوض نشده؟","expectedGuides":["human-resources/requests"]}
+{"id":"role-167","role":"مدیر منابع انسانی","question":"خروجی اکسل کارکنان از کجاس؟","expectedGuides":["human-resources/employees"]}
+{"id":"role-168","role":"مدیر منابع انسانی","question":"کاردکس مرخصی رو چجوری بخونم؟","expectedGuides":["human-resources/leave-balance"]}
+{"id":"role-169","role":"مدیر منابع انسانی","question":"برای اصلاح تردد کدوم کارتابلو باز کنم؟","expectedGuides":["workbench/attendance-correction"]}
+{"id":"role-170","role":"مدیر منابع انسانی","question":"جانشین مرخصی رو کجا چک کنم؟","expectedGuides":["workbench/substitute"]}
+{"id":"role-171","role":"مدیر منابع انسانی","question":"تو منابع انسانی پرونده کارمند کجاس؟","expectedGuides":["human-resources/employees"]}
+{"id":"role-172","role":"مدیر منابع انسانی","question":"فیلتر کارکنان براساس واحد چجوریه؟","expectedGuides":["human-resources/employees"]}
+{"id":"role-173","role":"مدیر منابع انسانی","question":"چجوری بازه گزارش کارکرد رو تنظیم کنم؟","expectedGuides":["human-resources/reports"]}
+{"id":"role-174","role":"مدیر منابع انسانی","question":"گزارش و آدیت منابع انسانی کجاس؟","expectedGuides":["human-resources/reports"]}
+{"id":"role-175","role":"مدیر منابع انسانی","question":"مدارک درخواست مرخصی رو کجا چک کنم؟","expectedGuides":["human-resources/requests"]}
+{"id":"role-176","role":"مدیر منابع انسانی","question":"مرخصی نیازمند اصلاح رو کجا ببینم؟","expectedGuides":["workbench/request-status"]}
+{"id":"role-177","role":"مدیر منابع انسانی","question":"مانده مرخصی چه جوری تو گزارش پیدا میشه؟","expectedGuides":["human-resources/leave-balance"]}
+{"id":"role-178","role":"مدیر منابع انسانی","question":"تجهیزات تحویلی کارمند رو کجا ببینم؟","expectedGuides":["human-resources/assets"]}
+{"id":"role-179","role":"مدیر منابع انسانی","question":"کد پرسنلی رو تو لیست از کجا سرچ کنم؟","expectedGuides":["human-resources/employees"]}
+{"id":"role-180","role":"مدیر منابع انسانی","question":"نظرسنجی تو منابع انسانی کجای منوئه؟","expectedGuides":["human-resources/surveys"]}
+{"id":"role-181","role":"مدیر واحد ثبت‌نشده","question":"مرخسی ساعتی رو از کجا ثبت کنم؟","expectedGuides":["workbench/leave-hourly"]}
+{"id":"role-182","role":"مدیر واحد ثبت‌نشده","question":"درخواستامو با کد پیگری کجا ببینم؟","expectedGuides":["workbench/request-status"]}
+{"id":"role-183","role":"مدیر واحد ثبت‌نشده","question":"اصلاح ترددو چجوری ثبت کنم؟","expectedGuides":["workbench/attendance-correction"]}
+{"id":"role-184","role":"مدیر واحد ثبت‌نشده","question":"یه یاداشت با یاداوری چطور بسازم؟","expectedGuides":["workbench/note-checklist"]}
+{"id":"role-185","role":"مدیر واحد ثبت‌نشده","question":"تو تقویم خودم چیزای امروز کجان؟","expectedGuides":["workbench/calendar"]}
+{"id":"role-186","role":"مدیر واحد ثبت‌نشده","question":"مساعده رو چجوری درخواست بدم؟","expectedGuides":["workbench/advance"]}
+{"id":"role-187","role":"مدیر واحد ثبت‌نشده","question":"مرخصی روزانه از کجا بزنم؟","expectedGuides":["workbench/leave-daily"]}
+{"id":"role-188","role":"مدیر واحد ثبت‌نشده","question":"جانشین مرخسی رو کجا بزارم؟","expectedGuides":["workbench/substitute"]}
+{"id":"role-189","role":"مدیر واحد ثبت‌نشده","question":"پیام داخلی رو چطور فوروارد کنم؟","expectedGuides":["workbench/message-search"]}
+{"id":"role-190","role":"مدیر واحد ثبت‌نشده","question":"تو فایلای من چطور فایل پیدا کنم؟","expectedGuides":["workbench/files"]}
+{"id":"role-191","role":"مدیر واحد ثبت‌نشده","question":"پکیجای روزو کجا ببینم؟","expectedGuides":["workbench/daily-packages"]}
+{"id":"role-192","role":"مدیر واحد ثبت‌نشده","question":"جلسه های تقویمو از کجا ببینم؟","expectedGuides":["workbench/calendar"]}
+{"id":"role-193","role":"مدیر واحد ثبت‌نشده","question":"اعلانای خونده نشده رو کجا ببینم؟","expectedGuides":["workbench/notifications"]}
+{"id":"role-194","role":"مدیر واحد ثبت‌نشده","question":"یادداشت بایگانی رو چجور برگردونم؟","expectedGuides":["workbench/note-organize"]}
+{"id":"role-195","role":"مدیر واحد ثبت‌نشده","question":"تو کارتابل کجا دلیل رد درخواستو بخونم؟","expectedGuides":["workbench/request-status"]}
+{"id":"role-196","role":"مدیر واحد ثبت‌نشده","question":"تو میزکار سوابق ترددم کجاس؟","expectedGuides":["workbench/performance"]}
+{"id":"role-197","role":"مدیر واحد ثبت‌نشده","question":"مرخصی اسعلاجی چجوری ثبت میشه؟","expectedGuides":["workbench/leave-medical"]}
+{"id":"role-198","role":"مدیر واحد ثبت‌نشده","question":"توی میزکار کجا تنظیمات حسابه؟","expectedGuides":["workbench/account"]}
+{"id":"role-199","role":"مدیر واحد ثبت‌نشده","question":"مکاتبه داخلی رو چجوری بفرستم؟","expectedGuides":["correspondence/internal-send"]}
+{"id":"role-200","role":"مدیر واحد ثبت‌نشده","question":"نامه صادره رو چجور چاپ کنم؟","expectedGuides":["correspondence/outgoing-export"]}
+{"id":"role-201","role":"مدیر ارشد مدیریت","question":"شواهد پاسخ نورا رو از کجا ببینم؟","expectedGuides":["nora-sources/evidence"]}
+{"id":"role-202","role":"مدیر ارشد مدیریت","question":"اگر نورا گزارشو پیدا نکرد چی چک کنم؟","expectedGuides":["nora-sources/troubleshoot"]}
+{"id":"role-203","role":"مدیر ارشد مدیریت","question":"برا منبع و بازه پاسخ نورا چی تایپ کنم؟","expectedGuides":["nora-sources/evidence"]}
+{"id":"role-204","role":"مدیر ارشد مدیریت","question":"کجا گزارش عملکرد شعب رو مقایسه کنم؟","expectedGuides":["reporting/branch-sales"]}
+{"id":"role-205","role":"مدیر ارشد مدیریت","question":"گزارش فروش و رزرواسیون شعب کجاس؟","expectedGuides":["reporting/branch-sales","reporting/branch-reservations"]}
+{"id":"role-206","role":"مدیر ارشد مدیریت","question":"گزارش مانده مطالبات و تحویل مدارک از کجا؟","expectedGuides":["reporting/receivables","reporting/delivery"]}
+{"id":"role-207","role":"مدیر ارشد مدیریت","question":"تغییر شرکت فعال رو از کجا بزنم؟","expectedGuides":["nora-sources/company-scope"]}
+{"id":"role-208","role":"مدیر ارشد مدیریت","question":"تعریف کاربر جدید از کدوم بخشه؟","expectedGuides":["system-management/accounts"]}
+{"id":"role-209","role":"مدیر ارشد مدیریت","question":"نقش و شعب مجاز کاربر رو کجا ببینم؟","expectedGuides":["system-management/permissions"]}
+{"id":"role-210","role":"مدیر ارشد مدیریت","question":"چطور پیشنهاد ادغام پرونده مشتری رو ثبت کنم؟","expectedGuides":["b2c/duplicate"]}
+{"id":"role-211","role":"مدیر ارشد مدیریت","question":"ثپت دریافت مشتری تو مالی کجاس؟","expectedGuides":["finance-delivery/customer-receipt"]}
+{"id":"role-212","role":"مدیر ارشد مدیریت","question":"تطبیق واریزی مشتری چه جوریه؟","expectedGuides":["finance-delivery/customer-receipt"]}
+{"id":"role-213","role":"مدیر ارشد مدیریت","question":"معنی مسدود تو تحویل مدارک چیه؟","expectedGuides":["finance-delivery/status"]}
+{"id":"role-214","role":"مدیر ارشد مدیریت","question":"لغو و صدور مجوز تحویل از کجا انجام میشه؟","expectedGuides":["finance-delivery/issue","finance-delivery/revoke"]}
+{"id":"role-215","role":"مدیر ارشد مدیریت","question":"استثنا مدیر مجوز تحویل مدارک چجوری میزنن؟","expectedGuides":["finance-delivery/exception"]}
+{"id":"role-216","role":"مدیر ارشد مدیریت","question":"کدوم دکمه رو برای تسویه کامل مجوز بزنم؟","expectedGuides":["finance-delivery/settlement"]}
+{"id":"role-217","role":"مدیر ارشد مدیریت","question":"رسید تایید نشده مجوز تحویل میگیره؟ چطور چک کنم؟","expectedGuides":["finance-delivery/receipt"]}
+{"id":"role-218","role":"مدیر ارشد مدیریت","question":"مانده مطالبات مشتری رو با فیلتر شعبه کجا پیدا کنم؟","expectedGuides":["reporting/receivables"]}
+{"id":"role-219","role":"مدیر ارشد مدیریت","question":"مطالبات و تحویل مدارک رو از چه گزارشی ببینم؟","expectedGuides":["reporting/receivables","reporting/delivery"]}
+{"id":"role-220","role":"مدیر ارشد مدیریت","question":"جستجوی شماره قرارداد تو تحویل مدارک کجاس؟","expectedGuides":["finance-delivery/search"]}

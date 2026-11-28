@@ -54,7 +54,10 @@ function ContractPrintLoader({
   contractNumber: string;
   onRetry: () => void;
 }) {
-  const [html, setHtml] = useState('');
+  const [preview, setPreview] = useState<{
+    html: string;
+    final: boolean;
+  } | null>(null);
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
   async function download() {
@@ -91,10 +94,15 @@ function ContractPrintLoader({
 
   useEffect(() => {
     let active = true;
-    void loadContractPrint(contractId)
+    void loadContractPrint(contractId, true)
       .then((result) => {
         if (active) {
-          setHtml(result.html);
+          setPreview({
+            html: result.html,
+            final: !['DRAFT', 'PENDING_CONFIRMATION'].includes(
+              result.output.contract.status,
+            ),
+          });
         }
       })
       .catch((reason: unknown) => {
@@ -112,15 +120,17 @@ function ContractPrintLoader({
 
   return (
     <div className={styles.preview}>
-      {!html && !error && <p role="status">در حال ساخت خروجی قرارداد…</p>}
-      <button
-        type="button"
-        onClick={() => void download()}
-        disabled={downloading}
-        className={styles.download}
-      >
-        {downloading ? 'در حال دانلود…' : 'دانلود PDF قرارداد'}
-      </button>
+      {!preview && !error && <p role="status">در حال ساخت خروجی قرارداد…</p>}
+      {preview?.final && (
+        <button
+          type="button"
+          onClick={() => void download()}
+          disabled={downloading}
+          className={styles.download}
+        >
+          {downloading ? 'در حال دانلود…' : 'دانلود PDF قرارداد'}
+        </button>
+      )}
       {error && (
         <div className={styles.error} role="alert">
           <p>
@@ -133,11 +143,11 @@ function ContractPrintLoader({
           </button>
         </div>
       )}
-      {html && (
+      {preview && (
         <>
           <iframe
             title={`قرارداد ${contractNumber}`}
-            srcDoc={html}
+            srcDoc={preview.html}
             sandbox="allow-same-origin allow-modals"
             className={styles.frame}
           />

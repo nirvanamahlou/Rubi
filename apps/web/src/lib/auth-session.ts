@@ -18,6 +18,23 @@ export class SessionRefreshUnavailableError extends Error {
 
 async function requestRefresh(baseUrl: string): Promise<LoginResponse | null> {
   for (let attempt = 0; attempt < 2; attempt += 1) {
+    // Panel identity reads and another tab's completed recovery must leave an
+    // active session intact while an authorized multi-step report is running.
+    const identity = await fetch(`${baseUrl}/iam/auth/identity`, {
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { accept: 'application/json' },
+      signal: AbortSignal.timeout(15_000),
+    }).catch(() => {
+      throw new SessionRefreshUnavailableError();
+    });
+    if (identity.ok) {
+      const session = readIamSessionV1(await identity.json().catch(() => null));
+      if (!session) throw new SessionRefreshUnavailableError();
+      return session;
+    }
+    if (identity.status === 403) return null;
+    if (identity.status !== 401) throw new SessionRefreshUnavailableError();
     const response = await fetch(`${baseUrl}/iam/auth/refresh`, {
       method: 'POST',
       credentials: 'include',

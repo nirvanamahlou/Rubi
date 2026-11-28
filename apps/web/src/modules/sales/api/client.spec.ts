@@ -77,6 +77,7 @@ describe('sales API dashboard connection', () => {
     );
     vi.stubGlobal('fetch', fetch);
     const blob = await salesApi.exportXlsx({
+      salesPeriodAsOf: '2026-11-24T21:00:00.000Z',
       search: 'TRACK',
       settlementStatus: 'UNPAID',
       createdFrom: '2026-09-01',
@@ -86,7 +87,7 @@ describe('sales API dashboard connection', () => {
     });
     expect(await blob.text()).toBe('PK-test');
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:4000/api/v1/sales/contracts/export.xlsx?search=TRACK&settlementStatus=UNPAID&createdFrom=2026-09-01&createdTo=2026-09-30&sortBy=updatedAt&sortDirection=desc',
+      'http://localhost:4000/api/v1/sales/contracts/export.xlsx?salesPeriodAsOf=2026-11-24T21%3A00%3A00.000Z&search=TRACK&settlementStatus=UNPAID&createdFrom=2026-09-01&createdTo=2026-09-30&sortBy=updatedAt&sortDirection=desc',
       expect.objectContaining({ credentials: 'include', cache: 'no-store' }),
     );
   });

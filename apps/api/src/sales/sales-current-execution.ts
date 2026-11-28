@@ -8,6 +8,7 @@ export async function currentSalesExecution(
   tx: Pick<Prisma.TransactionClient, 'salesContract'>,
   snapshot: SalesReservationRequestV1,
   branchIds: readonly string[],
+  previewWebsiteIntake = false,
 ): Promise<SalesReservationRequestV1> {
   const row = await tx.salesContract.findFirst({
     where: { id: snapshot.contractId, branchId: { in: [...branchIds] } },
@@ -16,7 +17,10 @@ export async function currentSalesExecution(
   if (!row) throw new ForbiddenException('قرارداد در دسترس نیست.');
   if (row.status === 'CANCELLED')
     throw new ConflictException('قرارداد ابطال شده است.');
-  if (['DRAFT', 'PENDING_CONFIRMATION'].includes(row.status))
+  if (
+    ['DRAFT', 'PENDING_CONFIRMATION'].includes(row.status) &&
+    !(previewWebsiteIntake && snapshot.requestId === snapshot.contractId)
+  )
     throw new ConflictException('قرارداد برای اصلاح عملیاتی در دسترس نیست.');
   const detail = presentSalesContract(row);
   return {

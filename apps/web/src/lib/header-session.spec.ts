@@ -39,15 +39,35 @@ describe('header session identity', () => {
     const loggedInAt = '2026-09-07T07:32:00.000Z';
 
     expect(rememberHeaderSession(user, loggedInAt, storage)).toEqual({
+      userId: user.id,
       displayName: 'کاربر نمونه',
       loggedInAt,
       roleNames: [],
     });
     expect(readHeaderSession(storage)).toEqual({
+      userId: user.id,
       displayName: 'کاربر نمونه',
       loggedInAt,
       roleNames: [],
     });
+  });
+  it('never supplies another user’s or an unbound legacy header to an authenticated actor', () => {
+    const storage = memoryStorage();
+    rememberHeaderSession(user, undefined, storage);
+    expect(readHeaderSession(storage, 'another-user')).toBeNull();
+    expect(readHeaderSession(storage, user.id)?.displayName).toBe(
+      user.displayName,
+    );
+    storage.setItem(
+      'nora:header-session:v1',
+      JSON.stringify({
+        displayName: 'legacy',
+        loggedInAt: new Date().toISOString(),
+        roleNames: ['former'],
+      }),
+    );
+    expect(readHeaderSession(storage, user.id)).toBeNull();
+    expect(getHeaderRoleLabel(storage, user.id)).toBe('');
   });
 
   it('rejects malformed or incomplete cached values', () => {

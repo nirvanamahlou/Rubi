@@ -100,44 +100,58 @@ export async function readOperationalMetric(
         throw new DOMException('Request aborted', 'AbortError');
       return answer;
     }
-    if (
-      !period ||
-      !('unit' in metric) ||
-      result?.version !== 1 ||
-      result.id !== metric.id ||
-      result.range !== period.range
-    )
-      return 'عدد تأییدشدهٔ این شاخص در دسترس نیست.';
-    if (result.scope === 'aggregate-required')
-      return 'این شاخص در نمای «همه شرکت‌ها» و در محدودهٔ دسترسی شما قابل خواندن است.';
-    const value = result.value;
-    const decimal = '[۰-۹0-9]+(?:٬[۰-۹0-9]{3})*(?:٫[۰-۹0-9]+)?';
-    const money = `${decimal} [A-Z]{3}`;
-    const format = new RegExp(
-      metric.unit
-        ? `^${decimal}$`
-        : `^(?:${/[۰0]/u.source}|${money}(?: · ${money})*)$`,
-      'u',
-    );
-    if (
-      !['organization', 'authorized', 'selected-company'].includes(
-        result.scope,
-      ) ||
-      typeof value !== 'string' ||
-      !format.test(value)
-    )
-      return 'عدد تأییدشدهٔ این شاخص در دسترس نیست.';
-    const scope =
-      result.scope === 'organization'
-        ? 'در کل سازمان'
-        : result.scope === 'selected-company'
-          ? 'در محدودهٔ مجاز شرکت انتخاب‌شده'
-          : 'در محدودهٔ شعب مجاز شما';
-    if (!metric.unit && /^[۰0]$/u.test(value))
-      return `برای «${metric.label}» در ${period.label}، ${scope}، مبلغی ثبت نشده است.`;
-    return `${metric.label} در ${period.label}، ${scope}، **${value}${metric.unit ? ' ' + metric.unit : ''}** است.`;
+    return formatOperationalMetric(request, result);
   } catch (error) {
     if (signal.aborted) throw error;
     return 'دریافت شاخص از ERP ناموفق بود. دوباره تلاش کنید.';
   }
+}
+
+export function formatOperationalMetric(
+  request: OperationalMetricRequest,
+  result: {
+    version?: number;
+    id?: string;
+    range?: string;
+    scope?: string;
+    value?: unknown;
+  } | null,
+) {
+  const { metric, period } = request;
+  if (
+    !period ||
+    !('unit' in metric) ||
+    result?.version !== 1 ||
+    result.id !== metric.id ||
+    result.range !== period.range
+  )
+    return 'عدد تأییدشدهٔ این شاخص در دسترس نیست.';
+  if (result.scope === 'aggregate-required')
+    return 'این شاخص در نمای «همه شرکت‌ها» و در محدودهٔ دسترسی شما قابل خواندن است.';
+  const value = result.value;
+  const decimal = '[۰-۹0-9]+(?:٬[۰-۹0-9]{3})*(?:٫[۰-۹0-9]+)?';
+  const money = `${decimal} [A-Z]{3}`;
+  const format = new RegExp(
+    metric.unit
+      ? `^${decimal}$`
+      : `^(?:${/[۰0]/u.source}|${money}(?: · ${money})*)$`,
+    'u',
+  );
+  if (
+    !['organization', 'authorized', 'selected-company'].includes(
+      result.scope ?? '',
+    ) ||
+    typeof value !== 'string' ||
+    !format.test(value)
+  )
+    return 'عدد تأییدشدهٔ این شاخص در دسترس نیست.';
+  const scope =
+    result.scope === 'organization'
+      ? 'در کل سازمان'
+      : result.scope === 'selected-company'
+        ? 'در محدودهٔ مجاز شرکت انتخاب‌شده'
+        : 'در محدودهٔ شعب مجاز شما';
+  if (!metric.unit && /^[۰0]$/u.test(value))
+    return `برای «${metric.label}» در ${period.label}، ${scope}، مبلغی ثبت نشده است.`;
+  return `${metric.label} در ${period.label}، ${scope}، **${value}${metric.unit ? ' ' + metric.unit : ''}** است.`;
 }

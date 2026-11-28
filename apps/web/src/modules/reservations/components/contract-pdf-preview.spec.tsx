@@ -10,11 +10,8 @@ it('builds the authenticated saved-contract PDF path without mixing request ids'
     <ContractPdfPreview contractId="contract-1" contractNumber="SC-TEST-001" />,
   );
   expect(html).toContain('در حال ساخت خروجی قرارداد');
-  expect(html).toContain('دانلود PDF قرارداد');
+  expect(html).not.toContain('دانلود PDF قرارداد');
   expect(html).toContain('نوتیس قرارداد');
-  expect(html.indexOf('نوتیس قرارداد')).toBeGreaterThan(
-    html.indexOf('دانلود PDF قرارداد'),
-  );
   expect(html).toContain('contract-notice-contract-1');
   expect(html).not.toContain('target="_blank"');
   expect(html).not.toContain('SC-TEST-001');

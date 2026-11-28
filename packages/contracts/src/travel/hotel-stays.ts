@@ -10,16 +10,21 @@ import type {
 } from '../sales';
 
 /** Identities are scoped to the immutable Sales intake snapshot, not hotel names. */
+export function reservationStayKey(
+  primaryKey: string,
+  ordinal: number,
+  hotelId: string,
+) {
+  return ordinal === 1 ? primaryKey : 'hotel-stay:' + ordinal + ':' + hotelId;
+}
+
 export function reservationHotelStays(
   snapshot: Pick<SalesReservationRequestV1, 'hotelSelection'>,
 ) {
   const primary = snapshot.hotelSelection;
   if (!primary) return [];
   return [primary, ...(primary.additionalStays ?? [])].map((stay, index) => ({
-    key:
-      index === 0
-        ? primary.serviceClientKey
-        : 'hotel-stay:' + (index + 1) + ':' + stay.hotelId,
+    key: reservationStayKey(primary.serviceClientKey, index + 1, stay.hotelId),
     ordinal: index + 1,
     hotel:
       index === 0

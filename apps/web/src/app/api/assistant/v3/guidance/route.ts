@@ -1,4 +1,4 @@
-import { canViewRoute } from '@nora/contracts';
+import { canOpenAssistantGuide } from '@/modules/assistant/guide-access';
 import { pilotGuideResponse } from '@/modules/assistant/guide-pilot';
 
 const response = (status: number, data: unknown) =>
@@ -70,8 +70,7 @@ export async function POST(request: Request) {
         input.panel,
         input.previous,
         (href, permission) =>
-          canViewRoute(actor.permissions, href) &&
-          (!permission || actor.permissions.includes(permission)),
+          canOpenAssistantGuide(actor.permissions, href, permission),
       ),
     );
   } catch {
