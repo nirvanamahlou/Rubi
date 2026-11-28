@@ -13,19 +13,54 @@ const views = new Map([
   ['sales_contract_payment_entries', 'payments'],
 ]);
 
+const aliases = {
+  sales_contracts: ['آخرین قرارداد', 'شماره قرارداد', 'قراردادهای فروش'],
+  sales_contract_payment_entries: [
+    'دریافت های تاییدشده',
+    'دریافت های تایید شده',
+    'اقساط قرارداد',
+    'رسید مشتری',
+  ],
+  sales_contract_price_components: [
+    'فروش خالص',
+    'فروش ناخالص',
+    'تخفیف قرارداد',
+  ],
+  reservation_ticket_documents: [
+    'بلیت صادرشده',
+    'بلیت های صادرشده',
+    'بلیت های باطل شده',
+  ],
+  reservation_insurance_policies: ['بیمه نامه', 'بیمه مسافرتی'],
+  hr_employees: ['کارکنان فعال', 'کارکنان سابق', 'پرسنل فعال'],
+  customer_affairs_tickets: ['درخواست کارتابل', 'درخواست های کارتابل'],
+};
+function normalize(text) {
+  return text
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[أإ]/gu, 'ا')
+    .replaceAll('ي', 'ی')
+    .replaceAll('ك', 'ک')
+    .replace(/[\u200c\s]+/gu, ' ')
+    .trim();
+}
 function tokens(text) {
   return new Set(
-    text
-      .normalize('NFKC')
-      .toLowerCase()
-      .replaceAll('ي', 'ی')
-      .replaceAll('ك', 'ک')
+    normalize(text)
       .split(/[^\p{L}\p{N}_]+/u)
-      .map((word) => word.replace(/(?:های|ها)$/u, ''))
+      .map((word) => word.replace(/(?:Ù‡Ø§ÛŒ|Ù‡Ø§)$/u, ''))
       .filter(
         (word) =>
           word.length > 1 &&
-          !['شده', 'برای', 'تعداد', 'چنده', 'های', 'گزارش'].includes(word),
+          ![
+            'Ø´Ø¯Ù‡',
+            'Ø¨Ø±Ø§ÛŒ',
+            'ØªØ¹Ø¯Ø§Ø¯',
+            'Ú†Ù†Ø¯Ù‡',
+            'Ù‡Ø§ÛŒ',
+            'Ú¯Ø²Ø§Ø±Ø´',
+          ].includes(word),
       ),
   );
 }
@@ -38,14 +73,19 @@ const index = cards.map((card) => ({
 
 export function tableGuide(question, sources) {
   const terms = tokens(question);
+  const phrase = normalize(question);
   const authorized = new Set(sources.map((item) => item.id));
   return index
     .map(({ card, keywords, panel }) => ({
       card,
-      score: [...terms].reduce(
-        (n, word) => n + (keywords.has(word) ? 4 : Number(panel.has(word))),
-        0,
-      ),
+      score:
+        ((aliases[card.table] ?? []).some((alias) => phrase.includes(alias))
+          ? 24
+          : 0) +
+        [...terms].reduce(
+          (n, word) => n + (keywords.has(word) ? 4 : Number(panel.has(word))),
+          0,
+        ),
     }))
     .filter(({ score }) => score >= 4)
     .sort(
