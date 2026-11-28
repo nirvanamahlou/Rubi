@@ -1,3 +1,4 @@
+import { tableGuide } from './erp-table-guide.mjs';
 import { findSources, sourceCards } from './source-discovery.mjs';
 import { createReportCatalog } from './report-catalog.mjs';
 import { compactCatalogPrompt } from './compact-catalog-prompt.mjs';
@@ -421,6 +422,9 @@ export function createDataAgent({
     messages.push({
       role: 'system',
       content: JSON.stringify({
+        tableGuide: tableGuide(request.message, sources),
+        guideUsage:
+          'ERP table names are lineage only. For SQL use only an authorized sqlSource with its described columns and grain. For other tables search an approved report; if none provides the facts, state the limitation. Table metadata is never evidence.',
         authorizedSourceDefinitions: initialSources,
         instruction:
           'These exact authorized schemas and meanings have already been read for this request; no catalog tool call is required before your SELECT. They are definitions, not query results. First set_plan, then query fresh facts. Do not claim a column is unavailable without checking these columns. Use catalog_describe for missing definitions.',

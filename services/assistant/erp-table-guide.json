@@ -1,0 +1,3237 @@
+[
+  {
+    "table": "workbench_calendar_events",
+    "module": "فضای کار",
+    "feature": "میزکار من",
+    "title": "رویدادهای تقویم شخصی",
+    "fields": ["user_id", "title", "description", "due_at", "status"]
+  },
+  {
+    "table": "workbench_feedback",
+    "module": "فضای کار",
+    "feature": "میزکار من",
+    "title": "پیشنهاد و بازخورد کارکنان با کد پیگیری",
+    "fields": [
+      "tracking_number",
+      "request_hash",
+      "department",
+      "subject",
+      "body"
+    ],
+    "usage": "موضوع، متن، واحد مقصد، وضعیت ناشناس‌بودن و شماره پیگیری پیشنهاد را ثبت می‌کند."
+  },
+  {
+    "table": "workbench_note_folders",
+    "module": "فضای کار",
+    "feature": "میزکار من",
+    "title": "پوشه‌های یادداشت شخصی",
+    "fields": ["user_id", "name"]
+  },
+  {
+    "table": "workbench_notes",
+    "module": "فضای کار",
+    "feature": "میزکار من",
+    "title": "متن و وضعیت یادداشت‌های کاربر",
+    "fields": ["user_id", "title", "body", "folder", "tags"],
+    "usage": "محتوای یادداشت کاربر و وضعیت آن، از جمله بایگانی، در این جدول قرار دارد."
+  },
+  {
+    "table": "messaging_conversations",
+    "module": "فضای کار",
+    "feature": "پیام‌های داخلی",
+    "title": "گفت‌وگوهای داخلی",
+    "fields": [
+      "type",
+      "title",
+      "creatorUserId",
+      "directPairKey",
+      "createRequestId"
+    ]
+  },
+  {
+    "table": "messaging_members",
+    "module": "فضای کار",
+    "feature": "پیام‌های داخلی",
+    "title": "عضویت کاربران در گفت‌وگو",
+    "fields": ["conversationId", "userId", "role", "joinedAt", "last_read_at"]
+  },
+  {
+    "table": "messaging_message_attachments",
+    "module": "فضای کار",
+    "feature": "پیام‌های داخلی",
+    "title": "پیوست‌های هر پیام",
+    "fields": ["message_id", "document_id", "title"]
+  },
+  {
+    "table": "messaging_message_reactions",
+    "module": "فضای کار",
+    "feature": "پیام‌های داخلی",
+    "title": "واکنش کاربران به پیام",
+    "fields": ["messageId", "userId", "emoji"]
+  },
+  {
+    "table": "messaging_messages",
+    "module": "فضای کار",
+    "feature": "پیام‌های داخلی",
+    "title": "متن و ارتباط پیام‌ها",
+    "fields": [
+      "conversationId",
+      "senderUserId",
+      "body",
+      "forwardedFromMessageId",
+      "clientRequestId"
+    ]
+  },
+  {
+    "table": "notifications",
+    "module": "فضای کار",
+    "feature": "اعلان‌ها",
+    "title": "اعلان‌های سامانه برای گیرندگان",
+    "fields": [
+      "recipient_user_id",
+      "actor_user_id",
+      "source_module",
+      "event_type",
+      "title"
+    ]
+  },
+  {
+    "table": "automation_tasks",
+    "module": "فضای کار",
+    "feature": "اتوماسیون و پیگیری",
+    "title": "کارهای ارجاع‌شده از ماژول‌ها، مسئول، مهلت و وضعیت",
+    "fields": [
+      "sourceModule",
+      "sourceEventId",
+      "sourceReference",
+      "assigneeUserId",
+      "kind"
+    ],
+    "usage": "کار قابل‌پیگیری را به ماژول مبدأ، مسئول و مهلت انجام وصل می‌کند."
+  },
+  {
+    "table": "hr_audit_events",
+    "module": "سرمایه انسانی",
+    "feature": "پرسنل، کارتابل و درخواست‌های میزکار",
+    "title": "رد تغییرات منابع انسانی",
+    "fields": ["actor_id", "employee_id", "record_id", "action", "from_status"]
+  },
+  {
+    "table": "hr_commands",
+    "module": "سرمایه انسانی",
+    "feature": "پرسنل، کارتابل و درخواست‌های میزکار",
+    "title": "ثبت فرمان‌های اجرایی منابع انسانی",
+    "fields": ["actor_id", "key", "hash", "result"]
+  },
+  {
+    "table": "hr_employees",
+    "module": "سرمایه انسانی",
+    "feature": "پرسنل، کارتابل و درخواست‌های میزکار",
+    "title": "پرونده کارکنان",
+    "fields": [
+      "photo_document_id",
+      "personnel_code",
+      "user_id",
+      "manager_id",
+      "name"
+    ]
+  },
+  {
+    "table": "hr_leave_entries",
+    "module": "سرمایه انسانی",
+    "feature": "پرسنل، کارتابل و درخواست‌های میزکار",
+    "title": "گردش روزهای مرخصی هر کارمند و درخواست مرتبط",
+    "fields": ["employee_id", "record_id", "type", "days", "year"],
+    "usage": "اثر درخواست بر مرخصی کارمند را به تفکیک سال، نوع و تعداد روز نگه می‌دارد."
+  },
+  {
+    "table": "hr_notification_reads",
+    "module": "سرمایه انسانی",
+    "feature": "پرسنل، کارتابل و درخواست‌های میزکار",
+    "title": "رسید خواندن اعلان توسط کاربر",
+    "fields": ["notification_id", "user_id", "read_at"]
+  },
+  {
+    "table": "hr_notifications",
+    "module": "سرمایه انسانی",
+    "feature": "پرسنل، کارتابل و درخواست‌های میزکار",
+    "title": "اعلان‌های منابع انسانی",
+    "fields": ["target_user_id", "employee_id", "record_id", "action", "title"]
+  },
+  {
+    "table": "hr_record_amounts",
+    "module": "سرمایه انسانی",
+    "feature": "پرسنل، کارتابل و درخواست‌های میزکار",
+    "title": "مبالغ تفکیکی رکورد منابع انسانی",
+    "fields": ["record_id", "field", "amount", "currency"]
+  },
+  {
+    "table": "hr_records",
+    "module": "سرمایه انسانی",
+    "feature": "پرسنل، کارتابل و درخواست‌های میزکار",
+    "title": "رکوردهای عملیاتی و درخواست‌های کارکنان به تفکیک بخش، نوع و وضعیت",
+    "fields": [
+      "search_text",
+      "expires_at",
+      "document_id",
+      "code",
+      "employee_id"
+    ],
+    "usage": "هر ردیف یک رکورد طبقه‌بندی‌شدهٔ منابع انسانی با کارمند، وضعیت، تاریخ اثر و داده‌های فرم است."
+  },
+  {
+    "table": "sales_contract_audit_events",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "رویدادهای تغییر قرارداد",
+    "fields": [
+      "contract_id",
+      "actor_user_id",
+      "actor_branch_id",
+      "action",
+      "outcome"
+    ]
+  },
+  {
+    "table": "sales_contract_hotel_rooms",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "اتاق‌های هتل قرارداد",
+    "fields": [
+      "hotel_selection_id",
+      "ordinal",
+      "room_type_id",
+      "room_type_name_snapshot",
+      "adults"
+    ]
+  },
+  {
+    "table": "sales_contract_hotel_selections",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "هتل‌های انتخابی قرارداد",
+    "fields": [
+      "contract_id",
+      "service_id",
+      "hotel_id",
+      "hotel_name_snapshot",
+      "city_id"
+    ]
+  },
+  {
+    "table": "sales_contract_hotel_stay_rooms",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "اتاق‌های هر دوره اقامت",
+    "fields": [
+      "stay_id",
+      "ordinal",
+      "room_type_id",
+      "room_type_name_snapshot",
+      "adults"
+    ]
+  },
+  {
+    "table": "sales_contract_hotel_stays",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "دوره‌های اقامت در قرارداد",
+    "fields": [
+      "hotel_selection_id",
+      "ordinal",
+      "hotel_id",
+      "city_id",
+      "hotel_name_snapshot"
+    ]
+  },
+  {
+    "table": "sales_contract_number_counters",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "شمارنده صدور شماره قرارداد",
+    "fields": ["last_number"]
+  },
+  {
+    "table": "sales_contract_passenger_prices",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "قیمت هر مسافر در قرارداد",
+    "fields": ["passenger_id", "currency_code", "amount"]
+  },
+  {
+    "table": "sales_contract_passengers",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "مسافران هر قرارداد",
+    "fields": [
+      "contract_id",
+      "customer_id",
+      "display_name_snapshot",
+      "birth_date",
+      "age_category"
+    ]
+  },
+  {
+    "table": "sales_contract_payment_entries",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "دریافت‌ها و اقلام پرداخت قرارداد",
+    "fields": ["contract_id", "amount", "currency_code", "due_at", "method"]
+  },
+  {
+    "table": "sales_contract_price_components",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "اجزای تشکیل‌دهنده قیمت قرارداد",
+    "fields": ["contract_id", "type", "title", "amount", "currency_code"]
+  },
+  {
+    "table": "sales_contract_services",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "خدمات فروخته‌شده در قرارداد",
+    "fields": [
+      "contract_id",
+      "client_key",
+      "kind",
+      "reference_id",
+      "title_snapshot"
+    ]
+  },
+  {
+    "table": "sales_contract_status_history",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "تاریخچه وضعیت قرارداد",
+    "fields": [
+      "contract_id",
+      "from_status",
+      "to_status",
+      "reason",
+      "changed_by_user_id"
+    ]
+  },
+  {
+    "table": "sales_contract_ticket_selections",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "بلیت‌های انتخابی قرارداد",
+    "fields": [
+      "contract_id",
+      "service_id",
+      "direction",
+      "offer_id",
+      "origin_id"
+    ]
+  },
+  {
+    "table": "sales_contracts",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "سربرگ قرارداد فروش",
+    "fields": [
+      "contract_number",
+      "owner_user_id",
+      "assigned_user_id",
+      "customer_id",
+      "payer_customer_id"
+    ]
+  },
+  {
+    "table": "sales_passenger_service_allocations",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "تخصیص هر خدمت به مسافر",
+    "fields": ["passenger_id", "service_id"]
+  },
+  {
+    "table": "sales_payment_refunds",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "استرداد پرداخت‌های فروش",
+    "fields": ["paymentId", "amount"]
+  },
+  {
+    "table": "sales_receipt_allocations",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "تخصیص رسید به بدهی فروش",
+    "fields": [
+      "sourcePaymentId",
+      "targetContractId",
+      "actorId",
+      "amount",
+      "currencyCode"
+    ]
+  },
+  {
+    "table": "sales_reservation_requests",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قراردادها",
+    "title": "درخواست ارسالی فروش به رزرواسیون",
+    "fields": [
+      "contract_id",
+      "contract_version",
+      "request_version",
+      "idempotency_key",
+      "request_fingerprint"
+    ]
+  },
+  {
+    "table": "customer_addresses",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "پرونده مشتری / B2C",
+    "title": "نشانی‌های مشتری",
+    "fields": ["customerId", "type", "label", "cityId", "isPrimary"]
+  },
+  {
+    "table": "customer_audit_events",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "پرونده مشتری / B2C",
+    "title": "تاریخچه تغییر پرونده مشتری",
+    "fields": [
+      "actorUserId",
+      "actorBranchId",
+      "action",
+      "entityType",
+      "entityId"
+    ]
+  },
+  {
+    "table": "customer_consents",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "پرونده مشتری / B2C",
+    "title": "رضایت‌نامه‌های مشتری",
+    "fields": ["customerId", "purpose", "channel", "status", "source"]
+  },
+  {
+    "table": "customer_contacts",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "پرونده مشتری / B2C",
+    "title": "راه‌های تماس مشتری",
+    "fields": ["customerId", "type", "label", "maskedValue", "valueHash"]
+  },
+  {
+    "table": "customer_duplicate_candidates",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "پرونده مشتری / B2C",
+    "title": "پرونده‌های مشکوک به تکرار",
+    "fields": [
+      "sourceCustomerId",
+      "candidateCustomerId",
+      "score",
+      "reasons",
+      "reviewStatus"
+    ]
+  },
+  {
+    "table": "customer_relationships",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "پرونده مشتری / B2C",
+    "title": "ارتباط بین مشتریان",
+    "fields": ["customerId", "relatedCustomerId", "relationshipType"]
+  },
+  {
+    "table": "customer_status_history",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "پرونده مشتری / B2C",
+    "title": "سابقه تغییر وضعیت مشتری",
+    "fields": [
+      "customerId",
+      "fromStatus",
+      "toStatus",
+      "reason",
+      "changedByUserId"
+    ]
+  },
+  {
+    "table": "customers",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "پرونده مشتری / B2C",
+    "title": "هویت و مشخصات اصلی مشتری",
+    "fields": ["kind", "organizationId", "firstName", "lastName", "displayName"]
+  },
+  {
+    "table": "b2b_agency_agreed_rates",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "مشتریان B2B",
+    "title": "نرخ‌های توافقی آژانس",
+    "fields": ["profileId", "code", "serviceReference", "title", "kind"]
+  },
+  {
+    "table": "b2b_agency_agreements",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "مشتریان B2B",
+    "title": "توافق‌نامه‌های آژانس همکار",
+    "fields": ["profileId", "code", "title", "documentReference", "startsAt"]
+  },
+  {
+    "table": "b2b_agency_credit_policies",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "مشتریان B2B",
+    "title": "سیاست اعتبار آژانس",
+    "fields": [
+      "profileId",
+      "creditLimit",
+      "currencyCode",
+      "effectiveFrom",
+      "expiresAt"
+    ]
+  },
+  {
+    "table": "b2b_agency_profiles",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "مشتریان B2B",
+    "title": "پروفایل تکمیلی آژانس",
+    "fields": [
+      "organizationId",
+      "accountManagerUserId",
+      "status",
+      "displayOrder",
+      "isActive"
+    ]
+  },
+  {
+    "table": "b2b_agreement_commands",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "مشتریان B2B",
+    "title": "فرمان‌های ثبت توافق‌نامه",
+    "fields": ["actorUserId", "requestId", "agreementId", "resultVersion"]
+  },
+  {
+    "table": "b2b_agreement_guarantees",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "مشتریان B2B",
+    "title": "تضمین‌های توافق‌نامه",
+    "fields": ["revisionId", "kind", "reference", "amount", "currencyCode"]
+  },
+  {
+    "table": "b2b_agreement_revisions",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "مشتریان B2B",
+    "title": "نسخه‌های توافق‌نامه",
+    "fields": ["agreementId", "number", "status", "title", "agreementType"]
+  },
+  {
+    "table": "b2b_audit_events",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "مشتریان B2B",
+    "title": "رد تغییرات مشتریان سازمانی",
+    "fields": [
+      "actorUserId",
+      "action",
+      "entityType",
+      "entityId",
+      "beforeSnapshot"
+    ]
+  },
+  {
+    "table": "b2b_organization_signatories",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "مشتریان B2B",
+    "title": "صاحبان امضای سازمان",
+    "fields": [
+      "organizationId",
+      "contactId",
+      "documentTypes",
+      "authorityLimit",
+      "currencyCode"
+    ]
+  },
+  {
+    "table": "b2b_organization_users",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "مشتریان B2B",
+    "title": "کاربران وابسته به سازمان",
+    "fields": ["organizationId", "userId", "roleName", "sections", "isActive"]
+  },
+  {
+    "table": "customer_affairs_audit_events",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "امور مشتریان و کال‌سنتر",
+    "title": "رد تغییرات امور مشتریان",
+    "fields": ["actor_user_id", "entity_type", "entity_id", "action", "reason"]
+  },
+  {
+    "table": "customer_affairs_call_contacts",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "امور مشتریان و کال‌سنتر",
+    "title": "مخاطبان کال‌سنتر",
+    "fields": [
+      "phone_fingerprint",
+      "latest_occurred_at",
+      "owner_user_id",
+      "owner_version"
+    ]
+  },
+  {
+    "table": "customer_affairs_call_notes",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "امور مشتریان و کال‌سنتر",
+    "title": "یادداشت‌های تماس",
+    "fields": [
+      "contact_id",
+      "created_by_user_id",
+      "encrypted_payload",
+      "key_version",
+      "request_fingerprint"
+    ]
+  },
+  {
+    "table": "customer_affairs_calls",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "امور مشتریان و کال‌سنتر",
+    "title": "سوابق تماس",
+    "fields": [
+      "contact_id",
+      "created_by_user_id",
+      "direction",
+      "status",
+      "occurred_at"
+    ]
+  },
+  {
+    "table": "customer_affairs_commands",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "امور مشتریان و کال‌سنتر",
+    "title": "فرمان‌های اجرایی امور مشتریان",
+    "fields": [
+      "actor_user_id",
+      "scope",
+      "idempotency_key",
+      "request_fingerprint",
+      "result_entity_id"
+    ]
+  },
+  {
+    "table": "customer_affairs_corrective_actions",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "امور مشتریان و کال‌سنتر",
+    "title": "اقدامات اصلاحی پرونده",
+    "fields": [
+      "ticket_id",
+      "satisfaction_id",
+      "title",
+      "owner_user_id",
+      "due_at"
+    ]
+  },
+  {
+    "table": "customer_affairs_handoffs",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "امور مشتریان و کال‌سنتر",
+    "title": "تحویل پرونده بین مسئولان",
+    "fields": [
+      "lead_id",
+      "package_version",
+      "idempotency_key",
+      "request_fingerprint",
+      "payload_snapshot"
+    ]
+  },
+  {
+    "table": "customer_affairs_leads",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "امور مشتریان و کال‌سنتر",
+    "title": "سرنخ‌های مشتری",
+    "fields": [
+      "tracking_number",
+      "customer_id",
+      "title",
+      "source_reference",
+      "inbound_channel"
+    ]
+  },
+  {
+    "table": "customer_affairs_marketing_intakes",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "امور مشتریان و کال‌سنتر",
+    "title": "ورودی‌های بازاریابی",
+    "fields": [
+      "phone_encrypted",
+      "phone_iv",
+      "phone_auth_tag",
+      "phone_key_version",
+      "phone_fingerprint"
+    ]
+  },
+  {
+    "table": "customer_affairs_referrals",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "امور مشتریان و کال‌سنتر",
+    "title": "ارجاع‌های پرونده",
+    "fields": [
+      "ticket_id",
+      "destination_module",
+      "destination_unit",
+      "assigned_user_id",
+      "title"
+    ]
+  },
+  {
+    "table": "customer_affairs_satisfaction",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "امور مشتریان و کال‌سنتر",
+    "title": "ارزیابی رضایت مشتری",
+    "fields": [
+      "ticket_id",
+      "invitation_reference",
+      "score",
+      "comment",
+      "submitted_by_customer"
+    ]
+  },
+  {
+    "table": "customer_affairs_site_tickets",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "امور مشتریان و کال‌سنتر",
+    "title": "ارتباط سایت و درخواست پشتیبانی",
+    "fields": ["site_id", "ticket_id", "external_id"]
+  },
+  {
+    "table": "customer_affairs_sites",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "امور مشتریان و کال‌سنتر",
+    "title": "سایت‌های ثبت‌شده در امور مشتریان",
+    "fields": ["code", "domain"]
+  },
+  {
+    "table": "customer_affairs_tickets",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "امور مشتریان و کال‌سنتر",
+    "title": "درخواست و پیگیری مشتری با مسئول، وضعیت و مهلت",
+    "fields": [
+      "tracking_number",
+      "customer_id",
+      "subject",
+      "description",
+      "channel"
+    ],
+    "usage": "درخواست، شماره پیگیری، مسئول اجرا، واحد و وضعیت جاری را نگه می‌دارد؛ کارتابل میزکار هم از این جدول استفاده می‌کند."
+  },
+  {
+    "table": "customer_affairs_timeline",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "امور مشتریان و کال‌سنتر",
+    "title": "رویدادهای خط زمانی پرونده",
+    "fields": ["lead_id", "ticket_id", "type", "outcome", "summary"],
+    "usage": "رویدادهای هر پرونده، از جمله جزئیات درخواست مرخصی یا مأموریت میزکار، در این جدول ثبت می‌شود."
+  },
+  {
+    "table": "call_center_answer_responsibilities",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "کال‌سنتر / پاسخگویی",
+    "title": "مسئولیت پاسخ‌گویی تماس",
+    "fields": ["callId", "userId", "inboxId", "answeredAt"]
+  },
+  {
+    "table": "call_center_request_reviews",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "کال‌سنتر / پاسخگویی",
+    "title": "اتمام و بازبینی درخواست تماس",
+    "fields": [
+      "ticket_id",
+      "call_id",
+      "completed_by_user_id",
+      "completed_at",
+      "reviewed_at"
+    ]
+  },
+  {
+    "table": "call_center_telephony_leases",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "کال‌سنتر / پاسخگویی",
+    "title": "رزرو موقت پردازش تلفنی",
+    "fields": ["userId", "tabId", "expiresAt"]
+  },
+  {
+    "table": "call_center_telephony_offers",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "کال‌سنتر / پاسخگویی",
+    "title": "پیشنهاد تماس به کارشناس",
+    "fields": ["sessionId", "mappingVersion", "userId", "active", "deferred"]
+  },
+  {
+    "table": "call_center_telephony_sessions",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "کال‌سنتر / پاسخگویی",
+    "title": "نشست‌های تلفنی کال‌سنتر",
+    "fields": [
+      "connectionId",
+      "rootFingerprint",
+      "callId",
+      "state",
+      "encryptedTechnical"
+    ]
+  },
+  {
+    "table": "marketing_assets",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "بازاریابی",
+    "title": "دارایی‌ها و محتوای بازاریابی",
+    "fields": ["kind", "name", "status", "campaign_id", "related_asset_id"]
+  },
+  {
+    "table": "marketing_audit_events",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "بازاریابی",
+    "title": "تاریخچه تغییرات بازاریابی",
+    "fields": ["actor_user_id", "entity_type", "entity_id", "action", "reason"]
+  },
+  {
+    "table": "marketing_campaign_spend_lines",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "بازاریابی",
+    "title": "ریز هزینه کمپین",
+    "fields": ["campaign_id", "label", "amount", "currency_code", "declared_at"]
+  },
+  {
+    "table": "marketing_campaigns",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "بازاریابی",
+    "title": "تعریف و وضعیت کمپین",
+    "fields": [
+      "internal_code",
+      "name",
+      "campaign_type",
+      "objective",
+      "execution_company"
+    ]
+  },
+  {
+    "table": "marketing_commands",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "بازاریابی",
+    "title": "فرمان‌های اجرایی بازاریابی",
+    "fields": [
+      "actor_user_id",
+      "operation",
+      "idempotency_key",
+      "request_fingerprint",
+      "entity_type"
+    ]
+  },
+  {
+    "table": "website_agency_accounts",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "فروش آنلاین و وب‌سایت",
+    "title": "حساب آژانس در وب‌سایت",
+    "fields": [
+      "site",
+      "externalId",
+      "organizationId",
+      "legalName",
+      "nationalId"
+    ]
+  },
+  {
+    "table": "website_catalog_deliveries",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "فروش آنلاین و وب‌سایت",
+    "title": "ارسال کاتالوگ به وب‌سایت",
+    "fields": [
+      "siteCode",
+      "revision",
+      "deliveredRevision",
+      "deliveredAt",
+      "nextRefreshAt"
+    ]
+  },
+  {
+    "table": "website_checkout_sessions",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "فروش آنلاین و وب‌سایت",
+    "title": "نشست‌های تکمیل خرید",
+    "fields": [
+      "siteCode",
+      "externalId",
+      "customerExternalId",
+      "quoteSnapshot",
+      "requesterName"
+    ]
+  },
+  {
+    "table": "website_contract_payments",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "فروش آنلاین و وب‌سایت",
+    "title": "پرداخت آنلاین قرارداد",
+    "fields": [
+      "receiptNumber",
+      "attempt",
+      "customerName",
+      "contractNumber",
+      "amountRial"
+    ]
+  },
+  {
+    "table": "website_orders",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "فروش آنلاین و وب‌سایت",
+    "title": "سفارش‌های وب‌سایت",
+    "fields": [
+      "siteCode",
+      "externalId",
+      "contractId",
+      "paymentFingerprint",
+      "paymentCommands"
+    ]
+  },
+  {
+    "table": "website_publications",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "فروش آنلاین و وب‌سایت",
+    "title": "انتشار محتوا یا محصول در وب‌سایت",
+    "fields": ["siteCode", "kind", "resourceId", "enabled", "salesStopped"]
+  },
+  {
+    "table": "TicketOfferAudit",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قیمت‌گذاری و عرضه پرواز",
+    "title": "تاریخچه تغییر عرضه بلیت",
+    "fields": ["offerId", "actorUserId", "action", "occurredAt"]
+  },
+  {
+    "table": "TicketOfferCapacityAllocation",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قیمت‌گذاری و عرضه پرواز",
+    "title": "تخصیص ظرفیت عرضه",
+    "fields": ["offerId", "contractId", "direction", "quantity", "status"]
+  },
+  {
+    "table": "TicketOfferCapacityHold",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قیمت‌گذاری و عرضه پرواز",
+    "title": "نگهداری موقت ظرفیت بلیت",
+    "fields": ["offerId", "quantity", "status", "expiresAt", "idempotencyKey"]
+  },
+  {
+    "table": "TicketOfferRoundTripSalePrice",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قیمت‌گذاری و عرضه پرواز",
+    "title": "قیمت فروش رفت‌وبرگشت",
+    "fields": [
+      "outboundOfferId",
+      "returnOfferId",
+      "revision",
+      "amount",
+      "currencyCode"
+    ]
+  },
+  {
+    "table": "TicketOfferSalePriceTier",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قیمت‌گذاری و عرضه پرواز",
+    "title": "پله‌های نرخ فروش بلیت",
+    "fields": [
+      "standalonePriceId",
+      "roundTripPriceId",
+      "tierIndex",
+      "seatCount",
+      "amount"
+    ]
+  },
+  {
+    "table": "TicketOfferSaleRoute",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قیمت‌گذاری و عرضه پرواز",
+    "title": "مسیرهای فروش بلیت",
+    "fields": ["offerId", "originId", "destinationId"]
+  },
+  {
+    "table": "TicketOfferStandaloneSalePrice",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قیمت‌گذاری و عرضه پرواز",
+    "title": "قیمت فروش مستقل بلیت",
+    "fields": ["offerId", "revision", "amount", "currencyCode", "actorUserId"]
+  },
+  {
+    "table": "TicketPublishedOffer",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قیمت‌گذاری و عرضه پرواز",
+    "title": "عرضه منتشرشده بلیت",
+    "fields": [
+      "originId",
+      "destinationId",
+      "departureAt",
+      "arrivalAt",
+      "carrierName"
+    ]
+  },
+  {
+    "table": "TicketSaleCommissionRevision",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قیمت‌گذاری و عرضه پرواز",
+    "title": "نسخه‌های کمیسیون فروش بلیت",
+    "fields": [
+      "offerId",
+      "returnOfferId",
+      "salePriceTargetId",
+      "scopeKey",
+      "revision"
+    ]
+  },
+  {
+    "table": "TicketSalePriceTarget",
+    "module": "فروش و ارتباط با مشتری",
+    "feature": "قیمت‌گذاری و عرضه پرواز",
+    "title": "مقصدهای تعریف‌شده برای قیمت‌گذاری فروش",
+    "fields": ["name", "code", "isActive"]
+  },
+  {
+    "table": "FloatingTourSaleCatalog",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "تور، تاریخ حرکت و فروش شناور",
+    "title": "کاتالوگ فروش تور شناور",
+    "fields": ["packageId", "payload"]
+  },
+  {
+    "table": "FloatingTourSaleImport",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "تور، تاریخ حرکت و فروش شناور",
+    "title": "سابقه ورود اطلاعات تور شناور",
+    "fields": ["packageId", "actorUserId", "digest", "payload"]
+  },
+  {
+    "table": "TourDeparture",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "تور، تاریخ حرکت و فروش شناور",
+    "title": "تاریخ‌های حرکت تور",
+    "fields": [
+      "packageId",
+      "packageVersion",
+      "startsOn",
+      "endsOn",
+      "outboundOfferId"
+    ]
+  },
+  {
+    "table": "TourDepartureLifecycleRevision",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "تور، تاریخ حرکت و فروش شناور",
+    "title": "تاریخچه چرخه عمر حرکت تور",
+    "fields": ["departureId", "status", "actorUserId"]
+  },
+  {
+    "table": "TourPackage",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "تور، تاریخ حرکت و فروش شناور",
+    "title": "تعریف پکیج تور",
+    "fields": ["name", "definition", "createKey", "archivedAt"]
+  },
+  {
+    "table": "PackagePricingTourAdjustment",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "تعدیل‌های قیمت تور",
+    "fields": ["draftId", "hotelRateId", "direction", "mode", "value"]
+  },
+  {
+    "table": "PackagePricingTourCombinationSource",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "منابع ترکیب تور",
+    "fields": [
+      "draftId",
+      "publicationId",
+      "hotelRateId",
+      "combinationKey",
+      "ordinal"
+    ]
+  },
+  {
+    "table": "PackagePricingTourDraft",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "پیش‌نویس قیمت‌گذاری تور",
+    "fields": [
+      "tourDepartureId",
+      "batchId",
+      "currencyCode",
+      "adultFlightSale",
+      "childFlightSale"
+    ]
+  },
+  {
+    "table": "PackagePricingTourPublishedRoomPrice",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "قیمت منتشرشده هر اتاق",
+    "fields": [
+      "publicationId",
+      "hotelRateId",
+      "roomCode",
+      "hotelPurchase",
+      "hotelSale"
+    ]
+  },
+  {
+    "table": "PackagePricingTourPublishedVersion",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "نسخه منتشرشده قیمت تور",
+    "fields": [
+      "draftId",
+      "draftVersion",
+      "tourVersion",
+      "sourceFingerprint",
+      "reason"
+    ]
+  },
+  {
+    "table": "package_pricing_audit_events",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "رد تغییرات قیمت پکیج",
+    "fields": [
+      "package_id",
+      "actor_user_id",
+      "actor_branch_id",
+      "action",
+      "outcome"
+    ]
+  },
+  {
+    "table": "package_pricing_banner_templates",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "قالب بنر پکیج",
+    "fields": ["issuer_legal_entity_id", "code", "title", "format", "width"]
+  },
+  {
+    "table": "package_pricing_components",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "اجزای هزینه و خدمات پکیج",
+    "fields": [
+      "departure_id",
+      "client_key",
+      "kind",
+      "source_owner",
+      "source_kind"
+    ]
+  },
+  {
+    "table": "package_pricing_departures",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "حرکت‌های پکیج",
+    "fields": ["package_id", "departure_date", "return_date", "nights", "days"]
+  },
+  {
+    "table": "package_pricing_hotel_options",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "گزینه‌های هتل پکیج",
+    "fields": [
+      "departure_id",
+      "hotel_reference_id",
+      "hotel_reference_version",
+      "hotel_name_snapshot",
+      "room_type_reference_id"
+    ]
+  },
+  {
+    "table": "package_pricing_packages",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "مشخصات اصلی پکیج قیمت‌گذاری",
+    "fields": [
+      "code",
+      "title_fa",
+      "title_en",
+      "issuer_legal_entity_id",
+      "issuer_legal_entity_version"
+    ]
+  },
+  {
+    "table": "package_pricing_passenger_prices",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "قیمت پکیج بر اساس نوع مسافر",
+    "fields": ["price_version_id", "category", "amount", "currency_code"]
+  },
+  {
+    "table": "package_pricing_periods",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "بازه‌های قیمت‌گذاری",
+    "fields": ["departure_id", "title", "valid_from", "valid_to", "is_archived"]
+  },
+  {
+    "table": "package_pricing_price_versions",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "نسخه قیمت پکیج",
+    "fields": [
+      "departure_id",
+      "period_id",
+      "status",
+      "currency_code",
+      "base_amount"
+    ]
+  },
+  {
+    "table": "package_pricing_quote_items",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "اقلام پیشنهاد قیمت",
+    "fields": [
+      "quote_id",
+      "category",
+      "quantity",
+      "unit_amount",
+      "total_amount"
+    ]
+  },
+  {
+    "table": "package_pricing_quotes",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "پیشنهادهای قیمت",
+    "fields": [
+      "package_id",
+      "departure_id",
+      "price_version_id",
+      "customer_reference",
+      "agency_reference"
+    ]
+  },
+  {
+    "table": "package_pricing_render_requests",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "درخواست تولید خروجی نمایشی",
+    "fields": [
+      "package_id",
+      "departure_id",
+      "price_version_id",
+      "template_id",
+      "template_version"
+    ]
+  },
+  {
+    "table": "package_pricing_rules",
+    "module": "تور و قیمت‌گذاری پکیج",
+    "feature": "ساخت و انتشار قیمت پکیج",
+    "title": "قواعد محاسبه قیمت پکیج",
+    "fields": ["period_id", "sequence", "title", "operation", "value"]
+  },
+  {
+    "table": "ReservationArrangementRevision",
+    "module": "رزرواسیون",
+    "feature": "عملیات و خدمات رزرو",
+    "title": "نسخه‌های هماهنگی رزرو",
+    "fields": [
+      "intakeId",
+      "roomCount",
+      "singleRoomCount",
+      "doubleRoomCount",
+      "extraBedCount"
+    ]
+  },
+  {
+    "table": "ReservationHotelPurchase",
+    "module": "رزرواسیون",
+    "feature": "عملیات و خدمات رزرو",
+    "title": "خرید هتل برای رزرو",
+    "fields": [
+      "intakeId",
+      "amount",
+      "currencyCode",
+      "actorUserId",
+      "idempotencyKey"
+    ]
+  },
+  {
+    "table": "ReservationIntake",
+    "module": "رزرواسیون",
+    "feature": "عملیات و خدمات رزرو",
+    "title": "ورودی رزرواسیون از فروش",
+    "fields": [
+      "requestId",
+      "contractId",
+      "contractVersion",
+      "snapshot",
+      "status"
+    ]
+  },
+  {
+    "table": "ReservationServicePurchase",
+    "module": "رزرواسیون",
+    "feature": "عملیات و خدمات رزرو",
+    "title": "خرید خدمات رزرو",
+    "fields": [
+      "intakeId",
+      "serviceClientKey",
+      "serviceKind",
+      "serviceTitleSnapshot",
+      "supplierOrganizationId"
+    ]
+  },
+  {
+    "table": "ReservationWorkflowRevision",
+    "module": "رزرواسیون",
+    "feature": "عملیات و خدمات رزرو",
+    "title": "تغییر مراحل گردش‌کار رزرو",
+    "fields": ["intakeId", "state", "actorUserId"]
+  },
+  {
+    "table": "reservation_hotel_group_rates",
+    "module": "رزرواسیون",
+    "feature": "نرخ هتل",
+    "title": "نرخ‌های گروهی هتل",
+    "fields": ["batchId", "hotelId", "brokerId", "hotelName", "brokerName"]
+  },
+  {
+    "table": "reservation_hotel_rate_batches",
+    "module": "رزرواسیون",
+    "feature": "نرخ هتل",
+    "title": "دسته‌های ثبت نرخ هتل",
+    "fields": ["actorId", "requestKey", "checkIn", "checkOut", "currency"]
+  },
+  {
+    "table": "reservation_hotel_rate_pack_sources",
+    "module": "رزرواسیون",
+    "feature": "نرخ هتل",
+    "title": "منابع بسته نرخ هتل",
+    "fields": ["packId", "sourceBatchId"]
+  },
+  {
+    "table": "reservation_hotel_rate_packs",
+    "module": "رزرواسیون",
+    "feature": "نرخ هتل",
+    "title": "بسته‌های نرخ هتل",
+    "fields": ["cityId", "checkIn", "checkOut", "currency", "method"]
+  },
+  {
+    "table": "reservation_hotel_room_rates",
+    "module": "رزرواسیون",
+    "feature": "نرخ هتل",
+    "title": "نرخ هر اتاق هتل",
+    "fields": [
+      "groupRateId",
+      "roomTypeId",
+      "roomTypeName",
+      "factor",
+      "maxAdults"
+    ]
+  },
+  {
+    "table": "reservation_insurance_applicant_access",
+    "module": "رزرواسیون",
+    "feature": "بیمه مسافرتی",
+    "title": "دسترسی به متقاضی بیمه",
+    "fields": ["applicantId", "actorUserId", "action"]
+  },
+  {
+    "table": "reservation_insurance_applicants",
+    "module": "رزرواسیون",
+    "feature": "بیمه مسافرتی",
+    "title": "مشخصات متقاضی بیمه",
+    "fields": [
+      "requestKey",
+      "requestFingerprint",
+      "displayName",
+      "encryptedData",
+      "sourceCountryCode"
+    ]
+  },
+  {
+    "table": "reservation_insurance_policies",
+    "module": "رزرواسیون",
+    "feature": "بیمه مسافرتی",
+    "title": "بیمه‌نامه مسافرتی و وضعیت صدور",
+    "fields": ["contractId", "intakeId", "customerId", "provider", "providerId"]
+  },
+  {
+    "table": "reservation_insurance_revisions",
+    "module": "رزرواسیون",
+    "feature": "بیمه مسافرتی",
+    "title": "نسخه‌ها و تغییرات بیمه",
+    "fields": ["policyId", "action", "snapshot", "actorUserId"]
+  },
+  {
+    "table": "reservation_manifest_export_items",
+    "module": "رزرواسیون",
+    "feature": "مانیفست، مکاتبات عملیاتی و بلیت",
+    "title": "ردیف‌های خروجی مانیفست",
+    "fields": [
+      "exportId",
+      "intakeId",
+      "contractId",
+      "contractVersion",
+      "outboundDepartureAt"
+    ]
+  },
+  {
+    "table": "reservation_manifest_exports",
+    "module": "رزرواسیون",
+    "feature": "مانیفست، مکاتبات عملیاتی و بلیت",
+    "title": "سابقه تولید مانیفست",
+    "fields": [
+      "actorUserId",
+      "idempotencyKey",
+      "fromDate",
+      "toDate",
+      "includePreviouslyExported"
+    ]
+  },
+  {
+    "table": "reservation_note_mail",
+    "module": "رزرواسیون",
+    "feature": "مانیفست، مکاتبات عملیاتی و بلیت",
+    "title": "صف ارسال ایمیل یادداشت رزرو",
+    "fields": ["revisionId", "contactId", "envelope", "status", "attempts"]
+  },
+  {
+    "table": "reservation_ticket_documents",
+    "module": "رزرواسیون",
+    "feature": "مانیفست، مکاتبات عملیاتی و بلیت",
+    "title": "مدارک بلیت رزرو",
+    "fields": ["intakeId", "customerId", "number", "source", "issuedAt"]
+  },
+  {
+    "table": "ProcurementTicketPurchaseRequest",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "درخواست خرید بلیت",
+    "fields": [
+      "catalogProductReference",
+      "title",
+      "serviceDate",
+      "supplierDisplaySnapshot",
+      "amount"
+    ]
+  },
+  {
+    "table": "procurement_approval_decision",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "تصمیم هر تأییدکننده",
+    "fields": ["stepId", "actorUserId", "decision", "reason", "data"]
+  },
+  {
+    "table": "procurement_approval_snapshot",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "تصویر گردش تأیید در زمان ثبت",
+    "fields": [
+      "requestId",
+      "requestVersionId",
+      "policyReference",
+      "policyVersion",
+      "payload"
+    ]
+  },
+  {
+    "table": "procurement_approval_step",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "مراحل تأیید خرید",
+    "fields": ["snapshotId", "position", "approverUserId", "status", "data"]
+  },
+  {
+    "table": "procurement_audit",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "تاریخچه عملیات خرید",
+    "fields": ["requestId", "actorUserId", "action", "entityType", "entityId"]
+  },
+  {
+    "table": "procurement_categories",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "دسته‌بندی خرید",
+    "fields": ["label", "normalizedLabel", "isActive"]
+  },
+  {
+    "table": "procurement_discrepancy",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "مغایرت‌های خرید یا تحویل",
+    "fields": ["requestId", "orderId", "receiptId", "kind", "status"]
+  },
+  {
+    "table": "procurement_export_job",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "کارهای تولید خروجی خرید",
+    "fields": [
+      "actorUserId",
+      "requestId",
+      "idempotencyKey",
+      "requestHash",
+      "kind"
+    ]
+  },
+  {
+    "table": "procurement_finance_handoff",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "تحویل پرونده خرید به مالی",
+    "fields": [
+      "requestId",
+      "invoiceId",
+      "invoiceVersion",
+      "sourceKey",
+      "status"
+    ]
+  },
+  {
+    "table": "procurement_idempotency",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "شناسه جلوگیری از اجرای تکراری درخواست",
+    "fields": ["actorUserId", "key", "operation", "requestHash", "response"]
+  },
+  {
+    "table": "procurement_invoice",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "فاکتور خرید",
+    "fields": ["requestId", "orderId", "supplierId", "number", "status"]
+  },
+  {
+    "table": "procurement_invoice_item",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "ردیف‌های فاکتور",
+    "fields": ["invoiceId", "orderId", "orderItemId", "quantity", "unitPrice"]
+  },
+  {
+    "table": "procurement_invoice_match",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "تطبیق فاکتور با خرید",
+    "fields": [
+      "invoiceId",
+      "invoiceVersion",
+      "orderId",
+      "orderVersionId",
+      "status"
+    ]
+  },
+  {
+    "table": "procurement_order",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "سفارش خرید",
+    "fields": ["requestId", "number", "supplierId", "selectionId", "status"]
+  },
+  {
+    "table": "procurement_order_item",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "ردیف‌های سفارش",
+    "fields": ["requestId", "orderId", "requestItemId", "quantity", "unitPrice"]
+  },
+  {
+    "table": "procurement_order_version",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "نسخه‌های سفارش",
+    "fields": ["orderId", "payload"]
+  },
+  {
+    "table": "procurement_outbox",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "صف رویدادهای خروجی خرید",
+    "fields": ["handoffId", "eventId", "eventType", "status", "attempts"]
+  },
+  {
+    "table": "procurement_quotation",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "استعلام و پیشنهاد تأمین‌کننده",
+    "fields": [
+      "requestId",
+      "supplierId",
+      "reference",
+      "currencyCode",
+      "totalAmount"
+    ]
+  },
+  {
+    "table": "procurement_quotation_item",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "اقلام پیشنهاد تأمین‌کننده",
+    "fields": [
+      "requestId",
+      "quotationId",
+      "requestItemId",
+      "quantity",
+      "unitPrice"
+    ]
+  },
+  {
+    "table": "procurement_receipt",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "رسید تحویل سفارش",
+    "fields": ["requestId", "orderId", "orderVersionId", "number", "receivedAt"]
+  },
+  {
+    "table": "procurement_receipt_adjustment",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "اصلاح رسید تحویل",
+    "fields": [
+      "requestId",
+      "orderId",
+      "orderVersionId",
+      "receiptItemId",
+      "receivedDelta"
+    ]
+  },
+  {
+    "table": "procurement_receipt_item",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "اقلام رسید تحویل",
+    "fields": [
+      "receiptId",
+      "orderId",
+      "orderItemId",
+      "quantity",
+      "acceptedQuantity"
+    ]
+  },
+  {
+    "table": "procurement_request",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "درخواست خرید",
+    "fields": ["number", "requesterUserId", "unitId", "ownerUserId", "status"]
+  },
+  {
+    "table": "procurement_request_item",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "اقلام درخواست خرید",
+    "fields": ["requestId", "kind", "description", "quantity", "unit"]
+  },
+  {
+    "table": "procurement_request_version",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "نسخه‌های درخواست",
+    "fields": ["requestId", "payload"]
+  },
+  {
+    "table": "procurement_return",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "مرجوعی خرید",
+    "fields": ["requestId", "orderId", "receiptItemId", "quantity", "reason"]
+  },
+  {
+    "table": "procurement_selection",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "انتخاب پیشنهاد خرید",
+    "fields": [
+      "requestId",
+      "quotationId",
+      "requestVersionId",
+      "selectedByUserId",
+      "reason"
+    ]
+  },
+  {
+    "table": "procurement_service_acceptance",
+    "module": "خرید و تأمین",
+    "feature": "درخواست، استعلام، سفارش و تحویل",
+    "title": "تأیید تحویل خدمت",
+    "fields": [
+      "requestId",
+      "orderId",
+      "orderItemId",
+      "acceptedByUserId",
+      "acceptedAt"
+    ]
+  },
+  {
+    "table": "procurement_petty_entries",
+    "module": "مالی",
+    "feature": "تنخواه",
+    "title": "گردش و هزینه‌های تنخواه",
+    "fields": ["requestId", "fundId", "requestKey", "amount", "actorId"]
+  },
+  {
+    "table": "procurement_petty_funds",
+    "module": "مالی",
+    "feature": "تنخواه",
+    "title": "صندوق‌های تنخواه",
+    "fields": [
+      "custodianId",
+      "currencyCode",
+      "balance",
+      "bankName",
+      "accountNumber"
+    ]
+  },
+  {
+    "table": "FinanceBankAccountAudit",
+    "module": "مالی",
+    "feature": "حساب‌ها، صرافی، خرید و تحویل مالی",
+    "title": "رد تغییرات حساب بانکی",
+    "fields": ["accountId", "actorUserId", "action", "metadata", "occurredAt"]
+  },
+  {
+    "table": "FinanceDeliveryRevision",
+    "module": "مالی",
+    "feature": "حساب‌ها، صرافی، خرید و تحویل مالی",
+    "title": "نسخه‌های تصمیم تحویل مالی رزرو",
+    "fields": ["intakeId", "approved", "reason", "actorUserId"]
+  },
+  {
+    "table": "FinanceExchangeAudit",
+    "module": "مالی",
+    "feature": "حساب‌ها، صرافی، خرید و تحویل مالی",
+    "title": "تاریخچه عملیات صرافی",
+    "fields": ["officeId", "actorUserId", "action", "metadata"]
+  },
+  {
+    "table": "FinanceExchangeBalance",
+    "module": "مالی",
+    "feature": "حساب‌ها، صرافی، خرید و تحویل مالی",
+    "title": "مانده‌های صرافی",
+    "fields": ["officeId", "currencyCode", "amount"]
+  },
+  {
+    "table": "FinanceExchangeMovement",
+    "module": "مالی",
+    "feature": "حساب‌ها، صرافی، خرید و تحویل مالی",
+    "title": "گردش مبالغ صرافی",
+    "fields": ["balanceId", "delta", "afterAmount", "kind", "actorUserId"]
+  },
+  {
+    "table": "FinanceExchangeOffice",
+    "module": "مالی",
+    "feature": "حساب‌ها، صرافی، خرید و تحویل مالی",
+    "title": "صرافی‌های طرف حساب",
+    "fields": ["title", "countryId", "address", "phone", "isActive"]
+  },
+  {
+    "table": "FinanceSettlementAccount",
+    "module": "مالی",
+    "feature": "حساب‌ها، صرافی، خرید و تحویل مالی",
+    "title": "حساب تسویه با مشخصات بانکی و ارتباط خزانه",
+    "fields": ["title", "kind", "currencyCode", "bankId", "maskedIdentifier"],
+    "usage": "مشخصات حساب تسویه، ارز، شعبه و پیوند بانکی و خزانه را نگه می‌دارد."
+  },
+  {
+    "table": "FinanceSupplierPaymentRevision",
+    "module": "مالی",
+    "feature": "حساب‌ها، صرافی، خرید و تحویل مالی",
+    "title": "تغییرات پرداخت به تأمین‌کننده",
+    "fields": [
+      "purchaseId",
+      "status",
+      "bankId",
+      "transferAt",
+      "paymentReference"
+    ]
+  },
+  {
+    "table": "FinanceTicketPurchaseCostRevision",
+    "module": "مالی",
+    "feature": "حساب‌ها، صرافی، خرید و تحویل مالی",
+    "title": "تغییرات هزینه خرید بلیت",
+    "fields": [
+      "requestId",
+      "offerId",
+      "offerVersion",
+      "adultUnitCost",
+      "childUnitCost"
+    ]
+  },
+  {
+    "table": "FinanceTicketPurchasePaymentRevision",
+    "module": "مالی",
+    "feature": "حساب‌ها، صرافی، خرید و تحویل مالی",
+    "title": "تغییرات پرداخت خرید بلیت",
+    "fields": [
+      "costRevisionId",
+      "status",
+      "accountId",
+      "paymentMethodId",
+      "paidAmount"
+    ]
+  },
+  {
+    "table": "finance_accounting_events",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "رویدادهای ارتباط مالی با حسابداری",
+    "fields": ["sourceKey", "source", "recordId", "requestId", "kind"]
+  },
+  {
+    "table": "finance_accounting_workflows",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "گردش‌کار ارسال به حسابداری",
+    "fields": ["actorId", "kind", "businessKey", "contractId", "hrRecordId"]
+  },
+  {
+    "table": "finance_bank_account_profiles",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "مشخصات تکمیلی حساب بانکی",
+    "fields": [
+      "accountId",
+      "creditLimit",
+      "reserveBalance",
+      "materiality",
+      "backupAccountId"
+    ]
+  },
+  {
+    "table": "finance_bank_account_signers",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "صاحبان امضای حساب بانکی",
+    "fields": ["accountId", "personId"]
+  },
+  {
+    "table": "finance_bank_statement_rows",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "ردیف‌های صورتحساب بانک",
+    "fields": ["statementId", "seq", "date", "amount", "reference"]
+  },
+  {
+    "table": "finance_bank_statements",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "سربرگ صورتحساب بانک",
+    "fields": ["periodId", "bankId", "accountId", "detailId", "from"]
+  },
+  {
+    "table": "finance_beneficiaries",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "ذی‌نفعان مالی",
+    "fields": [
+      "bankBranchId",
+      "ibanFingerprint",
+      "supplierId",
+      "brokerId",
+      "ownerId"
+    ]
+  },
+  {
+    "table": "finance_broker_transfers",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "حواله‌های کارگزار",
+    "fields": ["periodId", "officeId", "brokerId", "purchaseId", "invoiceId"]
+  },
+  {
+    "table": "finance_customer_document_delivery_revisions",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "نسخه‌های مجوز تحویل مدارک به مشتری",
+    "fields": ["contractId", "approved", "basis", "reason", "secondApproverRef"]
+  },
+  {
+    "table": "finance_operational_requests",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "درخواست عملیاتی مالی",
+    "fields": ["requesterId", "kind", "title", "party", "description"]
+  },
+  {
+    "table": "finance_operational_revisions",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "نسخه‌های درخواست عملیاتی",
+    "fields": ["requestId", "actorId", "action", "fromStatus", "toStatus"]
+  },
+  {
+    "table": "finance_payee_designations",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "تعیین دریافت‌کننده وجه",
+    "fields": ["ownerId", "costId", "purchaseId", "operationalId", "createdBy"]
+  },
+  {
+    "table": "finance_procurement_invoice_revisions",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "تغییرات فاکتور تأمین",
+    "fields": [
+      "sourceId",
+      "sourceVersion",
+      "status",
+      "accountId",
+      "paymentMethodId"
+    ]
+  },
+  {
+    "table": "finance_purchase_fx_snapshots",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "نرخ ارز ثبت‌شده هنگام خرید",
+    "fields": [
+      "reservationPurchaseId",
+      "ticketCostId",
+      "invoiceRevisionId",
+      "actorUserId",
+      "currencyCode"
+    ]
+  },
+  {
+    "table": "finance_reminder_deliveries",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "سابقه ارسال یادآوری مالی",
+    "fields": ["requestId", "sourceKey", "phase"]
+  },
+  {
+    "table": "finance_reminder_policies",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "سیاست یادآوری مالی",
+    "fields": ["managerId", "updatedById"]
+  },
+  {
+    "table": "finance_saved_views",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "نماهای ذخیره‌شده مالی",
+    "fields": ["ownerId", "title", "query"]
+  },
+  {
+    "table": "finance_settlement_accounts",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "مشخصات پایه حساب تسویه به تفکیک شعبه و ارز",
+    "fields": ["title", "kind", "currencyCode", "bankId", "maskedIdentifier"],
+    "usage": "جدول فیزیکی جداگانه‌ای برای مشخصات پایه حساب، ارز و شعبه است."
+  },
+  {
+    "table": "finance_ticket_pricing_requests",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "درخواست‌های قیمت‌گذاری بلیت در مالی",
+    "fields": ["ticketOfferId", "status", "requestedByUserId", "requestedAt"]
+  },
+  {
+    "table": "finance_ticket_pricing_revisions",
+    "module": "مالی",
+    "feature": "کارتابل مالی، بانک و تسویه",
+    "title": "نسخه‌های تصمیم قیمت‌گذاری بلیت",
+    "fields": [
+      "requestId",
+      "purchaseAmount",
+      "currencyCode",
+      "feeAmount",
+      "commission"
+    ]
+  },
+  {
+    "table": "accounting_account_group_details",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "ارتباط گروه حساب با تفصیلی",
+    "fields": ["groupId", "accountId", "detailId"]
+  },
+  {
+    "table": "accounting_account_group_members",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "اعضای گروه حساب",
+    "fields": ["groupId", "accountId"]
+  },
+  {
+    "table": "accounting_account_groups",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "گروه‌های حساب",
+    "fields": ["code", "title", "titleEn", "description", "active"]
+  },
+  {
+    "table": "accounting_accounts",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "سرفصل‌های حساب",
+    "fields": ["parentId", "code", "title", "titleEn", "level"]
+  },
+  {
+    "table": "accounting_books",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "دفاتر حسابداری",
+    "fields": ["code", "title", "baseCurrency", "isMain", "allowsPosting"]
+  },
+  {
+    "table": "accounting_commands",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "فرمان‌های حسابداری",
+    "fields": ["actorId", "key", "hash", "action", "result"]
+  },
+  {
+    "table": "accounting_configurations",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "تنظیمات حسابداری",
+    "fields": ["kind", "code", "title", "titleEn", "description"]
+  },
+  {
+    "table": "accounting_detail_group_members",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "اعضای گروه تفصیلی",
+    "fields": ["groupId", "detailId"]
+  },
+  {
+    "table": "accounting_detail_groups",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "گروه‌های تفصیلی",
+    "fields": ["code", "title", "titleEn", "description", "active"]
+  },
+  {
+    "table": "accounting_detail_type_conversions",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "تبدیل نوع تفصیلی",
+    "fields": ["userTypeId", "systemTypeId", "entity", "date", "description"]
+  },
+  {
+    "table": "accounting_details",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "حساب‌های تفصیلی",
+    "fields": ["typeId", "parentId", "code", "title", "currency"]
+  },
+  {
+    "table": "accounting_fx_snapshots",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "نرخ ارز ثبت‌شده برای عملیات حسابداری",
+    "fields": ["currency", "rate", "source", "validFrom", "validTo"]
+  },
+  {
+    "table": "accounting_general_document_lines",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "ردیف‌های سند کل",
+    "fields": ["documentId", "accountId", "debit", "credit"]
+  },
+  {
+    "table": "accounting_general_document_members",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "اسناد عضو سند کل",
+    "fields": ["journalId", "documentId"]
+  },
+  {
+    "table": "accounting_general_documents",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "سربرگ سند کل",
+    "fields": ["periodId", "number", "documentDate", "method", "makerId"]
+  },
+  {
+    "table": "accounting_journal_lines",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "ردیف‌های سند حسابداری",
+    "fields": ["journalId", "position", "accountId", "detail4Id", "detail5Id"]
+  },
+  {
+    "table": "accounting_journal_state_events",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "تاریخچه وضعیت سند",
+    "fields": ["journalId", "commandId", "actorId", "sequence", "eventType"]
+  },
+  {
+    "table": "accounting_journal_transfers",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "انتقال اسناد حسابداری",
+    "fields": [
+      "sourceBookId",
+      "sourceJournalId",
+      "targetBookId",
+      "targetJournalId"
+    ]
+  },
+  {
+    "table": "accounting_journals",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "سربرگ سند حسابداری",
+    "fields": ["periodId", "typeId", "documentDate", "description", "reference"]
+  },
+  {
+    "table": "accounting_periods",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "دوره‌های مالی",
+    "fields": ["fiscalYearId", "startDate", "endDate", "status", "isDefault"]
+  },
+  {
+    "table": "accounting_standard_codes",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "کدهای استاندارد حسابداری",
+    "fields": ["entityId", "code", "title", "titleEn", "position"]
+  },
+  {
+    "table": "accounting_standard_entities",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "موجودیت‌های استاندارد",
+    "fields": ["standardId", "rowId", "title", "titleEn", "systemEntity"]
+  },
+  {
+    "table": "accounting_standard_mappings",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "نگاشت به استاندارد حسابداری",
+    "fields": ["entityId", "codeId", "accountId"]
+  },
+  {
+    "table": "accounting_statements",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "صورت‌حساب‌های حسابداری",
+    "fields": ["journalId", "periodId", "recipientId", "level", "currencyMode"]
+  },
+  {
+    "table": "accounting_subsidiary_mappings",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "نگاشت حساب‌های معین",
+    "fields": [
+      "sourceAccountId",
+      "targetAccountId",
+      "detail4Id",
+      "detail5Id",
+      "detail6Id"
+    ]
+  },
+  {
+    "table": "accounting_template_lines",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "ردیف‌های الگوی سند",
+    "fields": ["templateId", "position", "accountId", "detail4Id", "detail5Id"]
+  },
+  {
+    "table": "accounting_templates",
+    "module": "مالی",
+    "feature": "حسابداری",
+    "title": "الگوهای ثبت سند",
+    "fields": ["kind", "code", "title", "titleEn", "description"]
+  },
+  {
+    "table": "treasury_cashier_assignments",
+    "module": "مالی",
+    "feature": "خزانه",
+    "title": "تخصیص صندوق‌دار",
+    "fields": ["instrumentId", "cashierId", "startsAt", "endsAt"]
+  },
+  {
+    "table": "treasury_instruments",
+    "module": "مالی",
+    "feature": "خزانه",
+    "title": "اسناد و ابزارهای خزانه",
+    "fields": [
+      "providerId",
+      "receivingBankId",
+      "operatorId",
+      "merchantNumber",
+      "terminalNumber"
+    ]
+  },
+  {
+    "table": "seasonal_journal_regions",
+    "module": "مالی",
+    "feature": "گزارش فصلی و مالیات",
+    "title": "مناطق مرتبط با دفتر فصلی",
+    "fields": ["journalId", "regionId"]
+  },
+  {
+    "table": "seasonal_report_snapshots",
+    "module": "مالی",
+    "feature": "گزارش فصلی و مالیات",
+    "title": "تصویر گزارش فصلی",
+    "fields": ["periodId", "dateFrom", "dateTo", "layout", "digest"]
+  },
+  {
+    "table": "tax_reference_entries",
+    "module": "مالی",
+    "feature": "گزارش فصلی و مالیات",
+    "title": "اقلام مرجع مالیاتی",
+    "fields": ["releaseId", "code", "title"]
+  },
+  {
+    "table": "tax_reference_mappings",
+    "module": "مالی",
+    "feature": "گزارش فصلی و مالیات",
+    "title": "تطبیق داده با مرجع مالیاتی",
+    "fields": ["currencyId", "regionId", "entryId"]
+  },
+  {
+    "table": "tax_reference_releases",
+    "module": "مالی",
+    "feature": "گزارش فصلی و مالیات",
+    "title": "انتشارهای مرجع مالیاتی",
+    "fields": ["kind", "label", "active", "importedAt", "importedById"]
+  },
+  {
+    "table": "document_access_grants",
+    "module": "اسناد و گزارش‌ها",
+    "feature": "اسناد و فایل‌ها",
+    "title": "مجوز دسترسی به سند",
+    "fields": [
+      "token_hash",
+      "document_id",
+      "actor_user_id",
+      "actor_session_id",
+      "purpose"
+    ]
+  },
+  {
+    "table": "document_audit_events",
+    "module": "اسناد و گزارش‌ها",
+    "feature": "اسناد و فایل‌ها",
+    "title": "سوابق تغییر و دسترسی سند",
+    "fields": [
+      "document_id",
+      "version_id",
+      "actor_user_id",
+      "actor_branch_id",
+      "action"
+    ]
+  },
+  {
+    "table": "document_categories",
+    "module": "اسناد و گزارش‌ها",
+    "feature": "اسناد و فایل‌ها",
+    "title": "دسته‌بندی سند",
+    "fields": ["code", "name", "parent_id", "is_active"]
+  },
+  {
+    "table": "document_favorites",
+    "module": "اسناد و گزارش‌ها",
+    "feature": "اسناد و فایل‌ها",
+    "title": "سندهای ستاره‌دار کاربران",
+    "fields": ["user_id", "document_id"]
+  },
+  {
+    "table": "document_processing_jobs",
+    "module": "اسناد و گزارش‌ها",
+    "feature": "اسناد و فایل‌ها",
+    "title": "صف پردازش سند",
+    "fields": ["version_id", "job_type", "status", "attempts", "available_at"]
+  },
+  {
+    "table": "document_quarantines",
+    "module": "اسناد و گزارش‌ها",
+    "feature": "اسناد و فایل‌ها",
+    "title": "فایل‌های قرنطینه‌شده",
+    "fields": [
+      "version_id",
+      "status",
+      "reason_code",
+      "quarantined_at",
+      "reviewed_by_user_id"
+    ]
+  },
+  {
+    "table": "document_relations",
+    "module": "اسناد و گزارش‌ها",
+    "feature": "اسناد و فایل‌ها",
+    "title": "پیوند سند به موجودیت‌های ERP",
+    "fields": [
+      "document_id",
+      "relation_type",
+      "source_module",
+      "source_entity_type",
+      "source_entity_id"
+    ]
+  },
+  {
+    "table": "document_types",
+    "module": "اسناد و گزارش‌ها",
+    "feature": "اسناد و فایل‌ها",
+    "title": "انواع سند",
+    "fields": [
+      "code",
+      "name",
+      "domain",
+      "default_confidentiality",
+      "allowed_mime_types"
+    ]
+  },
+  {
+    "table": "document_versions",
+    "module": "اسناد و گزارش‌ها",
+    "feature": "اسناد و فایل‌ها",
+    "title": "نسخه‌های فایل سند",
+    "fields": [
+      "document_id",
+      "version_number",
+      "storage_object_key",
+      "original_file_name",
+      "safe_download_name"
+    ]
+  },
+  {
+    "table": "documents",
+    "module": "اسناد و گزارش‌ها",
+    "feature": "اسناد و فایل‌ها",
+    "title": "پرونده اصلی سند",
+    "fields": [
+      "archive_code",
+      "title",
+      "description",
+      "document_type_id",
+      "category_id"
+    ]
+  },
+  {
+    "table": "reporting_export_artifacts",
+    "module": "اسناد و گزارش‌ها",
+    "feature": "گزارش‌ساز",
+    "title": "فایل‌های خروجی گزارش",
+    "fields": ["runId", "creatorUserId", "reportCode", "reportName", "format"]
+  },
+  {
+    "table": "reporting_runs",
+    "module": "اسناد و گزارش‌ها",
+    "feature": "گزارش‌ساز",
+    "title": "سابقه اجرای گزارش",
+    "fields": [
+      "reportCode",
+      "savedReportId",
+      "actorUserId",
+      "status",
+      "filterSnapshot"
+    ]
+  },
+  {
+    "table": "reporting_saved_report_shares",
+    "module": "اسناد و گزارش‌ها",
+    "feature": "گزارش‌ساز",
+    "title": "اشتراک گزارش ذخیره‌شده",
+    "fields": ["savedReportId", "recipientUserId", "sharedByUserId"]
+  },
+  {
+    "table": "reporting_saved_reports",
+    "module": "اسناد و گزارش‌ها",
+    "feature": "گزارش‌ساز",
+    "title": "تعریف گزارش ذخیره‌شده",
+    "fields": [
+      "reportCode",
+      "name",
+      "ownerUserId",
+      "sharingScope",
+      "isFavorite"
+    ]
+  },
+  {
+    "table": "reporting_schedules",
+    "module": "اسناد و گزارش‌ها",
+    "feature": "گزارش‌ساز",
+    "title": "زمان‌بندی اجرای گزارش",
+    "fields": [
+      "savedReportId",
+      "ownerUserId",
+      "name",
+      "frequency",
+      "runAtLocalTime"
+    ]
+  },
+  {
+    "table": "reporting_travel_facts",
+    "module": "اسناد و گزارش‌ها",
+    "feature": "گزارش‌ساز",
+    "title": "داده‌های تجمیعی سفر برای گزارش‌گیری",
+    "fields": [
+      "sourceItemId",
+      "sourceVersion",
+      "orderNumber",
+      "occurredAt",
+      "legalEntityCode"
+    ]
+  },
+  {
+    "table": "correspondence_attachments",
+    "module": "مکاتبات",
+    "feature": "دبیرخانه",
+    "title": "پیوست‌های نامه",
+    "fields": ["letterId", "name", "size", "digest", "bytes"]
+  },
+  {
+    "table": "correspondence_deliveries",
+    "module": "مکاتبات",
+    "feature": "دبیرخانه",
+    "title": "تحویل و توزیع نامه",
+    "fields": ["letterId", "senderId", "recipientId", "status", "requestKey"]
+  },
+  {
+    "table": "correspondence_letters",
+    "module": "مکاتبات",
+    "feature": "دبیرخانه",
+    "title": "سربرگ و متن نامه‌ها",
+    "fields": ["authorId", "number", "dateISO", "content"]
+  },
+  {
+    "table": "master_acquaintance_methods",
+    "module": "اطلاعات پایه",
+    "feature": "تعاریف فروش و مشتری",
+    "title": "روش‌های آشنایی مشتری",
+    "fields": ["code", "name", "description", "isActive", "updatedByUserId"]
+  },
+  {
+    "table": "master_campaign_types",
+    "module": "اطلاعات پایه",
+    "feature": "تعاریف فروش و مشتری",
+    "title": "انواع کمپین",
+    "fields": ["code", "name", "englishName", "description", "displayOrder"]
+  },
+  {
+    "table": "master_customer_types",
+    "module": "اطلاعات پایه",
+    "feature": "تعاریف فروش و مشتری",
+    "title": "انواع مشتری",
+    "fields": ["code", "name", "englishName", "description", "displayOrder"]
+  },
+  {
+    "table": "master_lead_sources",
+    "module": "اطلاعات پایه",
+    "feature": "تعاریف فروش و مشتری",
+    "title": "منشأ سرنخ فروش",
+    "fields": ["code", "name", "englishName", "description", "displayOrder"]
+  },
+  {
+    "table": "master_lost_reasons",
+    "module": "اطلاعات پایه",
+    "feature": "تعاریف فروش و مشتری",
+    "title": "دلایل از دست رفتن فروش",
+    "fields": ["code", "name", "englishName", "description", "displayOrder"]
+  },
+  {
+    "table": "master_sales_channels",
+    "module": "اطلاعات پایه",
+    "feature": "تعاریف فروش و مشتری",
+    "title": "کانال‌های فروش",
+    "fields": ["code", "name", "englishName", "description", "displayOrder"]
+  },
+  {
+    "table": "master_tags",
+    "module": "اطلاعات پایه",
+    "feature": "تعاریف فروش و مشتری",
+    "title": "برچسب‌ها",
+    "fields": ["code", "name", "englishName", "description", "colorHex"]
+  },
+  {
+    "table": "master_aircraft_types",
+    "module": "اطلاعات پایه",
+    "feature": "حمل‌ونقل",
+    "title": "نوع هواپیما",
+    "fields": ["code", "manufacturer", "model", "name", "englishName"]
+  },
+  {
+    "table": "master_airlines",
+    "module": "اطلاعات پایه",
+    "feature": "حمل‌ونقل",
+    "title": "شرکت هواپیمایی",
+    "fields": ["organizationId", "code", "icaoCode", "name", "isActive"]
+  },
+  {
+    "table": "master_baggage_rules",
+    "module": "اطلاعات پایه",
+    "feature": "حمل‌ونقل",
+    "title": "مقررات بار",
+    "fields": ["airlineId", "cabinClassId", "code", "name", "passengerType"]
+  },
+  {
+    "table": "master_bus_companies",
+    "module": "اطلاعات پایه",
+    "feature": "حمل‌ونقل",
+    "title": "شرکت اتوبوس‌رانی",
+    "fields": ["organizationId", "countryId", "code", "name", "englishName"]
+  },
+  {
+    "table": "master_bus_type_facilities",
+    "module": "اطلاعات پایه",
+    "feature": "حمل‌ونقل",
+    "title": "امکانات نوع اتوبوس",
+    "fields": ["busTypeId", "facilityId", "assignedAt", "assignedByUserId"]
+  },
+  {
+    "table": "master_bus_types",
+    "module": "اطلاعات پایه",
+    "feature": "حمل‌ونقل",
+    "title": "انواع اتوبوس",
+    "fields": ["code", "manufacturer", "model", "name", "englishName"]
+  },
+  {
+    "table": "master_cabin_classes",
+    "module": "اطلاعات پایه",
+    "feature": "حمل‌ونقل",
+    "title": "کلاس کابین پرواز",
+    "fields": ["code", "bookingCode", "name", "englishName", "cabinType"]
+  },
+  {
+    "table": "master_rail_companies",
+    "module": "اطلاعات پایه",
+    "feature": "حمل‌ونقل",
+    "title": "شرکت‌های ریلی",
+    "fields": ["organizationId", "countryId", "code", "name", "englishName"]
+  },
+  {
+    "table": "master_train_type_facilities",
+    "module": "اطلاعات پایه",
+    "feature": "حمل‌ونقل",
+    "title": "امکانات نوع قطار",
+    "fields": ["trainTypeId", "facilityId", "assignedAt", "assignedByUserId"]
+  },
+  {
+    "table": "master_train_types",
+    "module": "اطلاعات پایه",
+    "feature": "حمل‌ونقل",
+    "title": "انواع قطار",
+    "fields": ["code", "manufacturer", "model", "name", "englishName"]
+  },
+  {
+    "table": "master_transfer_types",
+    "module": "اطلاعات پایه",
+    "feature": "حمل‌ونقل",
+    "title": "انواع ترانسفر",
+    "fields": ["code", "name", "englishName", "vehicleType", "serviceMode"]
+  },
+  {
+    "table": "master_airports",
+    "module": "اطلاعات پایه",
+    "feature": "جغرافیا و پایانه‌ها",
+    "title": "فرودگاه",
+    "fields": ["cityId", "iataCode", "icaoCode", "name", "englishName"]
+  },
+  {
+    "table": "master_cities",
+    "module": "اطلاعات پایه",
+    "feature": "جغرافیا و پایانه‌ها",
+    "title": "شهرها",
+    "fields": ["countryId", "code", "name", "isActive", "updatedByUserId"]
+  },
+  {
+    "table": "master_countries",
+    "module": "اطلاعات پایه",
+    "feature": "جغرافیا و پایانه‌ها",
+    "title": "کشورها",
+    "fields": ["code", "name", "englishName", "isActive", "updatedByUserId"]
+  },
+  {
+    "table": "master_rail_terminals",
+    "module": "اطلاعات پایه",
+    "feature": "جغرافیا و پایانه‌ها",
+    "title": "پایانه‌های ریلی",
+    "fields": ["cityId", "code", "name", "englishName", "logoFileReference"]
+  },
+  {
+    "table": "master_regions",
+    "module": "اطلاعات پایه",
+    "feature": "جغرافیا و پایانه‌ها",
+    "title": "مناطق جغرافیایی",
+    "fields": ["countryId", "parentRegionId", "code", "name", "englishName"]
+  },
+  {
+    "table": "master_terminals",
+    "module": "اطلاعات پایه",
+    "feature": "جغرافیا و پایانه‌ها",
+    "title": "پایانه‌ها",
+    "fields": ["airportId", "code", "name", "englishName", "terminalType"]
+  },
+  {
+    "table": "master_audit_events",
+    "module": "اطلاعات پایه",
+    "feature": "عملیات اطلاعات پایه",
+    "title": "سابقه تغییر اطلاعات پایه",
+    "fields": ["actorUserId", "actorBranchId", "action", "resource", "entityId"]
+  },
+  {
+    "table": "master_export_requests",
+    "module": "اطلاعات پایه",
+    "feature": "عملیات اطلاعات پایه",
+    "title": "درخواست خروجی اطلاعات پایه",
+    "fields": [
+      "resource",
+      "format",
+      "filterSnapshot",
+      "columns",
+      "permissionSnapshot"
+    ]
+  },
+  {
+    "table": "master_bank_branches",
+    "module": "اطلاعات پایه",
+    "feature": "ارز و بانک",
+    "title": "شعب بانک",
+    "fields": ["bankId", "cityId", "code", "name", "englishName"]
+  },
+  {
+    "table": "master_banks",
+    "module": "اطلاعات پایه",
+    "feature": "ارز و بانک",
+    "title": "بانک‌ها",
+    "fields": ["countryId", "code", "name", "isActive", "updatedByUserId"]
+  },
+  {
+    "table": "master_currencies",
+    "module": "اطلاعات پایه",
+    "feature": "ارز و بانک",
+    "title": "ارزها",
+    "fields": ["code", "name", "symbol", "decimalDigits", "isActive"]
+  },
+  {
+    "table": "master_draft_exchange_rates",
+    "module": "اطلاعات پایه",
+    "feature": "ارز و بانک",
+    "title": "پیش‌نویس نرخ ارز",
+    "fields": ["fromCurrencyId", "toCurrencyId", "rate", "source", "observedAt"]
+  },
+  {
+    "table": "master_payment_methods",
+    "module": "اطلاعات پایه",
+    "feature": "ارز و بانک",
+    "title": "روش‌های پرداخت",
+    "fields": ["code", "name", "englishName", "description", "channel"]
+  },
+  {
+    "table": "master_broker_cities",
+    "module": "اطلاعات پایه",
+    "feature": "سازمان‌ها و همکاران",
+    "title": "شهرهای تحت پوشش کارگزار",
+    "fields": ["brokerId", "cityId"]
+  },
+  {
+    "table": "master_broker_services",
+    "module": "اطلاعات پایه",
+    "feature": "سازمان‌ها و همکاران",
+    "title": "خدمات کارگزار",
+    "fields": ["brokerId", "serviceId", "assignedAt", "assignedByUserId"]
+  },
+  {
+    "table": "master_brokers",
+    "module": "اطلاعات پایه",
+    "feature": "سازمان‌ها و همکاران",
+    "title": "کارگزاران",
+    "fields": ["organizationId", "code", "name", "isActive", "updatedByUserId"]
+  },
+  {
+    "table": "master_leaders",
+    "module": "اطلاعات پایه",
+    "feature": "سازمان‌ها و همکاران",
+    "title": "راهنمایان تور",
+    "fields": ["code", "name", "languages", "expertise", "isActive"]
+  },
+  {
+    "table": "master_organization_addresses",
+    "module": "اطلاعات پایه",
+    "feature": "سازمان‌ها و همکاران",
+    "title": "نشانی سازمان",
+    "fields": ["organizationId", "countryId", "cityId", "label", "postalCode"]
+  },
+  {
+    "table": "master_organization_contacts",
+    "module": "اطلاعات پایه",
+    "feature": "سازمان‌ها و همکاران",
+    "title": "راه تماس سازمان",
+    "fields": [
+      "organizationId",
+      "code",
+      "fullName",
+      "jobTitle",
+      "preferredChannel"
+    ]
+  },
+  {
+    "table": "master_organization_roles",
+    "module": "اطلاعات پایه",
+    "feature": "سازمان‌ها و همکاران",
+    "title": "نقش‌های سازمان",
+    "fields": ["organizationId", "roleCode", "assignedAt", "assignedByUserId"]
+  },
+  {
+    "table": "master_organizations",
+    "module": "اطلاعات پایه",
+    "feature": "سازمان‌ها و همکاران",
+    "title": "شناسنامه سازمان‌های مرجع",
+    "fields": [
+      "code",
+      "legalName",
+      "displayName",
+      "isActive",
+      "updatedByUserId"
+    ]
+  },
+  {
+    "table": "master_supplier_services",
+    "module": "اطلاعات پایه",
+    "feature": "سازمان‌ها و همکاران",
+    "title": "خدمات هر تأمین‌کننده",
+    "fields": ["supplierId", "serviceId", "assignedAt", "assignedByUserId"]
+  },
+  {
+    "table": "master_suppliers",
+    "module": "اطلاعات پایه",
+    "feature": "سازمان‌ها و همکاران",
+    "title": "تأمین‌کنندگان",
+    "fields": [
+      "organizationId",
+      "countryId",
+      "cityId",
+      "code",
+      "externalProviderReference"
+    ]
+  },
+  {
+    "table": "master_cip_services",
+    "module": "اطلاعات پایه",
+    "feature": "خدمات و محصولات سفر",
+    "title": "خدمات تشریفات فرودگاهی",
+    "fields": ["airportId", "supplierId", "code", "name", "englishName"]
+  },
+  {
+    "table": "master_insurance_coverages",
+    "module": "اطلاعات پایه",
+    "feature": "خدمات و محصولات سفر",
+    "title": "پوشش‌های بیمه",
+    "fields": ["currencyId", "code", "name", "englishName", "coverageLimit"]
+  },
+  {
+    "table": "master_insurance_plan_coverages",
+    "module": "اطلاعات پایه",
+    "feature": "خدمات و محصولات سفر",
+    "title": "پوشش‌های هر طرح بیمه",
+    "fields": ["planId", "coverageId", "assignedAt", "assignedByUserId"]
+  },
+  {
+    "table": "master_insurance_plans",
+    "module": "اطلاعات پایه",
+    "feature": "خدمات و محصولات سفر",
+    "title": "طرح‌های بیمه",
+    "fields": ["insurerId", "code", "name", "englishName", "destinationRegion"]
+  },
+  {
+    "table": "master_insurers",
+    "module": "اطلاعات پایه",
+    "feature": "خدمات و محصولات سفر",
+    "title": "شرکت‌های بیمه",
+    "fields": ["organizationId", "code", "name", "isActive", "updatedByUserId"]
+  },
+  {
+    "table": "master_manifest_templates",
+    "module": "اطلاعات پایه",
+    "feature": "خدمات و محصولات سفر",
+    "title": "قالب‌های مانیفست",
+    "fields": ["airlineId", "code", "name", "versionNumber", "fileFormat"]
+  },
+  {
+    "table": "master_tour_types",
+    "module": "اطلاعات پایه",
+    "feature": "خدمات و محصولات سفر",
+    "title": "انواع تور",
+    "fields": ["code", "name", "englishName", "scope", "description"]
+  },
+  {
+    "table": "master_travel_services",
+    "module": "اطلاعات پایه",
+    "feature": "خدمات و محصولات سفر",
+    "title": "خدمات سفر",
+    "fields": ["code", "name", "englishName", "isActive", "updatedByUserId"]
+  },
+  {
+    "table": "master_visa_services",
+    "module": "اطلاعات پایه",
+    "feature": "خدمات و محصولات سفر",
+    "title": "خدمات ویزا",
+    "fields": ["countryId", "supplierId", "code", "name", "englishName"]
+  },
+  {
+    "table": "master_composite_hotel_members",
+    "module": "اطلاعات پایه",
+    "feature": "اقامت",
+    "title": "هتل‌های عضو هتل ترکیبی",
+    "fields": [
+      "compositeHotelId",
+      "hotelId",
+      "priority",
+      "isBackup",
+      "assignedAt"
+    ]
+  },
+  {
+    "table": "master_composite_hotels",
+    "module": "اطلاعات پایه",
+    "feature": "اقامت",
+    "title": "تعریف هتل ترکیبی",
+    "fields": ["cityId", "code", "name", "englishName", "usageCondition"]
+  },
+  {
+    "table": "master_facilities",
+    "module": "اطلاعات پایه",
+    "feature": "اقامت",
+    "title": "امکانات قابل انتخاب",
+    "fields": ["code", "name", "englishName", "category", "iconFileReference"]
+  },
+  {
+    "table": "master_hotel_base_rate_rows",
+    "module": "اطلاعات پایه",
+    "feature": "اقامت",
+    "title": "ردیف نرخ پایه هتل",
+    "fields": [
+      "period_version_id",
+      "hotel_id",
+      "hotel_version",
+      "hotel_name_snapshot",
+      "star_rating_snapshot"
+    ]
+  },
+  {
+    "table": "master_hotel_chains",
+    "module": "اطلاعات پایه",
+    "feature": "اقامت",
+    "title": "زنجیره هتل",
+    "fields": ["countryId", "code", "name", "englishName", "website"]
+  },
+  {
+    "table": "master_hotel_facilities",
+    "module": "اطلاعات پایه",
+    "feature": "اقامت",
+    "title": "امکانات هر هتل",
+    "fields": ["hotelId", "facilityId", "assignedAt", "assignedByUserId"]
+  },
+  {
+    "table": "master_hotel_import_sessions",
+    "module": "اطلاعات پایه",
+    "feature": "اقامت",
+    "title": "نشست ورود اطلاعات هتل",
+    "fields": [
+      "templateVersion",
+      "fileHash",
+      "originalFileName",
+      "stagingFileName",
+      "actorUserId"
+    ]
+  },
+  {
+    "table": "master_hotel_meal_services",
+    "module": "اطلاعات پایه",
+    "feature": "اقامت",
+    "title": "خدمات غذای هتل",
+    "fields": ["hotelId", "mealServiceId", "assignedAt", "assignedByUserId"]
+  },
+  {
+    "table": "master_hotel_rate_period_versions",
+    "module": "اطلاعات پایه",
+    "feature": "اقامت",
+    "title": "نسخه بازه نرخ هتل",
+    "fields": [
+      "period_id",
+      "title",
+      "city_id_snapshot",
+      "city_name_snapshot",
+      "check_in"
+    ]
+  },
+  {
+    "table": "master_hotel_rate_periods",
+    "module": "اطلاعات پایه",
+    "feature": "اقامت",
+    "title": "بازه‌های نرخ هتل",
+    "fields": ["city_id", "title", "check_in", "check_out", "nights"]
+  },
+  {
+    "table": "master_hotel_room_types",
+    "module": "اطلاعات پایه",
+    "feature": "اقامت",
+    "title": "انواع اتاق هر هتل",
+    "fields": ["hotelId", "roomTypeId", "assignedAt", "assignedByUserId"]
+  },
+  {
+    "table": "master_hotels",
+    "module": "اطلاعات پایه",
+    "feature": "اقامت",
+    "title": "فهرست هتل‌ها",
+    "fields": ["cityId", "organizationId", "code", "name", "starRating"]
+  },
+  {
+    "table": "master_meal_services",
+    "module": "اطلاعات پایه",
+    "feature": "اقامت",
+    "title": "انواع خدمات غذا",
+    "fields": ["code", "name", "englishName", "includedMeals", "isActive"]
+  },
+  {
+    "table": "master_room_types",
+    "module": "اطلاعات پایه",
+    "feature": "اقامت",
+    "title": "انواع اتاق",
+    "fields": ["code", "name", "englishName", "referenceCapacity", "isActive"]
+  },
+  {
+    "table": "iam_audit_events",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت کاربران و دسترسی",
+    "title": "گزارش ممیزی دسترسی",
+    "fields": ["actorUserId", "action", "entityType", "entityId", "outcome"]
+  },
+  {
+    "table": "iam_permissions",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت کاربران و دسترسی",
+    "title": "مجوزهای قابل انتساب",
+    "fields": ["code", "module", "name", "description"]
+  },
+  {
+    "table": "iam_role_permissions",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت کاربران و دسترسی",
+    "title": "ارتباط نقش و مجوز",
+    "fields": ["roleId", "permissionId", "grantedAt"]
+  },
+  {
+    "table": "iam_roles",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت کاربران و دسترسی",
+    "title": "نقش‌های سامانه",
+    "fields": ["code", "name", "description", "isSystem", "isActive"]
+  },
+  {
+    "table": "iam_sessions",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت کاربران و دسترسی",
+    "title": "نشست‌های ورود",
+    "fields": ["userId", "familyId", "refreshTokenHash", "status", "expiresAt"]
+  },
+  {
+    "table": "iam_user_branches",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت کاربران و دسترسی",
+    "title": "شعب مجاز کاربر",
+    "fields": ["userId", "isPrimary", "grantedAt"]
+  },
+  {
+    "table": "iam_user_profiles",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت کاربران و دسترسی",
+    "title": "پروفایل کاربر",
+    "fields": ["user_id", "phone", "photo_document_id", "organization_unit_id"]
+  },
+  {
+    "table": "iam_user_roles",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت کاربران و دسترسی",
+    "title": "انتساب نقش به کاربر",
+    "fields": ["userId", "roleId", "assignedAt"]
+  },
+  {
+    "table": "iam_users",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت کاربران و دسترسی",
+    "title": "حساب‌های کاربری",
+    "fields": [
+      "email",
+      "displayName",
+      "passwordHash",
+      "status",
+      "failedLoginAttempts"
+    ]
+  },
+  {
+    "table": "branches",
+    "module": "تنظیمات شرکت",
+    "feature": "شرکت‌ها و شعب",
+    "title": "شعب سازمانی",
+    "fields": ["code", "name", "isActive"]
+  },
+  {
+    "table": "legal_entities",
+    "module": "تنظیمات شرکت",
+    "feature": "شرکت‌ها و شعب",
+    "title": "شرکت‌ها و اشخاص حقوقی مجموعه",
+    "fields": ["code", "persianName", "latinName", "tradeName", "logoFileId"]
+  },
+  {
+    "table": "legal_entity_audit_events",
+    "module": "تنظیمات شرکت",
+    "feature": "شرکت‌ها و شعب",
+    "title": "تاریخچه تغییر شرکت",
+    "fields": ["actorUserId", "action", "entityId", "outcome", "reason"]
+  },
+  {
+    "table": "legal_entity_branding_versions",
+    "module": "تنظیمات شرکت",
+    "feature": "شرکت‌ها و شعب",
+    "title": "نسخه‌های هویت بصری شرکت",
+    "fields": ["legalEntityId", "snapshot"]
+  },
+  {
+    "table": "legal_entity_document_issues",
+    "module": "تنظیمات شرکت",
+    "feature": "شرکت‌ها و شعب",
+    "title": "سابقه صدور سند شرکتی",
+    "fields": [
+      "issuerLegalEntityId",
+      "issuerCode",
+      "issuerName",
+      "brandingSnapshotVersion",
+      "brandingSnapshot"
+    ]
+  },
+  {
+    "table": "user_legal_entity_contexts",
+    "module": "تنظیمات شرکت",
+    "feature": "شرکت‌ها و شعب",
+    "title": "دامنه شرکت انتخاب‌شده کاربر",
+    "fields": ["userId", "mode", "legalEntityId"]
+  },
+  {
+    "table": "settings_procurement_approval_policies",
+    "module": "تنظیمات شرکت",
+    "feature": "سیاست تأیید خرید",
+    "title": "قواعد گردش تأیید درخواست خرید",
+    "fields": [
+      "unitId",
+      "category",
+      "currencyCode",
+      "maximumAmount",
+      "allowUnknownEstimate"
+    ]
+  },
+  {
+    "table": "system_admin_operations",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت سامانه",
+    "title": "عملیات مدیریتی سامانه",
+    "fields": ["kind", "status", "idempotencyKey", "payload", "reason"]
+  },
+  {
+    "table": "system_audit_events",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت سامانه",
+    "title": "رویدادهای ممیزی سامانه",
+    "fields": ["actorUserId", "action", "entityType", "entityId", "outcome"]
+  },
+  {
+    "table": "system_backup_requests",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت سامانه",
+    "title": "درخواست پشتیبان‌گیری",
+    "fields": [
+      "type",
+      "status",
+      "requestedByUserId",
+      "reason",
+      "retentionUntil"
+    ]
+  },
+  {
+    "table": "system_feature_flags",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت سامانه",
+    "title": "فعال‌سازی قابلیت‌ها",
+    "fields": ["key", "title", "description", "scope", "scopeId"]
+  },
+  {
+    "table": "system_health_snapshots",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت سامانه",
+    "title": "تاریخچه سلامت سامانه",
+    "fields": ["component", "status", "latencyMs", "detail", "metrics"]
+  },
+  {
+    "table": "system_issued_numbers",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت سامانه",
+    "title": "شماره‌های صادرشده",
+    "fields": [
+      "schemeId",
+      "idempotencyKey",
+      "issuedValue",
+      "sequenceValue",
+      "periodKey"
+    ]
+  },
+  {
+    "table": "system_message_templates",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت سامانه",
+    "title": "قالب‌های پیام سامانه",
+    "fields": ["key", "kind", "language", "status", "subject"]
+  },
+  {
+    "table": "system_notification_channels",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت سامانه",
+    "title": "کانال‌های ارسال اعلان",
+    "fields": [
+      "channel",
+      "enabled",
+      "templateRef",
+      "quietHoursStart",
+      "quietHoursEnd"
+    ]
+  },
+  {
+    "table": "system_numbering_schemes",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت سامانه",
+    "title": "طرح‌های شماره‌گذاری",
+    "fields": ["code", "scope", "scopeId", "scopeKey", "prefix"]
+  },
+  {
+    "table": "system_numbering_sequences",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت سامانه",
+    "title": "شمارنده‌های شماره‌گذاری",
+    "fields": ["schemeId", "periodKey", "lastValue"]
+  },
+  {
+    "table": "system_setting_versions",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت سامانه",
+    "title": "نسخه‌های تنظیمات",
+    "fields": ["settingId", "value", "reason"]
+  },
+  {
+    "table": "system_settings",
+    "module": "تنظیمات شرکت",
+    "feature": "مدیریت سامانه",
+    "title": "مقادیر تنظیمات سامانه",
+    "fields": ["namespace", "key", "valueType", "scope", "scopeId"]
+  },
+  {
+    "table": "integration_supplier_messages",
+    "module": "زیرساخت و یکپارچه‌سازی",
+    "feature": "اتصال تأمین‌کننده و تلفن",
+    "title": "پیام‌های تبادل‌شده با تأمین‌کننده",
+    "fields": [
+      "externalMessageId",
+      "eventType",
+      "orderReference",
+      "status",
+      "payload"
+    ]
+  },
+  {
+    "table": "integration_telephony_answers",
+    "module": "زیرساخت و یکپارچه‌سازی",
+    "feature": "اتصال تأمین‌کننده و تلفن",
+    "title": "پاسخ‌های سامانه تلفنی",
+    "fields": [
+      "connectionId",
+      "inboxId",
+      "queue",
+      "phoneFingerprint",
+      "answeredAt"
+    ]
+  },
+  {
+    "table": "integration_telephony_audit",
+    "module": "زیرساخت و یکپارچه‌سازی",
+    "feature": "اتصال تأمین‌کننده و تلفن",
+    "title": "رد عملیات اتصال تلفنی",
+    "fields": ["connectionId", "actorUserId", "action", "metadata", "entityId"]
+  },
+  {
+    "table": "integration_telephony_commands",
+    "module": "زیرساخت و یکپارچه‌سازی",
+    "feature": "اتصال تأمین‌کننده و تلفن",
+    "title": "فرمان‌های تلفنی",
+    "fields": [
+      "connectionId",
+      "actorUserId",
+      "extension",
+      "encryptedDestination",
+      "keyVersion"
+    ]
+  },
+  {
+    "table": "integration_telephony_connections",
+    "module": "زیرساخت و یکپارچه‌سازی",
+    "feature": "اتصال تأمین‌کننده و تلفن",
+    "title": "تعریف اتصال‌های تلفنی",
+    "fields": [
+      "name",
+      "synthetic",
+      "active",
+      "maxAgeSeconds",
+      "maxFutureSeconds"
+    ]
+  },
+  {
+    "table": "integration_telephony_inbox",
+    "module": "زیرساخت و یکپارچه‌سازی",
+    "feature": "اتصال تأمین‌کننده و تلفن",
+    "title": "صف ورودی تلفن",
+    "fields": [
+      "connectionId",
+      "externalFingerprint",
+      "payloadFingerprint",
+      "encryptedPayload",
+      "keyVersion"
+    ]
+  },
+  {
+    "table": "integration_telephony_mappings",
+    "module": "زیرساخت و یکپارچه‌سازی",
+    "feature": "اتصال تأمین‌کننده و تلفن",
+    "title": "نگاشت شناسه‌های تلفنی",
+    "fields": ["teamId", "connectionId", "extension", "userId", "active"]
+  },
+  {
+    "table": "integration_telephony_outbox",
+    "module": "زیرساخت و یکپارچه‌سازی",
+    "feature": "اتصال تأمین‌کننده و تلفن",
+    "title": "صف خروجی تلفن",
+    "fields": ["inboxId", "availableAt", "completedAt"]
+  },
+  {
+    "table": "integration_telephony_recording_chunks",
+    "module": "زیرساخت و یکپارچه‌سازی",
+    "feature": "اتصال تأمین‌کننده و تلفن",
+    "title": "قطعات ضبط مکالمه",
+    "fields": ["recordingId", "index", "encryptedAudio", "keyVersion"]
+  },
+  {
+    "table": "integration_telephony_recordings",
+    "module": "زیرساخت و یکپارچه‌سازی",
+    "feature": "اتصال تأمین‌کننده و تلفن",
+    "title": "پرونده ضبط مکالمه",
+    "fields": [
+      "connectionId",
+      "rootFingerprint",
+      "encryptedMetadata",
+      "keyVersion",
+      "sha256"
+    ]
+  },
+  {
+    "table": "_prisma_migrations",
+    "module": "زیرساخت و یکپارچه‌سازی",
+    "feature": "نگهداری دیتابیس",
+    "title": "تاریخچه اجرای تغییرات ساختار دیتابیس",
+    "fields": [
+      "checksum",
+      "finished_at",
+      "migration_name",
+      "logs",
+      "rolled_back_at"
+    ],
+    "usage": "سابقه اجرای مهاجرت‌های ساختار دیتابیس توسط Prisma را ثبت می‌کند."
+  }
+]
