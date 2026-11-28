@@ -9,7 +9,13 @@ import { AccountingStandardReport } from './accounting-standard-report';
 import { accountingBookId } from '../accounting-book-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { FolderOpen, FileText } from 'lucide-react';
-import { useId, useRef, useState, type ReactNode } from 'react';
+import {
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 import Link from '@/i18n/link';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import type {
@@ -22,7 +28,14 @@ import { AccountingButton as Button } from './accounting-operations';
 import { Input, Textarea, FormField } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
 import { SearchCombobox } from '@/components/ui/search-combobox';
-import { useAccessPermissions } from '@/modules/iam/access-context';
+import {
+  readHeaderSession,
+  subscribeHeaderSession,
+} from '@/lib/header-session';
+import {
+  useAccessActor,
+  useAccessPermissions,
+} from '@/modules/iam/access-context';
 import { journalDisplayTotals } from '../accounting-money';
 import { accountingApi } from '../api/accounting-api';
 import { AccountingReportWorkspace } from './accounting-report-workspace';
@@ -1581,6 +1594,13 @@ function JournalEditorWorkspace({
 }) {
   const router = useRouter();
   const editorPath = usePathname();
+  const actorId = useAccessActor()?.userId;
+  const currentMaker = useSyncExternalStore(
+    subscribeHeaderSession,
+    () =>
+      actorId ? (readHeaderSession(undefined, actorId)?.displayName ?? '') : '',
+    () => '',
+  );
   const clearEditor = () => {
     setJournal(null);
     setHead(defaultHead());
@@ -2175,7 +2195,12 @@ function JournalEditorWorkspace({
                 <Input
                   aria-label="صادر کننده"
                   readOnly
-                  value={journal?.makerName ?? ''}
+                  value={
+                    journal?.makerName ??
+                    (!journal || journal.makerId === actorId
+                      ? currentMaker
+                      : '')
+                  }
                 />
               </FormField>
             </div>

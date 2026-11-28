@@ -186,7 +186,9 @@ export function AccountingDocumentList({
         ? 'APPROVED'
         : '';
   const query = useQuery({
-    enabled: mode !== 'review' || !!currentPeriod,
+    enabled:
+      (mode !== 'review' || !!currentPeriod) &&
+      !(mode === 'list' && view === 'supplementary'),
     queryKey: [
       'accounting',
       'document-list',
@@ -830,6 +832,34 @@ export function AccountingDocumentList({
       </DocumentIconAction>
     </div>
   );
+  const viewPicker = (
+    <select
+      aria-label="نمای فهرست اسناد"
+      value={view}
+      onChange={(e) => {
+        setView(e.target.value);
+        setPage(1);
+        setSelected([]);
+      }}
+    >
+      <option value="all">لیست اسناد</option>
+      <option value="non-memo">لیست اسناد غیر یادداشت</option>
+      <option value="editable" disabled={!can('finance.journal.create')}>
+        لیست اسناد قابل ویرایش
+      </option>
+      <option value="supplementary">لیست اسناد دوره متمم</option>
+    </select>
+  );
+  if (mode === 'list' && view === 'supplementary')
+    return (
+      <section data-accounting-list className="space-y-3">
+        <h2 className="font-bold">فهرست سند حسابداری</h2>
+        {viewPicker}
+        <p role="status">
+          طبقه‌بندی دوره متمم برای اسناد این دفتر تعریف نشده است.
+        </p>
+      </section>
+    );
   return (
     <section
       className="space-y-3"
@@ -847,28 +877,7 @@ export function AccountingDocumentList({
       </h2>
       {mode === 'list' && (
         <div className="flex flex-wrap items-center gap-3">
-          <select
-            aria-label="نمای فهرست اسناد"
-            value={view}
-            onChange={(e) => {
-              setView(e.target.value);
-              setPage(1);
-              setSelected([]);
-            }}
-          >
-            <option value="all">لیست اسناد</option>
-            <option value="non-memo">لیست اسناد غیر یادداشت</option>
-            <option value="editable" disabled={!can('finance.journal.create')}>
-              لیست اسناد قابل ویرایش
-            </option>
-            <option
-              value="supplementary"
-              disabled
-              title="طبقه‌بندی دوره متمم برای اسناد این دفتر تعریف نشده است."
-            >
-              لیست اسناد دوره متمم
-            </option>
-          </select>
+          {viewPicker}
           {can('finance.export') && (
             <>
               <button
