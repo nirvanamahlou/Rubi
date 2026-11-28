@@ -11,7 +11,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { FolderOpen, FileText } from 'lucide-react';
 import { useId, useRef, useState, type ReactNode } from 'react';
 import Link from '@/i18n/link';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import type {
   AccountingAttributes,
   AccountingJournalV1,
@@ -59,7 +59,10 @@ import { AccountingAdvancedWorkspace } from './accounting-advanced-workspace';
 import { AccountingSourceWorkspace } from './accounting-source-workspace';
 import { AccountingYearEndWorkspace } from './accounting-year-end-workspace';
 import { AccountingCompletionWorkspace } from './accounting-completion-workspace';
-import { accountingCompletionRoute } from '../accounting-completion-routes';
+import {
+  accountingCompletionRoute,
+  completionJournalHref,
+} from '../accounting-completion-routes';
 import { AccountingAutomationWorkspace } from './accounting-automation-workspace';
 import { AccountingDocumentNumbering } from './accounting-document-numbering';
 import { AccountingDocumentPosting } from './accounting-document-posting';
@@ -78,6 +81,16 @@ import { AccountingInternalReport } from './accounting-internal-report';
 import { internalAccountingReportKind } from '../accounting-internal-report-model';
 import { DocumentIconAction } from './accounting-document-filter';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
+import {
+  AccountingVoucherPrint,
+  printVouchers,
+} from './accounting-voucher-print';
+import { AccountingJournalActivity } from './accounting-journal-activity';
+import {
+  copiedVoucherLines,
+  journalStates,
+  defaultVoucherType,
+} from '../accounting-voucher-display';
 import { AccountingJournalLines } from './accounting-journal-lines';
 import { AccountingDocumentImportDialog } from './accounting-document-import-dialog';
 import {
@@ -118,14 +131,7 @@ const writableJournalLines = (lines: AccountingLineV1[]) =>
         : {}),
     },
   }));
-const statuses: Record<string, string> = {
-  MEMORANDUM: 'ثبت یادداشت',
-  DRAFT: 'پیش‌نویس',
-  PENDING_APPROVAL: 'منتظر تأیید',
-  APPROVED: 'تأییدشده',
-  POSTED: 'قطعی',
-  CANCELLED: 'لغوشده',
-};
+const statuses: Record<string, string> = journalStates;
 const internalSections: readonly (readonly [string, string])[] = [
   ['general-ledger/documents/list', 'فهرست اسناد'],
 ] as const;
@@ -304,7 +310,12 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   );
   const bookId =
     legacyBook?.id ??
-    accountingBookId(books, selectedBookId || requestedBookId);
+    accountingBookId(
+      books,
+      pathname.includes('/documents/')
+        ? requestedBookId || fiscal?.data?.bookId || selectedBookId
+        : selectedBookId || requestedBookId,
+    );
   const snapshotQuery = useQuery({
     queryKey: ['accounting', 'snapshot', bookId, companyKey],
     queryFn: () => accountingApi.snapshot(bookId),
@@ -686,7 +697,7 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   )
     content = (
       <JournalWorkspace
-        key={bookId + section}
+        key={bookId + section + (fiscal?.period?.id ?? '')}
         book={snapshot}
         mode="edit"
         setupOpening
@@ -877,8 +888,9 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   )
     content = (
       <AccountingDocumentList
-        key={bookId + section}
+        key={bookId + section + (fiscal?.period?.id ?? '')}
         book={snapshot}
+        branch={branches.find((b) => b.id === snapshot.book.branchId)?.name}
         mode={
           section.endsWith('/review')
             ? 'review'
@@ -904,7 +916,7 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   )
     content = (
       <JournalWorkspace
-        key={bookId + section}
+        key={bookId + section + (fiscal?.period?.id ?? '')}
         book={snapshot}
         mode={
           section.endsWith('/journals')
@@ -1493,9 +1505,17 @@ type JournalMode = 'edit' | 'list' | 'review' | 'posting' | 'deleted';
 function JournalWorkspace(
   props: Omit<Parameters<typeof JournalEditorWorkspace>[0], 'initialJournal'>,
 ) {
-  const linkedId = useSearchParams().get('journalId') ?? '';
+  const params = useSearchParams();
+  const copyFrom = params.get('copyFrom') ?? '';
+  const linkedId = params.get('journalId') || copyFrom;
   const linked = useQuery({
-    queryKey: ['accounting', 'linked-journal', props.book.book.id, linkedId],
+    queryKey: [
+      'accounting',
+      'linked-journal',
+      props.book.book.id,
+      props.book.periods.map((p) => p.id),
+      linkedId,
+    ],
     queryFn: () => accountingApi.journals(props.book.book.id, { id: linkedId }),
     enabled: props.mode === 'edit' && Boolean(linkedId),
   });
@@ -1521,9 +1541,11 @@ function JournalWorkspace(
       );
     return (
       <JournalEditorWorkspace
-        key={`${record.id}:${record.version}`}
+        key={`${record.id}:${record.version}:${copyFrom}`}
         {...props}
-        initialJournal={record}
+        {...(copyFrom && !params.get('journalId')
+          ? { copySource: record }
+          : { initialJournal: record })}
       />
     );
   }
@@ -1545,6 +1567,7 @@ function JournalEditorWorkspace({
   run,
   can,
   initialJournal,
+  copySource,
   setupOpening = false,
 }: {
   book: AccountingSnapshotV1;
@@ -1553,15 +1576,25 @@ function JournalEditorWorkspace({
   run: Run;
   can: (p: string) => boolean;
   initialJournal?: AccountingJournalV1;
+  copySource?: AccountingJournalV1;
   setupOpening?: boolean;
 }) {
   const router = useRouter();
-  const fresh = () => {
+  const editorPath = usePathname();
+  const clearEditor = () => {
     setJournal(null);
     setHead(defaultHead());
     setLines([]);
     setNotes([]);
     setTab('main');
+  };
+  const fresh = () => {
+    clearEditor();
+    if (initialJournal || copySource)
+      router.replace(
+        editorPath + '?' + new URLSearchParams({ bookId: book.book.id }),
+        { scroll: false },
+      );
   };
   const closeEditor = () =>
     router.push(
@@ -1569,32 +1602,40 @@ function JournalEditorWorkspace({
     );
   const defaultHead = (): Draft => {
     const today = new Date();
+    const primary = defaultVoucherType(book, setupOpening);
     return {
       documentDate: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`,
-      typeId:
-        book.configurations.find(
-          (item) =>
-            item.kind === 'voucher-types' &&
-            item.active &&
-            item.title === (setupOpening ? 'افتتاحیه استقرار' : 'عمومی'),
-        )?.id ?? '',
+      typeId: primary?.id ?? '',
     };
   };
   const [journal, setJournal] = useState<AccountingJournalV1 | null>(
       initialJournal ?? null,
     ),
     [head, setHead] = useState<Draft>(() =>
-      initialJournal ? journalHeader(initialJournal) : defaultHead(),
+      initialJournal
+        ? journalHeader(initialJournal)
+        : copySource
+          ? {
+              ...defaultHead(),
+              typeId: copySource.typeId ?? '',
+              description: copySource.description,
+              descriptionEn: String(copySource.attributes.descriptionEn ?? ''),
+            }
+          : defaultHead(),
     ),
     [reverseHead, setReverseHead] = useState<Draft>({}),
     [lines, setLines] = useState<AccountingLineV1[]>(
-      initialJournal?.lines ?? [],
+      initialJournal?.lines ??
+        (copySource ? copiedVoucherLines(copySource.lines) : []),
     );
   const [notes, setNotes] = useState<SetupNote[]>(
     parseSetupNotes(initialJournal?.attributes.notes),
   );
   const [openVisible, setOpenVisible] = useState(false);
-  const [tab, setTab] = useState<'main' | 'notes'>('main');
+  const [tab, setTab] = useState<
+    'main' | 'notes' | 'history' | 'conversations' | 'processes'
+  >('main');
+  const [printOpen, setPrintOpen] = useState(false);
   const linkedId = useSearchParams().get('journalId') ?? '';
   const fixedStatus =
     mode === 'review'
@@ -1633,7 +1674,9 @@ function JournalEditorWorkspace({
   const eventQuery = useQuery({
     queryKey: ['accounting', 'journal-events', book.book.id, journal?.id],
     queryFn: () => accountingApi.journalEvents(book.book.id, journal!.id),
-    enabled: mode === 'deleted' && Boolean(journal),
+    enabled:
+      (mode === 'deleted' || tab === 'history' || tab === 'processes') &&
+      Boolean(journal),
   });
   const load = () => journalQuery.refetch();
   const open = (j: AccountingJournalV1) => {
@@ -1643,8 +1686,18 @@ function JournalEditorWorkspace({
     setNotes(parseSetupNotes(j.attributes.notes));
     setOpenVisible(false);
   };
+  const openFromList = (record: AccountingJournalV1) => {
+    open(record);
+    if (!setupOpening && record.id !== linkedId)
+      router.replace(completionJournalHref(book.book.id, record.id), {
+        scroll: false,
+      });
+  };
   const readonly =
-    journal !== null && !['DRAFT', 'MEMORANDUM'].includes(journal.status);
+    !can('finance.journal.create') ||
+    (journal !== null &&
+      (!['DRAFT', 'MEMORANDUM'].includes(journal.status) ||
+        Boolean(journal.attributes.revaluationSourceChecksum)));
   const action = async (name: string) => {
     if (!journal) return;
     let current = journal;
@@ -1711,10 +1764,11 @@ function JournalEditorWorkspace({
       open(result);
       await load();
       if (after === 'new') fresh();
-      if (after === 'close') {
-        fresh();
-        closeEditor();
-      }
+      else if (after === 'close') closeEditor();
+      else if (mode === 'edit' && !setupOpening && linkedId !== result.id)
+        router.replace(completionJournalHref(book.book.id, result.id), {
+          scroll: false,
+        });
     }
   };
   return (
@@ -1743,7 +1797,7 @@ function JournalEditorWorkspace({
             busy={busy}
             run={run}
             canCreate={can('finance.journal.create')}
-            onOpen={open}
+            onOpen={openFromList}
             typeId={String(head.typeId ?? '')}
           />
           <DocumentIconAction
@@ -1762,7 +1816,7 @@ function JournalEditorWorkspace({
                 busy={busy}
                 run={run}
                 can={can}
-                onOpen={open}
+                onOpen={openFromList}
               />
             </DialogContent>
           </Dialog>
@@ -1993,7 +2047,7 @@ function JournalEditorWorkspace({
           <div className="flex justify-between">
             <h3 className="font-bold">
               {journal
-                ? `سند ${journal.number ?? 'بدون شماره'} — ${statuses[journal.status]}`
+                ? `سند ${journal.number ?? 'بدون شماره'} — ${journalStates[journal.status]}`
                 : 'پیش‌نویس جدید'}
             </h3>
             {journal?.reversalOfId ? <span>سند برگشتی</span> : null}
@@ -2012,6 +2066,19 @@ function JournalEditorWorkspace({
             >
               اطلاعات اصلی
             </button>
+            {journal &&
+              (['history', 'conversations'] as const).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  className="px-4 py-2"
+                  aria-selected={tab === key}
+                  onClick={() => setTab(key)}
+                >
+                  {key === 'history' ? 'تاریخچه تغییر وضعیت' : 'مکالمات'}
+                </button>
+              ))}
             <button
               type="button"
               role="tab"
@@ -2021,7 +2088,66 @@ function JournalEditorWorkspace({
             >
               یادداشت
             </button>
+            {journal && (
+              <button
+                type="button"
+                role="tab"
+                className="px-4 py-2"
+                aria-selected={tab === 'processes'}
+                onClick={() => setTab('processes')}
+              >
+                فرآیندهای مرتبط
+              </button>
+            )}
           </div>
+          {journal &&
+            (tab === 'history' ||
+              tab === 'conversations' ||
+              tab === 'processes') && (
+              <AccountingJournalActivity
+                tab={tab}
+                data={eventQuery.data}
+                error={eventQuery.error?.message}
+              />
+            )}
+          {journal && (
+            <div className="flex flex-wrap gap-3">
+              {can('finance.export') && (
+                <>
+                  <button type="button" onClick={() => setPrintOpen(true)}>
+                    چاپ سند
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => printVouchers(book, [journal])}
+                  >
+                    چاپ مستقیم سند
+                  </button>
+                  <AccountingVoucherPrint
+                    book={book}
+                    items={printOpen ? [journal] : []}
+                    onClose={() => setPrintOpen(false)}
+                  />
+                </>
+              )}
+              {can('finance.journal.create') && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(
+                      '/finance/accounting/general-ledger/documents/journals?' +
+                        new URLSearchParams({
+                          bookId: book.book.id,
+                          copyFrom: journal.id,
+                        }),
+                    )
+                  }
+                >
+                  کپی سند
+                </button>
+              )}
+            </div>
+          )}
           <div hidden={tab !== 'main'} className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-4">
               <FormField label="شماره سند">
@@ -2062,8 +2188,18 @@ function JournalEditorWorkspace({
                   kind: 'select',
                   disabled: setupOpening,
                   options: book.configurations
-                    .filter((c) => c.kind === 'voucher-types')
-                    .map((c) => ({ value: c.id, label: c.title })),
+                    .filter(
+                      (c) =>
+                        c.kind === 'voucher-types' &&
+                        (c.active || c.id === head.typeId),
+                    )
+                    .map((c) => ({
+                      value: c.id,
+                      label:
+                        String(c.attributes.isDefault) === 'true'
+                          ? c.title + ' (پیش‌فرض)'
+                          : c.title,
+                    })),
                 },
                 {
                   key: 'documentDate',

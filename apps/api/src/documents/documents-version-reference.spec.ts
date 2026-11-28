@@ -16,6 +16,39 @@ const actor: AuthenticatedActor = {
     'documents.metadata.read',
   ],
 };
+describe('visible voucher attachments', () => {
+  it('restricts attachment indicators to authorized financial readers and the exact branch', async () => {
+    const repository = {
+      financialJournalAttachmentIds: vi
+        .fn()
+        .mockResolvedValue(new Set(['voucher'])),
+    };
+    const owner = { repository } as unknown as DocumentsService;
+    const read = (
+      branch: string,
+      permissions: AuthenticatedActor['permissions'],
+    ) =>
+      DocumentsService.prototype.financialJournalAttachmentIds.call(
+        owner,
+        branch,
+        ['voucher'],
+        { ...actor, permissions },
+      );
+    expect(await read('branch', ['documents.list'])).toEqual(new Set());
+    expect(
+      await read('outside', ['documents.list', 'documents.finance.read']),
+    ).toEqual(new Set());
+    expect(repository.financialJournalAttachmentIds).not.toHaveBeenCalled();
+    expect(
+      await read('branch', ['documents.list', 'documents.finance.read']),
+    ).toEqual(new Set(['voucher']));
+    expect(repository.financialJournalAttachmentIds).toHaveBeenCalledWith(
+      'branch',
+      ['voucher'],
+      false,
+    );
+  });
+});
 describe('public organization document version references', () => {
   it('enforces branch access and redacts references without document read permissions', async () => {
     const repository = { organizationVersionReferences: vi.fn() };

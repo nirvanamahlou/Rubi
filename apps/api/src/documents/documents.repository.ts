@@ -795,6 +795,32 @@ export class DocumentsRepository {
     return { documentTypes, categories, owners, branches };
   }
 
+  async financialJournalAttachmentIds(
+    branchId: string,
+    journalIds: string[],
+    includeSensitive: boolean,
+  ) {
+    const relations = await this.database.client.documentRelation.groupBy({
+      by: ['sourceEntityId'],
+      where: {
+        relationType: 'PRIMARY_CASE',
+        sourceModule: 'FINANCE',
+        sourceEntityType: 'AccountingJournal',
+        sourceEntityId: { in: journalIds },
+        document: {
+          branchId,
+          documentType: { domain: 'FINANCE' },
+          archiveStatus: { not: 'DELETED' },
+          confidentialAccessCodeHash: null,
+          ...(includeSensitive
+            ? {}
+            : { confidentiality: { in: ['PUBLIC', 'INTERNAL'] } }),
+        },
+      },
+    });
+    return new Set(relations.map((r) => r.sourceEntityId));
+  }
+
   async caseOptions(input: {
     branchId: string;
     domains: readonly DocumentDomainCode[];

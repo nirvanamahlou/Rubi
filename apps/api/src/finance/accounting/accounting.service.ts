@@ -1,3 +1,4 @@
+import { DocumentsService } from '../../documents/documents.service';
 import {
   allowsManualFinanceCode,
   financeCodingProfile,
@@ -317,6 +318,9 @@ export class AccountingService {
     @Optional()
     @Inject(FinanceSourceReferences)
     private readonly sourceReferences?: FinanceSourceReferences,
+    @Optional()
+    @Inject(DocumentsService)
+    private readonly documents?: DocumentsService,
   ) {}
   private require(
     actor: AuthenticatedActor,
@@ -671,7 +675,7 @@ export class AccountingService {
           ? this.fiscal.query(bookId, query)
           : { ...query, periodId: period.id };
     }
-    await this.book(this.database.client, bookId, actor);
+    const book = await this.book(this.database.client, bookId, actor);
     const exporting = query.export === 'true';
     if (query.sourceKind && query.sourceKind !== 'revaluation')
       v.invalid('نوع فهرست معتبر نیست.');
@@ -811,8 +815,18 @@ export class AccountingService {
           v.invalid('ستون گروه‌بندی معتبر نیست.');
         let filteredIds: string[] | undefined;
         let filteredTotal: number | undefined;
-        if (query.filter || query.sort || query.group) {
+        if (
+          query.filter ||
+          query.sort ||
+          query.group ||
+          query.editable === 'true'
+        ) {
           const scopes: Prisma.Sql[] = [Prisma.sql`j."bookId"=${bookId}::uuid`];
+          if (query.editable === 'true') {
+            scopes.push(
+              Prisma.sql`j.status IN ('DRAFT', 'MEMORANDUM') AND COALESCE(j.attributes->>'revaluationSourceChecksum','')=''`,
+            );
+          }
           if (query.sourceKind === 'revaluation')
             scopes.push(
               Prisma.sql`j."sourceKey" LIKE 'REVALUE:%' AND j.attributes->>'revaluationCurrency' IS NOT NULL`,
@@ -921,12 +935,23 @@ export class AccountingService {
         )
       ).map((user) => [user.id, user.displayName]),
     );
+    const attachments =
+      query.includeAttachments === 'true'
+        ? await this.documents?.financialJournalAttachmentIds(
+            book.branchId,
+            pageResult.items.map((j) => j.id),
+            actor,
+          )
+        : undefined;
     return {
       total: pageResult.total,
       page: pageResult.page,
       pageSize: pageResult.pageSize,
       items: pageResult.items.map((item) => ({
         ...item,
+        ...(attachments
+          ? { hasVisibleAttachment: attachments.has(item.id) }
+          : {}),
         makerName: names.get(item.makerId) ?? null,
         approverName: item.approverId
           ? (names.get(item.approverId) ?? null)
@@ -6570,7 +6595,13 @@ export class AccountingService {
           ? { periodId: this.fiscal.require(bookId)!.id }
           : {}),
       },
-      select: { id: true, status: true },
+      select: {
+        id: true,
+        status: true,
+        financialWorkflow: {
+          select: { id: true, kind: true, reference: true, createdAt: true },
+        },
+      },
     });
     if (!journal) throw new NotFoundException();
     const events =
@@ -6591,6 +6622,7 @@ export class AccountingService {
       ).map((user) => [user.id, user.displayName]),
     );
     return {
+      workflow: journal.financialWorkflow,
       events: events.map((event) => ({
         ...event,
         actorName: names.get(event.actorId) ?? null,
@@ -7210,6 +7242,7 @@ export class AccountingService {
       return this.database.client.$transaction(
         async (tx) => {
           const book = await this.book(tx, bookId, actor);
+          if (query.export === 'true') this.require(actor, 'finance.export');
           return documentFigures(tx, book, kind, query);
         },
         { isolationLevel: 'RepeatableRead' },

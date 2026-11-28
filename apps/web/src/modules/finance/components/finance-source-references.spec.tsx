@@ -142,9 +142,10 @@ describe('Readable Finance references', () => {
       ],
     } satisfies FinanceJournalReadV1;
     const html = renderToStaticMarkup(
-      <FinanceJournalReadView bookId="b" id="j" />,
+      <FinanceJournalReadView bookId="b" id="j" position={1} />,
     );
     expect(result.key[2]).toBe('/finance/accounting/books/b/journals/j/read');
+    expect(html).toContain('<tr aria-current="true"');
     for (const value of [
       '۱۴۰۴',
       '001',

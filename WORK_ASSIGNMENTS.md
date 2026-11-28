@@ -1,3 +1,7 @@
+## LEDGER-VOUCHERS-1128 — PC-D — REVIEW
+
+Ledger document forms, voucher list presets, authorized attachment indicators, print, and source-linked turnover. The Documents owner supplies a batch presence lookup. The additive optional journal field preserves existing consumers. Reference gaps and the verified routes are recorded in docs/tasks/LEDGER-VOUCHERS-1128.md.
+
 ## NSS-PAYMENT-COMPANY-SCOPE-1126 — PC-A
 
 Reserve the NSS receipt list company guard, Sales panel visibility and focused regressions. The existing company context determines eligibility in Web and API. The completed NSS receipt tasks supply the unchanged intake and records. Owner authorizes a green `develop` merge. No schema, payment destination or deployment change.

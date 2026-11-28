@@ -257,6 +257,7 @@ export type AccountingJournalStatus =
   | 'POSTED'
   | 'CANCELLED';
 export interface AccountingJournalV1 {
+  hasVisibleAttachment?: boolean;
   id: string;
   bookId: string;
   periodId: string | null;
