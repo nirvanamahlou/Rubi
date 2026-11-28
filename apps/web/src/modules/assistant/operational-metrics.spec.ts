@@ -9,6 +9,8 @@ describe('Nora operational reads', () => {
   afterEach(() => vi.unstubAllEnvs());
 
   it.each([
+    ['تعداد کل کارکنان شرکت رو بده', 'active-employee-count'],
+    ['چن تا پرسنل فعال داریم؟', 'active-employee-count'],
     ['مجموع اضافه‌کاری کارکنان این هفته چقدره؟', 'employee-overtime'],
     ['روزهای کارکرد کارکنان امروز', 'employee-workdays'],
     ['تعداد اسناد صدور رزرواسیون این ماه', 'issued-documents'],

@@ -1,5 +1,13 @@
 export const operationalMetrics = [
   {
+    id: 'active-employee-count',
+    phrase:
+      /(?:تعداد |چند |چنتا |چن تا )?(?:کل )?(?:کارکنان|کارمندان|پرسنل)(?: فعال)?(?: شرکت(?: ها)?)?/,
+    label: 'کارکنان فعال',
+    unit: 'نفر',
+    snapshot: true,
+  },
+  {
     id: 'employee-overtime',
     phrase:
       /(?:مجموع |ساعت |چند ساعت )?اضافه کاری(?: ثبت شده)? (?:کارکنان|کارمندان)/,

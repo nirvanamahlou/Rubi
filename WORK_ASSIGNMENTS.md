@@ -120,6 +120,8 @@ Own the city and country photo fields, geography dialog, additive migration, and
 
 Reserve Nora Web routing, supported guide selection, and the assistant sales period parser with focused regressions. Keep producer permissions and APIs unchanged.
 
+PC-C | codex/pc-c-nora-employee-integration-1128 | Integrate #1951 with develop ca19a7656. Scope is the existing HR read metric and regenerated Nora data atlas. No schema or dependency changes.
+
 ## NORA-OPT-IN-EVIDENCE-1124 — PC-C — ACTIVE
 
 Reserve Nora v3 reply presentation, native report formatting and focused tests. Preserve authenticated reads and evidence validation.

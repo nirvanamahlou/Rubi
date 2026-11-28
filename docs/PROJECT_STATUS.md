@@ -10856,3 +10856,5 @@ PC-C — All 220 role-report prompts were submitted to the production Nora UI un
 PC-C — The first reconciliation patch passed CI and merged in #1967. The follow-up aligns call-center drilldowns, active reservation requests, tour definitions, insurance issuer grouping, sales passenger and discount projections, and the fiscal-period-independent aggregate journal register with their source owners. Deployment and browser acceptance are tracked separately from CI.
 
 PC-C — The second full browser run recorded 220 final responses. During the run, the production edge logged 434 HTTP 401 conversation attempts including retries. The change in #1968 adds a guarded current-identity read before session rotation and distinguishes authorization and transport failures from Nora evidence failures. Live revalidation follows deployment.
+
+PC-C | #1951 combined the employee metric with the current data atlas. Regeneration produced 1798 records and discovery validated 20 source cases and 29 report cases.
