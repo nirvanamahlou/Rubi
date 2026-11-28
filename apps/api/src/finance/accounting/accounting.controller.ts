@@ -34,6 +34,15 @@ export class AccountingController {
   books(@Req() request: AuthenticatedRequest) {
     return this.accounting.books(request.actor);
   }
+  @Get('journal-register')
+  @Header('Cache-Control', 'private, no-store')
+  journalRegister(
+    @Query('status') status: string,
+    @Query('page') page: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.accounting.journalRegister(status, page, request.actor);
+  }
   @Post('books')
   @RequirePermissions('finance.read', 'finance.account.manage')
   create(@Body() body: unknown, @Req() request: AuthenticatedRequest) {

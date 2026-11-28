@@ -70,6 +70,26 @@ describe('Sales public agent source authorization', () => {
     ).rejects.toThrow();
   });
 
+  it('never grants the new rolling report through the legacy global-read exception and rechecks scope before release', async () => {
+    const h = setup();
+    const id = '00000000-0000-4000-8000-000000000001';
+    h.current.userId = id;
+    h.request.actor = { ...h.request.actor, userId: id };
+    h.current.permissions = [];
+    vi.stubEnv('NORA_DANIAL_BUSINESS_READ_USER_ID', id);
+    h.database.client.user.findFirst.mockResolvedValue({ id });
+    await expect(h.controller.rollingSales(h.request, {})).rejects.toThrow();
+    expect(h.database.client.$transaction).not.toHaveBeenCalled();
+    h.current.permissions = ['sales.contracts.read.own'];
+    h.database.client.$transaction.mockImplementation(async () => {
+      h.companies.selected.mockResolvedValue('other-company');
+      return { version: 1, rows: [] };
+    });
+    await expect(h.controller.rollingSales(h.request, {})).rejects.toThrow(
+      'AGENT_CONTEXT_CHANGED',
+    );
+  });
+
   it('rejects count scope injection, stale scope and revocation before result release', async () => {
     const h = setup();
     const { contextId } = await h.controller.catalog(h.request);
@@ -87,6 +107,31 @@ describe('Sales public agent source authorization', () => {
     await expect(
       h.controller.countBreakdown(h.request, { contextId }),
     ).rejects.toThrow('AGENT_CONTEXT_CHANGED');
+  });
+  it('uses native authorization for personal counts and revalidates the selected company before disclosure', async () => {
+    const h = setup();
+    h.current.permissions = [];
+    await expect(h.controller.myContractCount(h.request)).rejects.toThrow();
+    expect(h.database.client.$transaction).not.toHaveBeenCalled();
+    h.current.permissions = ['sales.contracts.read.all'];
+    h.current.branchIds = [];
+    h.database.client.$transaction.mockResolvedValue({
+      observedAt: '2026-11-25T00:00:00.000Z',
+      rows: [{ total: 3, panel_non_cancelled: 1 }],
+    });
+    await expect(h.controller.myContractCount(h.request)).resolves.toEqual({
+      version: 1,
+      ownership: 'mine',
+      observedAt: '2026-11-25T00:00:00.000Z',
+      total: 3,
+      panelNonCancelled: 1,
+    });
+    h.companies.selected
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce('other-company');
+    await expect(h.controller.myContractCount(h.request)).rejects.toThrow(
+      'AGENT_CONTEXT_CHANGED',
+    );
   });
   it('returns a controlled unavailable response, never zero, on count reader failure', async () => {
     const h = setup();

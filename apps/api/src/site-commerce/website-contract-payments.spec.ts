@@ -8,6 +8,7 @@ import {
   VerifiedGatewayReceiptPublic,
   type VerifiedGatewayProof,
 } from '../finance/payments/verified-gateway-receipt.public';
+import type { LegalEntitiesService } from '../legal-entities/legal-entities.service';
 import { stableFingerprint } from './site-commerce.policy';
 import { WebsiteContractPayments } from './website-contract-payments';
 
@@ -23,8 +24,12 @@ const actor = {
   branchIds: ['branch'],
   permissions: [],
 } as unknown as AuthenticatedActor;
+const operator = {
+  ...actor,
+  permissions: ['sales.contracts.read.branch', 'sales.payments.read'],
+} as AuthenticatedActor;
 
-function setup() {
+function setup(selection = 'NIYAYESH_SEIR_SAHAR') {
   vi.stubEnv(
     'SITE_COMMERCE_BINDINGS',
     JSON.stringify({ nss: { userId: actor.userId, branchId: 'branch' } }),
@@ -66,6 +71,9 @@ function setup() {
   const service = new WebsiteContractPayments(
     db,
     new VerifiedGatewayReceiptPublic(db),
+    {
+      current: vi.fn(async () => ({ data: { selection } })),
+    } as unknown as LegalEntitiesService,
   );
   const proof: VerifiedGatewayProof = {
     version: 1,
@@ -107,10 +115,6 @@ describe('Niyayesh contract payment intake', () => {
     });
     expect(records.size).toBe(1);
     await expect(service.list(actor)).rejects.toThrow();
-    const operator = {
-      ...actor,
-      permissions: ['sales.contracts.read.branch', 'sales.payments.read'],
-    } as AuthenticatedActor;
     const list = await service.list(operator, 'LEGACY-847');
     expect(list.data[0]).toMatchObject({
       receiptNumber: 'NSS-P-00000001',
@@ -128,6 +132,24 @@ describe('Niyayesh contract payment intake', () => {
       }),
     );
   });
+
+  it.each(['JAHAN_BASTAN', 'GHESATI_RO', 'ALL'])(
+    'denies listing and reference lookup in %s despite shared branch and permissions',
+    async (company) => {
+      const { service, findMany } = setup(company);
+      const authorized = {
+        ...operator,
+        permissions: [...operator.permissions, 'legal-entity.aggregate.read'],
+      } as AuthenticatedActor;
+      await expect(service.list(authorized)).rejects.toMatchObject({
+        status: 403,
+      });
+      await expect(
+        service.list(authorized, input.contractNumber),
+      ).rejects.toMatchObject({ status: 403 });
+      expect(findMany).not.toHaveBeenCalled();
+    },
+  );
 
   it('rejects altered contract details, amounts and integration identities before a write', async () => {
     const { service, proof, upsert } = setup();

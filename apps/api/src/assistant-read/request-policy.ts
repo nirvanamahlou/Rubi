@@ -12,6 +12,7 @@ export function allowsAssistantReadRequest(
         '/api/v1/sales/assistant-agent/query',
         '/api/v1/sales/assistant-agent/count-breakdown',
         '/api/v1/sales/assistant-agent/hotel-ranking',
+        '/api/v1/sales/assistant-agent/rolling-sales',
       ].includes(path))
   );
 }

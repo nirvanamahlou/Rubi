@@ -1,5 +1,7 @@
 'use client';
 import type { ReportColumnFilter } from './output-filters';
+import { reportDateRangeUtc } from './report-dates';
+export { reportDateRangeUtc } from './report-dates';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -151,24 +153,6 @@ interface TravelReportResult {
   filterSnapshot: SalesByOrganizationReportResult['filterSnapshot'];
   filterOptions: Readonly<Record<string, readonly string[]>>;
   warnings: readonly string[];
-}
-
-export function reportDateRangeUtc(fromDate?: string, toDate?: string) {
-  const filters: Record<string, string> = {};
-  if (fromDate)
-    filters.fromUtc = new Date(`${fromDate}T00:00:00+03:30`).toISOString();
-  if (toDate) {
-    const [year, month, day] = toDate.split('-').map(Number) as [
-      number,
-      number,
-      number,
-    ];
-    const nextDay = new Date(Date.UTC(year, month - 1, day + 1))
-      .toISOString()
-      .slice(0, 10);
-    filters.toUtc = new Date(`${nextDay}T00:00:00+03:30`).toISOString();
-  }
-  return filters;
 }
 
 export class ReportingApiError extends Error {

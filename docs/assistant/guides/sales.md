@@ -29,7 +29,7 @@
 
 ## پیداکردن قرارداد و استفاده از فهرست
 
-<!-- nora-guide {"id":"list","route":["فروش و ارتباط با مشتری","قرارداد"],"sources":["apps/web/src/modules/sales/components/sales-workspace.tsx"],"pattern":"جستجو|جست وجو|پیدا|فهرست|فیلتر|اکسل|excel|ستون|تاریخ بستن|تاریخ ثبت|تاریخ به روز رسانی|تاریخ به روزرسانی|تاریخ میلادی","flags":"","href":"/sales","conditions":["دسترسی به پنل قراردادها"],"related":[]} -->
+<!-- nora-guide {"id":"list","route":["فروش و ارتباط با مشتری","قرارداد"],"sources":["apps/web/src/modules/sales/components/sales-workspace.tsx"],"pattern":"جستجو|جست وجو|پیدا|فهرست|فیلتر|اکسل|excel|ستون|تاریخ بستن|تاریخ ثبت|تاریخ به روز رسانی|تاریخ به روزرسانی|تاریخ میلادی","flags":"","href":"/sales","conditions":["دسترسی به پنل قراردادها"],"related":[],"terms":["یافتن قرارداد","جستجوی قرارداد","فهرست قرارداد","پیدا کردن قرارداد","جستجو قرارداد","خروجی اکسل قرارداد","اکسل قرارداد","خروجی excel","اکسل"]} -->
 
 ### مراحل
 
@@ -207,7 +207,7 @@
 
 ## ثبت خدمت ویزا
 
-<!-- nora-guide {"id":"visa","route":["فروش و ارتباط با مشتری","قرارداد","قرارداد جدید","مسیر، خدمات و مسافران","خدمات قرارداد","ویزا"],"sources":["apps/web/src/modules/sales/components/sales-contract-form.tsx"],"pattern":"ویزا","flags":"","href":"/sales","conditions":["دسترسی به پنل قراردادها"],"related":[]} -->
+<!-- nora-guide {"id":"visa","route":["فروش و ارتباط با مشتری","قرارداد","قرارداد جدید","مسیر، خدمات و مسافران","خدمات قرارداد","ویزا"],"sources":["apps/web/src/modules/sales/components/sales-contract-form.tsx"],"pattern":"ویزا","flags":"","href":"/sales","conditions":["دسترسی به پنل قراردادها"],"related":[],"terms":["قرارداد ویزا","خدمت ویزا"]} -->
 
 ### مراحل
 

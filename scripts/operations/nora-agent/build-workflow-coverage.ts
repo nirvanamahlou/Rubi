@@ -1,0 +1,456 @@
+import { createHash } from 'node:crypto';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { USER_ACCESS_SCREENS } from '../../../packages/contracts/src/iam/user-access';
+import { assistantGuideCatalogues } from '../../../apps/web/src/modules/assistant/assistant-guide-registry';
+
+type Row = {
+  owner?: string;
+  id: string;
+  need: string;
+  panel: string;
+  scope: string;
+  source: string;
+  connection: 'connected' | 'needs-connection';
+  acceptance: string;
+  guide?: string;
+  roles?: string[];
+  cases?: string[];
+  definition?: string;
+};
+type AtlasRow = {
+  kind?: string;
+  id: string;
+  title: string;
+  source?: string;
+  permission?: string;
+  approvedView?: string;
+  projection?: string;
+  access?: string;
+  availability?: string;
+  businessDefinition?: string;
+  description?: string;
+  periods?: string[];
+  ownerModules?: string[];
+  redirect?: string;
+  owner?: string;
+  kpiIds?: string[];
+};
+const read = (path: string) =>
+  readFileSync(path, 'utf8').replaceAll('\r\n', '\n');
+const dir = 'docs/assistant';
+const data: AtlasRow[] = read(dir + '/data-atlas/index.jsonl')
+  .trim()
+  .split('\n')
+  .map((line) => JSON.parse(line));
+const cases: {
+  id: string;
+  role: string;
+  question: string;
+  expectedGuides: string[];
+}[] = read(dir + '/role-guide-acceptance.jsonl')
+  .trim()
+  .split('\n')
+  .map((line) => JSON.parse(line));
+const rows = new Map<string, Row>();
+const guideRefs = new Set<string>();
+const sources = new Set<string>();
+function add(row: Row) {
+  if (rows.has(row.id)) throw new Error('Duplicate coverage id ' + row.id);
+  rows.set(row.id, row);
+}
+
+// Guide roles below are acceptance audiences. Effective access is evaluated by the session.
+for (const [module, guide] of Object.entries(assistantGuideCatalogues)) {
+  const path = dir + '/guides/' + module + '.md';
+  const markdown = read(path);
+  sources.add(path);
+  const metadata = new Map(
+    markdown
+      .split(/^<a id="/m)
+      .slice(1)
+      .map((section) => {
+        const match = /<!-- nora-guide (.+?) -->/.exec(section);
+        if (!match) throw new Error('Missing guide metadata in ' + path);
+        const item: {
+          id: string;
+          sources?: string[];
+          source?: string;
+          permission?: string;
+        } = JSON.parse(match[1]);
+        const references =
+          section.split(/^### مرجع\s*$/m)[1]?.split(/^### /m)[0] ?? '';
+        const linkedSources = [
+          ...references.matchAll(
+            /\]\(\.\.\/\.\.\/\.\.\/((?:apps|packages|services)\/[^)\s#]+)\)/g,
+          ),
+        ].map((link) => link[1]);
+        return [item.id, { ...item, linkedSources }] as const;
+      }),
+  );
+  for (const topic of guide.topics) {
+    const ref = module + '/' + topic.id;
+    const meta = metadata.get(topic.id);
+    if (!meta) throw new Error('Guide missing authored section ' + ref);
+    const topicSources = [
+      ...(meta.sources ?? []),
+      ...(meta.source ? [meta.source] : []),
+      ...meta.linkedSources,
+    ];
+    for (const source of topicSources) sources.add(source);
+    const scenarios = cases.filter((c) => c.expectedGuides.includes(ref));
+    if (
+      scenarios.length &&
+      !topicSources.some(
+        (source) =>
+          /^(?:apps|packages|services)\/.+\.(?:tsx?|mjs)$/.test(source) &&
+          !/\.(?:spec|test)\./.test(source),
+      )
+    )
+      throw new Error(
+        'Acceptance guide missing an implementation reference: ' + ref,
+      );
+    guideRefs.add(ref);
+    add({
+      owner: module,
+      id: 'guide/' + ref,
+      need: topic.title,
+      panel: topic.href,
+      scope:
+        ref === 'reservations/settled-vouchers'
+          ? 'finance.read + finance.financial_release.read + reservations.read + screens finance.delivery and reservations.home'
+          : ['canViewRoute', meta.permission].filter(Boolean).join(' + '),
+      source: path + '#' + topic.id,
+      connection: 'connected',
+      acceptance: 'follow-steps-in-panel',
+      guide: ref,
+      ...(scenarios.length
+        ? {
+            roles: [...new Set(scenarios.map((c) => c.role))],
+            cases: scenarios.map((c) => c.id),
+          }
+        : {}),
+    });
+  }
+}
+
+// Screen inventory stays separate from topics: a link to a parent panel proves nothing about a tab.
+for (const screen of USER_ACCESS_SCREENS) {
+  const query = new URLSearchParams(screen.query);
+  add({
+    id: 'screen/' + screen.id,
+    need: screen.title,
+    panel: screen.route + (query.size ? '?' + query.toString() : ''),
+    scope: 'canViewScreen ' + screen.id,
+    source: 'packages/contracts/src/iam/user-access.ts',
+    definition: [screen.group, screen.tab].filter(Boolean).join('/'),
+    owner: screen.group,
+    connection: 'needs-connection',
+    acceptance: 'verify-screen-workflows',
+  });
+}
+const nativeMetrics = new Map(
+  data.filter((r) => r.kind === 'native-metric').map((r) => [r.id, r]),
+);
+for (const item of data) {
+  if (item.kind === 'page') {
+    if (!item.source?.includes('/(crm)/')) continue;
+    add({
+      id: 'page' + item.id,
+      need: item.id,
+      panel: item.id,
+      owner: item.ownerModules?.join(',') ?? 'web',
+      scope: 'canViewRoute + effective screen grants',
+      source: item.source,
+      definition: item.redirect ?? item.ownerModules?.join(','),
+      connection: 'needs-connection',
+      acceptance: 'verify-screen-workflows',
+    });
+  } else if (item.kind === 'report') {
+    add({
+      owner: item.owner,
+      id: 'report/' + item.id,
+      need: item.title,
+      panel: '/reports?view=catalog&report=' + item.id,
+      source:
+        'POST /reports/' +
+        item.id +
+        '/query · ' +
+        (item.approvedView ?? item.id),
+      scope: item.permission ?? 'native-report ACL',
+      definition: item.description,
+      connection:
+        item.availability === 'READY' ? 'connected' : 'needs-connection',
+      acceptance: 'compare-executed-report-with-panel',
+    });
+    if (item.availability === 'READY')
+      add({
+        owner: item.owner,
+        id: 'discover/' + item.id,
+        need: item.title,
+        panel: '/reports?view=catalog&report=' + item.id,
+        source: 'services/assistant/report-catalog.mjs',
+        scope: item.permission ?? 'native-report ACL',
+        definition: item.approvedView,
+        connection: 'connected',
+        acceptance: 'discover-authorized-report',
+      });
+  } else if (item.kind === 'native-metric' || item.kind === 'kpi') {
+    const native = nativeMetrics.get(item.id);
+    add({
+      owner: item.owner ?? 'Reporting',
+      id: item.kind + '/' + item.id,
+      need: item.title,
+      panel: '/dashboard',
+      source: native
+        ? 'GET /reports/nora/metric?id=' + item.id
+        : (item.projection ?? item.id),
+      definition:
+        item.businessDefinition ??
+        [item.source, item.periods?.join(',')].filter(Boolean).join(' / '),
+      scope:
+        item.permission ?? 'native metric ACL + effective actor and company',
+      connection: native ? 'connected' : 'needs-connection',
+      acceptance: 'compare-value-period-currency-and-population',
+    });
+  }
+}
+const readers = [
+  [
+    'workbench/request-status',
+    'workbench-request-guide',
+    'describeWorkbenchRequest',
+  ],
+  [
+    'call-center/call-center-request',
+    'call-center-request-guide',
+    'readCallCenterRequestStatus',
+  ],
+  [
+    'call-center/call-center-overview',
+    'call-center-request-guide',
+    'readCallCenterMetric',
+  ],
+  [
+    'finance-delivery/status',
+    'finance-delivery-guide',
+    'readFinanceDeliveryStatus',
+  ],
+  ['b2b/metrics', 'b2b-guide', 'readB2bGuide'],
+  ['b2c/metrics', 'customer-guides', 'readCustomerGuide'],
+  ['purchase/dashboard', 'purchase-guides', 'readPurchaseGuide'],
+  ['documents/overview', 'document-guides', 'readDocumentGuide'],
+  ['flight-pricing/overview', 'flight-pricing-guide', 'readFlightPricing'],
+  ['master-data/currencies', 'master-data-guide', 'readMasterDataGuide'],
+  ['flight-capacity/capacity', 'flight-capacity-guide', 'readFlightCapacity'],
+  [
+    'reservation-report/cards',
+    'reservation-report-guide',
+    'readReservationReportAnswer',
+  ],
+  [
+    'correspondence/incoming',
+    'correspondence-guide',
+    'readCorrespondenceStatus',
+  ],
+  ['petty-cash/fund', 'petty-cash-guide', 'readPettyCashGuide'],
+  ['tour/overview', 'tour-guide', 'readTourGuideStatus'],
+  [
+    'hotel-purchase-rates/hotel-purchase-existing',
+    'hotel-purchase-guide',
+    'readHotelPurchaseGuidePack',
+  ],
+];
+for (const [guide, file, symbol] of readers) {
+  const source = 'apps/web/src/modules/assistant/' + file + '.ts';
+  const topic = rows.get('guide/' + guide);
+  if (!topic || !read(source).includes('function ' + symbol + '('))
+    throw new Error('Missing reader or guide for ' + guide);
+  sources.add(source);
+  add({
+    owner: topic.owner,
+    id: 'reader/' + guide,
+    need: topic.need,
+    panel: topic.panel,
+    source: source + '#' + symbol,
+    guide,
+    scope: 'same authorized reader and company as panel',
+    connection: 'connected',
+    acceptance: 'compare-permitted-records-with-panel',
+  });
+}
+for (const [id, owner, need, panel, source, scope] of [
+  [
+    'rolling-sales',
+    'Sales',
+    'مبلغ فروش دو هفته اخیر و فهرست قراردادهای مشمول',
+    '/sales',
+    'apps/api/src/sales/assistant-agent/rolling-sales.ts',
+    'native sales row and company scope',
+  ],
+  [
+    'settled-vouchers',
+    'Sales/Finance/Reservations',
+    'قراردادهای تسویه‌شده و اقامت‌های دارای کسری واچر',
+    '/reservations?report=settled-vouchers',
+    'apps/api/src/reporting/settled-vouchers.controller.ts',
+    'intersection of native sales, finance and reservations scopes',
+  ],
+  [
+    'own-contract-count',
+    'Sales',
+    'تعداد قراردادهای خودم و تعداد قابل نمایش در فهرست فروش پس از حذف ابطال‌ها',
+    '/sales',
+    'apps/api/src/sales/assistant-agent/count-breakdown.ts',
+    'authenticated owner within the selected company and permitted Sales scope',
+  ],
+  [
+    'standard-sales',
+    'Sales',
+    'تعداد و مبلغ فروش قطعی در همهٔ زمان‌ها، به تفکیک ارز و با حذف ابطال‌های مؤثر',
+    '/reports?report=sales_contract_pipeline',
+    'apps/api/src/sales/assistant-agent/rolling-sales.ts',
+    'native sales scope, confirmation by cutoff and latest effective reservation cancellation',
+  ],
+]) {
+  sources.add(source);
+  add({
+    id: 'workflow/' + id,
+    owner,
+    need,
+    panel,
+    source,
+    scope,
+    connection: 'connected',
+    acceptance: 'compare-permitted-records-with-panel',
+  });
+}
+const panelReader = 'apps/web/src/modules/assistant/planned-operational.ts';
+for (const [id, owner, panel, need, scope] of [
+  [
+    'b2c-cards',
+    'Customers',
+    '/customers',
+    'تعداد مشتری، مسافر و مشتری جدید سه ماه اخیر و نرخ بازگشت مشتری',
+    'customers.read + customers screen',
+  ],
+  [
+    'b2c-status',
+    'Customers',
+    '/customers',
+    'وضعیت پروندهٔ یک مشتری حقیقی با نام کامل یکتا',
+    'customers.read + customers screen',
+  ],
+  [
+    'b2b-cards',
+    'MasterData',
+    '/organizations',
+    'تعداد آژانس همکار و مشتری سازمانی در فهرست مجاز',
+    'organizations screen + owner list ACL',
+  ],
+  [
+    'b2b-status',
+    'MasterData',
+    '/organizations',
+    'وضعیت یک سازمان با کد دقیق و نقش مشتری سازمانی یا آژانس همکار',
+    'organizations screen + owner list ACL',
+  ],
+  [
+    'purchase-cards',
+    'Reservations',
+    '/ticket-purchases',
+    'تعداد کل خدمات خرید و تفکیک در انتظار ثبت، ثبت‌شده و وضعیت نامشخص',
+    'purchase and reservations screens + reservations.read',
+  ],
+  [
+    'call-center-cards',
+    'CustomerAffairs',
+    '/customer-affairs/call-center',
+    'تعداد تماس امروز، هفته، بدون نتیجه و نیازمند تماس مجدد',
+    'call center screen + customer_affairs.call_center.read + selected branch',
+  ],
+])
+  add({
+    id: 'panel-read/' + id,
+    owner,
+    panel,
+    need,
+    scope: scope + ' + authorized ALL company context',
+    source: panelReader,
+    connection: 'connected',
+    acceptance: 'compare-card-or-record-with-same-panel-and-scope',
+  });
+for (const source of [
+  panelReader,
+  'apps/web/src/modules/assistant/planned-operational-intent.ts',
+  'apps/web/src/modules/assistant/planned-native-report.ts',
+  'apps/web/src/modules/reports/model/report-dates.ts',
+  'apps/web/src/modules/assistant/guide-access.ts',
+  'apps/web/src/modules/assistant/historical-report-period.ts',
+])
+  sources.add(source);
+sources.add('packages/contracts/src/iam/user-access.ts');
+sources.add('packages/contracts/src/iam/user-access-controls.ts');
+sources.add('services/assistant/report-catalog.mjs');
+sources.add('apps/api/src/reporting/nora-metrics.controller.ts');
+sources.add('apps/api/src/reporting/nora-owner-metrics.ts');
+sources.add('apps/web/src/modules/assistant/operational-metric-catalog.ts');
+sources.add(dir + '/role-guide-acceptance.jsonl');
+const byRole = new Map<string, number>();
+const caseIds = new Set<string>();
+for (const entry of cases) {
+  if (
+    !entry.question ||
+    !entry.role ||
+    !entry.expectedGuides.length ||
+    caseIds.has(entry.id)
+  )
+    throw new Error('Invalid role case ' + entry.id);
+  for (const ref of entry.expectedGuides) {
+    if (!guideRefs.has(ref)) throw new Error('Unknown acceptance guide ' + ref);
+  }
+  caseIds.add(entry.id);
+  byRole.set(entry.role, (byRole.get(entry.role) ?? 0) + 1);
+}
+if (byRole.size !== 11 || [...byRole.values()].some((count) => count !== 20))
+  throw new Error('Expected 20 prompts for each of the 11 audited roles');
+const sorted = [...rows.values()].sort((a, b) =>
+  a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
+);
+const hashes = Object.fromEntries(
+  [...sources]
+    .sort()
+    .map((s) => [s, createHash('sha256').update(read(s)).digest('hex')]),
+);
+const file = dir + '/workflow-coverage.jsonl';
+const serialized =
+  [{ version: 1, sourceFingerprints: hashes }, ...sorted]
+    .map((r) => JSON.stringify(r))
+    .join('\n') + '\n';
+if (process.argv.includes('--check')) {
+  if (read(file) !== serialized)
+    throw new Error(
+      'Stale workflow coverage. Review changed workflows and rebuild ' + file,
+    );
+} else if (process.argv.includes('--table')) {
+  const escape = (s: string) => s.replaceAll('|', '\\|').replaceAll('\n', ' ');
+  console.log('|شناسه|کار کاربر|مسیر پنل|مجوز|منبع|وضعیت اتصال|آزمون|');
+  console.log('|---|---|---|---|---|---|---|');
+  for (const row of sorted)
+    console.log(
+      '|' +
+        [
+          row.id,
+          row.need,
+          row.panel,
+          row.scope,
+          row.source,
+          row.connection,
+          row.acceptance,
+        ]
+          .map(escape)
+          .join('|') +
+        '|',
+    );
+} else {
+  writeFileSync(file, serialized);
+}

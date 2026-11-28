@@ -1,5 +1,7 @@
 /** Sales-owned public reporting contract. No raw metadata/contact/document columns. */
 export const AGENT_CATALOG_VERSION = 1;
+export const CONTRACT_AMOUNT_RANKING_EXAMPLE =
+  "SELECT c.contract_number, a.amount, a.currency_code FROM amounts a JOIN contracts c ON c.id=a.contract_id WHERE a.currency_code='USD' ORDER BY a.amount DESC, c.contract_number ASC LIMIT 2";
 export const AGENT_SOURCES = {
   contracts: {
     description:
@@ -41,7 +43,9 @@ export const AGENT_SOURCES = {
   },
   amounts: {
     description:
-      'Discounted contractual amount BEFORE refunds, one row per contract/currency. DISCOUNT is already subtracted; all other price components added. contract_id is a UUID referencing contracts.id; for a human contract number JOIN contracts c ON amounts.contract_id=c.id WHERE c.contract_number=the_number. This is not accounting revenue, net sales, or a paid balance. Every monetary aggregate must SELECT and GROUP BY currency_code even when WHERE fixes one currency; never add different currencies.',
+      'Discounted contractual amount before refunds, one row per contract/currency. DISCOUNT components are subtracted and all others added. Join amounts.contract_id to contracts.id and filter contracts.contract_number for a business number. This is not accounting revenue, net sales, or paid balance. Monetary aggregates must select and group by currency_code, even for a fixed currency. Never add currencies. To find a highest contract, sort precomputed numeric amounts directly in the requested currency and scope, e.g. ' +
+      CONTRACT_AMOUNT_RANKING_EXAMPLE +
+      '. No separate MAX, subquery or window is needed. Equal first two amounts indicate a shared maximum. Fetch further ties only when requested; never claim the first contract is uniquely highest then.',
     columns: ['contract_id', 'currency_code', 'amount'],
     grain: 'contract and currency',
     payment: false,

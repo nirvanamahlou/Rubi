@@ -37,14 +37,14 @@ test('hybrid runtime keeps simple prompts on Groq and sends analysis to OpenAI',
   ])
     assert.equal(
       agent.selectProvider({ message, history: [] }).model,
-      'gpt-6.2-sol',
+      'gpt-6.1-sol',
     );
   assert.equal(
     agent.selectProvider({
       message: 'سلام',
       history: [{ role: 'user', content: 'داده' }],
     }).model,
-    'gpt-6.2-sol',
+    'gpt-6.1-sol',
   );
 });
 
@@ -69,7 +69,7 @@ test('OpenAI rotation skips shared exhausted quota and revalidates before anothe
   });
   const budget = { attempts: 0, retryTokens: 0 };
   const result = await pool.fetch(
-    'https://api.openai.com/v1/responses',
+    'https://api.openai.com/v1/chat/completions',
     { method: 'POST', redirect: 'error', body: '{}' },
     {
       attemptBudget: budget,

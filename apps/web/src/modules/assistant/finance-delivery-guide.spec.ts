@@ -1,6 +1,8 @@
 import type { FinanceCustomerDocumentDeliveryCandidateV1 } from '@nora/contracts';
 import { expect, it, vi } from 'vitest';
 import { FinanceInboxApiError } from '@/modules/finance/api/finance-inbox-api';
+import { financeRouteNeedsYear } from '@/modules/finance/components/finance-fiscal-boundary';
+import { assistantGuideCatalogues } from './assistant-guide-registry';
 import {
   readFinanceDeliveryStatus,
   renderFinanceDeliveryGuide,
@@ -45,6 +47,37 @@ it.each([
   expect(renderFinanceDeliveryGuide(topic, true)).toContain(
     'مالی ← تحویل مدارک',
   );
+  const entry = assistantGuideCatalogues['finance-delivery'].topics.find(
+    (item) => item.id === topic,
+  )!;
+  const answer = renderFinanceDeliveryGuide(topic, false);
+  for (const step of entry.steps) expect(answer).toContain(step);
+  expect(renderFinanceDeliveryGuide(topic, true)).toContain(entry.steps.at(-1));
+});
+
+it('describes the fiscal context at each protected destination, including the receipt inbox', () => {
+  const receipt = assistantGuideCatalogues['finance-delivery'].topics.find(
+    (item) => item.id === 'customer-receipt',
+  )!;
+  expect(receipt.href).toBe('/finance/requests');
+  expect(financeRouteNeedsYear('/finance')).toBe(false);
+  const entries = Object.values(assistantGuideCatalogues).flatMap((module) =>
+    module.topics.filter(({ href }) =>
+      ['/finance/requests', '/finance/delivery'].includes(href),
+    ),
+  );
+  expect(entries).toHaveLength(11);
+  for (const entry of entries) {
+    expect(financeRouteNeedsYear(entry.href)).toBe(true);
+    expect(entry.steps[0]).toContain('همه شرکت‌ها');
+    expect(entry.steps[0]).toContain('یک شرکت');
+    expect(entry.steps[0]).toContain('سال مالی پیش‌فرض شرکت');
+  }
+  expect(
+    assistantGuideCatalogues.reporting.topics.find(
+      ({ id }) => id === 'delivery',
+    )?.href,
+  ).toBe('/reports');
 });
 
 it('keeps uploads and sales registration in their own guides', () => {

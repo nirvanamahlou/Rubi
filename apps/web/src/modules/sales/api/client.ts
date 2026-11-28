@@ -249,6 +249,9 @@ export const salesApi = {
   exportXlsx: (query: SalesContractListQuery) => {
     // Export the applied list filters, never just the visible page or unsubmitted input.
     const filters: SalesContractListQuery = {
+      ...(query.salesPeriodAsOf
+        ? { salesPeriodAsOf: query.salesPeriodAsOf }
+        : {}),
       ...(query.ownerUserId ? { ownerUserId: query.ownerUserId } : {}),
       ...(query.supplyType ? { supplyType: query.supplyType } : {}),
       ...(query.search ? { search: query.search } : {}),
@@ -274,9 +277,9 @@ export const salesApi = {
       true,
     );
   },
-  output: (id: string) =>
+  output: (id: string, reservationPreview = false) =>
     request<{ data: SalesContractOutputV1 }>(
-      `/contracts/${encodeURIComponent(id)}/output`,
+      `/contracts/${encodeURIComponent(id)}/output${reservationPreview ? '?mode=reservation-preview' : ''}`,
     ),
   dashboard: () => request<SalesDashboard>('/dashboard'),
   receivables: (query: SalesReceivablesQuery = {}) =>

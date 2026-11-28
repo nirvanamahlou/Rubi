@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { validateAgentSql } from './sql-policy';
-import { allowedSources } from './catalog';
+import {
+  AGENT_SOURCES,
+  allowedSources,
+  CONTRACT_AMOUNT_RANKING_EXAMPLE,
+} from './catalog';
 const sources = allowedSources(true);
 
 describe('calculation evidence metadata', () => {
@@ -30,6 +34,20 @@ describe('calculation evidence metadata', () => {
 });
 
 describe('model-authored SQL policy', () => {
+  it('validates the bounded ranking example supplied by the owner with its required sources and calculation rules', () => {
+    expect(AGENT_SOURCES.amounts.description).toContain(
+      CONTRACT_AMOUNT_RANKING_EXAMPLE,
+    );
+    const checked = validateAgentSql(CONTRACT_AMOUNT_RANKING_EXAMPLE, sources);
+    expect(checked.sources.sort()).toEqual(['amounts', 'contracts']);
+    expect(checked.calculation).toMatchObject({
+      required: true,
+      operations: ['monetary_source'],
+    });
+    expect(() =>
+      validateAgentSql(CONTRACT_AMOUNT_RANKING_EXAMPLE, ['contracts']),
+    ).toThrow('SOURCE_NOT_ALLOWED');
+  });
   it.each([
     'SELECT id, contract_number FROM contracts LIMIT 10',
     'SELECT currency_code,sum(amount) AS total FROM amounts GROUP BY currency_code',

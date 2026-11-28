@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { canOpenAssistantGuide } from './guide-access';
 import Link from '@/i18n/link';
 import { useAccessActor, useRouteAccess } from '@/modules/iam/access-context';
 import {
@@ -28,10 +29,7 @@ export function AssistantGuidePage({
     section: NonNullable<ReturnType<typeof assistantGuideSection>>,
   ) =>
     canOpen(section.href) &&
-    (!section.permission ||
-      actor.permissions.some(
-        (permission) => permission === section.permission,
-      ));
+    canOpenAssistantGuide(actor.permissions, section.href, section.permission);
   const topics = catalogue.topics.flatMap(({ id }) => {
     const section = assistantGuideSection(module, id);
     return section && mayOpen(section) ? [section] : [];

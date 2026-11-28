@@ -15,6 +15,7 @@ import { boundedAgentJson } from './agent-provider.mjs';
 import { validCountBreakdown } from './contract-count-breakdown.mjs';
 import { usageCounters } from './token-efficiency.mjs';
 import { hotelRankingRequest, renderHotelRanking } from './hotel-ranking.mjs';
+import { rollingSalesRequest, renderRollingSales } from './rolling-sales.mjs';
 import { nativeCountRoute } from './native-count-route.mjs';
 import {
   salesWindowRequest,
@@ -60,6 +61,20 @@ export function validateDataAgentMessage(input) {
     history: input.history,
   });
   if (input.context === undefined) return base;
+  if (
+    shape(input.context, ['salesPeriodAsOf']) &&
+    typeof input.context.salesPeriodAsOf === 'string'
+  ) {
+    const value = input.context.salesPeriodAsOf;
+    const time = Date.parse(value);
+    if (
+      Number.isFinite(time) &&
+      new Date(time).toISOString() === value &&
+      rollingSalesRequest({ ...base, context: input.context })
+    )
+      return { ...base, context: { salesPeriodAsOf: value } };
+    throw new ServiceError(400, 'INVALID_MESSAGE');
+  }
   if (
     !shape(input.context, ['selectedContractId']) ||
     typeof input.context.selectedContractId !== 'string' ||
@@ -176,6 +191,21 @@ export function createDataAgent({
       contextId = result.contextId;
       if (path === 'catalog' && reports) await reports.revalidate();
       return result;
+    }
+    const rolling = rollingSalesRequest(request);
+    if (rolling?.unsupported)
+      return {
+        version: 3,
+        status: 'CLARIFY',
+        requestId,
+        plan: [],
+        sources: [],
+        limitations: [],
+        text: 'گزارش فروش دو هفتهٔ اخیر قراردادهای تأییدشده و لغونشده را در دامنهٔ فعلی نشان می‌دهد. قید اضافهٔ این سؤال در این گزارش پشتیبانی نمی‌شود. جمع و فهرست همین دامنه را می‌خواهید؟',
+      };
+    if (rolling) {
+      const result = await call('rolling-sales', request.context ?? {});
+      return renderRollingSales(result, rolling, requestId);
     }
     const catalog = await call('catalog');
     if (

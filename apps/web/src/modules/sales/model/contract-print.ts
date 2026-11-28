@@ -117,7 +117,7 @@ const time = (value: string) =>
 export function contractPrintHtml(
   output: SalesContractOutputV1,
   refs: ContractPrintReferences,
-  options: { draft?: boolean } = {},
+  options: { draft?: boolean; savedDraft?: boolean } = {},
 ): string {
   const guestStays = readPassengerHotelStays(
     output.contract.servicesDetail,
@@ -587,6 +587,7 @@ export function contractPrintHtml(
 
   <header><div class="brand${output.company.code === 'JAHAN_BASTAN' ? ' jahan-brand' : ''}">${logo}${jahanIssuer ? '' : `<div>${e(issuerName)}</div><small>${e(output.company.latinName ?? '')}</small>`}</div><div class="title"><h1>قرارداد فروش خدمات مسافرتی</h1><p class="subtitle" dir="ltr">TRAVEL SERVICES CONTRACT</p></div></header>
   ${c.status === 'CANCELLED' ? '<div class="cancelled">این قرارداد لغو شده است</div>' : ''}
+  ${options.savedDraft ? '<p class="note"><b>پیش‌نویس قرارداد · در انتظار تأیید نهایی</b></p>' : ''}
   ${options.draft ? '<p class="note"><b>پیش‌نمایش قرارداد — هنوز ثبت و به رزرواسیون ارسال نشده است.</b></p>' : ''}
   <div class="meta"><div>شماره قرارداد<strong><bdi>${e(c.contractNumber)}</bdi></strong></div><div>${options.draft ? 'تاریخ پیش‌نمایش' : 'تاریخ ثبت'}<strong>${e(date(c.createdAt))}</strong></div><div>ساعت<strong>${e(time(c.createdAt))}</strong></div><div>مسئول فروش<strong>${e(output.ownerName)}</strong></div></div>
   <section>${heading(1, 'CONTRACT PARTIES', 'طرفین قرارداد')}<div class="fields"><div>دفتر خریدار / مشتری: <b>${e(contractPartyName)}</b></div><div>شماره مشتری: <bdi>${e(output.customer.phone)}</bdi></div><div>تلفن ثابت: <bdi>${e(output.customer.landline || '—')}</bdi></div><div>نشانی: ${e(output.customer.address)}</div><div>کد پستی: <bdi>${e(output.customer.postalCode)}</bdi></div><div>مقصد: ${e(destinationLabel)}</div><div>تعداد: ${partyCount} نفر</div><div>درخواست‌کننده: ${e(contractPartyName)}</div><div class="wide">خدمات: ${e(c.services.map(kind).join('، '))}</div></div></section>

@@ -1,7 +1,7 @@
 import { customersApi, CustomersApiError } from '../customers/api/client';
 import { normalizeCustomerListQuery } from '../customers/api/contracts';
 import catalog from './customer-guide-catalog.json';
-import { normalizeQuestion } from './question-text';
+import { matchesQuestion, normalizeQuestion } from './question-text';
 
 export const customerGuideLink = { href: '/customers', label: 'مشتریان B2C' };
 const topics = catalog.map(({ id, title, pattern, text, guideHref }) => ({
@@ -28,11 +28,13 @@ export function resolveCustomerQuestion(
     )
   )
     return;
-  if (!onPanel && !/مشتری|مسافر|b2c/.test(text)) return;
+  const passenger = matchesQuestion(text, /مسافر/);
+  const customer = /مشتری|b2c/.test(text);
+  if (!onPanel && !customer && !passenger) return;
   const topic = topics.find((entry) => normalizeQuestion(entry.title) === text);
   if (topic) return { kind: 'guide' as const, topic };
   const how = /چطور|چگونه|کجا|راهنما|نحوه|چرا|معنی|یعنی/.test(text);
-  if (!how && /تعداد|چند |نرخ بازگشت/.test(text) && /مشتری|مسافر/.test(text)) {
+  if (!how && /تعداد|چند |نرخ بازگشت/.test(text) && (customer || passenger)) {
     const externalFilters =
       /امروز|دیروز|هفته|ماه|سال|شعبه|از تاریخ|تا تاریخ|نحوه آشنایی/.test(
         text.replace(/سه ماه اخیر/g, ''),
@@ -44,7 +46,7 @@ export function resolveCustomerQuestion(
         ? ('rate' as const)
         : /سه ماه اخیر|مشتریان جدید/.test(text)
           ? ('new' as const)
-          : /مسافر/.test(text) && !/مشتری/.test(text)
+          : passenger && !customer
             ? ('passengers' as const)
             : ('all' as const),
     };

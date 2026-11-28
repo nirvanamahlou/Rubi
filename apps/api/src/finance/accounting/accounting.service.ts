@@ -355,6 +355,69 @@ export class AccountingService {
     }
     return row;
   }
+  /** Aggregate register across fiscal periods. No journal lines or amounts leave the ledger. */
+  async journalRegister(
+    status: string,
+    rawPage: string,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor);
+    if (!actor.permissions.includes('legal-entity.aggregate.read'))
+      throw new ForbiddenException();
+    const scope = await this.ledgerCompanies?.current(actor);
+    if (!scope?.isAggregate) throw new ForbiddenException();
+    const page = Number(rawPage ?? 1);
+    if (
+      !['DRAFT', 'POSTED'].includes(status) ||
+      !Number.isSafeInteger(page) ||
+      page < 1 ||
+      page > 100000
+    )
+      v.invalid('فیلتر نامعتبر است.');
+    const companies = new Map(scope.companies.map((c) => [c.id, c.title]));
+    const where: Prisma.AccountingJournalWhereInput = {
+      status,
+      book: {
+        branchId: { in: actor.branchIds },
+        OR: [
+          { legalEntityId: null },
+          { legalEntityId: { in: [...companies.keys()] } },
+        ],
+      },
+    };
+    const [total, rows] = await this.database.client.$transaction(
+      [
+        this.database.client.accountingJournal.count({ where }),
+        this.database.client.accountingJournal.findMany({
+          where,
+          orderBy: { id: 'asc' },
+          take: 50,
+          skip: (page - 1) * 50,
+          select: {
+            id: true,
+            number: true,
+            book: { select: { branchId: true, legalEntityId: true } },
+          },
+        }),
+      ],
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+    );
+    return {
+      data: rows.map((r) => ({
+        id: r.id,
+        number: r.number,
+        branchId: r.book.branchId,
+        company: r.book.legalEntityId
+          ? {
+              id: r.book.legalEntityId,
+              name: companies.get(r.book.legalEntityId)!,
+            }
+          : null,
+      })),
+      meta: { total, page, period: 'ALL' as const },
+    };
+  }
+
   async books(actor: AuthenticatedActor) {
     this.require(actor);
     const scope = await this.ledgerCompanies?.current(actor);

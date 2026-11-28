@@ -2,12 +2,59 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { readApi, emptySearch, searchBody } from './read-client';
 import { CallCenterHttpError } from './client';
 const transport = vi.hoisted(() => vi.fn());
+const refresh = vi.hoisted(() => vi.fn());
 vi.mock('@/i18n/localized-fetch', () => ({ localizedFetch: transport }));
+vi.mock('@/lib/auth-session', () => ({ refreshAuthenticatedSession: refresh }));
 vi.mock('@/lib/environment', () => ({
   getPublicApiBaseUrl: () => 'http://localhost:4000/api/v1',
 }));
 describe('Call Center paginated read transport', () => {
   beforeEach(() => vi.clearAllMocks());
+  it.each(['branches', 'kpis'] as const)(
+    'renews an expired session once for the same authorized %s read',
+    async (reader) => {
+      const result =
+        reader === 'branches'
+          ? {
+              data: [{ id: 'branch', name: 'demo' }],
+              meta: { defaultBranchId: 'branch' },
+            }
+          : {
+              data: { today: 0, week: 3, withoutOutcome: 2, needsFollowUp: 1 },
+              meta: { branchId: 'branch' },
+            };
+      transport
+        .mockResolvedValueOnce(new Response(null, { status: 401 }))
+        .mockResolvedValueOnce(Response.json(result));
+      refresh.mockResolvedValueOnce({ user: { id: 'synthetic' } });
+      const signal = new AbortController().signal;
+      expect(await readApi[reader]('branch', signal)).toEqual(result);
+      expect(refresh).toHaveBeenCalledExactlyOnceWith(
+        'http://localhost:4000/api/v1',
+      );
+      expect(transport).toHaveBeenCalledTimes(2);
+      expect(transport.mock.calls[1]).toEqual(transport.mock.calls[0]);
+      expect(transport.mock.calls[1]?.[1]).toMatchObject({
+        signal,
+        credentials: 'include',
+        headers: { 'x-branch-id': 'branch' },
+      });
+    },
+  );
+  it.each([401, 403])(
+    'preserves authoritative KPI denial %i without new authority',
+    async (status) => {
+      transport.mockResolvedValueOnce(
+        Response.json({ message: 'denied' }, { status }),
+      );
+      refresh.mockResolvedValueOnce(null);
+      await expect(
+        readApi.kpis('branch', new AbortController().signal),
+      ).rejects.toMatchObject({ status });
+      expect(transport).toHaveBeenCalledTimes(1);
+      expect(refresh).toHaveBeenCalledTimes(status === 401 ? 1 : 0);
+    },
+  );
   it.each(['today', 'week'] as const)(
     'loads %s calls with scoped paging',
     async (period) => {
