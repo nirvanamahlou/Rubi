@@ -1,3 +1,7 @@
+## Nora colloquial sales periods
+
+The sales evidence route recognizes colloquial possessive suffixes on relative periods, including «فروش هفته پیشمون چقدر بوده». The existing Tehran calendar and authorized sales calculations answer the request. The three focused sales-period tests passed during integration of #1955.
+
 ## Niyayesh website receipts and active company
 
 Sales shows standalone Niyayesh website receipts only with Niyayesh Seir Sahar selected. The receipt API requires the same company context alongside existing branch and payment permissions for both listing and contract-number searches.

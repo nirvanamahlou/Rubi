@@ -6,6 +6,10 @@ Reserve the NSS receipt list company guard, Sales panel visibility and focused r
 
 Reserve the NSS standalone receipt validation and amount display. Preserve prior receipts and accept any positive whole rial amount within the existing checkout limit. No schema or shared service changes.
 
+## NORA-COLLOQUIAL-SALES-WEEK — PC-C — REVIEW
+
+Reserve sales-period text normalization and its regression test for colloquial possessive suffixes on relative dates. No API, migration, or dependency change.
+
 ## NSS-CONTRACT-PAYMENT-1125 — PC-A — REVIEW
 
 Reserve Sales website-payment intake, contracts workspace receipt list, the Sales module registration and one additive Prisma migration. Base origin/develop 458e43d31. NSS submits only SEP-verified receipts through its bound integration identity. The operator list is branch-scoped. The supplied number is a reference for a standalone receipt.
@@ -13694,3 +13698,5 @@ PC-D — Review saved draft contracts in the reservation document viewer on code
 PC-C | codex/pc-c-nora-owner-reconciliation-1126 | Production report reconciliation follow-up to #1967. Sales supplies optional discount and passenger-row projections. Insurance supplies its nullable contract reference. Finance owns the read-only all-company journal register with existing journal, aggregate-company and branch permissions. Nora consumes those reads and the scoped reservation, purchase, call-center and tour readers. Release tooling verifies the type of the Next.js cache directory. No migration or dependency changes.
 
 The same item covers the authenticated IAM identity read and Web session helper used by the ERP panels. GET /iam/auth/identity returns the current caller's existing LoginResponse projection. Existing login, token rotation and revocation contracts stay in force. Nora distinguishes scope, transport and source-evidence failures.
+
+PC-C | codex/pc-c-nora-sales-period-integration-1128 | Resolve the #1955 project status conflict against develop ca19a7656 and verify the existing sales-period parser and regressions. No schema or dependency changes.

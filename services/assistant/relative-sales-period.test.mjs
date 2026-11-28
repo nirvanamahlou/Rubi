@@ -154,4 +154,18 @@ test('agent applies exact half-open windows with a single clock and renders veri
   assert.equal(clockCalls, 2);
   assert.match(daily.text, /بازهٔ ۱: ۵، بازهٔ ۲: ۲۰، اختلاف: -۱۵/);
   assert.match(daily.text, /دورهٔ ناقص/);
+  const previousWeek = await agent(
+    {
+      version: 1,
+      message: 'فروش هفته پیشمون چقدر بوده',
+      history: [],
+    },
+    { signal: new AbortController().signal },
+  );
+  assert.equal(previousWeek.status, 'ANSWER');
+  assert.equal(previousWeek.sources.length, 1);
+  assert.equal(clockCalls, 3);
+  assert.match(previousWeek.text, /۱۰/);
+  assert.match(sqls.at(-1), /2026-11-13T20:30:00\.000Z/);
+  assert.match(sqls.at(-1), /2026-11-20T20:30:00\.000Z/);
 });
