@@ -28,9 +28,12 @@ export function callCenterIntent(message: string, onPanel: boolean) {
     return;
   if (
     /تماس/.test(text) &&
-    /تعداد|چند|چن تا/.test(text) &&
+    /تعداد|چند|چن تا|چقد(?:ر|ه)/.test(text) &&
     /بدون نتیجه|نتیجه ثبت نشده/.test(text) &&
-    /بازه|1[34]\d{2}/.test(text)
+    /بازه|1[34]\d{2}/.test(text) &&
+    !/ورودی|خروجی|کارشناس|شعبه|خودم|تماس هام|تماس های من|داشتم|به تفکیک/.test(
+      text,
+    )
   )
     return 'historicalWithoutOutcome';
   if (!onPanel && !/کال سنتر|صف رسیدگی/.test(text)) return;

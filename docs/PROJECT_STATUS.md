@@ -10858,3 +10858,5 @@ PC-C — The first reconciliation patch passed CI and merged in #1967. The follo
 PC-C — The second full browser run recorded 220 final responses. During the run, the production edge logged 434 HTTP 401 conversation attempts including retries. The change in #1968 adds a guarded current-identity read before session rotation and distinguishes authorization and transport failures from Nora evidence failures. Live revalidation follows deployment.
 
 PC-C | #1951 combined the employee metric with the current data atlas. Regeneration produced 1798 records and discovery validated 20 source cases and 29 report cases.
+
+PC-C | Nora now routes supported active employee and historical workbench/call counts to ERP readers before generic planning. Persian month and date ranges retain the inclusive final Tehran day. The call drilldown sends only its documented filter fields. No permission, persistence or Call Center panel changes.

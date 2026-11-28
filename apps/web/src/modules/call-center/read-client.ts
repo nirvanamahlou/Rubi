@@ -171,7 +171,7 @@ export const readApi = {
       body: JSON.stringify({
         page,
         pageSize: 20,
-        ...(range ?? {}),
+        ...(range ? { from: range.from, to: range.to } : {}),
         ...(revision ? { revision } : {}),
       }),
       signal,
