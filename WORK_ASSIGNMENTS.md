@@ -110,6 +110,8 @@ Own the city and country photo fields, geography dialog, additive migration, and
 
 Reserve Nora Web routing, supported guide selection, and the assistant sales period parser with focused regressions. Keep producer permissions and APIs unchanged.
 
+PC-C | codex/pc-c-nora-employee-integration-1128 | Integrate #1951 with develop ca19a7656. Scope is the existing HR read metric and regenerated Nora data atlas. No schema or dependency changes.
+
 ## NORA-OPT-IN-EVIDENCE-1124 — PC-C — ACTIVE
 
 Reserve Nora v3 reply presentation, native report formatting and focused tests. Preserve authenticated reads and evidence validation.
@@ -13694,5 +13696,3 @@ PC-D — Review saved draft contracts in the reservation document viewer on code
 PC-C | codex/pc-c-nora-owner-reconciliation-1126 | Production report reconciliation follow-up to #1967. Sales supplies optional discount and passenger-row projections. Insurance supplies its nullable contract reference. Finance owns the read-only all-company journal register with existing journal, aggregate-company and branch permissions. Nora consumes those reads and the scoped reservation, purchase, call-center and tour readers. Release tooling verifies the type of the Next.js cache directory. No migration or dependency changes.
 
 The same item covers the authenticated IAM identity read and Web session helper used by the ERP panels. GET /iam/auth/identity returns the current caller's existing LoginResponse projection. Existing login, token rotation and revocation contracts stay in force. Nora distinguishes scope, transport and source-evidence failures.
-
-PC-C | codex/pc-c-nora-employee-integration-1128 | Integrate #1951 with develop ca19a7656. Scope is the existing HR read metric and regenerated Nora data atlas. No schema or dependency changes.
