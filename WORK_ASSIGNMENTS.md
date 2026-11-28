@@ -62,6 +62,12 @@ Stage 4, based on #1917. Reserve only the purchase and reservation-report guide 
 
 Stacked on #1907. Reserve the five Stage 3 guide documents, their generated catalogue, bounded pilot retrieval integration, focused tests and acceptance notes. Producer modules are referenced read-only. No migration, dependency, merge or deployment.
 
+## NORA-HISTORICAL-REPORTS-1125 — PC-C — REVIEW
+
+Nora routes dated no-outcome calls and counts of user-created workbench requests through Customer Affairs. Scope includes the existing call drilldown range, the new self-only count endpoint and the assistant source atlas. No migration or dependency changes. Historical Finance settlement remains pending a verified transition source.
+
+PC-C | codex/pc-c-nora-historical-report-integration-1128 | Integrate #1954 with develop ca19a7656 using the current Customer Affairs owner reads, Nora date handling, translations and generated atlas. No runtime or schema difference against develop.
+
 ## NORA-PETTY-CASH-GUIDE-1124 — PC-C — ACTIVE
 
 Reserve Nora petty cash guide, generation, read-only Composer dispatch and focused tests. Reuse native Procurement access and workflows.

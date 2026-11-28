@@ -61,6 +61,12 @@ Stage 3 expands five procedural guides with 15 additional source-linked topics a
 
 Stage 2 completed its 18 authenticated local browser cases across Sales, Travel Issuance and Customer Affairs. Customer-status questions without a tracking number now request it and identify the appropriate panel. Evidence and fixture limitations are in docs/tasks/NORA-GUIDE-PILOT-VERIFICATION-1124.md. Draft PR #1907 remains subject to CI and review.
 
+## NORA-HISTORICAL-REPORTS-1125
+
+Nora resolves explicit Persian dates within one named month for counts of no-outcome calls and the signed-in user's visible workbench submissions. Counts use the existing authorized call predicates and the ticket creation timestamp, in Tehran time. Production acceptance is pending.
+
+The original #1954 CI failure was the English UI completeness test. The current develop already includes the historical report implementation and translation fixes. All six focused translation and historical-period tests passed on the integrated tree.
+
 ## NORA-GUIDE-COVERAGE-1124 — PC-C
 
 Initial linked guides for travel issuance, Customer Affairs, package generator, petty cash and correspondence. Scoped lexical retrieval uses accessible destinations and existing record dispatch. Build-time catalogue consistency and 11 focused retrieval tests passed. Stage 1 acceptance baseline records 15 module coverage rows, 18 pilot questions and policy evidence gaps in docs/tasks/NORA-GUIDE-ACCEPTANCE-BASELINE-1124.md. Server-side retrieval and execution of the pilot belong to Stage 2.
