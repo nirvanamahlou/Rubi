@@ -582,50 +582,23 @@ async function loadRecords(
     };
   }
   if (route === '/finance/requests') {
-    const group = subject === 'approvedReceipts' ? 'APPROVED' : 'PENDING';
-    const schema = z.object({
-      page: count,
-      total: count,
-      sources: z.array(z.object({ source: id, connection: id })),
-      items: z.array(
+    const receipts = z
+      .array(
         z.object({
           id,
-          sourceReference: id,
-          sourceContextReference: id,
-          title: id,
-          branchReference: id,
+          contractId: id,
+          branch: id,
+          label: id,
+          confirmed: z.boolean(),
         }),
-      ),
-    });
-    const all = await collect(async (p) => {
-      const status = group === 'APPROVED' ? 'RECEIPT_CONFIRMED' : 'NEW';
-      const r = schema.parse(
-        await read(
-          '/finance/inbox/page?source=SALES&category=RECEIPT&approvalGroup=' +
-            group +
-            '&status=' +
-            status +
-            '&pageSize=25&page=' +
-            p,
-        ),
-      );
-      if (
-        !r.sources.some(
-          (s) => s.source === 'SALES' && s.connection === 'CONNECTED',
-        )
       )
-        throw new Error('FINANCE_SOURCE_UNAVAILABLE');
-      return { data: r.items, page: r.page, total: r.total };
-    });
+      .parse(await read('/finance/reports/sales-receipts'));
     return {
       hasCompany: false,
       hasBranch: true,
-      rows: all.map((r) => ({
-        id: r.sourceReference,
-        contractId: r.sourceContextReference,
-        label: r.title,
-        branch: r.branchReference,
-      })),
+      rows: receipts.filter(
+        (receipt) => receipt.confirmed === (subject === 'approvedReceipts'),
+      ),
     };
   }
   if (subject === 'pettyExpenses') {

@@ -185,6 +185,19 @@ export class FinanceInboxService {
     };
   }
 
+  async salesReceiptRecords(actor: AuthenticatedActor) {
+    const receipts = await this.sales.financeInbox(actor, true);
+    return receipts
+      .filter((receipt) => !receipt.financeVoided)
+      .map((receipt) => ({
+        id: receipt.paymentId,
+        contractId: receipt.contractId,
+        branch: receipt.branchId,
+        label: receipt.contractNumber,
+        confirmed: receipt.financeConfirmed === true,
+      }));
+  }
+
   async page(
     query: FinanceInboxQueryV1,
     actor: AuthenticatedActor,
