@@ -27,7 +27,12 @@ type Row = {
   company?: Group | null;
   contractId?: string | null | undefined;
 };
-type Records = { rows: Row[]; hasBranch: boolean; hasCompany: boolean };
+type Records = {
+  rows: Row[];
+  hasBranch: boolean;
+  hasCompany: boolean;
+  sharedDefinitions?: true;
+};
 const count = z.number().int().safe().nonnegative();
 const id = z.string().min(1);
 const fact = (n: number) => n.toLocaleString('fa-IR');
@@ -386,6 +391,7 @@ async function loadRecords(
     return {
       hasBranch: false,
       hasCompany: false,
+      sharedDefinitions: true,
       rows: all.map((r) => ({ id: r.id, label: r.name + ' — ' + r.code })),
     };
   }
@@ -663,6 +669,7 @@ async function loadRecords(
     return {
       hasBranch: false,
       hasCompany: false,
+      sharedDefinitions: true,
       rows: roles.map((r) => ({ id: r.id, label: r.name })),
     };
   }
@@ -780,7 +787,13 @@ export async function runOwnerRecordReport(
   }
   if (shape === 'branch' || shape === 'company') {
     const branch = shape === 'branch';
-    if (rows.length && !(branch ? data.hasBranch : data.hasCompany)) {
+    if (data.sharedDefinitions) {
+      lines.push(
+        'مشترک — ' + fact(rows.length),
+        branch ? 'مالکیت اختصاصی هر شعبه — ۰' : 'مالکیت اختصاصی هر شرکت — ۰',
+        (branch ? 'بدون شعبه' : 'بدون شرکت') + ' — ۰',
+      );
+    } else if (rows.length && !(branch ? data.hasBranch : data.hasCompany)) {
       lines.push(
         branch
           ? 'منبع این پنل شعبهٔ هر رکورد را مشخص نمی‌کند؛ تفکیک شعبه و شمارش موارد بدون شعبه در دسترس نیست.'

@@ -236,3 +236,32 @@ it('lists the receipt source identity from the connected finance queue', async (
   expect(answer.text).toContain('payment-1 —');
   expect(answer.text).not.toContain('sales:payment-1');
 });
+
+it.each([
+  [
+    'تعداد نقش‌های تعریف‌شده رو به تفکیک شعبه و در کل بده',
+    { roles: [{ id: 'r', name: 'role' }] },
+  ],
+  [
+    'شرکت‌ها رو به ترتیب تعداد آژانس‌های همکار مرتب کن',
+    {
+      data: [{ id: 'a', name: 'agency', code: 'A' }],
+      meta: { page: 1, total: 1 },
+    },
+  ],
+] as const)(
+  'counts shared definitions once for %s',
+  async (question, response) => {
+    const read = vi.fn().mockResolvedValue(response);
+    const result = await runOwnerRecordReport(
+      question,
+      ownerRecordRequest(question)!,
+      actor,
+      context,
+      read,
+    );
+    expect(result.status).toBe('answer');
+    expect(result.text).toContain('مشترک — ۱');
+    expect(read).toHaveBeenCalledTimes(1);
+  },
+);

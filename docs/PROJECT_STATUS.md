@@ -10872,3 +10872,5 @@ PC-C: Nora petty-fund identity regression and structured reader diagnostics impl
 PC-C: The read-only Nora sales receipt status report uses Sales actor scope independently of a default accounting year. Finance writes remain fiscal-year guarded.
 
 PC-C: The finance document-delivery queue reads current authorization revisions by contract independently of fiscal year. Changes to authorization remain fiscal-year guarded.
+
+Nora reports globally defined roles and master organizations once under shared ownership, keeping unresolved ownership distinct.
