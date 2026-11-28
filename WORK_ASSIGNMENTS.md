@@ -13722,3 +13722,5 @@ PC-C | codex/pc-c-nora-report-parity-1128 | Nora reporting source and identity p
 PC-C | codex/pc-c-nora-sales-receipts-fiscal-1128 | Finance sales receipt report fiscal boundary and regression tests. No migration.
 
 PC-C | codex/pc-c-nora-owner-reports-1973 | Read-only document-release status reporting and live acceptance after PR 1973. No migration.
+
+PC-C | codex/pc-c-nora-shared-report-ownership | Shared definition ownership and regression tests. No migration.
