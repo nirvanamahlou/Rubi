@@ -217,17 +217,15 @@ it('lists the petty fund identifier separately from its branch', async () => {
 });
 it('lists the receipt source identity from the connected finance queue', async () => {
   const question = 'فهرست دریافت‌های تأییدشده رو بده';
-  const read = vi
-    .fn()
-    .mockResolvedValue([
-      {
-        id: 'payment-1',
-        contractId: 'contract-1',
-        label: 'CNT-1',
-        branch: 'west',
-        confirmed: true,
-      },
-    ]);
+  const read = vi.fn().mockResolvedValue([
+    {
+      id: 'payment-1',
+      contractId: 'contract-1',
+      label: 'CNT-1',
+      branch: 'west',
+      confirmed: true,
+    },
+  ]);
   const answer = await runOwnerRecordReport(
     question,
     ownerRecordRequest(question)!,
