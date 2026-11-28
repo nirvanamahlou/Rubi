@@ -265,3 +265,38 @@ it.each([
     expect(read).toHaveBeenCalledTimes(1);
   },
 );
+
+it('labels recorded roster ownership and keeps a shared employee in one bucket', async () => {
+  const question = 'شرکت‌ها رو به ترتیب تعداد کارکنان فعال مرتب کن';
+  const rows = [
+    {
+      id: '1',
+      name: 'A',
+      status: 'فعال',
+      branchId: 'west',
+      companyId: 'west',
+      companyName: 'west',
+    },
+    {
+      id: '2',
+      name: 'B',
+      status: 'فعال',
+      branchId: 'west',
+      companyId: 'ALL',
+      companyName: 'all',
+    },
+  ];
+  const read = vi
+    .fn()
+    .mockResolvedValueOnce({ data: rows, meta: { page: 1, total: 2 } })
+    .mockResolvedValueOnce({ branches: [{ id: 'west', name: 'West' }] });
+  const result = await runOwnerRecordReport(
+    question,
+    ownerRecordRequest(question)!,
+    actor,
+    context,
+    read,
+  );
+  expect(result.text).toContain('مشترک — ۱');
+  expect(result.text).toContain('West — ۱');
+});

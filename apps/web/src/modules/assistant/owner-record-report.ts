@@ -822,6 +822,26 @@ export async function runOwnerRecordReport(
         for (const c of options.data)
           groups.set(c.id, { name: c.persianName, count: 0 });
       }
+      const employeeCompanies =
+        !branch && (subject === 'employees' || subject === 'formerEmployees');
+      const names = new Map<string, string>();
+      if (
+        employeeCompanies &&
+        actor.permissions.includes('iam.users.read') &&
+        rows.some(
+          (r) =>
+            r.company &&
+            r.company.id === r.company.name &&
+            actor.branchIds.includes(r.company.id),
+        )
+      ) {
+        const { branches } = z
+          .object({ branches: z.array(z.object({ id, name: id })) })
+          .parse(await read('/iam/users/access-options'));
+        for (const entry of branches)
+          if (actor.branchIds.includes(entry.id))
+            names.set(entry.id, entry.name);
+      }
       let missing = 0;
       for (const row of rows) {
         const group = branch
@@ -833,7 +853,11 @@ export async function runOwnerRecordReport(
           missing++;
           continue;
         }
-        const entry = groups.get(group.id) ?? { name: group.name, count: 0 };
+        const name =
+          employeeCompanies && group.id === 'ALL'
+            ? 'مشترک'
+            : (names.get(group.id) ?? group.name);
+        const entry = groups.get(group.id) ?? { name, count: 0 };
         entry.count++;
         groups.set(group.id, entry);
       }
