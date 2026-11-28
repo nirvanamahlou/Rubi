@@ -10848,3 +10848,5 @@ PC-C — The first reconciliation patch passed CI and merged in #1967. The follo
 PC-C — The second full browser run recorded 220 final responses. During the run, the production edge logged 434 HTTP 401 conversation attempts including retries. The change in #1968 adds a guarded current-identity read before session rotation and distinguishes authorization and transport failures from Nora evidence failures. Live revalidation follows deployment.
 
 PC-C: Added a 353-table ERP feature dictionary to the Nora data agent. SQL hints are intersected with the caller's native catalog. Live acceptance pending.
+
+PC-C: Nora petty-fund identity regression and structured reader diagnostics implemented; full report parity pending.

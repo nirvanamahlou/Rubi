@@ -13696,3 +13696,5 @@ PC-C | codex/pc-c-nora-owner-reconciliation-1126 | Production report reconciliat
 The same item covers the authenticated IAM identity read and Web session helper used by the ERP panels. GET /iam/auth/identity returns the current caller's existing LoginResponse projection. Existing login, token rotation and revocation contracts stay in force. Nora distinguishes scope, transport and source-evidence failures.
 
 PC-C | codex/pc-c-nora-table-guide-1128 | Assistant table and feature dictionary, scoped retrieval, release and production reporting acceptance. No migration.
+
+PC-C | codex/pc-c-nora-report-parity-1128 | Nora reporting source and identity parity | active

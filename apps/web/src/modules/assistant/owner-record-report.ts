@@ -644,7 +644,7 @@ async function loadRecords(
     const rows: Row[] = [];
     for (const branch of branches) {
       const fund = z
-        .object({ currencyCode: id })
+        .object({ id, currencyCode: id })
         .nullable()
         .parse(
           await read(
@@ -652,7 +652,11 @@ async function loadRecords(
           ),
         );
       if (fund)
-        rows.push({ id: branch, label: 'تنخواه ' + fund.currencyCode, branch });
+        rows.push({
+          id: fund.id,
+          label: 'تنخواه ' + fund.currencyCode,
+          branch,
+        });
     }
     return { rows, hasCompany: false, hasBranch: true };
   }

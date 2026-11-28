@@ -203,3 +203,15 @@ it('checks the authorized scope before reading', async () => {
   expect(result.status).toBe('denied');
   expect(read).not.toHaveBeenCalled();
 });
+it('lists the petty fund identifier separately from its branch', async () => {
+  const question = 'فهرست حساب‌های تنخواه رو بده';
+  const result = await runOwnerRecordReport(
+    question,
+    ownerRecordRequest(question)!,
+    actor,
+    context,
+    vi.fn().mockResolvedValue({ id: 'fund-123', currencyCode: 'IRR' }),
+  );
+  expect(result.text).toContain('fund-123 —');
+  expect(result.text).not.toContain('west —');
+});

@@ -600,6 +600,19 @@ export async function runPlannedConversation(
           ),
         ];
       } catch (e) {
+        console.warn('nora.report.read_failure', {
+          tool: step.kind,
+          subject: ownerRecordRequest(question)?.subject,
+          reason:
+            e instanceof ReadError
+              ? 'upstream_http'
+              : e instanceof z.ZodError
+                ? 'invalid_source_shape'
+                : signal.aborted
+                  ? 'aborted'
+                  : 'reader_failure',
+          status: e instanceof ReadError ? e.status : undefined,
+        });
         if (signal.aborted || (e instanceof ReadError && e.status === 401))
           throw e;
         return [
